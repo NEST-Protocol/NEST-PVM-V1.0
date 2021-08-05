@@ -17,6 +17,16 @@ interface INestPriceFacade {
         address paybackAddress
     ) external payable returns (uint blockNumber, uint price);
 
+    /// @dev Get the latest trigger price
+    /// @param tokenAddress Destination token address
+    /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, and the excess fees will be returned through this address
+    /// @return blockNumber The block number of price
+    /// @return price The token price. (1eth equivalent to (price) token)
+    function triggeredPrice(
+        address tokenAddress, 
+        address paybackAddress
+    ) external payable returns (uint blockNumber, uint price);
+
     // /// @dev Price call entry configuration structure
     // struct Config {
 

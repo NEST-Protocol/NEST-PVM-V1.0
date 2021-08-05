@@ -12,7 +12,7 @@
 // import "./CoFiToken.sol";
 
 // /// @dev Stake xtoken or CNode, earn CoFi
-// contract CoFiXVaultForStaking is CoFiXBase, ICoFiXVaultForStaking {
+// contract FortVaultForStaking.sol is CoFiXBase, ICoFiXVaultForStaking {
 
 //     /// @dev Account information
 //     struct Account {

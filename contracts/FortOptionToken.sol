@@ -5,8 +5,8 @@ pragma solidity ^0.8.6;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "./interfaces/INestPriceFacade.sol";
 
-/// @dev 二元期权
-contract BinaryOptionToken is ERC20("", "") {
+/// @dev 期权凭证
+contract FortOptionToken is ERC20("", "") {
 
     address _tokenAddress;
     uint88 _endblock;
@@ -34,12 +34,12 @@ contract BinaryOptionToken is ERC20("", "") {
     }
 
     function mint(address to, uint amount) external {
-        require(msg.sender == _owner, "BinaryOptionToken: not owner");
+        require(msg.sender == _owner, "FortOptionToken: not owner");
         _mint(to, amount);
     }
 
     function burn(address from, uint amount) external {
-        require(msg.sender == _owner, "BinaryOptionToken: not owner");
+        require(msg.sender == _owner, "FortOptionToken: not owner");
         _burn(from, amount);
     }
 }

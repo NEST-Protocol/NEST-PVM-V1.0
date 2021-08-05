@@ -8,18 +8,18 @@ const hre = require('hardhat');
 exports.deploy = async function() {
     const NestPriceFacade = await ethers.getContractFactory('NestPriceFacade');
     const FortToken = await ethers.getContractFactory('FortToken');
-    const FortBinary = await ethers.getContractFactory('FortBinary');
+    const FortEuropeanOption = await ethers.getContractFactory('FortEuropeanOption');
     
     const nestPriceFacade = await NestPriceFacade.deploy();
     const fort = await FortToken.deploy();
-    const fortBinary = await FortBinary.deploy();
+    const fortEuropeanOption = await FortEuropeanOption.deploy();
 
-    await fortBinary.setFortToken(fort.address);
-    await fortBinary.setNestPriceFacade(nestPriceFacade.address);
+    await fortEuropeanOption.setFortToken(fort.address);
+    await fortEuropeanOption.setNestPriceFacade(nestPriceFacade.address);
 
     const contracts = {
         fort: fort,
-        fortBinary: fortBinary
+        fortEuropeanOption: fortEuropeanOption
     };
 
     return contracts;

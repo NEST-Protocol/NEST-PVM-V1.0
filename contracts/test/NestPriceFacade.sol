@@ -19,4 +19,16 @@ contract NestPriceFacade is INestPriceFacade {
     ) external payable override returns (uint blockNumber, uint price) {
         return (height - 10, 2600000000);
     }
+
+    /// @dev Get the latest trigger price
+    /// @param tokenAddress Destination token address
+    /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, and the excess fees will be returned through this address
+    /// @return blockNumber The block number of price
+    /// @return price The token price. (1eth equivalent to (price) token)
+    function triggeredPrice(
+        address tokenAddress, 
+        address paybackAddress
+    ) external payable override returns (uint blockNumber, uint price) {
+        return (block.number - 10, 2600000000);
+    }
 }
