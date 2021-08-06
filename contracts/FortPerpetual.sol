@@ -6,13 +6,14 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "./libs/TransferHelper.sol";
 
+import "./interfaces/IFortPerpetual.sol";
 import "./FortToken.sol";
 import "./FortOptionToken.sol";
 
 /// @dev 永续合约
-contract FortPerpetual {
+contract FortPerpetual is IFortPerpetual {
     
-        // fort代币地址
+    // fort代币地址
     address _fortToken;
 
     // INestPriceFacade地址
@@ -29,16 +30,6 @@ contract FortPerpetual {
         _nestPriceFacade = nestPriceFacade;
     }
 
-    /// @dev 表示一个永续合约
-    struct Order {
-        address owner;
-        uint88 lever;
-        bool orientation;
-        address tokenAddress;
-        uint96 bond;
-        uint price;
-    }
-
     struct Account {
         uint64[] orders;
     }
@@ -46,6 +37,53 @@ contract FortPerpetual {
     Order[] _orders;
 
     mapping(address=>Account) _accounts; 
+
+    /// @dev 列出永续合约
+    /// @param offset Skip previous (offset) records
+    /// @param count Return (count) records
+    /// @param order Order. 0 reverse order, non-0 positive order
+    /// @return orderArray List of orders
+    function list(uint offset, uint count, uint order) external view override returns (Order[] memory orderArray) {
+        Order[] storage orders = _orders;
+        orderArray = new Order[](count);
+        if (order == 0) {
+            uint length = orders.length - offset - 1;
+            for (uint i = 0; i < count; ++i) {
+                orderArray[i] = orders[length - i];
+            }
+        } else {
+            for (uint i = 0; i < count; ++i) {
+                orderArray[i] = orders[i + offset];
+            }
+        }
+    }
+
+    /// @dev 列出用户的永续合约
+    /// @param owner 目标用户
+    /// @param offset Skip previous (offset) records
+    /// @param count Return (count) records
+    /// @param order Order. 0 reverse order, non-0 positive order
+    /// @return orderArray List of orders
+    function find(
+        address owner, 
+        uint offset, 
+        uint count, 
+        uint order
+    ) external view override returns (Order[] memory orderArray) {
+        Order[] storage orders = _orders;
+        uint64[] storage indexes = _accounts[owner].orders;
+        orderArray = new Order[](count);
+        if (order == 0) {
+            uint length = indexes.length - offset - 1;
+            for (uint i = 0; i < count; ++i) {
+                orderArray[i] = orders[indexes[length - i]];
+            }
+        } else {
+            for (uint i = 0; i < count; ++i) {
+                orderArray[i] = orders[indexes[i + offset]];
+            }
+        }
+    }
 
     // 币种对 Y/X 、开仓价P1、杠杆倍数L、保证金数量A、方向Ks、清算率C、手续费F、持有时间T
     /// @dev 开仓
@@ -58,7 +96,7 @@ contract FortPerpetual {
         uint lever,
         uint bond,
         bool orientation
-    ) external payable {
+    ) external payable override {
 
         // 1. 销毁保证金
         FortToken(_fortToken).burn(msg.sender, bond); 
@@ -88,10 +126,12 @@ contract FortPerpetual {
     }
 
     /// @dev 平仓
+    /// @param index 目标合约编号
+    /// @param bond 平仓数量
     function close(
         uint index,
         uint bond
-    ) external payable {
+    ) external payable override {
         Order storage order = _orders[index];
         require(msg.sender == order.owner, "FortPerpetual: must owner");
 
@@ -106,7 +146,9 @@ contract FortPerpetual {
     }
 
     /// @dev 补仓
-    function replenish(uint index, uint bond) external {
+    /// @param index 目标合约编号
+    /// @param bond 补仓数量
+    function replenish(uint index, uint bond) external payable override {
         FortToken(_fortToken).burn(msg.sender, bond); 
         Order storage order = _orders[index];
         order.bond = uint96(uint(order.bond) + bond);
@@ -114,11 +156,8 @@ contract FortPerpetual {
 
     /// @dev 清算
     /// @param index 清算目标合约单编号
-    /// @param bond 结算的份数
-    function settle(
-        uint index,
-        uint bond
-    ) external payable {
+    /// @param bond 清算数量
+    function settle(uint index,uint bond) external payable override {
         Order storage order = _orders[index];
         // TODO: 检查清算条件
         uint orderBond = uint(order.bond);

@@ -8,7 +8,8 @@ interface INestPriceFacade {
     /// @dev Find the price at block number
     /// @param tokenAddress Destination token address
     /// @param height Destination block number
-    /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, and the excess fees will be returned through this address
+    /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, 
+    /// and the excess fees will be returned through this address
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
     function findPrice(
@@ -19,7 +20,8 @@ interface INestPriceFacade {
 
     /// @dev Get the latest trigger price
     /// @param tokenAddress Destination token address
-    /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, and the excess fees will be returned through this address
+    /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, 
+    /// and the excess fees will be returned through this address
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
     function triggeredPrice(
@@ -79,7 +81,8 @@ interface INestPriceFacade {
     
     // /// @dev Get the latest trigger price
     // /// @param tokenAddress Destination token address
-    // /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, and the excess fees will be returned through this address
+    // /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, 
+    // /// and the excess fees will be returned through this address
     // /// @return blockNumber The block number of price
     // /// @return price The token price. (1eth equivalent to (price) token)
     // function triggeredPrice(
@@ -89,13 +92,14 @@ interface INestPriceFacade {
 
     // /// @dev Get the full information of latest trigger price
     // /// @param tokenAddress Destination token address
-    // /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, and the excess fees will be returned through this address
+    // /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, 
+    // /// and the excess fees will be returned through this address
     // /// @return blockNumber The block number of price
     // /// @return price The token price. (1eth equivalent to (price) token)
     // /// @return avgPrice Average price
-    // /// @return sigmaSQ The square of the volatility (18 decimal places). The current implementation assumes that 
-    // ///         the volatility cannot exceed 1. Correspondingly, when the return value is equal to 999999999999996447,
-    // ///         it means that the volatility has exceeded the range that can be expressed
+    // /// @return sigmaSQ The square of the volatility (18 decimal places). The current implementation 
+    // /// assumes that the volatility cannot exceed 1. Correspondingly, when the return value is equal to 
+    // /// 999999999999996447, it means that the volatility has exceeded the range that can be expressed
     // function triggeredPriceInfo(
     //     address tokenAddress, 
     //     address paybackAddress
@@ -104,7 +108,8 @@ interface INestPriceFacade {
     // /// @dev Find the price at block number
     // /// @param tokenAddress Destination token address
     // /// @param height Destination block number
-    // /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, and the excess fees will be returned through this address
+    // /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, 
+    // /// and the excess fees will be returned through this address
     // /// @return blockNumber The block number of price
     // /// @return price The token price. (1eth equivalent to (price) token)
     // function findPrice(
@@ -115,7 +120,8 @@ interface INestPriceFacade {
 
     // /// @dev Get the latest effective price
     // /// @param tokenAddress Destination token address
-    // /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, and the excess fees will be returned through this address
+    // /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, 
+    // /// and the excess fees will be returned through this address
     // /// @return blockNumber The block number of price
     // /// @return price The token price. (1eth equivalent to (price) token)
     // function latestPrice(
@@ -126,7 +132,8 @@ interface INestPriceFacade {
     // /// @dev Get the last (num) effective price
     // /// @param tokenAddress Destination token address
     // /// @param count The number of prices that want to return
-    // /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, and the excess fees will be returned through this address
+    // /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, 
+    // /// and the excess fees will be returned through this address
     // /// @return An array which length is num * 2, each two element expresses one price like blockNumber｜price
     // function lastPriceList(
     //     address tokenAddress, 
@@ -136,15 +143,16 @@ interface INestPriceFacade {
 
     // /// @dev Returns the results of latestPrice() and triggeredPriceInfo()
     // /// @param tokenAddress Destination token address
-    // /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, and the excess fees will be returned through this address
+    // /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, 
+    // /// and the excess fees will be returned through this address
     // /// @return latestPriceBlockNumber The block number of latest price
     // /// @return latestPriceValue The token latest price. (1eth equivalent to (price) token)
     // /// @return triggeredPriceBlockNumber The block number of triggered price
     // /// @return triggeredPriceValue The token triggered price. (1eth equivalent to (price) token)
     // /// @return triggeredAvgPrice Average price
-    // /// @return triggeredSigmaSQ The square of the volatility (18 decimal places). The current implementation assumes that 
-    // ///         the volatility cannot exceed 1. Correspondingly, when the return value is equal to 999999999999996447,
-    // ///         it means that the volatility has exceeded the range that can be expressed
+    // /// @return triggeredSigmaSQ The square of the volatility (18 decimal places). The current implementation 
+    // /// assumes that the volatility cannot exceed 1. Correspondingly, when the return value is equal to 
+    // /// 999999999999996447, it means that the volatility has exceeded the range that can be expressed
     // function latestPriceAndTriggeredPriceInfo(address tokenAddress, address paybackAddress) 
     // external 
     // payable 
@@ -160,14 +168,15 @@ interface INestPriceFacade {
     // /// @dev Returns lastPriceList and triggered price info
     // /// @param tokenAddress Destination token address
     // /// @param count The number of prices that want to return
-    // /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, and the excess fees will be returned through this address
+    // /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, 
+    // /// and the excess fees will be returned through this address
     // /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber｜price
     // /// @return triggeredPriceBlockNumber The block number of triggered price
     // /// @return triggeredPriceValue The token triggered price. (1eth equivalent to (price) token)
     // /// @return triggeredAvgPrice Average price
-    // /// @return triggeredSigmaSQ The square of the volatility (18 decimal places). The current implementation assumes that 
-    // ///         the volatility cannot exceed 1. Correspondingly, when the return value is equal to 999999999999996447,
-    // ///         it means that the volatility has exceeded the range that can be expressed
+    // /// @return triggeredSigmaSQ The square of the volatility (18 decimal places). The current implementation 
+    // /// assumes that the volatility cannot exceed 1. Correspondingly, when the return value is equal to 
+    // /// 999999999999996447, it means that the volatility has exceeded the range that can be expressed
     // function lastPriceListAndTriggeredPriceInfo(
     //     address tokenAddress, 
     //     uint count, 
@@ -183,7 +192,8 @@ interface INestPriceFacade {
 
     // /// @dev Get the latest trigger price. (token and ntoken)
     // /// @param tokenAddress Destination token address
-    // /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, and the excess fees will be returned through this address
+    // /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, 
+    // /// and the excess fees will be returned through this address
     // /// @return blockNumber The block number of price
     // /// @return price The token price. (1eth equivalent to (price) token)
     // /// @return ntokenBlockNumber The block number of ntoken price
@@ -200,19 +210,20 @@ interface INestPriceFacade {
 
     // /// @dev Get the full information of latest trigger price. (token and ntoken)
     // /// @param tokenAddress Destination token address
-    // /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, and the excess fees will be returned through this address
+    // /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, 
+    // /// and the excess fees will be returned through this address
     // /// @return blockNumber The block number of price
     // /// @return price The token price. (1eth equivalent to (price) token)
     // /// @return avgPrice Average price
     // /// @return sigmaSQ The square of the volatility (18 decimal places). The current implementation assumes that 
-    // ///         the volatility cannot exceed 1. Correspondingly, when the return value is equal to 999999999999996447, 
-    // ///         it means that the volatility has exceeded the range that can be expressed
+    // /// the volatility cannot exceed 1. Correspondingly, when the return value is equal to 999999999999996447, 
+    // /// it means that the volatility has exceeded the range that can be expressed
     // /// @return ntokenBlockNumber The block number of ntoken price
     // /// @return ntokenPrice The ntoken price. (1eth equivalent to (price) ntoken)
     // /// @return ntokenAvgPrice Average price of ntoken
-    // /// @return ntokenSigmaSQ The square of the volatility (18 decimal places). The current implementation assumes that
-    // ///         the volatility cannot exceed 1. Correspondingly, when the return value is equal to 999999999999996447,
-    // ///         it means that the volatility has exceeded the range that can be expressed
+    // /// @return ntokenSigmaSQ The square of the volatility (18 decimal places). The current implementation 
+    // /// assumes that the volatility cannot exceed 1. Correspondingly, when the return value is equal to 
+    // /// 999999999999996447, it means that the volatility has exceeded the range that can be expressed
     // function triggeredPriceInfo2(
     //     address tokenAddress, 
     //     address paybackAddress
@@ -229,7 +240,8 @@ interface INestPriceFacade {
 
     // /// @dev Get the latest effective price. (token and ntoken)
     // /// @param tokenAddress Destination token address
-    // /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, and the excess fees will be returned through this address
+    // /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, 
+    // /// and the excess fees will be returned through this address
     // /// @return blockNumber The block number of price
     // /// @return price The token price. (1eth equivalent to (price) token)
     // /// @return ntokenBlockNumber The block number of ntoken price

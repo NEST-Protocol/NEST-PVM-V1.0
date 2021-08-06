@@ -6,11 +6,13 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "./libs/TransferHelper.sol";
 
+import "./interfaces/IFortEuropeanOption.sol";
+
 import "./FortToken.sol";
 import "./FortOptionToken.sol";
 
 /// @dev 欧式期权
-contract FortEuropeanOption {
+contract FortEuropeanOption is IFortEuropeanOption {
     
     // 期权代币映射
     mapping(bytes32=>address) _optionMapping;
@@ -32,17 +34,17 @@ contract FortEuropeanOption {
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
     /// @return optionArray List of price sheets
-    function list(uint offset, uint count, uint order) external view returns (address[] memory optionArray) {
+    function list(uint offset, uint count, uint order) external view override returns (address[] memory optionArray) {
         address[] storage options = _options;
         optionArray = new address[](count);
         if (order == 0) {
-            uint length = options.length - 1;
+            uint length = options.length - offset - 1;
             for (uint i = 0; i < count; ++i) {
                 optionArray[i] = options[length - i];
             }
         } else {
             for (uint i = 0; i < count; ++i) {
-                optionArray[i] = options[i];
+                optionArray[i] = options[i + offset];
             }
         }
     }
@@ -61,7 +63,7 @@ contract FortEuropeanOption {
         uint price, 
         bool orientation, 
         uint endblock
-    ) public view returns (address) {
+    ) public view override returns (address) {
         bytes32 key = keccak256(abi.encodePacked(tokenAddress, price, orientation, endblock));
         return _optionMapping[key];
     }
@@ -77,7 +79,7 @@ contract FortEuropeanOption {
         bool orientation,
         uint endblock,
         uint amount
-    ) external payable {
+    ) external payable override {
 
         // 1. 创建期权凭证token
         bytes32 key = keccak256(abi.encodePacked(tokenAddress, price, orientation, endblock));
@@ -101,7 +103,7 @@ contract FortEuropeanOption {
     /// @dev 行权
     /// @param optionAddress 期权合约地址
     /// @param amount 结算的期权分数
-    function exercise(address optionAddress, uint amount) external payable {
+    function exercise(address optionAddress, uint amount) external payable override {
 
         // 1. 获取期权信息
         (
