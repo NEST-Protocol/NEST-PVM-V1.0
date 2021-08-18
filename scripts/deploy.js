@@ -9,17 +9,22 @@ exports.deploy = async function() {
     const NestPriceFacade = await ethers.getContractFactory('NestPriceFacade');
     const FortToken = await ethers.getContractFactory('FortToken');
     const FortEuropeanOption = await ethers.getContractFactory('FortEuropeanOption');
-    
+    const FortLever = await ethers.getContractFactory('FortLever');
+
     const nestPriceFacade = await NestPriceFacade.deploy();
     const fort = await FortToken.deploy();
     const fortEuropeanOption = await FortEuropeanOption.deploy();
+    const fortLever = await FortLever.deploy();
 
     await fortEuropeanOption.setFortToken(fort.address);
     await fortEuropeanOption.setNestPriceFacade(nestPriceFacade.address);
+    await fortLever.setFortToken(fort.address);
+    await fortLever.setNestPriceFacade(nestPriceFacade.address);
 
     const contracts = {
         fort: fort,
-        fortEuropeanOption: fortEuropeanOption
+        fortEuropeanOption: fortEuropeanOption,
+        fortLever: fortLever
     };
 
     return contracts;

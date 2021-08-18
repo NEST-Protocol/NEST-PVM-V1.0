@@ -4,6 +4,8 @@ pragma solidity ^0.8.6;
 
 import "../interfaces/INestPriceFacade.sol";
 
+import "hardhat/console.sol";
+
 contract NestPriceFacade is INestPriceFacade {
     
     /// @dev Find the price at block number
@@ -18,7 +20,10 @@ contract NestPriceFacade is INestPriceFacade {
         uint height, 
         address paybackAddress
     ) external payable override returns (uint blockNumber, uint price) {
-        return (height - 10, 2600000000);
+        if (height > 90) {
+            return (height - 1, 2450000000);
+        }
+        return (height - 1, 2600000000);
     }
 
     /// @dev Get the latest trigger price
@@ -31,6 +36,9 @@ contract NestPriceFacade is INestPriceFacade {
         address tokenAddress, 
         address paybackAddress
     ) external payable override returns (uint blockNumber, uint price) {
-        return (block.number - 10, 2600000000);
+        if (block.number > 90) {
+            return (block.number - 1, 450000000);
+        }
+        return (block.number - 1, 2600000000);
     }
 }

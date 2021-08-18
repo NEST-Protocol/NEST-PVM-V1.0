@@ -8,7 +8,7 @@ import "./interfaces/INestPriceFacade.sol";
 /// @dev 期权凭证
 contract FortOptionToken is ERC20("", "") {
 
-    address _tokenAddress;
+    address immutable _tokenAddress;
     uint88 _endblock;
     bool _orientation;
     uint _price;
