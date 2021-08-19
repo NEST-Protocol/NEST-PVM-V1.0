@@ -13,21 +13,6 @@ import "./interfaces/IFortGovernance.sol";
 /// @dev Base contract of Fort
 contract FortBase {
 
-    // Address of CoFiToken contract
-    address constant FORT_TOKEN_ADDRESS = 0x1a23a6BfBAdB59fa563008c0fB7cf96dfCF34Ea1;
-
-    // Address of CoFiNode contract
-    //address constant CNODE_TOKEN_ADDRESS = 0x558201DC4741efc11031Cdc3BC1bC728C23bF512;
-
-    // Genesis block number of CoFi
-    // CoFiToken contract is created at block height 11040156. However, because the mining algorithm of Fort1.0
-    // is different from that at present, a new mining algorithm is adopted from Fort2.1. The new algorithm
-    // includes the attenuation logic according to the block. Therefore, it is necessary to trace the block
-    // where the CoFi begins to decay. According to the circulation when CoFi2.0 is online, the new mining
-    // algorithm is used to deduce and convert the CoFi, and the new algorithm is used to mine the Fort2.1
-    // on-line flow, the actual block is 11040688
-    uint constant FORT_GENESIS_BLOCK = 0;
-
     /// @dev IFortGovernance implementation contract address
     address public _governance;
 

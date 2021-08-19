@@ -16,6 +16,7 @@ contract FortOptionToken is ERC20("", "") {
     address _owner;
 
     constructor(address tokenAddress, uint88 endblock, bool orientation, uint price) {
+        
         _tokenAddress = tokenAddress;
         _endblock = endblock;
         _orientation = orientation;

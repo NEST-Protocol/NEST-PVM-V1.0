@@ -44,8 +44,10 @@ contract FortPerpetual is IFortPerpetual {
     /// @param order Order. 0 reverse order, non-0 positive order
     /// @return orderArray List of orders
     function list(uint offset, uint count, uint order) external view override returns (Order[] memory orderArray) {
+
         Order[] storage orders = _orders;
         orderArray = new Order[](count);
+
         if (order == 0) {
             uint length = orders.length - offset - 1;
             for (uint i = 0; i < count; ++i) {
@@ -70,9 +72,11 @@ contract FortPerpetual is IFortPerpetual {
         uint count, 
         uint order
     ) external view override returns (Order[] memory orderArray) {
+
         Order[] storage orders = _orders;
         uint64[] storage indexes = _accounts[owner].orders;
         orderArray = new Order[](count);
+
         if (order == 0) {
             uint length = indexes.length - offset - 1;
             for (uint i = 0; i < count; ++i) {
@@ -132,6 +136,7 @@ contract FortPerpetual is IFortPerpetual {
         uint index,
         uint bond
     ) external payable override {
+
         Order storage order = _orders[index];
         require(msg.sender == order.owner, "FortPerpetual: must owner");
 
@@ -149,6 +154,7 @@ contract FortPerpetual is IFortPerpetual {
     /// @param index 目标合约编号
     /// @param bond 补仓数量
     function replenish(uint index, uint bond) external payable override {
+
         FortToken(_fortToken).burn(msg.sender, bond); 
         Order storage order = _orders[index];
         order.bond = uint96(uint(order.bond) + bond);
@@ -158,6 +164,7 @@ contract FortPerpetual is IFortPerpetual {
     /// @param index 清算目标合约单编号
     /// @param bond 清算数量
     function settle(uint index,uint bond) external payable override {
+        
         Order storage order = _orders[index];
         // TODO: 检查清算条件
         uint orderBond = uint(order.bond);

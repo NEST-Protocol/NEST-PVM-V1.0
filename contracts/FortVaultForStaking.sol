@@ -8,11 +8,11 @@ import "./libs/TransferHelper.sol";
 
 import "./interfaces/IFortVaultForStaking.sol";
 
-import "./FortBase.sol";
+import "./FortBase2.sol";
 import "./FortToken.sol";
 
-/// @dev Stake xtoken or CNode, earn CoFi
-contract FortVaultForStaking is FortBase, IFortVaultForStaking {
+/// @dev Stake xtoken, earn fort
+contract FortVaultForStaking is FortBase2, IFortVaultForStaking {
 
     /// @dev Account information
     struct Account {
@@ -47,10 +47,10 @@ contract FortVaultForStaking is FortBase, IFortVaultForStaking {
         mapping(address=>Account) accounts;
     }
     
-    // // CoFi mining speed weight base
+    // // fort mining speed weight base
     // uint constant FORT_WEIGHT_BASE = 1e9;
 
-    // CoFi mining unit
+    // fort mining unit
     uint _fortUnit;
 
     // staking通道信息xtoken|cycle=>StakeChannel
@@ -60,22 +60,14 @@ contract FortVaultForStaking is FortBase, IFortVaultForStaking {
     constructor () {
     }
 
-    // /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
-    // ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
-    // /// @param newGovernance IFortGovernance implementation contract address
-    // function update(address newGovernance) public override {
-    //     super.update(newGovernance);
-    //     _cofixRouter = IFortGovernance(newGovernance).getFortRouterAddress();
-    // }
-
     /// @dev Modify configuration
-    /// @param fortUnit CoFi mining unit
+    /// @param fortUnit fort mining unit
     function setConfig(uint fortUnit) external onlyGovernance {
         _fortUnit = fortUnit;
     }
 
     /// @dev Get configuration
-    /// @return fortUnit CoFi mining unit
+    /// @return fortUnit fort mining unit
     function getConfig() external view returns (uint fortUnit) {
         return _fortUnit;
     }
@@ -94,8 +86,10 @@ contract FortVaultForStaking is FortBase, IFortVaultForStaking {
         uint96[] calldata cycles, 
         uint[] calldata weights
     ) external override onlyGovernance {
+
         uint cnt = xtokens.length;
         require(cnt == weights.length, "FortVaultForStaking: mismatch len");
+
         for (uint i = 0; i < cnt; ++i) {
             address xtoken = xtokens[i];
             require(xtoken != address(0), "FortVaultForStaking: invalid xtoken");
@@ -110,13 +104,13 @@ contract FortVaultForStaking is FortBase, IFortVaultForStaking {
     /// @dev Get stake channel information
     /// @param xtoken xtoken address (or CNode address)
     /// @return totalStaked Total lock volume of target xtoken
-    /// @return cofiPerBlock Mining speed, cofi per block
+    /// @return fortPerBlock Mining speed, fort per block
     function getChannelInfo(
         address xtoken, 
         uint96 cycle
     ) external view override returns (
         uint totalStaked, 
-        uint cofiPerBlock
+        uint fortPerBlock
     ) {
         StakeChannel storage channel = _channels[_getKey(xtoken, cycle)];
         return (channel.totalStaked, uint(channel.weight) * _fortUnit);
@@ -130,11 +124,12 @@ contract FortVaultForStaking is FortBase, IFortVaultForStaking {
         return uint(_channels[_getKey(xtoken, cycle)].accounts[addr].balance);
     }
 
-    /// @dev Get the number of CoFi to be collected by the target address on the designated transaction pair lock
+    /// @dev Get the number of fort to be collected by the target address on the designated transaction pair lock
     /// @param xtoken xtoken address (or CNode address)
     /// @param addr Target address
-    /// @return The number of CoFi to be collected by the target address on the designated transaction lock
+    /// @return The number of fort to be collected by the target address on the designated transaction lock
     function earned(address xtoken, uint96 cycle, address addr) external view override returns (uint) {
+
         // Load staking channel
         StakeChannel storage channel = _channels[_getKey(xtoken, cycle)];
         // Call _calcReward() to calculate new reward
@@ -155,10 +150,11 @@ contract FortVaultForStaking is FortBase, IFortVaultForStaking {
         return (rewardPerToken - _decodeFloat(account.rewardCursor)) * balance / 1 ether;
     }
 
-    /// @dev Stake xtoken to earn CoFi
+    /// @dev Stake xtoken to earn fort
     /// @param xtoken xtoken address (or CNode address)
     /// @param amount Stake amount
     function stake(address xtoken, uint96 cycle, uint amount) external override {
+
         // Load stake channel
         StakeChannel storage channel = _channels[_getKey(xtoken, cycle)];
         // Settle reward for account
@@ -174,10 +170,11 @@ contract FortVaultForStaking is FortBase, IFortVaultForStaking {
         channel.accounts[msg.sender] = account;
     }
 
-    /// @dev Withdraw xtoken, and claim earned CoFi
+    /// @dev Withdraw xtoken, and claim earned fort
     /// @param xtoken xtoken address (or CNode address)
     /// @param amount Withdraw amount
     function withdraw(address xtoken, uint96 cycle, uint amount) external override {
+
         // Load stake channel
         StakeChannel storage channel = _channels[_getKey(xtoken, cycle)];
         // Settle reward for account
@@ -193,7 +190,7 @@ contract FortVaultForStaking is FortBase, IFortVaultForStaking {
         TransferHelper.safeTransfer(xtoken, msg.sender, amount);
     }
 
-    /// @dev Claim CoFi
+    /// @dev Claim fort
     /// @param xtoken xtoken address (or CNode address)
     function getReward(address xtoken, uint96 cycle) external override {
         StakeChannel storage channel = _channels[_getKey(xtoken, cycle)];
@@ -205,6 +202,7 @@ contract FortVaultForStaking is FortBase, IFortVaultForStaking {
         StakeChannel storage channel, 
         address to
     ) private returns (Account memory account) {
+
         // Load account
         account = channel.accounts[to];
         // Update the global dividend information and get the new unit token dividend amount
@@ -221,7 +219,7 @@ contract FortVaultForStaking is FortBase, IFortVaultForStaking {
         account.rewardCursor = _encodeFloat(rewardPerToken);
         //channel.accounts[to] = account;
 
-        // Transfer CoFi to account
+        // Transfer fort to account
         if (reward > 0) {
             FortToken(FORT_TOKEN_ADDRESS).mint(to, reward);
         }
@@ -229,6 +227,7 @@ contract FortVaultForStaking is FortBase, IFortVaultForStaking {
 
     // Update the global dividend information and return the new unit token dividend amount
     function _updateReward(StakeChannel storage channel) private returns (uint rewardPerToken) {
+
         // Call _calcReward() to calculate new reward
         uint newReward = _calcReward(channel);
 
@@ -248,10 +247,12 @@ contract FortVaultForStaking is FortBase, IFortVaultForStaking {
 
     // Calculate new reward
     function _calcReward(StakeChannel storage channel) private view returns (uint newReward) {
+
         uint blockNumber = channel.endblock;
         if (blockNumber > block.number) {
             blockNumber = block.number;
         }
+
         uint blockCursor = uint(channel.blockCursor);
         if (blockNumber > blockCursor) {
             newReward =
@@ -261,6 +262,7 @@ contract FortVaultForStaking is FortBase, IFortVaultForStaking {
                 * channel.weight
                 / 400 ;
         }
+
         newReward = 0;
     }
 
@@ -272,6 +274,7 @@ contract FortVaultForStaking is FortBase, IFortVaultForStaking {
         uint newReward, 
         uint rewardPerToken
     ) {
+
         // Load staking channel
         StakeChannel storage channel = _channels[_getKey(xtoken, cycle)];
         // Call _calcReward() to calculate new reward
@@ -286,9 +289,9 @@ contract FortVaultForStaking is FortBase, IFortVaultForStaking {
         }
     }
 
-    // CoFi ore drawing attenuation interval. 2400000 blocks, about one year
+    // fort ore drawing attenuation interval. 2400000 blocks, about one year
     uint constant FORT_REDUCTION_SPAN = 2400000;
-    // The decay limit of CoFi ore drawing becomes stable after exceeding this interval. 24 million blocks, about 4 years
+    // The decay limit of fort ore drawing becomes stable after exceeding this interval. 24 million blocks, about 4 years
     uint constant FORT_REDUCTION_LIMIT = 9600000; // FORT_REDUCTION_SPAN * 4;
     // Attenuation gradient array, each attenuation step value occupies 16 bits. The attenuation value is an integer
     uint constant FORT_REDUCTION_STEPS = 0x280035004300530068008300A300CC010001400190;

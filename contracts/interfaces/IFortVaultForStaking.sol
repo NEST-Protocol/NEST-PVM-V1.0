@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.6;
 
-/// @dev Stake xtoken or CNode, earn CoFi
+/// @dev Stake xtoken, earn fort
 interface IFortVaultForStaking {
 
     /// @dev Initialize ore drawing weight
@@ -14,8 +14,8 @@ interface IFortVaultForStaking {
     /// @dev Get stake channel information
     /// @param xtoken xtoken address (or CNode address)
     /// @return totalStaked Total lock volume of target xtoken
-    /// @return cofiPerBlock Mining speed, cofi per block
-    function getChannelInfo(address xtoken, uint96 cycle) external view returns (uint totalStaked, uint cofiPerBlock);
+    /// @return fortPerBlock Mining speed, fort per block
+    function getChannelInfo(address xtoken, uint96 cycle) external view returns (uint totalStaked, uint fortPerBlock);
 
     /// @dev Get staked amount of target address
     /// @param xtoken xtoken address (or CNode address)
@@ -23,23 +23,23 @@ interface IFortVaultForStaking {
     /// @return Staked amount of target address
     function balanceOf(address xtoken, uint96 cycle, address addr) external view returns (uint);
 
-    /// @dev Get the number of CoFi to be collected by the target address on the designated transaction pair lock
+    /// @dev Get the number of fort to be collected by the target address on the designated transaction pair lock
     /// @param xtoken xtoken address (or CNode address)
     /// @param addr Target address
-    /// @return The number of CoFi to be collected by the target address on the designated transaction lock
+    /// @return The number of fort to be collected by the target address on the designated transaction lock
     function earned(address xtoken, uint96 cycle, address addr) external view returns (uint);
 
-    /// @dev Stake xtoken to earn CoFi
+    /// @dev Stake xtoken to earn fort
     /// @param xtoken xtoken address (or CNode address)
     /// @param amount Stake amount
     function stake(address xtoken, uint96 cycle, uint amount) external;
 
-    /// @dev Withdraw xtoken, and claim earned CoFi
+    /// @dev Withdraw xtoken, and claim earned fort
     /// @param xtoken xtoken address (or CNode address)
     /// @param amount Withdraw amount
     function withdraw(address xtoken, uint96 cycle, uint amount) external;
 
-    /// @dev Claim CoFi
+    /// @dev Claim fort
     /// @param xtoken xtoken address (or CNode address)
     function getReward(address xtoken, uint96 cycle) external;
 

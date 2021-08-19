@@ -10,11 +10,8 @@ import "./interfaces/IFortDAO.sol";
 
 import "./FortBase.sol";
 
-/// @dev Management of cofix public funds
+/// @dev Management of fort public funds
 contract FortDAO is FortBase, IFortDAO {
-
-    // Configuration
-    //Config _config;
 
     // DAO applications
     mapping(address=>uint) _applications;
@@ -22,26 +19,6 @@ contract FortDAO is FortBase, IFortDAO {
     /// @dev Create FortDAO contract
     constructor() {
     }
-
-    // /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
-    // ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
-    // /// @param newGovernance IFortGovernance implementation contract address
-    // function update(address newGovernance) public override {
-    //     super.update(newGovernance);
-    //     _cofixController = IFortGovernance(newGovernance).getFortControllerAddress();
-    // }
-
-    // /// @dev Modify configuration
-    // /// @param config Configuration object
-    // function setConfig(Config calldata config) external override onlyGovernance {
-    //     _config = config;
-    // }
-
-    // /// @dev Get configuration
-    // /// @return Configuration object
-    // function getConfig() external view override returns (Config memory) {
-    //     return _config;
-    // }
 
     /// @dev Set DAO application
     /// @param addr DAO application contract address

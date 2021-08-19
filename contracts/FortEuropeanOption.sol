@@ -9,28 +9,37 @@ import "./libs/ABDKMath64x64.sol";
 
 import "./interfaces/IFortEuropeanOption.sol";
 
+import "./FortBase2.sol";
 import "./FortToken.sol";
 import "./FortOptionToken.sol";
 
-// import "hardhat/console.sol";
 import "hardhat/console.sol";
 
 /// @dev 欧式期权
-contract FortEuropeanOption is IFortEuropeanOption {
+contract FortEuropeanOption is FortBase2, IFortEuropeanOption {
     
+    //int128 constant e = 50143449209798400000;
+    int128 constant PI = 57952155664617100000;
+
     // 期权代币映射
     mapping(bytes32=>address) _optionMapping;
 
     // 期权代币数组
     address[] _options;
 
-    // fort代币地址
-    address _fortToken;
-
-    // INestPriceFacade地址
-    address _nestPriceFacade;
+    // 0.3/365/86400 = 9.512937595129377E-09
+    // 175482725206
+    int128 _miu;
 
     constructor() {
+    }
+
+    function setConfig(int128 miu) external onlyGovernance {
+        _miu = miu;
+    }
+
+    function getConfig() external view returns (int128) {
+        return _miu;
     }
 
     /// @dev 列出历史期权代币地址
@@ -39,8 +48,10 @@ contract FortEuropeanOption is IFortEuropeanOption {
     /// @param order Order. 0 reverse order, non-0 positive order
     /// @return optionArray List of price sheets
     function list(uint offset, uint count, uint order) external view override returns (address[] memory optionArray) {
+
         address[] storage options = _options;
         optionArray = new address[](count);
+
         if (order == 0) {
             uint length = options.length - offset - 1;
             for (uint i = 0; i < count; ++i) {
@@ -53,21 +64,18 @@ contract FortEuropeanOption is IFortEuropeanOption {
         }
     }
 
-    function setFortToken(address fortToken) external {
-        _fortToken = fortToken;
-    }
-
-    function setNestPriceFacade(address nestPriceFacade) external {
-        _nestPriceFacade = nestPriceFacade;
-    }
-
-    /// @dev 获取二元期权信息
-    function getBinaryToken(
+    /// @dev 获取欧式期权代币地址
+    /// @param tokenAddress 目前Fort系统支持ETH/USDT、NEST/ETH、COFI/ETH、HBTC/ETH
+    /// @param price 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
+    /// @param orientation 看涨/看跌2个方向
+    /// @param endblock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
+    /// @return 欧式期权代币地址
+    function getEuropeanToken(
         address tokenAddress, 
         uint price, 
         bool orientation, 
         uint endblock
-    ) public view override returns (address) {
+    ) external view override returns (address) {
         bytes32 key = keccak256(abi.encodePacked(tokenAddress, price, orientation, endblock));
         return _optionMapping[key];
     }
@@ -97,40 +105,40 @@ contract FortEuropeanOption is IFortEuropeanOption {
 
         (
             ,//uint blockNumber, 
-            uint oraclePrice
-        ) = INestPriceFacade(_nestPriceFacade).findPrice {
+            uint oraclePrice,
+            ,
+            uint sigmaSQ
+        ) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).triggeredPriceInfo {
             value: msg.value
         } (
             tokenAddress, 
-            block.number, 
             msg.sender
         );
 
-        uint sigmaSQ = 4168125400;
-        //int128 sigma = ABDKMath64x64.sqrt(sigma); //1190940626872424;
+        // TODO: 测试代码
+        //sigmaSQ = 4168125400;
 
         // 2. TODO: 计算权利金（需要的fort数量）
         uint amount;
-        uint T = 1000 * 14; // (endblock - block.number) * 14
+        // 按照平均每14秒出一个块计算
+        // TODO: 确定时间间隔，是从block.number算起，还是从预言机价格所在区块算起
+        uint T = (endblock - block.number) * 14;
+        // TODO: 测试代码
+        //T = 1000 * 14;
 
         // 看涨
         if (orientation) {
             // TODO: 注意价格是倒过来的
             uint vc = _calcVc(oraclePrice, T, price, sigmaSQ);
-            //console.log("vc:", vc);
             amount = (fortAmount << 64) * 1 ether / vc;
         } else {
             // TODO: 注意价格是倒过来的
             uint vp = _calcVp(oraclePrice, T, price, sigmaSQ);
-            //console.log("vp:", vp);
             amount = (fortAmount << 64) * 1 ether / vp;
         }
 
-        //console.log("fortAmount: ", fortAmount);
-        //console.log("amount: ", amount);
-
         // 3. 销毁权利金
-        FortToken(_fortToken).burn(msg.sender, fortAmount);
+        FortToken(FORT_TOKEN_ADDRESS).burn(msg.sender, fortAmount);
 
         // 4. 分发期权凭证
         FortOptionToken(option).mint(msg.sender, amount);
@@ -154,32 +162,22 @@ contract FortEuropeanOption is IFortEuropeanOption {
     // James:
     // 年化30%  折算成秒是多少？
 
-    // 0.3/365/86400 = 9.512937595129377E-09
-    int128 constant miu = 175482725206;
-    // 0.00006456
-    //int128 constant sigma = 1190940626872424;
-    int128 constant e = 50143449209798400000;
-    int128 constant PI = 57952155664617100000;
-
+    // TODO: 优化计算公式
     function _calcVc(uint S0, uint T, uint K, uint sigmaSQ) private view returns (uint) {
 
         int128 sigma = ABDKMath64x64.sqrt(int128(int((sigmaSQ << 64) / 1 ether)));
         int128 d1 = _d1(S0, T, K, sigma);
-        //log("d1", d1);
         int128 sqrtT = ABDKMath64x64.sqrt(int128(int(T << 64)));
-        //console.log("_calcVc-sqrtT: ", uint(int(sqrtT)));
 
         int128 f1 = _fai(ABDKMath64x64.sub(
             ABDKMath64x64.div(d1, sqrtT),
             ABDKMath64x64.mul(sigma, sqrtT)
         ));
-        //log("f1", f1);
 
         int128 f2 = _fai(ABDKMath64x64.div(d1, sqrtT));
-        //log("f2", f2);
 
         int left = ABDKMath64x64.mul(
-            ABDKMath64x64.exp(miu * int128(int(T))), 
+            ABDKMath64x64.exp(_miu * int128(int(T))), 
             (int128(1 << 64) - f1)
         );
 
@@ -194,24 +192,19 @@ contract FortEuropeanOption is IFortEuropeanOption {
 
         int128 sigma = ABDKMath64x64.sqrt(int128(int((sigmaSQ << 64) / 1 ether)));
         int128 d1 = _d1(S0, T, K, sigma);
-        //log("d1", d1);
         int128 sqrtT = ABDKMath64x64.sqrt(int128(int(T << 64)));
-        //console.log("_calcVc-sqrtT: ", uint(int(sqrtT)));
 
         int128 f1 = _fai(ABDKMath64x64.div(d1, sqrtT));
-        //log("f1", f1);
 
         int128 f2 = _fai(ABDKMath64x64.sub(
             ABDKMath64x64.div(d1, sqrtT),
             ABDKMath64x64.mul(sigma, sqrtT)
         ));
 
-        //log("f2", f2);
-
         int left = f1;
 
         int right = ABDKMath64x64.mul(
-            ABDKMath64x64.exp(miu * int128(int(T))), 
+            ABDKMath64x64.exp(_miu * int128(int(T))), 
             f2
         );
 
@@ -220,6 +213,7 @@ contract FortEuropeanOption is IFortEuropeanOption {
         return uint(r);
     }
 
+    // TODO: 测试方法，需要删掉
     function log(string memory m, int v) private view {
         if (v < 0) {
             console.log(m, "-", uint(-v));
@@ -228,70 +222,24 @@ contract FortEuropeanOption is IFortEuropeanOption {
         }
     }
 
-    function _fai(int128 x) private view returns (int128) {
-        //console.log("_fai-x:", uint(int((ABDKMath64x64.sqrt(int128(2<<64)) * PI))));
-        //int128 f = int128(1<<63) + ABDKMath64x64.div(x, 81956724509658300000);
-        //console.log("fai:", uint(int(f)));
-        int128 f = ABDKMath64x64.add(
-            int128(int(1<<63)),
-            ABDKMath64x64.div(
-                x,
-                ABDKMath64x64.sqrt(
-                    ABDKMath64x64.mul(
-                        int128(int(2<<64)),
-                        PI
+    function _fai(int128 x) private pure returns (int128) {
+
+        return 
+            ABDKMath64x64.add(
+                int128(int(1 << 63)),
+                ABDKMath64x64.div(
+                    x,
+                    ABDKMath64x64.sqrt(
+                        ABDKMath64x64.mul(
+                            int128(int(2 << 64)),
+                            PI
+                        )
                     )
                 )
-            )
-        );
-
-        return f;
+            );
     }
 
     function _d1(uint S0, uint T, uint K, int128 sigma) private view returns (int128) {
-
-        // int128 lnv = ABDKMath64x64.ln(int128(int((S0 << 64) / K)));
-        // log("ln", lnv);
-        // int128 r =ABDKMath64x64.div(ABDKMath64x64.mul(sigma, sigma), int128(int(2 << 64)));
-        // log("r", r);
-        // int128 ru = ABDKMath64x64.sub(
-        //                     ABDKMath64x64.div(ABDKMath64x64.mul(sigma, sigma), int128(int(2 << 64))), 
-        //                     miu
-        //                 );
-        // log("r-u", ru);
-        // int128 ruT = ABDKMath64x64.mul(
-        //                 ABDKMath64x64.sub(
-        //                     ABDKMath64x64.div(ABDKMath64x64.mul(sigma, sigma), int128(int(2 << 64))), 
-        //                     miu
-        //                 ),
-        //                 int128(int(T << 64))
-        //             );
-        // log("r-u*T", ruT);
-        // int128 fm = ABDKMath64x64.add(
-        //             lnv, 
-        //             ABDKMath64x64.mul(
-        //                 ABDKMath64x64.sub(
-        //                     ABDKMath64x64.div(ABDKMath64x64.mul(sigma, sigma), int128(int(2 << 64))), 
-        //                     miu
-        //                 ),
-        //                 int128(int(T << 64))
-        //             )
-        //         );
-        // log("fm", fm);
-        // int128 v = ABDKMath64x64.div(
-        //         ABDKMath64x64.add(
-        //             lnv, 
-        //             ABDKMath64x64.mul(
-        //                 ABDKMath64x64.sub(
-        //                     ABDKMath64x64.div(ABDKMath64x64.mul(sigma, sigma), int128(int(2 << 64))), 
-        //                     miu
-        //                 ),
-        //                 int128(int(T << 64))
-        //             )
-        //         ),
-        //         sigma
-        //     );
-        // log("v", v);
 
         // TODO: 考虑溢出问题
         return
@@ -304,21 +252,13 @@ contract FortEuropeanOption is IFortEuropeanOption {
                                 ABDKMath64x64.mul(sigma, sigma), 
                                 int128(int(2 << 64))
                             ), 
-                            miu
+                            _miu
                         ),
                         int128(int(T << 64))
                     )
                 ),
                 sigma
             );
-    }
-
-    function ln(uint x) public view returns (uint) {
-        return uint(int(ABDKMath64x64.ln(int128(int(x)))));
-    }
-
-    function sqrt(uint x) public view returns (uint) {
-        return uint(int(ABDKMath64x64.sqrt(int128(int(x)))));
     }
 
     /// @dev 行权
@@ -344,7 +284,7 @@ contract FortEuropeanOption is IFortEuropeanOption {
         (
             ,//uint blockNumber, 
             uint oraclePrice
-        ) = INestPriceFacade(_nestPriceFacade).findPrice {
+        ) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).findPrice {
             value: msg.value
         } (
             tokenAddress, 
@@ -380,7 +320,7 @@ contract FortEuropeanOption is IFortEuropeanOption {
 
         // 5. 用户赌赢了，给其增发赢得的fort
         if (gain > 0) {
-            FortToken(_fortToken).mint(msg.sender, gain);
+            FortToken(FORT_TOKEN_ADDRESS).mint(msg.sender, gain);
         }
     }
 }

@@ -29,6 +29,8 @@ contract FortLeverToken {
         uint balance;
     }
 
+    address _owner;
+
     // 最后更新的价格
     uint _price;
     
@@ -43,7 +45,8 @@ contract FortLeverToken {
     // 方向，看涨/看跌
     bool immutable ORIENTATION;
 
-    uint constant MIN_VALUE = 1e9;
+    // 最小余额数量，余额小于此值会被清算
+    uint constant MIN_VALUE = 1 ether;
 
     // 期权代币映射
     mapping(address=>Account) _accounts;
@@ -51,18 +54,24 @@ contract FortLeverToken {
     address _nestPriceFacade;
 
     constructor(address tokenAddress, uint lever, bool orientation) {
+
+        _owner = msg.sender;
         TOKEN_ADDRESS = tokenAddress;
         LEVER = lever;
         ORIENTATION = orientation;
     }
+    
+    modifier onlyOwner {
+        require(msg.sender == _owner, "FortLeverToken: not owner");
+        _;
+    }
 
-    function setNestPriceFacade(address nestPriceFacade) external {
+    function setNestPriceFacade(address nestPriceFacade) external onlyOwner {
         _nestPriceFacade = nestPriceFacade;
     }
 
-    // TODO: 控制权限
-    function updateLeverInfo() public payable returns (uint blockNumber, uint oraclePrice) {
-        console.log("mint", _nestPriceFacade);
+    // TODO: 主动触发更新的人，如何奖励?
+    function updateLeverInfo(address payback) public payable returns (uint blockNumber, uint oraclePrice) {
 
         (
             blockNumber, 
@@ -71,8 +80,9 @@ contract FortLeverToken {
             value: msg.value
         } (
             TOKEN_ADDRESS, 
-            msg.sender
+            payback
         );
+
         _price = oraclePrice;
         _block = blockNumber;
     }
@@ -86,13 +96,11 @@ contract FortLeverToken {
     }
 
     function balanceOf(address acc) external view returns (uint) {
+
         Account storage account = _accounts[acc];
         uint oraclePrice = _price;
         uint price = account.price;
         uint balance = account.balance;
-
-        console.log("balanceOf-oraclePrice", oraclePrice);
-        console.log("balanceOf-price", price);
 
         uint left;
         uint right;
@@ -150,7 +158,8 @@ contract FortLeverToken {
     }
 
     function transfer(address to, uint value) external payable {
-        (uint blockNumber, uint oraclePrice) = updateLeverInfo();
+
+        (uint blockNumber, uint oraclePrice) = updateLeverInfo(msg.sender);
 
         _update(msg.sender, blockNumber, oraclePrice);
         _update(to, blockNumber, oraclePrice);
@@ -159,26 +168,25 @@ contract FortLeverToken {
         _accounts[to].balance += value;
     }
 
-    function mint(address to, uint value) external payable returns(uint) {
-        (uint blockNumber, uint oraclePrice) = updateLeverInfo();
+    function mint(address to, uint value, address payback) external payable onlyOwner returns(uint) {
+
+        (uint blockNumber, uint oraclePrice) = updateLeverInfo(payback);
         //_update(msg.sender, blockNumber, oraclePrice);
+
         Account storage account = _accounts[to];
         account.balance += value;
         account.block = blockNumber;
         account.price = oraclePrice;
 
-        // console.log("mint-balance", account.balance);
-        // console.log("mint-block", account.block);
-        // console.log("mint-price", account.price);
-
         return value;
     }
 
-    function burn(address from, uint value) external payable returns(uint) {
-        (uint blockNumber, uint oraclePrice) = updateLeverInfo();
-        //console.log("burn-value", value);
+    function burn(address from, uint value, address payback) external payable onlyOwner returns(uint) {
+
+        require(msg.sender == _owner, "FortLeverToken: not owner");
+        (uint blockNumber, uint oraclePrice) = updateLeverInfo(payback);
         _update(from, blockNumber, oraclePrice);
-        console.log("burn-value", value);
+
         Account storage account = _accounts[from];
         account.balance -= value;
         //account.block = block;
@@ -188,15 +196,12 @@ contract FortLeverToken {
     }
 
     function _update(address acc, uint blockNumber, uint oraclePrice) private returns (uint balance) {
+
         // TODO: 结算逻辑
         Account storage account = _accounts[acc];
         uint price = account.price;
         balance = account.balance;
-        // console.log("_update-ORIENTATION", ORIENTATION);
-        // console.log("_update-LEVER", LEVER);
-        // console.log("_update-price", price);
-        // console.log("_update-oraclePrice", oraclePrice);
-        // console.log("_update-account.balance", account.balance);
+
         // // 看涨
         // if (ORIENTATION) {
         //     // 涨了
@@ -244,10 +249,11 @@ contract FortLeverToken {
         account.price = oraclePrice;
     }
 
-    function settle(address acc) external payable returns (uint) {
-        (uint blockNumber, uint oraclePrice) = updateLeverInfo();
-        //console.log("burn-value", value);
+    function settle(address acc, address payback) external payable returns (uint) {
+
+        (uint blockNumber, uint oraclePrice) = updateLeverInfo(payback);
         uint balance = _update(acc, blockNumber, oraclePrice);
+
         if (balance < MIN_VALUE) {
             Account storage account = _accounts[acc];
             account.balance = 0;
@@ -256,6 +262,7 @@ contract FortLeverToken {
 
             return balance;
         }
+        
         return 0;
     }
 }

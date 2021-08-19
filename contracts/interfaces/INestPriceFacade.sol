@@ -90,20 +90,20 @@ interface INestPriceFacade {
     //     address paybackAddress
     // ) external payable returns (uint blockNumber, uint price);
 
-    // /// @dev Get the full information of latest trigger price
-    // /// @param tokenAddress Destination token address
-    // /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, 
-    // /// and the excess fees will be returned through this address
-    // /// @return blockNumber The block number of price
-    // /// @return price The token price. (1eth equivalent to (price) token)
-    // /// @return avgPrice Average price
-    // /// @return sigmaSQ The square of the volatility (18 decimal places). The current implementation 
-    // /// assumes that the volatility cannot exceed 1. Correspondingly, when the return value is equal to 
-    // /// 999999999999996447, it means that the volatility has exceeded the range that can be expressed
-    // function triggeredPriceInfo(
-    //     address tokenAddress, 
-    //     address paybackAddress
-    // ) external payable returns (uint blockNumber, uint price, uint avgPrice, uint sigmaSQ);
+    /// @dev Get the full information of latest trigger price
+    /// @param tokenAddress Destination token address
+    /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, 
+    /// and the excess fees will be returned through this address
+    /// @return blockNumber The block number of price
+    /// @return price The token price. (1eth equivalent to (price) token)
+    /// @return avgPrice Average price
+    /// @return sigmaSQ The square of the volatility (18 decimal places). The current implementation 
+    /// assumes that the volatility cannot exceed 1. Correspondingly, when the return value is equal to 
+    /// 999999999999996447, it means that the volatility has exceeded the range that can be expressed
+    function triggeredPriceInfo(
+        address tokenAddress, 
+        address paybackAddress
+    ) external payable returns (uint blockNumber, uint price, uint avgPrice, uint sigmaSQ);
 
     // /// @dev Find the price at block number
     // /// @param tokenAddress Destination token address

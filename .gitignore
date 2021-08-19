@@ -1,5 +1,6 @@
 node_modules
-
+opensrc
 #Hardhat files
 cache
 artifacts
+.private.json

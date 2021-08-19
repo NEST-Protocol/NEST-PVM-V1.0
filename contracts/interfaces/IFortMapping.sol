@@ -6,59 +6,60 @@ pragma solidity ^0.8.6;
 interface IFortMapping {
 
     /// @dev Set the built-in contract address of the system
-    /// @param cofiToken Address of CoFi token contract
-    /// @param cofiNode Address of CoFi Node contract
-    /// @param cofixDAO IFortDAO implementation contract address
-    /// @param cofixRouter IFortRouter implementation contract address for Fort
-    /// @param cofixController IFortController implementation contract address
-    /// @param cofixVaultForStaking IFortVaultForStaking implementation contract address
+    /// @param fortToken Address of fort token contract
+    /// @param fortDAO IFortDAO implementation contract address
+    /// @param fortEuropeanOption IFortEuropeanOption implementation contract address for Fort
+    /// @param fortLever IFortLever implementation contract address
+    /// @param fortVaultForStaking IFortVaultForStaking implementation contract address
+    /// @param nestPriceFacade INestPriceFacade implementation contract address
     function setBuiltinAddress(
-        address cofiToken,
-        address cofiNode,
-        address cofixDAO,
-        address cofixRouter,
-        address cofixController,
-        address cofixVaultForStaking
+        address fortToken,
+        address fortDAO,
+        address fortEuropeanOption,
+        address fortLever,
+        address fortVaultForStaking,
+        address nestPriceFacade
     ) external;
 
     /// @dev Get the built-in contract address of the system
-    /// @return cofiToken Address of CoFi token contract
-    /// @return cofiNode Address of CoFi Node contract
-    /// @return cofixDAO IFortDAO implementation contract address
-    /// @return cofixRouter IFortRouter implementation contract address for Fort
-    /// @return cofixController IFortController implementation contract address
+    /// @return fortToken Address of fort token contract
+    /// @return fortDAO IFortDAO implementation contract address
+    /// @return fortEuropeanOption IFortEuropeanOption implementation contract address for Fort
+    /// @return fortLever IFortLever implementation contract address
+    /// @return fortVaultForStaking IFortVaultForStaking implementation contract address
+    /// @return nestPriceFacade INestPriceFacade implementation contract address
     function getBuiltinAddress() external view returns (
-        address cofiToken,
-        address cofiNode,
-        address cofixDAO,
-        address cofixRouter,
-        address cofixController,
-        address cofixVaultForStaking
+        address fortToken,
+        address fortDAO,
+        address fortEuropeanOption,
+        address fortLever,
+        address fortVaultForStaking,
+        address nestPriceFacade
     );
 
-    /// @dev Get address of CoFi token contract
-    /// @return Address of CoFi Node token contract
-    function getCoFiTokenAddress() external view returns (address);
-
-    /// @dev Get address of CoFi Node contract
-    /// @return Address of CoFi Node contract
-    function getCoFiNodeAddress() external view returns (address);
+    /// @dev Get address of fort token contract
+    /// @return Address of fort token contract
+    function getFortTokenAddress() external view returns (address);
 
     /// @dev Get IFortDAO implementation contract address
     /// @return IFortDAO implementation contract address
     function getFortDAOAddress() external view returns (address);
 
-    /// @dev Get IFortRouter implementation contract address for Fort
-    /// @return IFortRouter implementation contract address for Fort
-    function getFortRouterAddress() external view returns (address);
+    /// @dev Get IFortEuropeanOption implementation contract address for Fort
+    /// @return IFortEuropeanOption implementation contract address for Fort
+    function getFortEuropeanOptionAddress() external view returns (address);
 
-    /// @dev Get IFortController implementation contract address
-    /// @return IFortController implementation contract address
-    function getFortControllerAddress() external view returns (address);
+    /// @dev Get IFortLever implementation contract address
+    /// @return IFortLever implementation contract address
+    function getFortLeverAddress() external view returns (address);
 
     /// @dev Get IFortVaultForStaking implementation contract address
     /// @return IFortVaultForStaking implementation contract address
     function getFortVaultForStakingAddress() external view returns (address);
+
+    /// @dev Get INestPriceFacade implementation contract address
+    /// @return INestPriceFacade implementation contract address
+    function getNestPriceFacade() external view returns (address);
 
     /// @dev Registered address. The address registered here is the address accepted by Fort system
     /// @param key The key
