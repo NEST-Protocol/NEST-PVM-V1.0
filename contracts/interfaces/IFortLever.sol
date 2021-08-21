@@ -12,10 +12,24 @@ interface IFortLever {
     /// @return leverArray List of price sheets
     function list(uint offset, uint count, uint order) external view returns (address[] memory leverArray);
 
+    /// @dev 创建杠杆币
+    /// @param tokenAddress 杠杆币的标的地产代币地址
+    /// @param lever 杠杆倍数
+    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
+    function create(
+        address tokenAddress, 
+        uint lever,
+        bool orientation
+    ) external;
+
+    /// @dev 获取已经开通的杠杆币数量
+    /// @return 已经开通的杠杆币数量
+    function getTokenCount() external view returns (uint);
+
     /// @dev 获取杠杆币地址
     /// @param tokenAddress 杠杆币的标的地产代币地址
     /// @param lever 杠杆倍数
-    /// @param orientation 看涨/看跌2个方向
+    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     /// @return 杠杆币地址
     function getLeverToken(
         address tokenAddress, 
@@ -26,7 +40,7 @@ interface IFortLever {
     /// @dev 买入杠杆币
     /// @param tokenAddress 杠杆币的标的地产代币地址
     /// @param lever 杠杆倍数
-    /// @param orientation 看涨/看跌2个方向
+    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     /// @param fortAmount 支付的fort数量
     function buy(
         address tokenAddress,
@@ -35,8 +49,16 @@ interface IFortLever {
         uint fortAmount
     ) external payable;
 
+    /// @dev 买入杠杆币
+    /// @param leverAddress 目标杠杆币地址
+    /// @param fortAmount 支付的fort数量
+    function buyDirect(
+        address leverAddress,
+        uint fortAmount
+    ) external payable;
+
     /// @dev 卖出杠杆币
-    /// @param leverAddress 目标合约地址
+    /// @param leverAddress 目标杠杆币地址
     /// @param amount 卖出数量
     function sell(
         address leverAddress,

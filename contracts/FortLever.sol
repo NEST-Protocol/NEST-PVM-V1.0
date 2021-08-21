@@ -8,18 +8,18 @@ import "./libs/TransferHelper.sol";
 
 import "./interfaces/IFortLever.sol";
 
-import "./FortBase2.sol";
+import "./FortFrequentlyUsed.sol";
 import "./FortToken.sol";
 import "./FortLeverToken.sol";
 
 /// @dev 杠杆币交易
-contract FortLever is FortBase2, IFortLever {
+contract FortLever is FortFrequentlyUsed, IFortLever {
     
-    // 期权代币映射
+    // 杠杆币映射
     mapping(bytes32=>address) _leverMapping;
 
-    // 期权代币数组
-    address[] _options;
+    // 杠杆币数组
+    address[] _levers;
 
     constructor() {
     }
@@ -31,39 +31,81 @@ contract FortLever is FortBase2, IFortLever {
     /// @return leverArray List of price sheets
     function list(uint offset, uint count, uint order) external view override returns (address[] memory leverArray) {
 
-        address[] storage options = _options;
+        // 加载代币数组
+        address[] storage levers = _levers;
+        // 创建结果数组
         leverArray = new address[](count);
 
+        uint i = 0;
+        // 倒序
         if (order == 0) {
-            uint length = options.length - offset - 1;
-            for (uint i = 0; i < count; ++i) {
-                leverArray[i] = options[length - i];
+            uint end = levers.length - offset - 1;
+            while (i < count) {
+                leverArray[i] = levers[end - i];
+                ++i;
             }
-        } else {
-            for (uint i = 0; i < count; ++i) {
-                leverArray[i] = options[i + offset];
+        } 
+        // 正序
+        else {
+            while (i < count) {
+                leverArray[i] = levers[i + offset];
+                ++i;
             }
         }
+    }
+
+    function _getKey(
+        address tokenAddress, 
+        uint lever,
+        bool orientation
+    ) private pure returns (bytes32) {
+        return keccak256(abi.encodePacked(tokenAddress, lever, orientation));
+    }
+    
+    /// @dev 创建杠杆币
+    /// @param tokenAddress 杠杆币的标的地产代币地址
+    /// @param lever 杠杆倍数
+    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
+    function create(
+        address tokenAddress, 
+        uint lever,
+        bool orientation
+    ) external override {
+
+        bytes32 key = _getKey(tokenAddress, lever, orientation);
+        address leverAddress = _leverMapping[key];
+        require(leverAddress == address(0), "FortLever: exists");
+
+        // TODO: 代币命名问题
+        leverAddress = address(new FortLeverToken(tokenAddress, lever, orientation));
+        FortLeverToken(leverAddress).setNestPriceFacade(NEST_PRICE_FACADE_ADDRESS);
+        _leverMapping[key] = leverAddress;
+        _levers.push(leverAddress);
+    }
+
+    /// @dev 获取已经开通的杠杆币数量
+    /// @return 已经开通的杠杆币数量
+    function getTokenCount() external view override returns (uint) {
+        return _levers.length;
     }
 
     /// @dev 获取杠杆币地址
     /// @param tokenAddress 杠杆币的标的地产代币地址
     /// @param lever 杠杆倍数
-    /// @param orientation 看涨/看跌2个方向
+    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     /// @return 杠杆币地址
     function getLeverToken(
         address tokenAddress, 
         uint lever,
         bool orientation
     ) external view override returns (address) {
-        bytes32 key = keccak256(abi.encodePacked(tokenAddress, lever, orientation));
-        return _leverMapping[key];
+        return _leverMapping[_getKey(tokenAddress, lever, orientation)];
     }
 
     /// @dev 买入杠杆币
     /// @param tokenAddress 杠杆币的标的地产代币地址
     /// @param lever 杠杆倍数
-    /// @param orientation 看涨/看跌2个方向
+    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     /// @param fortAmount 支付的fort数量
     function buy(
         address tokenAddress,
@@ -73,27 +115,39 @@ contract FortLever is FortBase2, IFortLever {
     ) external payable override {
 
         // 1. 找到杠杆代币地址
-        bytes32 key = keccak256(abi.encodePacked(tokenAddress, lever, orientation));
-        address option = _leverMapping[key];
-        if (option == address(0)) {
-            option = address(new FortLeverToken(tokenAddress, lever, orientation));
-            FortLeverToken(option).setNestPriceFacade(NEST_PRICE_FACADE_ADDRESS);
-            _leverMapping[key] = option;
-            _options.push(option);
-        }
+        address leverAddress = _leverMapping[_getKey(tokenAddress, lever, orientation)];
+        require(leverAddress != address(0), "FortLever: not exist");
 
-        // 2. 收取用户的fort
+        // 2. 销毁用户的fort
         FortToken(FORT_TOKEN_ADDRESS).burn(msg.sender, fortAmount);
 
         // 3. 给用户分发杠杆币
         uint leverAmount = fortAmount;
-        FortLeverToken(option).mint { 
+        FortLeverToken(leverAddress).mint { 
+            value: msg.value 
+        } (msg.sender, leverAmount, msg.sender);
+    }
+
+    /// @dev 买入杠杆币
+    /// @param leverAddress 目标杠杆币地址
+    /// @param fortAmount 支付的fort数量
+    function buyDirect(
+        address leverAddress,
+        uint fortAmount
+    ) external payable override {
+
+        // 1. 销毁用户的fort
+        FortToken(FORT_TOKEN_ADDRESS).burn(msg.sender, fortAmount);
+
+        // 2. 给用户分发杠杆币
+        uint leverAmount = fortAmount;
+        FortLeverToken(leverAddress).mint { 
             value: msg.value 
         } (msg.sender, leverAmount, msg.sender);
     }
 
     /// @dev 卖出杠杆币
-    /// @param leverAddress 目标合约地址
+    /// @param leverAddress 目标杠杆币地址
     /// @param amount 卖出数量
     function sell(
         address leverAddress,
@@ -101,9 +155,11 @@ contract FortLever is FortBase2, IFortLever {
     ) external payable override {
 
         // 1. 销毁用户的杠杆币
-        uint fortAmount = FortLeverToken(leverAddress).burn { 
+        FortLeverToken(leverAddress).burn { 
             value: msg.value 
         } (msg.sender, amount, msg.sender);
+
+        uint fortAmount = amount;
 
         // 2. 给用户分发fort
         FortToken(FORT_TOKEN_ADDRESS).mint(msg.sender, fortAmount);
@@ -123,7 +179,9 @@ contract FortLever is FortBase2, IFortLever {
         } (account, msg.sender);
 
         // 2. 跟用户分发fort
-        FortToken(FORT_TOKEN_ADDRESS).mint(msg.sender, fortAmount);
+        if (fortAmount > 0) {
+            FortToken(FORT_TOKEN_ADDRESS).mint(msg.sender, fortAmount);
+        }
     }
 
     /// @dev 更新杠杆币的价格合约地址

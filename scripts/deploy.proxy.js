@@ -81,7 +81,7 @@ exports.deploy = async function() {
     await fortVaultForStaking.update(fortGovernance.address);
 
     console.log('8. fortEuropeanOption.setConfig()');
-    await fortEuropeanOption.setConfig('175482725206');
+    await fortEuropeanOption.setConfig('175482725206', 10);
 
     console.log('9. fort.setMinter(fortEuropeanOption.address, 1)');
     await fort.setMinter(fortEuropeanOption.address, 1);

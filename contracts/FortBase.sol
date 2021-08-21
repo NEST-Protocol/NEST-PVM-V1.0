@@ -9,7 +9,6 @@ import "./libs/TransferHelper.sol";
 import "./interfaces/IFortDAO.sol";
 import "./interfaces/IFortGovernance.sol";
 
-// Router contract to interact with each FortPair, no owner or governance
 /// @dev Base contract of Fort
 contract FortBase {
 

@@ -19,10 +19,26 @@
 ### 2.2. 获取杠杆币地址
 
 ```javascript
+
+    /// @dev 创建杠杆币
+    /// @param tokenAddress 杠杆币的标的地产代币地址
+    /// @param lever 杠杆倍数
+    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
+    /// @return 杠杆币地址
+    function create(
+        address tokenAddress, 
+        uint lever,
+        bool orientation
+    ) external;
+```
+
+### 2.3. 获取杠杆币地址
+
+```javascript
     /// @dev 获取杠杆币地址
     /// @param tokenAddress 杠杆币的标的地产代币地址
     /// @param lever 杠杆倍数
-    /// @param orientation 看涨/看跌2个方向
+    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     /// @return 杠杆币地址
     function getLeverToken(
         address tokenAddress, 
@@ -31,13 +47,13 @@
     ) external view returns (address);
 ```
 
-### 2.3. 买入杠杆币
+### 2.4. 买入杠杆币
 
 ```javascript
     /// @dev 买入杠杆币
     /// @param tokenAddress 杠杆币的标的地产代币地址
     /// @param lever 杠杆倍数
-    /// @param orientation 看涨/看跌2个方向
+    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     /// @param fortAmount 支付的fort数量
     function buy(
         address tokenAddress,
@@ -47,7 +63,19 @@
     ) external payable;
 ```
 
-### 2.4. 卖出杠杆币
+### 2.5. 买入杠杆币
+
+```javascript
+    /// @dev 买入杠杆币
+    /// @param leverAddress 目标杠杆币地址
+    /// @param fortAmount 支付的fort数量
+    function buyDirect(
+        address leverAddress,
+        uint fortAmount
+    ) external payable;
+```
+
+### 2.6. 卖出杠杆币
 
 ```javascript
     /// @dev 清算
@@ -59,11 +87,11 @@
     ) external payable;
 ```
 
-### 2.5. 清算
+### 2.7. 清算
 
 ```javascript
     /// @dev 清算
-    /// @param leverAddress 目标合约地址
+    /// @param leverAddress 目标杠杆币地址
     /// @param account 清算账号
     function settle(
         address leverAddress,

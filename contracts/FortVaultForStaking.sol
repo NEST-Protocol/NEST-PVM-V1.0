@@ -8,11 +8,11 @@ import "./libs/TransferHelper.sol";
 
 import "./interfaces/IFortVaultForStaking.sol";
 
-import "./FortBase2.sol";
+import "./FortFrequentlyUsed.sol";
 import "./FortToken.sol";
 
 /// @dev Stake xtoken, earn fort
-contract FortVaultForStaking is FortBase2, IFortVaultForStaking {
+contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
 
     /// @dev Account information
     struct Account {

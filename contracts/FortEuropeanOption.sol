@@ -9,17 +9,20 @@ import "./libs/ABDKMath64x64.sol";
 
 import "./interfaces/IFortEuropeanOption.sol";
 
-import "./FortBase2.sol";
+import "./FortFrequentlyUsed.sol";
 import "./FortToken.sol";
 import "./FortOptionToken.sol";
 
 import "hardhat/console.sol";
 
 /// @dev 欧式期权
-contract FortEuropeanOption is FortBase2, IFortEuropeanOption {
+contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     
-    //int128 constant e = 50143449209798400000;
+    // 64位二进制精度的 PI = 3.1415926
     int128 constant PI = 57952155664617100000;
+
+    // 64位二进制精度的1
+    int128 constant ONE = int128(int(1 << 64));
 
     // 期权代币映射
     mapping(bytes32=>address) _optionMapping;
@@ -27,19 +30,27 @@ contract FortEuropeanOption is FortBase2, IFortEuropeanOption {
     // 期权代币数组
     address[] _options;
 
+    // 64位二进制精度
     // 0.3/365/86400 = 9.512937595129377E-09
     // 175482725206
     int128 _miu;
 
+    // TODO: 通过数值计算过程，确定期权行权时间最大间隔
+    // 期权行权时间和当前时间的最小间隔
+    uint32 _minPeriod;
+
     constructor() {
     }
 
-    function setConfig(int128 miu) external onlyGovernance {
+    /// @dev 设置配置
+    function setConfig(int128 miu, uint32 minPeriod) external onlyGovernance {
         _miu = miu;
+        _minPeriod = minPeriod;
     }
 
-    function getConfig() external view returns (int128) {
-        return _miu;
+    /// @dev 获取配置
+    function getConfig() external view returns (int128 miu, uint32 minPeriod) {
+        return (_miu, _minPeriod);
     }
 
     /// @dev 列出历史期权代币地址
@@ -49,25 +60,48 @@ contract FortEuropeanOption is FortBase2, IFortEuropeanOption {
     /// @return optionArray List of price sheets
     function list(uint offset, uint count, uint order) external view override returns (address[] memory optionArray) {
 
+        // 加载代币数组
         address[] storage options = _options;
+        // 创建结果数组
         optionArray = new address[](count);
 
+        uint i = 0;
+        // 倒序
         if (order == 0) {
-            uint length = options.length - offset - 1;
-            for (uint i = 0; i < count; ++i) {
-                optionArray[i] = options[length - i];
+            uint end = options.length - offset - 1;
+            while (i < count) {
+                optionArray[i] = options[end - i];
+                ++i;
             }
-        } else {
-            for (uint i = 0; i < count; ++i) {
+        } 
+        // 正序
+        else {
+            while (i < count) {
                 optionArray[i] = options[i + offset];
+                ++i;
             }
         }
+    }
+
+    /// @dev 获取已经开通的欧式期权代币数量
+    /// @return 已经开通的欧式期权代币数量
+    function getTokenCount() external view override returns (uint) {
+        return _options.length;
+    }
+
+    function _getKey(
+        address tokenAddress, 
+        uint price, 
+        bool orientation, 
+        uint endblock
+    ) private pure returns (bytes32) {
+        return keccak256(abi.encodePacked(tokenAddress, price, orientation, endblock));
     }
 
     /// @dev 获取欧式期权代币地址
     /// @param tokenAddress 目前Fort系统支持ETH/USDT、NEST/ETH、COFI/ETH、HBTC/ETH
     /// @param price 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
-    /// @param orientation 看涨/看跌2个方向
+    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     /// @param endblock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
     /// @return 欧式期权代币地址
     function getEuropeanToken(
@@ -76,14 +110,13 @@ contract FortEuropeanOption is FortBase2, IFortEuropeanOption {
         bool orientation, 
         uint endblock
     ) external view override returns (address) {
-        bytes32 key = keccak256(abi.encodePacked(tokenAddress, price, orientation, endblock));
-        return _optionMapping[key];
+        return _optionMapping[_getKey(tokenAddress, price, orientation, endblock)];
     }
 
     /// @dev 开仓
     /// @param tokenAddress 目前Fort系统支持ETH/USDT、NEST/ETH、COFI/ETH、HBTC/ETH
     /// @param price 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
-    /// @param orientation 看涨/看跌2个方向
+    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     /// @param endblock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
     /// @param fortAmount 支付的fort数量
     function open(
@@ -94,15 +127,21 @@ contract FortEuropeanOption is FortBase2, IFortEuropeanOption {
         uint fortAmount
     ) external payable override {
 
-        // 1. 创建期权凭证token
-        bytes32 key = keccak256(abi.encodePacked(tokenAddress, price, orientation, endblock));
+        // TODO: 确定哪些交易对可以开仓
+        require(endblock > block.number + uint(_minPeriod), "FortEuropeanOption: endblock to small");
+
+        // 1. 获取或创建期权代币
+        bytes32 key = _getKey(tokenAddress, price, orientation, endblock);
         address option = _optionMapping[key];
         if (option == address(0)) {
+            // TODO: 重新对齐
+            // TODO: 代币命名问题
             option = address(new FortOptionToken(tokenAddress, uint88(endblock), orientation, price));
             _optionMapping[key] = option;
             _options.push(option);
         }
 
+        // 2. 调用预言机获取价格
         (
             ,//uint blockNumber, 
             uint oraclePrice,
@@ -118,7 +157,7 @@ contract FortEuropeanOption is FortBase2, IFortEuropeanOption {
         // TODO: 测试代码
         //sigmaSQ = 4168125400;
 
-        // 2. TODO: 计算权利金（需要的fort数量）
+        // 3. TODO: 计算权利金（需要的fort数量）
         uint amount;
         // 按照平均每14秒出一个块计算
         // TODO: 确定时间间隔，是从block.number算起，还是从预言机价格所在区块算起
@@ -137,10 +176,10 @@ contract FortEuropeanOption is FortBase2, IFortEuropeanOption {
             amount = (fortAmount << 64) * 1 ether / vp;
         }
 
-        // 3. 销毁权利金
+        // 4. 销毁权利金
         FortToken(FORT_TOKEN_ADDRESS).burn(msg.sender, fortAmount);
 
-        // 4. 分发期权凭证
+        // 5. 分发期权凭证
         FortOptionToken(option).mint(msg.sender, amount);
     }
     
@@ -276,7 +315,7 @@ contract FortEuropeanOption is FortBase2, IFortEuropeanOption {
 
         require(block.number >= endblock, "FortEuropeanOption:at maturity");
 
-        // 2. 销毁期权
+        // 2. 销毁期权代币
         FortOptionToken(optionAddress).burn(msg.sender, amount);
 
         // 3. 调用预言机获取价格
@@ -297,25 +336,23 @@ contract FortEuropeanOption is FortBase2, IFortEuropeanOption {
         // 计算结算结果
         // 看涨期权
         if (orientation) {
-            // 赌对了
+            // 赌赢了
             if (oraclePrice < price) {
                 gain = amount / oraclePrice - amount / price;
             }
-            // 赌错了
-            else {
-
-            }
+            // 赌输了
+            // else {
+            // }
         } 
         // 看跌期权
         else {
-            // 赌对了
+            // 赌赢了
             if (oraclePrice > price) {
                 gain = amount / price - amount / oraclePrice;
             }
-            // 赌错了
-            else {
-
-            }
+            // 赌输了
+            // else {
+            // }
         }
 
         // 5. 用户赌赢了，给其增发赢得的fort

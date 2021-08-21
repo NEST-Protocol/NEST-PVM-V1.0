@@ -33,19 +33,17 @@ contract FortToken is FortBase, ERC20("Fort", "Fort") {
         return _minters[account];
     }
 
-    /// @dev 挖矿
+    /// @dev 铸币
     /// @param to 接受地址
-    /// @param amount 挖矿数量
-    function mint(address to, uint amount) external onlyMinter {
-        //require(msg.sender == _owner, "FortToken: not owner");
-        _mint(to, amount);
+    /// @param value 铸币数量
+    function mint(address to, uint value) external onlyMinter {
+        _mint(to, value);
     }
 
     /// @dev 销毁
     /// @param from 目标地址
-    /// @param amount 销毁数量
-    function burn(address from, uint amount) external onlyMinter {
-        //require(msg.sender == _owner, "FortToken: not owner");
-        _burn(from, amount);
+    /// @param value 销毁数量
+    function burn(address from, uint value) external onlyMinter {
+        _burn(from, value);
     }
 }

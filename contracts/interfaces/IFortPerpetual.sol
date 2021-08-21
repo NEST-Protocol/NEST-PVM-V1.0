@@ -40,7 +40,7 @@ interface IFortPerpetual {
     /// @param tokenAddress 目前Fort系统支持ETH/USDT、NEST/ETH、COFI/ETH、HBTC/ETH
     /// @param lever 杠杆倍数
     /// @param bond 保证金数量
-    /// @param orientation 看涨/看跌2个方向
+    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     function open(
         address tokenAddress,
         uint lever,
