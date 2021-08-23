@@ -47,24 +47,25 @@ describe('FortEuropeanOption', function() {
         await fort.mint(owner.address, '10000000000000000000000000');
         
         console.log('owner: ' + toDecimal(await fort.balanceOf(owner.address) )+ 'fort');
-
         console.log('owner: ' + owner.address);
 
-        await fortEuropeanOption.open(usdt.address, '2450000000', true, 100, toBigInt(1), {
+        const BLOCK = 10000;
+        await fortEuropeanOption.open(usdt.address, '2450000000', true, BLOCK, toBigInt(1), {
             value: toBigInt(0.01)
         });
-        await fortEuropeanOption.open(usdt.address, '2450000000', true, 100, toBigInt(1), {
-            value: toBigInt(0.01)
-        });
-        
+        // await fortEuropeanOption.open(usdt.address, '2450000000', true, 100, toBigInt(1), {
+        //     value: toBigInt(0.01)
+        // });
+
         console.log('block: ' + await ethers.provider.getBlockNumber()); 
         const FortOptionToken = await ethers.getContractFactory('FortOptionToken');
         const bot = await FortOptionToken.attach(
-            await fortEuropeanOption.getEuropeanToken(usdt.address, '2450000000', true, 100)
+            await fortEuropeanOption.getEuropeanToken(usdt.address, '2450000000', true, BLOCK)
         );
         console.log('bot: ' + bot.address);
         console.log('owner: ' + toDecimal(await fort.balanceOf(owner.address)) + 'fort');
         console.log('owner: ' + toDecimal(await bot.balanceOf(owner.address)) + 'bot');
+
         for(var i = 0; i < 100; ++i) {
             //await ethers.provider.sendTransaction({ from: owner.address, to: owner.address, value: 0});
             await fort.transfer(owner.address, 0);
