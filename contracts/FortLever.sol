@@ -5,6 +5,7 @@ pragma solidity ^0.8.6;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "./libs/TransferHelper.sol";
+import "./libs/StringHelper.sol";
 
 import "./interfaces/IFortLever.sol";
 
@@ -77,7 +78,12 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         require(leverAddress == address(0), "FortLever: exists");
 
         // TODO: 代币命名问题
-        leverAddress = address(new FortLeverToken(tokenAddress, lever, orientation));
+        leverAddress = address(new FortLeverToken(
+            StringHelper.stringConcat("LEVER-", StringHelper.toString(_levers.length)),
+            tokenAddress, 
+            lever, 
+            orientation
+        ));
         FortLeverToken(leverAddress).setNestPriceFacade(NEST_PRICE_FACADE_ADDRESS);
         _leverMapping[key] = leverAddress;
         _levers.push(leverAddress);

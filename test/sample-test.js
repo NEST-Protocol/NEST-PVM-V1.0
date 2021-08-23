@@ -103,5 +103,8 @@ describe('FortEuropeanOption', function() {
         // await fortEuropeanOption.open(usdt.address, '2450000000', true, 500, toBigInt(1), {
         //     value: toBigInt(0.01)
         // });
+
+        console.log('bot-name: ' + await bot.name());
+        console.log('lot-name: ' + await lot.name());
     });
 });

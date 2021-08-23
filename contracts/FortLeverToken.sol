@@ -48,6 +48,9 @@ contract FortLeverToken {
     // 方向，看涨/看跌
     bool immutable ORIENTATION;
 
+    // 代币名称
+    string _name;
+
     // 期权代币映射
     mapping(address=>Account) _accounts;
 
@@ -60,8 +63,9 @@ contract FortLeverToken {
     // 最后更新的区块
     uint _block;
 
-    constructor(address tokenAddress, uint lever, bool orientation) {
+    constructor(string memory name_, address tokenAddress, uint lever, bool orientation) {
 
+        _name = name_;
         OWNER = msg.sender;
         TOKEN_ADDRESS = tokenAddress;
         LEVER = lever;
@@ -72,6 +76,10 @@ contract FortLeverToken {
         require(msg.sender == OWNER, "FortLeverToken: not owner");
         _;
     }
+
+    /// @dev 获取代币名称
+    /// @return 代币名称
+    function name() external view returns (string memory) { return _name; }
 
     /// @dev 设置价格查询合约地址
     /// @param nestPriceFacade 价格查询合约地址

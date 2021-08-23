@@ -7,7 +7,7 @@ import "./interfaces/INestPriceFacade.sol";
 
 // TODO: 代币名称
 /// @dev 期权凭证
-contract FortOptionToken is ERC20("", "") {
+contract FortOptionToken is ERC20 {
 
     address immutable TOKEN_ADDRESS;
     address OWNER;
@@ -17,7 +17,14 @@ contract FortOptionToken is ERC20("", "") {
     bool _orientation;
     uint _price;
 
-    constructor(address tokenAddress, uint88 endblock, bool orientation, uint price) {
+    constructor(
+        string memory name, 
+        string memory symbol, 
+        address tokenAddress, 
+        uint88 endblock, 
+        bool orientation, 
+        uint price
+    ) ERC20(name, symbol) {
         
         OWNER = msg.sender;
         TOKEN_ADDRESS = tokenAddress;
