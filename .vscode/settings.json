@@ -3,6 +3,7 @@
         "abdk",
         "abdk math x",
         "cofi",
+        "concat",
         "eth",
         "eth cofi",
         "eth hbtc",
@@ -10,6 +11,8 @@
         "keccak",
         "math",
         "spdx",
+        "string",
+        "string concat",
         "x"
     ]
 }
