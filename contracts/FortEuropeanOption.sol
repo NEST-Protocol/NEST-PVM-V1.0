@@ -25,6 +25,11 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     // 64位二进制精度的1
     int128 constant ONE = int128(int(1 << 64));
 
+    int128 constant TWO = int128(int(2 << 64));
+
+    // 64位二进制精度的50000
+    uint constant V50000 = 922337203685477580800000;
+
     // 期权代币映射
     mapping(bytes32=>address) _optionMapping;
 
@@ -129,7 +134,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     ) external payable override {
 
         // TODO: 确定哪些交易对可以开仓
-        require(endblock > block.number + uint(_minPeriod), "FortEuropeanOption: endblock to small");
+        require(endblock > block.number + uint(_minPeriod), "FEO: endblock to small");
 
         // 1. 获取或创建期权代币
         bytes32 key = _getKey(tokenAddress, price, orientation, endblock);
@@ -168,7 +173,6 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         //sigmaSQ = 4168125400;
 
         // 3. TODO: 计算权利金（需要的fort数量）
-        uint amount;
         // 按照平均每14秒出一个块计算
         // TODO: 确定时间间隔，是从block.number算起，还是从预言机价格所在区块算起
         uint T = (endblock - block.number) * 14;
@@ -185,15 +189,20 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         //     console.log("open-vp", vp);
         // }
 
+        uint amount;
         // 看涨
         if (orientation) {
             // TODO: 注意价格是倒过来的
             uint vc = _calcVc(oraclePrice, T, price, sigmaSQ);
-            amount = (fortAmount << 64) * 1 ether / vc;
-        } else {
+            //amount = (fortAmount << 64) * 1 ether / vc;
+            amount = fortAmount * 0x0DE0B6B3A76400000000000000000000 / vc;
+        }
+        // 看跌
+        else {
             // TODO: 注意价格是倒过来的
             uint vp = _calcVp(oraclePrice, T, price, sigmaSQ);
-            amount = (fortAmount << 64) * 1 ether / vp;
+            //amount = (fortAmount << 64) * 1 ether / vp;
+            amount = fortAmount * 0x0DE0B6B3A76400000000000000000000 / vp;
         }
 
         // 4. 销毁权利金
@@ -203,82 +212,85 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         FortOptionToken(option).mint(msg.sender, amount);
     }
     
-    // TODO: 优化计算公式
+    // 将18位十进制定点数转化为64位二级制定点数
+    function _d18TOb64(uint v) private pure returns (int128) {
+        //require(v < 0x1000000000000000000000000000000000000000000000000, "FEO:value can't ROL 64bits");
+        require(v < 0x0DE0B6B3A764000000000000000000000000000000000000, "FEO:can't convert to 64bits");
+        return int128(int((v << 64) / 1 ether));
+    }
+
+    // 将uint转化为int128
+    function _toInt128(uint v) private pure returns (int128) {
+        require(v < 100000000000000000000000000000000, "FEO:can't convert to int128");
+        return int128(int(v));
+    }
+
+    // 将int128转化为uint
+    function _toUInt(int128 v) private pure returns (uint) {
+        require(v >= 0, "FEO:can't convert to uint");
+        return uint(int(v));
+    }
+
+    // 计算看涨期权价格
     function _calcVc(uint S0, uint T, uint K, uint sigmaSQ) private view returns (uint) {
 
-        // TODO: 溢出问题
-        //int128 sigma = ABDKMath64x64.sqrt(int128(int((sigmaSQ << 64) / 1 ether)));
-        //int128 d1 = _d1(S0, T, K, sigma);
-        //int128 sqrtT = ABDKMath64x64.sqrt(int128(int(T << 64)));
-
-        int128 sigmaSQ_T = int128(int((sigmaSQ * T << 64) / 1 ether));
+        int128 sigmaSQ_T = _d18TOb64(sigmaSQ * T);
+        int128 miu_T = _toInt128(uint(int(_miu)) * T);
         int128 sigma_t = ABDKMath64x64.sqrt(sigmaSQ_T);
-        int128 D1 = _D1(S0, T, K, sigmaSQ_T);
-        int128 v = ABDKMath64x64.div(D1, sigma_t);
+        int128 D1 = _D1(S0, K, sigmaSQ_T, miu_T);
+        int128 d = ABDKMath64x64.div(D1, sigma_t);
 
-        int128 f1 = _snd(ABDKMath64x64.sub(
-            v,
-            sigma_t
-        ));
-        int128 f2 = _snd(v);
+        uint left = _toUInt(ABDKMath64x64.mul(
+            ABDKMath64x64.exp(miu_T), 
+            ABDKMath64x64.sub(
+                ONE,
+                _snd(ABDKMath64x64.sub(d, sigma_t))
+            )
+        )) * 1 ether / S0;
+        uint right = _toUInt(ABDKMath64x64.sub(ONE, _snd(d))) * 1 ether / K;
 
-        int left = ABDKMath64x64.mul(
-            ABDKMath64x64.exp(_miu * int128(int(T))), 
-            (int128(1 << 64) - f1)
-        );
-
-        int right = int128(1 << 64) - f2;
-
-        int r = int(1 ether / S0) * left - int(1 ether / K) * right;
-
-        return uint(r);
+        return left - right;
     }
 
+    // 计算看跌期权价格
     function _calcVp(uint S0, uint T, uint K, uint sigmaSQ) private view returns (uint) {
 
-        // TODO: 看跌期权，行权价必须比当前价低，也就是 S0 < T
-        // int128 sigma = ABDKMath64x64.sqrt(int128(int((sigmaSQ << 64) / 1 ether)));
-        // int128 d1 = _d1(S0, T, K, sigma);
-        // int128 sqrtT = ABDKMath64x64.sqrt(int128(int(T << 64)));
-
-        int128 sigmaSQ_T = int128(int((sigmaSQ * T << 64) / 1 ether));
+        int128 sigmaSQ_T = _d18TOb64(sigmaSQ * T);
+        int128 miu_T = _toInt128(uint(int(_miu)) * T);
         int128 sigma_t = ABDKMath64x64.sqrt(sigmaSQ_T);
-        int128 D1 = _D1(S0, T, K, sigmaSQ_T);
-        int128 v = ABDKMath64x64.div(D1, sigma_t);
+        int128 D1 = _D1(S0, K, sigmaSQ_T, miu_T);
+        int128 d = ABDKMath64x64.div(D1, sigma_t);
 
-        int128 f1 = _snd(v);
-        int128 f2 = _snd(ABDKMath64x64.sub(
-            ABDKMath64x64.div(D1, sigma_t),
-            sigma_t
-        ));
+        uint left = _toUInt(_snd(d)) * 1 ether / K;
+        uint right = _toUInt(ABDKMath64x64.mul(
+            ABDKMath64x64.exp(miu_T), 
+            _snd(ABDKMath64x64.sub(d, sigma_t))
+        )) * 1 ether / S0;
 
-        int left = f1;
-
-        int right = ABDKMath64x64.mul(
-            ABDKMath64x64.exp(_miu * int128(int(T))), 
-            f2
-        );
-
-        int r = int(1 ether / K) * left - int(1 ether / S0) * right;
-
-        return uint(r);
+        return left - right;
     }
 
-    // TODO: 测试方法，需要删掉
-    function log(string memory m, int v) private view {
-        if (v < 0) {
-            console.log(m, "-", uint(-v));
-        } else {
-            console.log(m, uint(v));
-        }
+    // 计算公式种的d1，因为没有除以σ，所以命名为D1
+    function _D1(uint S0, uint K, int128 sigmaSQ_T, int128 miu_T) private pure returns (int128) {
+
+        require(S0 < 0x1000000000000000000000000000000000000000000000000, "FEO:S0 can't ROL 64bits");
+        return
+            ABDKMath64x64.sub(
+                ABDKMath64x64.add(
+                    ABDKMath64x64.ln(_toInt128((S0 << 64) / K)),
+                    sigmaSQ_T >> 1
+                ),
+                miu_T
+            );
     }
 
     // 通过查表的方法计算标准正态分布函数
-    function _snd(int128 x) private view returns (int128) {
+    function _snd(int128 x) private pure returns (int128) {
 
         uint[28] memory table = [
             /* */ ///////////////////// STANDARD NORMAL TABLE //////////////////////////
             /* */ 0x174A15BF143412A8111C0F8F0E020C740AE6095807CA063B04AD031E018F0000, //
+            ///// 0x2F8C2E0F2C912B1229922811268F250B23872202207D1EF61D6F1BE61A5D18D8, //
             /* */ 0x2F8C2E0F2C912B1229922811268F250B23872202207D1EF61D6F1BE61A5D18D4, //
             /* */ 0x46A2453C43D4426B41003F943E263CB63B4539D3385F36EA357333FB32823108, //
             /* */ 0x5C0D5AC5597B582F56E05590543E52EA5194503C4EE24D874C294ACA49694807, //
@@ -286,7 +298,8 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
             /* */ 0x807E7F7F7E7D7D797C737B6A7A5F79517841772F761A750373E972CD71AF708E, //
             /* */ 0x8F2A8E518D768C998BB98AD789F2890B88218736864785568463836E8276817B, //
             /* */ 0x9B749AC19A0B9953989997DD971E965D959A94D4940C9342927591A690D49000, //
-            /* */ 0xA57CA4ECA459A3C4A32EA295A1FAA15DA0BDA01C9F789ED29E2A9D809CD39C25, //
+            /* */ 0xA57CA4ECA459A3C4A32EA295A1FAA15CA0BDA01C9F789ED29E2A9D809CD39C25, //
+            ///// 0xA57CA4ECA459A3C4A32EA295A1FAA15DA0BDA01C9F789ED29E2A9D809CD39C25, //
             /* */ 0xAD78AD07AC93AC1EABA7AB2EAAB3AA36A9B8A937A8B5A830A7AAA721A697A60B, //
             /* */ 0xB3AAB353B2FAB2A0B245B1E7B189B128B0C6B062AFFDAF96AF2DAEC2AE56ADE8, //
             /* */ 0xB859B818B7D6B793B74EB708B6C0B678B62EB5E2B595B547B4F7B4A6B454B400, //
@@ -363,7 +376,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
 
         uint ux = uint(int(x < 0 ? -x : x));
         uint i = (ux * 100 ) >> 64;
-        uint v = 50000 << 64;
+        uint v = V50000;
 
         if (i < 447) {
             v = uint((table[i >> 4] >> ((i & 0xF) << 4)) & 0xFFFF) << 64;
@@ -378,48 +391,12 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         }
 
         if (x > 0) {
-            v = (50000 << 64) + v;
+            v = V50000 + v;
         } else {
-            v = (50000 << 64) - v;
+            v = V50000 - v;
         }
 
-        int128 r = int128(int(v / 100000));
-        return r;
-    }
-
-    function _d1(uint S0, uint T, uint K, int128 sigma) private view returns (int128) {
-
-        // TODO: 考虑溢出问题
-        return
-            ABDKMath64x64.div(
-                ABDKMath64x64.add(
-                    ABDKMath64x64.ln(int128(int((S0 << 64) / K))), 
-                    ABDKMath64x64.mul(
-                        ABDKMath64x64.sub(
-                            ABDKMath64x64.div(
-                                ABDKMath64x64.mul(sigma, sigma), 
-                                int128(int(2 << 64))
-                            ), 
-                            _miu
-                        ),
-                        int128(int(T << 64))
-                    )
-                ),
-                sigma
-            );
-    }
-
-    function _D1(uint S0, uint T, uint K, int128 sigmaSQ_T) private view returns (int128) {
-
-        // TODO: 考虑溢出问题
-        return
-            ABDKMath64x64.sub(
-                ABDKMath64x64.add(
-                    ABDKMath64x64.ln(int128(int((S0 << 64) / K))),
-                    sigmaSQ_T / 2
-                ),
-                int128(int(uint(int(_miu)) * T))
-            );
+        return int128(int(v / 100000));
     }
 
     /// @dev 行权
@@ -436,7 +413,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         ) = FortOptionToken(optionAddress).getOptionInfo();
 
         // TODO: 测试期间不检查
-        //require(block.number >= endblock, "FortEuropeanOption:at maturity");
+        //require(block.number >= endblock, "FEO:at maturity");
 
         // 2. 销毁期权代币
         FortOptionToken(optionAddress).burn(msg.sender, amount);
@@ -481,6 +458,15 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         // 5. 用户赌赢了，给其增发赢得的fort
         if (gain > 0) {
             FortToken(FORT_TOKEN_ADDRESS).mint(msg.sender, gain);
+        }
+    }
+
+    // TODO: 测试方法，需要删掉
+    function log(string memory m, int v) private view {
+        if (v < 0) {
+            console.log(m, "-", uint(-v));
+        } else {
+            console.log(m, uint(v));
         }
     }
 }
