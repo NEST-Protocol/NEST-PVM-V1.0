@@ -28,7 +28,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     int128 constant TWO = int128(int(2 << 64));
 
     // 64位二进制精度的50000
-    uint constant V50000 = 922337203685477580800000;
+    uint constant V50000 = 0x0C3500000000000000000;
 
     // 期权代币映射
     mapping(bytes32=>address) _optionMapping;
@@ -134,6 +134,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     ) external payable override {
 
         // TODO: 确定哪些交易对可以开仓
+        require(fortAmount < 0x100000000000000000000000000000000, "FEO:fortAmount too large");
         require(endblock > block.number + uint(_minPeriod), "FEO: endblock to small");
 
         // 1. 获取或创建期权代币
@@ -195,14 +196,16 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
             // TODO: 注意价格是倒过来的
             uint vc = _calcVc(oraclePrice, T, price, sigmaSQ);
             //amount = (fortAmount << 64) * 1 ether / vc;
-            amount = fortAmount * 0x0DE0B6B3A76400000000000000000000 / vc;
+            //amount = fortAmount * 0x0DE0B6B3A76400000000000000000000 / vc;
+            amount = (fortAmount << 128) / vc;
         }
         // 看跌
         else {
             // TODO: 注意价格是倒过来的
             uint vp = _calcVp(oraclePrice, T, price, sigmaSQ);
             //amount = (fortAmount << 64) * 1 ether / vp;
-            amount = fortAmount * 0x0DE0B6B3A76400000000000000000000 / vp;
+            //amount = fortAmount * 0x0DE0B6B3A76400000000000000000000 / vp;
+            amount = (fortAmount << 128) / vp;
         }
 
         // 4. 销毁权利金
@@ -221,7 +224,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
 
     // 将uint转化为int128
     function _toInt128(uint v) private pure returns (int128) {
-        require(v < 100000000000000000000000000000000, "FEO:can't convert to int128");
+        require(v < 0x100000000000000000000000000000000, "FEO:can't convert to int128");
         return int128(int(v));
     }
 
@@ -240,14 +243,14 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         int128 D1 = _D1(S0, K, sigmaSQ_T, miu_T);
         int128 d = ABDKMath64x64.div(D1, sigma_t);
 
-        uint left = _toUInt(ABDKMath64x64.mul(
+        uint left = (_toUInt(ABDKMath64x64.mul(
             ABDKMath64x64.exp(miu_T), 
             ABDKMath64x64.sub(
                 ONE,
                 _snd(ABDKMath64x64.sub(d, sigma_t))
             )
-        )) * 1 ether / S0;
-        uint right = _toUInt(ABDKMath64x64.sub(ONE, _snd(d))) * 1 ether / K;
+        )) << 64) / S0;
+        uint right = (_toUInt(ABDKMath64x64.sub(ONE, _snd(d))) << 64) / K;
 
         return left - right;
     }
@@ -261,11 +264,11 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         int128 D1 = _D1(S0, K, sigmaSQ_T, miu_T);
         int128 d = ABDKMath64x64.div(D1, sigma_t);
 
-        uint left = _toUInt(_snd(d)) * 1 ether / K;
-        uint right = _toUInt(ABDKMath64x64.mul(
+        uint left = (_toUInt(_snd(d)) << 64) / K;
+        uint right = (_toUInt(ABDKMath64x64.mul(
             ABDKMath64x64.exp(miu_T), 
             _snd(ABDKMath64x64.sub(d, sigma_t))
-        )) * 1 ether / S0;
+        )) << 64) / S0;
 
         return left - right;
     }
