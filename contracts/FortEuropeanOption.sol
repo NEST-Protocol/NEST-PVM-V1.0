@@ -19,13 +19,10 @@ import "hardhat/console.sol";
 /// @dev 欧式期权
 contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     
-    // 64位二进制精度的 PI = 3.1415926
-    int128 constant PI = 57952155664617100000;
-
     // 64位二进制精度的1
-    int128 constant ONE = int128(int(1 << 64));
+    int128 constant ONE = 0x10000000000000000;
 
-    int128 constant TWO = int128(int(2 << 64));
+    int128 constant TWO = 0x20000000000000000;
 
     // 64位二进制精度的50000
     uint constant V50000 = 0x0C3500000000000000000;
