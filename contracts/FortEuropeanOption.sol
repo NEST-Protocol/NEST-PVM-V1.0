@@ -211,6 +211,67 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         // 5. 分发期权凭证
         FortOptionToken(option).mint(msg.sender, amount);
     }
+
+    /// @dev 预估开仓可以买到的期权币数量
+    /// @param price 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
+    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
+    /// @param endblock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
+    /// @param fortAmount 支付的fort数量
+    /// @param oraclePrice 当前预言机价格价
+    /// @param sigmaSQ 波动率
+    /// @return amount 预估可以获得的期权币数量
+    function estimate(
+        uint oraclePrice,
+        uint price,
+        bool orientation,
+        uint endblock,
+        uint fortAmount,
+        uint sigmaSQ
+    ) external view override returns (uint amount) {
+
+        // TODO: 确定哪些交易对可以开仓
+        require(fortAmount < 0x100000000000000000000000000000000, "FEO:fortAmount too large");
+        require(endblock > block.number + uint(_minPeriod), "FEO: endblock to small");
+
+        // // 1. 获取或创建期权代币
+        // bytes32 key = _getKey(tokenAddress, price, orientation, endblock);
+        // address option = _optionMapping[key];
+        // require(option != address(0));
+
+        // 3. TODO: 计算权利金（需要的fort数量）
+        // 按照平均每14秒出一个块计算
+        // TODO: 确定时间间隔，是从block.number算起，还是从预言机价格所在区块算起
+        uint T = (endblock - block.number) * 14;
+        // TODO: 测试代码
+        //T = 1000 * 14;
+        // console.log("open-oraclePrice", oraclePrice);
+        // console.log("open-price", price);
+        // console.log("open-T", T);
+        // console.log("open-sigmaSQ", sigmaSQ);
+        // {
+        //     uint vc = _calcVc(oraclePrice, T, price, sigmaSQ);
+        //     uint vp = _calcVp(oraclePrice, T, price, sigmaSQ);
+        //     console.log("open-vc", vc);
+        //     console.log("open-vp", vp);
+        // }
+
+        // 看涨
+        if (orientation) {
+            // TODO: 注意价格是倒过来的
+            uint vc = _calcVc(oraclePrice, T, price, sigmaSQ);
+            //amount = (fortAmount << 64) * 1 ether / vc;
+            //amount = fortAmount * 0x0DE0B6B3A76400000000000000000000 / vc;
+            amount = (fortAmount << 128) / vc;
+        }
+        // 看跌
+        else {
+            // TODO: 注意价格是倒过来的
+            uint vp = _calcVp(oraclePrice, T, price, sigmaSQ);
+            //amount = (fortAmount << 64) * 1 ether / vp;
+            //amount = fortAmount * 0x0DE0B6B3A76400000000000000000000 / vp;
+            amount = (fortAmount << 128) / vp;
+        }
+    }
     
     // 将18位十进制定点数转化为64位二级制定点数
     function _d18TOb64(uint v) private pure returns (int128) {

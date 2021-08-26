@@ -6,16 +6,34 @@ pragma solidity ^0.8.6;
 interface IFortVaultForStaking {
 
     /// @dev Initialize ore drawing weight
+    /// @dev Initialize ore drawing weight
+    /// @param startblock 锁仓起始区块
     /// @param xtokens xtoken array
     /// @param cycles cycle array
     /// @param weights weight array
-    function batchSetPoolWeight(address[] calldata xtokens, uint96[] calldata cycles, uint[] calldata weights) external;
+    function batchSetPoolWeight(
+        uint startblock,
+        address[] calldata xtokens, 
+        uint96[] calldata cycles, 
+        uint[] calldata weights
+    ) external;
 
     /// @dev Get stake channel information
     /// @param xtoken xtoken address (or CNode address)
+    /// @param cycle cycle
     /// @return totalStaked Total lock volume of target xtoken
-    /// @return fortPerBlock Mining speed, fort per block
-    function getChannelInfo(address xtoken, uint96 cycle) external view returns (uint totalStaked, uint fortPerBlock);
+    /// @return totalRewards 通道总出矿量
+    /// @return startblock 锁仓起始区块
+    /// @return endblock 锁仓结束区块（达到结束区块后可以领取分红）
+    function getChannelInfo(
+        address xtoken, 
+        uint96 cycle
+    ) external view returns (
+        uint totalStaked, 
+        uint totalRewards,
+        uint startblock,
+        uint endblock
+    );
 
     /// @dev Get staked amount of target address
     /// @param xtoken xtoken address (or CNode address)
@@ -42,13 +60,4 @@ interface IFortVaultForStaking {
     /// @dev Claim fort
     /// @param xtoken xtoken address (or CNode address)
     function getReward(address xtoken, uint96 cycle) external;
-
-    /// @dev Calculate dividend data
-    /// @param xtoken xtoken address (or CNode address)
-    /// @return newReward Amount added since last settlement
-    /// @return rewardPerToken New number of unit token dividends
-    function calcReward(address xtoken, uint96 cycle) external view returns (
-        uint newReward, 
-        uint rewardPerToken
-    );
 }

@@ -18,8 +18,6 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
     struct Account {
         // Staked of current account
         uint160 balance;
-        // Token dividend value mark of the unit that the account has received
-        uint96 rewardCursor;
     }
     
     /// @dev Stake channel information
@@ -32,16 +30,6 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
         // Total staked amount
         uint totalStaked;
 
-        // xtoken global sign
-        // Total ore drawing mark of settled transaction
-        uint128 tradeReward;
-        // Total settled ore output mark
-        //uint128 totalReward;
-        // The dividend mark that the settled company token can receive
-        uint96 rewardPerToken;
-        // Settlement block mark
-        uint32 blockCursor;
-
         // Accounts
         // address=>balance
         mapping(address=>Account) accounts;
@@ -52,6 +40,7 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
 
     // fort mining unit
     uint _fortUnit;
+    uint _startblock;
 
     // staking通道信息xtoken|cycle=>StakeChannel
     mapping(uint=>StakeChannel) _channels;
@@ -78,10 +67,12 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
 
     // TODO: 周期改为固定区块
     /// @dev Initialize ore drawing weight
+    /// @param startblock 锁仓起始区块
     /// @param xtokens xtoken array
     /// @param cycles cycle array
     /// @param weights weight array
     function batchSetPoolWeight(
+        uint startblock,
         address[] calldata xtokens, 
         uint96[] calldata cycles, 
         uint[] calldata weights
@@ -95,25 +86,36 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
             require(xtoken != address(0), "FortVaultForStaking: invalid xtoken");
             uint key = _getKey(xtoken, cycles[i]);
             StakeChannel storage channel = _channels[key];
-            _updateReward(channel);
+            channel.endblock = startblock + uint(cycles[i]);
             channel.weight = weights[i];
-            channel.endblock = block.number + cycles[i];
         }
+
+        _startblock = startblock;
     }
 
     /// @dev Get stake channel information
     /// @param xtoken xtoken address (or CNode address)
+    /// @param cycle cycle
     /// @return totalStaked Total lock volume of target xtoken
-    /// @return fortPerBlock Mining speed, fort per block
+    /// @return totalRewards 通道总出矿量
+    /// @return startblock 锁仓起始区块
+    /// @return endblock 锁仓结束区块（达到结束区块后可以领取分红）
     function getChannelInfo(
         address xtoken, 
         uint96 cycle
     ) external view override returns (
         uint totalStaked, 
-        uint fortPerBlock
+        uint totalRewards,
+        uint startblock,
+        uint endblock
     ) {
         StakeChannel storage channel = _channels[_getKey(xtoken, cycle)];
-        return (channel.totalStaked, uint(channel.weight) * _fortUnit);
+        return (
+            channel.totalStaked, 
+            channel.weight * _fortUnit, 
+            _startblock, 
+            channel.endblock
+        );
     }
 
     /// @dev Get staked amount of target address
@@ -132,22 +134,10 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
 
         // Load staking channel
         StakeChannel storage channel = _channels[_getKey(xtoken, cycle)];
-        // Call _calcReward() to calculate new reward
-        uint newReward = _calcReward(channel);
-        
-        // Load account
-        Account memory account = channel.accounts[addr];
-        uint balance = uint(account.balance);
-        // Load total amount of staked
-        uint totalStaked = channel.totalStaked;
-
-        // Unit token dividend
-        uint rewardPerToken = _decodeFloat(channel.rewardPerToken);
-        if (totalStaked > 0) {
-            rewardPerToken += newReward * 1 ether / totalStaked;
+        if (block.number < channel.endblock) {
+            return 0;
         }
-        
-        return (rewardPerToken - _decodeFloat(account.rewardCursor)) * balance / 1 ether;
+        return channel.weight * _fortUnit * channel.accounts[addr].balance / channel.totalStaked;
     }
 
     /// @dev Stake xtoken to earn fort
@@ -157,8 +147,10 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
 
         // Load stake channel
         StakeChannel storage channel = _channels[_getKey(xtoken, cycle)];
+        // TODO: 结束时间不一样?
+        require(block.number >= _startblock && block.number < channel.endblock, "FortVaultForStaking:!block");
         // Settle reward for account
-        Account memory account = _getReward(channel, msg.sender);
+        Account memory account = channel.accounts[msg.sender];
 
         // Transfer xtoken from msg.sender to this
         TransferHelper.safeTransferFrom(xtoken, msg.sender, address(this), amount);
@@ -205,136 +197,13 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
 
         // Load account
         account = channel.accounts[to];
-        // Update the global dividend information and get the new unit token dividend amount
-        uint rewardPerToken = _updateReward(channel);
-        
-        // Calculate reward for account
-        uint balance = uint(account.balance);
-        // if (xtoken == CNODE_TOKEN_ADDRESS) {
-        //     //balance *= 1 ether;
-        // }
-        uint reward = (rewardPerToken - _decodeFloat(account.rewardCursor)) * balance / 1 ether;
-        
-        // Update sign of account
-        account.rewardCursor = _encodeFloat(rewardPerToken);
-        //channel.accounts[to] = account;
 
-        // Transfer fort to account
-        if (reward > 0) {
-            FortToken(FORT_TOKEN_ADDRESS).mint(to, reward);
+        if (block.number >= channel.endblock) {
+            uint reward = channel.weight * _fortUnit * account.balance / channel.totalStaked;
+            // Transfer fort to account
+            if (reward > 0) {
+                FortToken(FORT_TOKEN_ADDRESS).mint(to, reward);
+            }
         }
-    }
-
-    // Update the global dividend information and return the new unit token dividend amount
-    function _updateReward(StakeChannel storage channel) private returns (uint rewardPerToken) {
-
-        // Call _calcReward() to calculate new reward
-        uint newReward = _calcReward(channel);
-
-        // Load total amount of staked
-        uint totalStaked = channel.totalStaked;
-        
-        rewardPerToken = _decodeFloat(channel.rewardPerToken);
-        if (totalStaked > 0) {
-            rewardPerToken += newReward * 1 ether / totalStaked;
-        }
-
-        // Update the dividend value of unit share
-        channel.rewardPerToken = _encodeFloat(rewardPerToken);
-        // Update settled block number
-        channel.blockCursor = uint32(block.number);
-    }
-
-    // Calculate new reward
-    function _calcReward(StakeChannel storage channel) private view returns (uint newReward) {
-
-        uint blockNumber = channel.endblock;
-        if (blockNumber > block.number) {
-            blockNumber = block.number;
-        }
-
-        uint blockCursor = uint(channel.blockCursor);
-        if (blockNumber > blockCursor) {
-            newReward =
-                (blockNumber - blockCursor)
-                * _reduction(block.number - FORT_GENESIS_BLOCK) 
-                * _fortUnit
-                * channel.weight
-                / 400 ;
-        }
-
-        newReward = 0;
-    }
-
-    /// @dev Calculate dividend data
-    /// @param xtoken xtoken address (or CNode address)
-    /// @return newReward Amount added since last settlement
-    /// @return rewardPerToken New number of unit token dividends
-    function calcReward(address xtoken, uint96 cycle) external view override returns (
-        uint newReward, 
-        uint rewardPerToken
-    ) {
-
-        // Load staking channel
-        StakeChannel storage channel = _channels[_getKey(xtoken, cycle)];
-        // Call _calcReward() to calculate new reward
-        newReward = _calcReward(channel);
-
-        // Load total amount of staked
-        uint totalStaked = channel.totalStaked;
-
-        rewardPerToken = _decodeFloat(channel.rewardPerToken);
-        if (totalStaked > 0) {
-            rewardPerToken += newReward * 1 ether / totalStaked;
-        }
-    }
-
-    // fort ore drawing attenuation interval. 2400000 blocks, about one year
-    uint constant FORT_REDUCTION_SPAN = 2400000;
-    // The decay limit of fort ore drawing becomes stable after exceeding this interval. 24 million blocks, about 4 years
-    uint constant FORT_REDUCTION_LIMIT = 9600000; // FORT_REDUCTION_SPAN * 4;
-    // Attenuation gradient array, each attenuation step value occupies 16 bits. The attenuation value is an integer
-    uint constant FORT_REDUCTION_STEPS = 0x280035004300530068008300A300CC010001400190;
-        // 0
-        // | (uint(400 / uint(1)) << (16 * 0))
-        // | (uint(400 * 8 / uint(10)) << (16 * 1))
-        // | (uint(400 * 8 * 8 / uint(10 * 10)) << (16 * 2))
-        // | (uint(400 * 8 * 8 * 8 / uint(10 * 10 * 10)) << (16 * 3))
-        // | (uint(400 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10)) << (16 * 4))
-        // | (uint(400 * 8 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10 * 10)) << (16 * 5))
-        // | (uint(400 * 8 * 8 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10 * 10 * 10)) << (16 * 6))
-        // | (uint(400 * 8 * 8 * 8 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10 * 10 * 10 * 10)) << (16 * 7))
-        // | (uint(400 * 8 * 8 * 8 * 8 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10 * 10 * 10 * 10 * 10)) << (16 * 8))
-        // | (uint(400 * 8 * 8 * 8 * 8 * 8 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10 * 10 * 10 * 10 * 10 * 10)) << (16 * 9))
-        // //| (uint(400 * 8 * 8 * 8 * 8 * 8 * 8 * 8 * 8 * 8 * 8 / uint(10 * 10 * 10 * 10 * 10 * 10 * 10 * 10 * 10 * 10)) << (16 * 10));
-        // | (uint(40) << (16 * 10));
-
-    // Calculation of attenuation gradient
-    function _reduction(uint delta) private pure returns (uint) {
-        
-        if (delta < FORT_REDUCTION_LIMIT) {
-            return (FORT_REDUCTION_STEPS >> ((delta / FORT_REDUCTION_SPAN) << 4)) & 0xFFFF;
-        }
-        return (FORT_REDUCTION_STEPS >> 64) & 0xFFFF;
-    }
-
-    /// @dev Encode the uint value as a floating-point representation in the form of fraction * 16 ^ exponent
-    /// @param value Destination uint value
-    /// @return float format
-    function _encodeFloat(uint value) private pure returns (uint96) {
-
-        uint exponent = 0; 
-        while (value > 0x3FFFFFFFFFFFFFFFFFFFFFF) {
-            value >>= 4;
-            ++exponent;
-        }
-        return uint96((value << 6) | exponent);
-    }
-
-    /// @dev Decode the floating-point representation of fraction * 16 ^ exponent to uint
-    /// @param floatValue fraction value
-    /// @return decode format
-    function _decodeFloat(uint96 floatValue) private pure returns (uint) {
-        return (uint(floatValue) >> 6) << ((uint(floatValue) & 0x3F) << 2);
     }
 }

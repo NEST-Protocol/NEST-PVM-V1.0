@@ -58,3 +58,24 @@
     /// @param amount 结算的期权分数
     function exercise(address optionAddress, uint amount) external payable;
 ```
+
+### 2.5. 预估开仓可以买到的期权币数量
+
+```javascript
+    /// @dev 预估开仓可以买到的期权币数量
+    /// @param price 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
+    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
+    /// @param endblock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
+    /// @param fortAmount 支付的fort数量
+    /// @param oraclePrice 当前预言机价格价
+    /// @param sigmaSQ 波动率
+    /// @return amount 预估可以获得的期权币数量
+    function estimate(
+        uint oraclePrice,
+        uint price,
+        bool orientation,
+        uint endblock,
+        uint fortAmount,
+        uint sigmaSQ
+    ) external view returns (uint amount);
+```
