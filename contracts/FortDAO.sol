@@ -36,24 +36,21 @@ contract FortDAO is FortBase, IFortDAO {
     }
 
     /// @dev Add reward
-    /// @param pool Destination pool
-    function addETHReward(address pool) external payable override {
+    function addETHReward(address) external payable override {
         //require(pool != address(0));
     }
 
     /// @dev The function returns eth rewards of specified pool
-    /// @param pool Destination pool
-    function totalETHRewards(address pool) external view override returns (uint) {
+    function totalETHRewards(address) external view override returns (uint) {
         //require(pool != address(0));
         return address(this).balance;
     }
 
     /// @dev Settlement
-    /// @param pool Destination pool. Indicates which pool to pay with
     /// @param tokenAddress Token address of receiving funds (0 means ETH)
     /// @param to Address to receive
     /// @param value Amount to receive
-    function settle(address pool, address tokenAddress, address to, uint value) external payable override {
+    function settle(address, address tokenAddress, address to, uint value) external payable override {
         //require(pool != address(0));
         require(_applications[msg.sender] == 1, "FortDAO:!app");
 

@@ -84,6 +84,17 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
             lever, 
             orientation
         ));
+        // 使用create2创建合约，会导致杠杆币内不能使用immutable变量来保存杠杆信息，从而增加gas消耗，放弃此方法
+        // leverAddress = address(new FortLeverToken { 
+        //         salt: keccak256(abi.encodePacked(tokenAddress, lever, orientation)) 
+        //     } (
+        //         StringHelper.stringConcat("LEVER-", StringHelper.toString(_levers.length)),
+        //         tokenAddress, 
+        //         lever, 
+        //         orientation
+        //     )
+        // );
+        
         FortLeverToken(leverAddress).setNestPriceFacade(NEST_PRICE_FACADE_ADDRESS);
         _leverMapping[key] = leverAddress;
         _levers.push(leverAddress);
@@ -106,6 +117,17 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         bool orientation
     ) external view override returns (address) {
         return _leverMapping[_getKey(tokenAddress, lever, orientation)];
+        // 使用create2创建合约，会导致杠杆币内不能使用immutable变量来保存杠杆信息，从而增加gas消耗，放弃此方法
+        // return 
+        // address(uint160(uint(keccak256(abi.encodePacked(
+        //     bytes1(0xff),
+        //     address(this),
+        //     keccak256(abi.encodePacked(tokenAddress, lever, orientation)),
+        //     keccak256(abi.encodePacked(
+        //         type(FortLeverToken).creationCode,
+        //         abi.encode(tokenAddress, lever, orientation)
+        //     ))
+        // )))));
     }
 
     /// @dev 买入杠杆币

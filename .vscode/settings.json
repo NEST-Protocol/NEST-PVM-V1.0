@@ -11,8 +11,12 @@
         "keccak",
         "math",
         "spdx",
+        "staking",
+        "staking xtoken",
         "string",
         "string concat",
-        "x"
+        "x",
+        "xtoken",
+        "xtokens"
     ]
 }

@@ -145,29 +145,29 @@ contract FortLeverToken {
         return 0;
     }
 
-    /// @dev 转账
-    /// @param to 接收地址
-    /// @param value 转账金额
-    function transfer(address to, uint value) external payable {
+    // /// @dev 转账
+    // /// @param to 接收地址
+    // /// @param value 转账金额
+    // function transfer(address to, uint value) external payable {
 
-        // TODO: 用户铸币会锁定全部资产，确定此逻辑是否可行
-        require(
-            block.number > _accounts[msg.sender].lastMintBlock + MIN_PERIOD, 
-            "FortLeverToken:The lock-up period has not expired "
-        );
+    //     // TODO: 用户铸币会锁定全部资产，确定此逻辑是否可行
+    //     require(
+    //         block.number > _accounts[msg.sender].lastMintBlock + MIN_PERIOD, 
+    //         "FortLeverToken:The lock-up period has not expired "
+    //     );
 
-        // 更新杠杆币信息
-        (uint blockNumber, uint oraclePrice) = updateLeverInfo(msg.sender);
+    //     // 更新杠杆币信息
+    //     (uint blockNumber, uint oraclePrice) = updateLeverInfo(msg.sender);
 
-        // 更新发送账号信息
-        _update(msg.sender, blockNumber, oraclePrice);
-        // 更新接收账号信息
-        _update(to, blockNumber, oraclePrice);
+    //     // 更新发送账号信息
+    //     _update(msg.sender, blockNumber, oraclePrice);
+    //     // 更新接收账号信息
+    //     _update(to, blockNumber, oraclePrice);
 
-        // 更新余额
-        _accounts[msg.sender].balance -= value;
-        _accounts[to].balance += value;
-    }
+    //     // 更新余额
+    //     _accounts[msg.sender].balance -= value;
+    //     _accounts[to].balance += value;
+    // }
 
     /// @dev 铸币
     /// @param to 接收地址
