@@ -75,11 +75,23 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
 
         bytes32 key = _getKey(tokenAddress, lever, orientation);
         address leverAddress = _leverMapping[key];
-        require(leverAddress == address(0), "FortLever: exists");
+        require(leverAddress == address(0), "FortLever:exists");
 
         // TODO: 代币命名问题
+        string memory name = StringHelper.toUpper(
+            StringHelper.stringConcat(
+                StringHelper.stringConcat(
+                    StringHelper.stringConcat(
+                        "E/", 
+                        StringHelper.substring(ERC20(tokenAddress).symbol(), 0, 1)
+                    ),
+                    orientation ? "+F" : "-F"
+                ),
+                StringHelper.toString(lever, 1)
+            )
+        );
         leverAddress = address(new FortLeverToken(
-            StringHelper.stringConcat("LEVER-", StringHelper.toString(_levers.length)),
+            name,
             tokenAddress, 
             lever, 
             orientation
@@ -142,9 +154,10 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         uint fortAmount
     ) external payable override {
 
+        require(fortAmount >= 100 ether, "FortLever:at least 100 FORT");
         // 1. 找到杠杆代币地址
         address leverAddress = _leverMapping[_getKey(tokenAddress, lever, orientation)];
-        require(leverAddress != address(0), "FortLever: not exist");
+        require(leverAddress != address(0), "FortLever:not exist");
 
         // 2. 销毁用户的fort
         FortToken(FORT_TOKEN_ADDRESS).burn(msg.sender, fortAmount);
@@ -163,6 +176,8 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         address leverAddress,
         uint fortAmount
     ) external payable override {
+
+        require(fortAmount >= 100 ether, "FortLever:at least 100 FORT");
 
         // 1. 销毁用户的fort
         FortToken(FORT_TOKEN_ADDRESS).burn(msg.sender, fortAmount);
@@ -218,5 +233,17 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         for (uint i = leverAddressArray.length; i > 0; ) {
             FortLeverToken(leverAddressArray[--i]).setNestPriceFacade(NEST_PRICE_FACADE_ADDRESS);
         }
+    }
+
+    // TODO: 主动触发更新的人，按照区块奖励FORT
+    /// @dev 触发更新价格，获取FORT奖励
+    /// @param leverAddress 目标杠杆币地址
+    /// @param payback 多余的预言机费用退回地址
+    function updateLeverInfo(
+        address leverAddress, 
+        address payback
+    ) external payable override {
+        uint blocks = FortLeverToken(leverAddress).updateLeverInfo(payback);
+        FortToken(FORT_TOKEN_ADDRESS).mint(msg.sender, blocks * 1 ether);
     }
 }

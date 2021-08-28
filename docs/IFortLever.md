@@ -98,3 +98,15 @@
         address account
     ) external payable;
 ```
+
+### 2.8. 触发更新价格，获取FORT奖励
+
+```javascript
+    /// @dev 触发更新价格，获取FORT奖励
+    /// @param leverAddress 目标杠杆币地址
+    /// @param payback 多余的预言机费用退回地址
+    function updateLeverInfo(
+        address leverAddress, 
+        address payback
+    ) external payable;
+```

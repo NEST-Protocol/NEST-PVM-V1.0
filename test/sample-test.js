@@ -49,7 +49,7 @@ describe('FortEuropeanOption', function() {
         console.log('owner: ' + toDecimal(await fort.balanceOf(owner.address) )+ 'fort');
         console.log('owner: ' + owner.address);
 
-        const BLOCK = 10000;
+        const BLOCK = 100000;
         await fortEuropeanOption.open(usdt.address, '2450000000', true, BLOCK, toBigInt(1), {
             value: toBigInt(0.01)
         });
@@ -87,7 +87,7 @@ describe('FortEuropeanOption', function() {
         console.log('------------------------------');
 
         await fortLever.create(usdt.address, 2, true);
-        await fortLever.buy(usdt.address, 2, true, toBigInt(1), {
+        await fortLever.buy(usdt.address, 2, true, toBigInt(100), {
             value: toBigInt(0.01)
         });
 
@@ -113,5 +113,8 @@ describe('FortEuropeanOption', function() {
 
         console.log('bot-name: ' + await bot.name());
         console.log('lot-name: ' + await lot.name());
+
+        console.log('lower: ' + await fortLever.stringCase('ChenFei', 0));
+        console.log('upper: ' + await fortLever.stringCase('ChenFei', 1));
     });
 });

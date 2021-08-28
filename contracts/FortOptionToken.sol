@@ -10,7 +10,7 @@ import "./interfaces/INestPriceFacade.sol";
 contract FortOptionToken is ERC20 {
 
     address immutable TOKEN_ADDRESS;
-    address OWNER;
+    address immutable OWNER;
 
     uint88 _endblock;
     // TODO: orientation 没有作用
@@ -33,6 +33,11 @@ contract FortOptionToken is ERC20 {
         _price = price;
     }
 
+    modifier onlyOwner {
+        require(msg.sender == OWNER, "FortOptionToken:not owner");
+        _;
+    }
+    
     /// @dev 获取期权信息
     /// @return tokenAddress 目标代币地址
     /// @return endblock 行权区块号
@@ -50,16 +55,14 @@ contract FortOptionToken is ERC20 {
     /// @dev 铸币
     /// @param to 接收地址
     /// @param value 铸币数量
-    function mint(address to, uint value) external {
-        require(msg.sender == OWNER, "FortOptionToken: not owner");
+    function mint(address to, uint value) external onlyOwner {
         _mint(to, value);
     }
 
     /// @dev 销毁
     /// @param from 目标地址
     /// @param value 销毁数量
-    function burn(address from, uint value) external {
-        require(msg.sender == OWNER, "FortOptionToken: not owner");
+    function burn(address from, uint value) external onlyOwner {
         _burn(from, value);
     }
 }

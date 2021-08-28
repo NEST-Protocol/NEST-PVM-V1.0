@@ -79,11 +79,11 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
     ) external override onlyGovernance {
 
         uint cnt = xtokens.length;
-        require(cnt == weights.length, "FortVaultForStaking: mismatch len");
+        require(cnt == weights.length, "FVFS:mismatch len");
 
         for (uint i = 0; i < cnt; ++i) {
             address xtoken = xtokens[i];
-            require(xtoken != address(0), "FortVaultForStaking: invalid xtoken");
+            require(xtoken != address(0), "FVFS:invalid xtoken");
             uint key = _getKey(xtoken, cycles[i]);
             StakeChannel storage channel = _channels[key];
             channel.endblock = startblock + uint(cycles[i]);
@@ -148,7 +148,7 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
         // Load stake channel
         StakeChannel storage channel = _channels[_getKey(xtoken, cycle)];
         // TODO: 结束时间不一样?
-        require(block.number >= _startblock && block.number < channel.endblock, "FortVaultForStaking:!block");
+        require(block.number >= _startblock && block.number < channel.endblock, "FVFS:!block");
         // Settle reward for account
         Account memory account = channel.accounts[msg.sender];
 

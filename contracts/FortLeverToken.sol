@@ -73,7 +73,7 @@ contract FortLeverToken {
     }
     
     modifier onlyOwner {
-        require(msg.sender == OWNER, "FortLeverToken: not owner");
+        require(msg.sender == OWNER, "FLT:not owner");
         _;
     }
 
@@ -88,7 +88,14 @@ contract FortLeverToken {
     }
 
     // TODO: 主动触发更新的人，按照区块奖励FORT
-    function updateLeverInfo(address payback) public payable returns (uint blockNumber, uint oraclePrice) {
+    function updateLeverInfo(address payback) external payable returns (uint) {
+
+        uint blockNumber = _block;
+        (uint newBlock,) = _updateLeverInfo(payback);
+        return newBlock - blockNumber;
+    }
+
+    function _updateLeverInfo(address payback) private returns (uint blockNumber, uint oraclePrice) {
 
         (
             blockNumber, 
@@ -145,29 +152,27 @@ contract FortLeverToken {
         return 0;
     }
 
-    // /// @dev 转账
-    // /// @param to 接收地址
-    // /// @param value 转账金额
-    // function transfer(address to, uint value) external payable {
+    /// @dev 转账
+    /// @param to 接收地址
+    /// @param value 转账金额
+    function transfer(address to, uint value) external payable {
 
-    //     // TODO: 用户铸币会锁定全部资产，确定此逻辑是否可行
-    //     require(
-    //         block.number > _accounts[msg.sender].lastMintBlock + MIN_PERIOD, 
-    //         "FortLeverToken:The lock-up period has not expired "
-    //     );
+        // TODO: 用户铸币会锁定全部资产，确定此逻辑是否可行
+        require(LEVER == 1, "FLT:only for lever 1");
+        require(block.number > _accounts[msg.sender].lastMintBlock + MIN_PERIOD, "FLT:period not expired");
 
-    //     // 更新杠杆币信息
-    //     (uint blockNumber, uint oraclePrice) = updateLeverInfo(msg.sender);
+        // 更新杠杆币信息
+        (uint blockNumber, uint oraclePrice) = _updateLeverInfo(msg.sender);
 
-    //     // 更新发送账号信息
-    //     _update(msg.sender, blockNumber, oraclePrice);
-    //     // 更新接收账号信息
-    //     _update(to, blockNumber, oraclePrice);
+        // 更新发送账号信息
+        _update(msg.sender, blockNumber, oraclePrice);
+        // 更新接收账号信息
+        _update(to, blockNumber, oraclePrice);
 
-    //     // 更新余额
-    //     _accounts[msg.sender].balance -= value;
-    //     _accounts[to].balance += value;
-    // }
+        // 更新余额
+        _accounts[msg.sender].balance -= value;
+        _accounts[to].balance += value;
+    }
 
     /// @dev 铸币
     /// @param to 接收地址
@@ -176,7 +181,7 @@ contract FortLeverToken {
     function mint(address to, uint value, address payback) external payable onlyOwner {
 
         // 更新杠杆币信息
-        (uint blockNumber, uint oraclePrice) = updateLeverInfo(payback);
+        (uint blockNumber, uint oraclePrice) = _updateLeverInfo(payback);
 
         // 更新接收账号信息
         _update(to, blockNumber, oraclePrice);
@@ -195,14 +200,11 @@ contract FortLeverToken {
     /// @param payback 多余的预言机费用退回地址
     function burn(address from, uint value, address payback) external payable onlyOwner {
 
-        require(
-            block.number > _accounts[from].lastMintBlock + MIN_PERIOD, 
-            "FortLeverToken:The lock-up period has not expired "
-        );
-        require(msg.sender == OWNER, "FortLeverToken: not owner");
+        require(block.number > _accounts[from].lastMintBlock + MIN_PERIOD, "FLT:period not expired");
+        require(msg.sender == OWNER, "FLT:not owner");
 
         // 更新杠杆币信息
-        (uint blockNumber, uint oraclePrice) = updateLeverInfo(payback);
+        (uint blockNumber, uint oraclePrice) = _updateLeverInfo(payback);
 
         // 更新目标账号信息
         _update(from, blockNumber, oraclePrice);
@@ -253,7 +255,7 @@ contract FortLeverToken {
     function settle(address acc, address payback) external payable returns (uint) {
 
         // 更新杠杆币信息
-        (uint blockNumber, uint oraclePrice) = updateLeverInfo(payback);
+        (uint blockNumber, uint oraclePrice) = _updateLeverInfo(payback);
 
         // 更新目标账号信息
         uint balance = _update(acc, blockNumber, oraclePrice);

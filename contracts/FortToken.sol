@@ -18,7 +18,7 @@ contract FortToken is FortBase, ERC20("Fort", "Fort") {
     }
 
     modifier onlyMinter {
-        require(_minters[msg.sender] == 1, "FortToken: not minter");
+        require(_minters[msg.sender] == 1, "FortToken:not minter");
         _;
     }
 

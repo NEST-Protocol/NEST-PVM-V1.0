@@ -3,6 +3,7 @@
 pragma solidity ^0.8.6;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "./libs/TransferHelper.sol";
 import "./libs/StringHelper.sol";
@@ -116,6 +117,11 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         return _optionMapping[_getKey(tokenAddress, price, orientation, endblock)];
     }
 
+    function _check(address tokenAddress) private pure returns (bool) {
+        //return tokenAddress == 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+        return true;
+    }
+
     /// @dev 开仓
     /// @param tokenAddress 目前Fort系统支持ETH/USDT、NEST/ETH、COFI/ETH、HBTC/ETH
     /// @param price 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
@@ -130,17 +136,30 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         uint fortAmount
     ) external payable override {
 
+        // 1. 最小期权费用（计算公式）为每份（注意用户买入可以是0.1份，这是指计算）
+        //    期权费用不低于S0,K的1%（分别对应看涨和看跌）
+        //    Vc>=S0*1%; Vp>=K*1%
+        // 2. 行权周期不低于10000区块
+        // 3. 杠杆币 100FORT起（最小单位未来和FORT价格挂钩：注意激励相容） 期权0.1份起
+        // 4. 触发激励和价格挂钩 早期就设置100FORT一次
+        // 5. 1.0目前就支持eth/usd开仓
+        // 6. 杠杆币：E/U+F1和E/U-F1
+        // 7. 期权 C3302E/U10003837 P3321E/U10008766
+        //    价格精度和转化问题
+
         // TODO: 确定哪些交易对可以开仓
         require(fortAmount < 0x100000000000000000000000000000000, "FEO:fortAmount too large");
-        require(endblock > block.number + uint(_minPeriod), "FEO: endblock to small");
+        require(endblock > block.number + uint(_minPeriod), "FEO:endblock to small");
 
         // 1. 获取或创建期权代币
         bytes32 key = _getKey(tokenAddress, price, orientation, endblock);
         address option = _optionMapping[key];
         if (option == address(0)) {
+            
+            require(_check(tokenAddress), "FEO:token not allowed");
             // TODO: 重新对齐
             // TODO: 代币命名问题
-            string memory idx = StringHelper.toString(_options.length);
+            string memory idx = StringHelper.toString(_options.length, 1);
             option = address(new FortOptionToken(
                 StringHelper.stringConcat("FT-", idx),
                 StringHelper.stringConcat("FORT-", idx),
@@ -192,6 +211,8 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         if (orientation) {
             // TODO: 注意价格是倒过来的
             uint vc = _calcVc(oraclePrice, T, price, sigmaSQ);
+            // Vc>=S0*1%; Vp>=K*1%
+            require(vc * oraclePrice * 100 >= 1 << 64, "FEO:vc must greater than S0*1%");
             //amount = (fortAmount << 64) * 1 ether / vc;
             //amount = fortAmount * 0x0DE0B6B3A76400000000000000000000 / vc;
             amount = (fortAmount << 128) / vc;
@@ -200,10 +221,13 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         else {
             // TODO: 注意价格是倒过来的
             uint vp = _calcVp(oraclePrice, T, price, sigmaSQ);
+            // Vc>=S0*1%; Vp>=K*1%
+            require(vp * price * 100 >= 1 << 64, "FEO:vc must greater than S0*1%");
             //amount = (fortAmount << 64) * 1 ether / vp;
             //amount = fortAmount * 0x0DE0B6B3A76400000000000000000000 / vp;
             amount = (fortAmount << 128) / vp;
         }
+        require(amount > 0.1 ether, "FEO:at least 0.1");
 
         // 4. 销毁权利金
         FortToken(FORT_TOKEN_ADDRESS).burn(msg.sender, fortAmount);
@@ -231,7 +255,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
 
         // TODO: 确定哪些交易对可以开仓
         require(fortAmount < 0x100000000000000000000000000000000, "FEO:fortAmount too large");
-        require(endblock > block.number + uint(_minPeriod), "FEO: endblock to small");
+        require(endblock > block.number + uint(_minPeriod), "FEO:endblock to small");
 
         // // 1. 获取或创建期权代币
         // bytes32 key = _getKey(tokenAddress, price, orientation, endblock);
@@ -432,7 +456,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         //  ];
 
         // for (uint i = 0; i < 448; ++i) {
-        //     require(uint(tableOld[i]) == uint((table[i >> 4] >> ((i & 0xF) << 4)) & 0xFFFF), "FEO: not equal");
+        //     require(uint(tableOld[i]) == uint((table[i >> 4] >> ((i & 0xF) << 4)) & 0xFFFF), "FEO:not equal");
         // }
 
         uint ux = uint(int(x < 0 ? -x : x));
