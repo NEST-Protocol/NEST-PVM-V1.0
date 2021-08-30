@@ -25,7 +25,7 @@ contract FortLeverToken {
         // 账本-价格
         uint64 price;
         // 账本-价格所在区块号
-        uint32 block;
+        uint32 blockNumber;
         // 解锁区块
         uint32 unlockBlock;
     }
@@ -55,7 +55,7 @@ contract FortLeverToken {
     uint64 _price;
     
     // 最后更新的区块
-    uint32 _block;
+    uint32 _blockNumber;
 
     constructor(string memory name_, address tokenAddress, uint lever, bool orientation) {
 
@@ -87,7 +87,7 @@ contract FortLeverToken {
     /// @return 触发更新的区块间隔（以此作为奖励依据）
     function update(address payback) external payable returns (uint) {
 
-        uint blockNumber = uint(_block);
+        uint blockNumber = uint(_blockNumber);
         (uint newBlock,) = _update(payback);
         return newBlock - blockNumber;
     }
@@ -106,7 +106,7 @@ contract FortLeverToken {
         );
 
         _price = _encodeFloat(oraclePrice);
-        _block = uint32(blockNumber);
+        _blockNumber = uint32(blockNumber);
     }
 
     /// @dev 获取杠杆币信息
@@ -114,7 +114,7 @@ contract FortLeverToken {
     /// @return price 已经更新的最新价格
     /// @return blockNumber 已经更新的最新价格所在区块
     function getLeverInfo() external view returns (address tokenAddress, uint price, uint blockNumber) {
-        return (TOKEN_ADDRESS, _decodeFloat(_price), uint(_block));
+        return (TOKEN_ADDRESS, _decodeFloat(_price), uint(_blockNumber));
     }
 
     /// @dev 查看余额
@@ -170,7 +170,7 @@ contract FortLeverToken {
         fromAccount.balance = _toUInt128(_balanceOf(fromAccount, oraclePrice) - value);
         toAccount.balance = _toUInt128(_balanceOf(toAccount, oraclePrice) + value);
         fromAccount.price = toAccount.price = _encodeFloat(oraclePrice);
-        fromAccount.block = toAccount.block = uint32(blockNumber);
+        fromAccount.blockNumber = toAccount.blockNumber = uint32(blockNumber);
 
         accounts[msg.sender] = fromAccount;
         accounts[to] = toAccount;
@@ -191,7 +191,7 @@ contract FortLeverToken {
         Account memory account = accounts[to];
         account.balance = _toUInt128(_balanceOf(account, oraclePrice) + value);
         account.price = _encodeFloat(oraclePrice);
-        account.block = uint32(blockNumber);
+        account.blockNumber = uint32(blockNumber);
         account.unlockBlock = uint32(unlockBlock);
         
         accounts[to] = account;
@@ -214,7 +214,7 @@ contract FortLeverToken {
         Account memory account = accounts[from];
         account.balance = _toUInt128(_balanceOf(account, oraclePrice) - value);
         account.price = _encodeFloat(oraclePrice);
-        account.block = uint32(blockNumber);
+        account.blockNumber = uint32(blockNumber);
 
         accounts[from] = account;
     }
