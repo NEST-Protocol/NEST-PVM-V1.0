@@ -76,4 +76,19 @@ library StringHelper {
         }
         return string(re);
     }
+
+    function substring(string memory str, uint start) internal pure returns (string memory) {
+        bytes memory bs = bytes(str);
+        uint length = bs.length;
+        if (start >= length) {
+            return "";
+        }
+        uint count = length - start;
+        bytes memory re = new bytes(count);
+        while (count > 0) {
+            --count;
+            re[count] = bs[start + count];
+        }
+        return string(re);
+    }
 }

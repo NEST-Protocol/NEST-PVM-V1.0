@@ -113,8 +113,5 @@ describe('FortEuropeanOption', function() {
 
         console.log('bot-name: ' + await bot.name());
         console.log('lot-name: ' + await lot.name());
-
-        console.log('lower: ' + await fortLever.stringCase('ChenFei', 0));
-        console.log('upper: ' + await fortLever.stringCase('ChenFei', 1));
     });
 });

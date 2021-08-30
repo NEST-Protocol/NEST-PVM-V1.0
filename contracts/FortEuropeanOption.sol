@@ -3,7 +3,6 @@
 pragma solidity ^0.8.6;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "./libs/TransferHelper.sol";
 import "./libs/StringHelper.sol";
@@ -141,7 +140,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         //    Vc>=S0*1%; Vp>=K*1%
         // 2. 行权周期不低于10000区块
         // 3. 杠杆币 100FORT起（最小单位未来和FORT价格挂钩：注意激励相容） 期权0.1份起
-        // 4. 触发激励和价格挂钩 早期就设置100FORT一次
+        // 4. 按照区块触发
         // 5. 1.0目前就支持eth/usd开仓
         // 6. 杠杆币：E/U+F1和E/U-F1
         // 7. 期权 C3302E/U10003837 P3321E/U10008766
@@ -164,10 +163,10 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
                 StringHelper.stringConcat("FT-", idx),
                 StringHelper.stringConcat("FORT-", idx),
                 tokenAddress, 
-                uint88(endblock), 
+                price, 
                 orientation, 
-                price)
-            );
+                endblock
+            ));
             _optionMapping[key] = option;
             _options.push(option);
         }
@@ -459,8 +458,8 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         //     require(uint(tableOld[i]) == uint((table[i >> 4] >> ((i & 0xF) << 4)) & 0xFFFF), "FEO:not equal");
         // }
 
-        uint ux = uint(int(x < 0 ? -x : x));
-        uint i = (ux * 100 ) >> 64;
+        uint ux = uint(int(x < 0 ? -x : x)) * 100;
+        uint i = ux >> 64;
         uint v = V50000;
 
         if (i < 447) {
@@ -470,7 +469,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
                         (
                             (uint((table[(i + 1) >> 4] >> (((i + 1) & 0xF) << 4)) & 0xFFFF) << 64)
                             - v
-                        ) * (ux * 100 - (i << 64))
+                        ) * (ux - (i << 64))
                     ) >> 64
                 ) + v;
         }
@@ -492,9 +491,9 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         // 1. 获取期权信息
         (
             address tokenAddress, 
-            uint endblock, 
+            uint price, 
             bool orientation, 
-            uint price
+            uint endblock
         ) = FortOptionToken(optionAddress).getOptionInfo();
 
         // TODO: 测试期间不检查

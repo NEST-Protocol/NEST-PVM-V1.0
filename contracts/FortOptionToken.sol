@@ -5,32 +5,29 @@ pragma solidity ^0.8.6;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "./interfaces/INestPriceFacade.sol";
 
-// TODO: 代币名称
 /// @dev 期权凭证
 contract FortOptionToken is ERC20 {
 
-    address immutable TOKEN_ADDRESS;
     address immutable OWNER;
-
-    uint88 _endblock;
-    // TODO: orientation 没有作用
-    bool _orientation;
-    uint _price;
+    address immutable TOKEN_ADDRESS;
+    uint immutable PRICE;
+    bool immutable ORIENTATION;
+    uint immutable ENDBLOCK;
 
     constructor(
         string memory name, 
         string memory symbol, 
         address tokenAddress, 
-        uint88 endblock, 
-        bool orientation, 
-        uint price
+        uint price,
+        bool orientation,
+        uint endblock
     ) ERC20(name, symbol) {
         
         OWNER = msg.sender;
         TOKEN_ADDRESS = tokenAddress;
-        _endblock = endblock;
-        _orientation = orientation;
-        _price = price;
+        PRICE = price;
+        ORIENTATION = orientation;
+        ENDBLOCK = endblock;
     }
 
     modifier onlyOwner {
@@ -40,16 +37,16 @@ contract FortOptionToken is ERC20 {
     
     /// @dev 获取期权信息
     /// @return tokenAddress 目标代币地址
-    /// @return endblock 行权区块号
-    /// @return orientation 期权方向
     /// @return price 行权价格
+    /// @return orientation 期权方向
+    /// @return endblock 行权区块号
     function getOptionInfo() external view returns (
         address tokenAddress, 
-        uint endblock, 
-        bool orientation, 
-        uint price
+        uint price,
+        bool orientation,
+        uint endblock
     ) {
-        return (TOKEN_ADDRESS, uint(_endblock), _orientation, _price);
+        return (TOKEN_ADDRESS, PRICE, ORIENTATION, ENDBLOCK);
     }
 
     /// @dev 铸币

@@ -16,6 +16,12 @@ import "./FortLeverToken.sol";
 /// @dev 杠杆币交易
 contract FortLever is FortFrequentlyUsed, IFortLever {
     
+    // 最小余额数量，余额小于此值会被清算
+    uint constant MIN_VALUE = 1 ether;
+
+    // 买入杠杆币和其他交易之间最小的间隔区块数
+    uint constant MIN_PERIOD = 10;
+
     // 杠杆币映射
     mapping(bytes32=>address) _leverMapping;
 
@@ -166,7 +172,7 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         uint leverAmount = fortAmount;
         FortLeverToken(leverAddress).mint { 
             value: msg.value 
-        } (msg.sender, leverAmount, msg.sender);
+        } (msg.sender, leverAmount, block.number + MIN_PERIOD, msg.sender);
     }
 
     /// @dev 买入杠杆币
@@ -186,7 +192,7 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         uint leverAmount = fortAmount;
         FortLeverToken(leverAddress).mint { 
             value: msg.value 
-        } (msg.sender, leverAmount, msg.sender);
+        } (msg.sender, leverAmount, block.number + MIN_PERIOD, msg.sender);
     }
 
     /// @dev 卖出杠杆币
@@ -219,7 +225,7 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         // 1. 销毁用户的杠杆币
         uint fortAmount = FortLeverToken(leverAddress).settle { 
             value: msg.value 
-        } (account, msg.sender);
+        } (account, MIN_VALUE, msg.sender);
 
         // 2. 跟用户分发fort
         if (fortAmount > 0) {
@@ -243,7 +249,7 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         address leverAddress, 
         address payback
     ) external payable override {
-        uint blocks = FortLeverToken(leverAddress).updateLeverInfo(payback);
+        uint blocks = FortLeverToken(leverAddress).update(payback);
         FortToken(FORT_TOKEN_ADDRESS).mint(msg.sender, blocks * 1 ether);
     }
 }
