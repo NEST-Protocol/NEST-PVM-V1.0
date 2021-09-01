@@ -40,18 +40,6 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     constructor() {
     }
 
-    // /// @dev 设置配置
-    // function setConfig(uint96 sigmaSQ, int128 miu, uint32 minPeriod) external onlyGovernance {
-    //     _sigmaSQ = sigmaSQ;
-    //     _miu = miu;
-    //     _minPeriod = minPeriod;
-    // }
-
-    // /// @dev 获取配置
-    // function getConfig() external view returns (uint96 sigmaSQ, int128 miu, uint32 minPeriod) {
-    //     return (_sigmaSQ, _miu, _minPeriod);
-    // }
-    
     /// @dev Modify configuration
     /// @param tokenAddress 目标代币地址
     /// @param config Configuration object
@@ -102,7 +90,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         return _options.length;
     }
 
-    // 对齐价格，保留7为有效数字
+    // 对齐价格，保留7位有效数字
     function _align(uint price) private pure returns (uint) {
         uint decimals = 0;
         while (price >= 10000000) {
@@ -136,14 +124,6 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     ) external view override returns (address) {
         return _optionMapping[_getKey(tokenAddress, _align(price), orientation, endblock)];
     }
-
-    // // 检查开仓代币地址是否合法
-    // function _check(address tokenAddress) private pure returns (bool) {
-    //     // TODO: 确定哪些交易对可以开仓
-    //     //return tokenAddress == 0xdAC17F958D2ee523a2206206994597C13D831ec7;
-    //     require(tokenAddress == address(0), "FEO:not allowed");
-    //     return true;
-    // }
 
     // 获取代币的小数位数
     function _getDecimals(address tokenAddress) private view returns (uint) {
@@ -236,17 +216,6 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
 
         Config memory config = _configs[tokenAddress];
         require(uint(config.minPeriod) > 0, "FEO:not allowed");
-        // 1. 最小期权费用（计算公式）为每份（注意用户买入可以是0.1份，这是指计算）
-        //    期权费用不低于S0,K的1%（分别对应看涨和看跌）
-        //    Vc>=S0*1%; Vp>=K*1%
-        // 2. 行权周期不低于10000区块
-        // 3. 杠杆币 100FORT起（最小单位未来和FORT价格挂钩：注意激励相容） 期权0.1份起
-        // 4. 按照区块触发
-        // 5. 1.0目前就支持eth/usd开仓
-        // 6. 杠杆币：E/U+F1和E/U-F1
-        // 7. 期权 C3302E/U10003837 P3321E/U10008766
-        //    价格精度和转化问题
-
         require(fortAmount < 0x100000000000000000000000000000000, "FEO:fortAmount too large");
         require(endblock > block.number + uint(config.minPeriod), "FEO:endblock to small");
 
@@ -256,9 +225,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         address option = _optionMapping[key];
         if (option == address(0)) {
             
-            // TODO: 重新对齐
-            // TODO: 代币命名问题
-            //string memory idx = StringHelper.toString(_options.length, 1);
+            // 生成代币名称
             string memory name = _getName(
                 tokenAddress == address(0) ? "ETH" : StringHelper.substring(
                     StringHelper.toUpper(ERC20(tokenAddress).symbol()),
@@ -269,6 +236,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
                 orientation, 
                 endblock
             );
+            // 生成期权代币合约
             option = address(new FortOptionToken(
                 name,
                 name,
@@ -319,7 +287,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
             oraclePrice = usdtAmount * 10 ** (_getDecimals(tokenAddress)) / tokenAmount;
         }
 
-        // 3. TODO: 计算权利金（需要的fort数量）
+        // 3. 计算权利金（需要的fort数量）
         // 按照平均每14秒出一个块计算
         // TODO: 确定时间间隔，是从block.number算起，还是从预言机价格所在区块算起
         uint T = (endblock - block.number) * 14;
@@ -327,37 +295,29 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         // TODO: 验证计算值，和C#代码比较
         // TODO: 重新分析数据取值范围
         //T = 1000 * 14;
-        console.log("open-oraclePrice", oraclePrice);
-        console.log("open-price", price);
-        console.log("open-T", T);
-        console.log("open-sigmaSQ", uint(config.sigmaSQ));
-        {
-            uint vc = _calcVc(config, oraclePrice, T, price);
-            uint vp = _calcVp(config, oraclePrice, T, price);
-            console.log("open-vc", vc);
-            console.log("open-vp", vp);
-        }
+        // console.log("open-oraclePrice", oraclePrice);
+        // console.log("open-price", price);
+        // console.log("open-T", T);
+        // console.log("open-sigmaSQ", uint(config.sigmaSQ));
+        // {
+        //     uint vc = _calcVc(config, oraclePrice, T, price);
+        //     uint vp = _calcVp(config, oraclePrice, T, price);
+        //     console.log("open-vc", vc);
+        //     console.log("open-vp", vp);
+        // }
 
         uint v;
         // 看涨
         if (orientation) {
-            // TODO: 注意价格是倒过来的
             v = _calcVc(config, oraclePrice, T, price);
             // Vc>=S0*1%; Vp>=K*1%
             require(v * 100 >= oraclePrice << 64, "FEO:vc must greater than S0*1%");
-            //amount = (fortAmount << 64) * 1 ether / vc;
-            //amount = fortAmount * 0x0DE0B6B3A76400000000000000000000 / vc;
-            //amount = (fortAmount << 64) * USDT_BASE / vc;
         }
         // 看跌
         else {
-            // TODO: 注意价格是倒过来的
             v = _calcVp(config, oraclePrice, T, price);
             // Vc>=S0*1%; Vp>=K*1%
             require(v * 100 >= price << 64, "FEO:vp must greater than K*1%");
-            //amount = (fortAmount << 64) * 1 ether / vp;
-            //amount = fortAmount * 0x0DE0B6B3A76400000000000000000000 / vp;
-            //amount = (fortAmount << 64) * USDT_BASE / vp;
         }
         v = (fortAmount << 64) * USDT_BASE / v;
         require(v > 0.1 ether, "FEO:at least 0.1");
@@ -388,40 +348,32 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
 
         Config memory config = _configs[tokenAddress];
         require(uint(config.minPeriod) > 0, "FEO:not allowed");
-        
         require(fortAmount < 0x100000000000000000000000000000000, "FEO:fortAmount too large");
         require(endblock > block.number + uint(config.minPeriod), "FEO:endblock to small");
 
         // 1. 获取或创建期权代币
         price = _align(price);
-
-        // 2. 调用预言机获取价格
         
-        // 3. TODO: 计算权利金（需要的fort数量）
-        // 按照平均每14秒出一个块计算
-        // TODO: 确定时间间隔，是从block.number算起，还是从预言机价格所在区块算起
+        // 2. 调用预言机获取价格
+        // 2.1 获取token相对于eth的价格
+
+        // 3. 计算权利金（需要的fort数量）
         uint T = (endblock - block.number) * 14;
 
+        uint v;
         // 看涨
         if (orientation) {
-            // TODO: 注意价格是倒过来的
-            uint vc = _calcVc(config, oraclePrice, T, price);
+            v = _calcVc(config, oraclePrice, T, price);
             // Vc>=S0*1%; Vp>=K*1%
-            require(vc * 100 >= oraclePrice << 64, "FEO:vc must greater than S0*1%");
-            //amount = (fortAmount << 64) * 1 ether / vc;
-            //amount = fortAmount * 0x0DE0B6B3A76400000000000000000000 / vc;
-            amount = (fortAmount << 64) * USDT_BASE / vc;
+            require(v * 100 >= oraclePrice << 64, "FEO:vc must greater than S0*1%");
         }
         // 看跌
         else {
-            // TODO: 注意价格是倒过来的
-            uint vp = _calcVp(config, oraclePrice, T, price);
+            v = _calcVp(config, oraclePrice, T, price);
             // Vc>=S0*1%; Vp>=K*1%
-            require(vp * 100 >= price << 64, "FEO:vp must greater than K*1%");
-            //amount = (fortAmount << 64) * 1 ether / vp;
-            //amount = fortAmount * 0x0DE0B6B3A76400000000000000000000 / vp;
-            amount = (fortAmount << 64) * USDT_BASE / vp;
+            require(v * 100 >= price << 64, "FEO:vp must greater than K*1%");
         }
+        amount = (fortAmount << 64) * USDT_BASE / v;
     }
     
     // 将18位十进制定点数转化为64位二级制定点数
@@ -670,9 +622,6 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
             if (oraclePrice > price) {
                 gain = amount * (oraclePrice - price) / USDT_BASE;
             }
-            // 赌输了
-            // else {
-            // }
         } 
         // 看跌期权
         else {
@@ -680,9 +629,6 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
             if (oraclePrice < price) {
                 gain = amount * (price - oraclePrice) / USDT_BASE;
             }
-            // 赌输了
-            // else {
-            // }
         }
 
         // 5. 用户赌赢了，给其增发赢得的fort
