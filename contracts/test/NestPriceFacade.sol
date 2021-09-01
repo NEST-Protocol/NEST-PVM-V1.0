@@ -54,9 +54,9 @@ contract NestPriceFacade is INestPriceFacade {
             require(msg.value == 0.01 ether, "CoFiXController: Error fee");
         }
 
-        if (height > 90) {
-            return (height - 1, 2450000000);
-        }
+        // if (height > 90) {
+        //     return (height - 1, 2450000000);
+        // }
         return latestPriceView(tokenAddress);
     }
 

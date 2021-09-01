@@ -37,7 +37,7 @@ interface IFortPerpetual {
 
     // 币种对 Y/X 、开仓价P1、杠杆倍数L、保证金数量A、方向Ks、清算率C、手续费F、持有时间T
     /// @dev 开仓
-    /// @param tokenAddress 目前Fort系统支持ETH/USDT、NEST/ETH、COFI/ETH、HBTC/ETH
+    /// @param tokenAddress 目标代币地址，0表示eth
     /// @param lever 杠杆倍数
     /// @param bond 保证金数量
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌

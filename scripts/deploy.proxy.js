@@ -7,6 +7,7 @@ const { ethers, upgrades } = require('hardhat');
 
 exports.deploy = async function() {
     
+    const eth = { address: '0x0000000000000000000000000000000000000000' };
     const TestERC20 = await ethers.getContractFactory('TestERC20');
     const NestPriceFacade = await ethers.getContractFactory('NestPriceFacade');
     const FortGovernance = await ethers.getContractFactory('FortGovernance');
@@ -22,6 +23,10 @@ exports.deploy = async function() {
     const usdt = await TestERC20.deploy('USDT', 'USDT', 6);
     //const usdt = await TestERC20.attach('0x0000000000000000000000000000000000000000');
     console.log('usdt: ' + usdt.address);
+
+    const hbtc = await TestERC20.deploy('HBTC', 'HBTC', 18);
+    //const hbtc = await TestERC20.attach('0x0000000000000000000000000000000000000000');
+    console.log('hbtc: ' + hbtc.address);
 
     const nestPriceFacade = await NestPriceFacade.deploy();
     //const nestPriceFacade = await NestPriceFacade.attach('0x0000000000000000000000000000000000000000');
@@ -81,7 +86,17 @@ exports.deploy = async function() {
     await fortVaultForStaking.update(fortGovernance.address);
 
     console.log('8. fortEuropeanOption.setConfig()');
-    await fortEuropeanOption.setConfig('175482725206', 10000);
+    await fortEuropeanOption.setConfig(eth.address, { 
+        sigmaSQ: '4168125400', 
+        miu: '175482725206', 
+        minPeriod: 10000 
+    });
+    console.log('8.1. fortEuropeanOption.setConfig()');
+    await fortEuropeanOption.setConfig(hbtc.address, { 
+        sigmaSQ: '4168125400', 
+        miu: '175482725206', 
+        minPeriod: 10000 
+    });
 
     console.log('9. fort.setMinter(fortEuropeanOption.address, 1)');
     await fort.setMinter(fortEuropeanOption.address, 1);
@@ -90,10 +105,28 @@ exports.deploy = async function() {
     console.log('11. fort.setMinter(fortVaultForStaking.address, 1)');
     await fort.setMinter(fortVaultForStaking.address, 1);
 
+    await fortEuropeanOption.setUsdtTokenAddress(usdt.address);
+    await fortLever.setUsdtTokenAddress(usdt.address);
+
+    console.log('8.2 create lever');
+    await fortLever.create(eth.address, 1, true);
+    await fortLever.create(eth.address, 2, true);
+    await fortLever.create(eth.address, 5, true);
+    await fortLever.create(eth.address, 1, false);
+    await fortLever.create(eth.address, 2, false);
+    await fortLever.create(eth.address, 5, false);
+    await fortLever.create(hbtc.address, 1, true);
+    await fortLever.create(hbtc.address, 2, true);
+    await fortLever.create(hbtc.address, 5, true);
+    await fortLever.create(hbtc.address, 1, false);
+    await fortLever.create(hbtc.address, 2, false);
+    await fortLever.create(hbtc.address, 5, false);
+
     console.log('---------- OK ----------');
     
     const contracts = {
         usdt: usdt,
+        hbtc: hbtc,
 
         fort: fort,
         fortDAO: fortDAO,

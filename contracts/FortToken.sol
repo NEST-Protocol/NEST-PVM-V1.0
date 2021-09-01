@@ -8,8 +8,9 @@ import "./interfaces/INestPriceFacade.sol";
 
 import "./FortBase.sol";
 
+// TODO: 命名问题
 /// @dev Fort代币
-contract FortToken is FortBase, ERC20("Fort", "Fort") {
+contract FortToken is FortBase, ERC20("Decentralized Derivatives Unit", "DCU") {
 
     // 保存挖矿权限地址
     mapping(address=>uint) _minters;

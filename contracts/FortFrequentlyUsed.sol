@@ -15,9 +15,15 @@ contract FortFrequentlyUsed is FortBase {
 
     // Address of NestPriceFacade contract
     address NEST_PRICE_FACADE_ADDRESS;
+    
+    // USDT代币地址
+    //address constant USDT_TOKEN_ADDRESS = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+    address USDT_TOKEN_ADDRESS;
+
+    // USDT代币的基数
+    uint constant USDT_BASE = 1000000;
 
     // Genesis block number of fort
-
     // FortToken contract is created at block height TODO: 11040156. However, because the mining algorithm of Fort v1.0
     // is different from that at present, a new mining algorithm is adopted from Fort v2.1. The new algorithm
     // includes the attenuation logic according to the block. Therefore, it is necessary to trace the block
@@ -40,5 +46,10 @@ contract FortFrequentlyUsed is FortBase {
             ,//address fortVaultForStaking,
             NEST_PRICE_FACADE_ADDRESS //address nestPriceFacade
         ) = IFortGovernance(newGovernance).getBuiltinAddress();
+    }
+
+    // TODO: 测试方法
+    function setUsdtTokenAddress(address usdtTokenAddress) external {
+        USDT_TOKEN_ADDRESS = usdtTokenAddress;
     }
 }

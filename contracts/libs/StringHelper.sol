@@ -5,7 +5,10 @@ pragma solidity ^0.8.6;
 /// @dev 字符串工具
 library StringHelper {
 
-    // from NEST v3.0
+    /// @dev 连接两个字符串
+    /// @param a 字符串a
+    /// @param b 字符串b
+    /// @return 连接后的字符串
     function stringConcat(string memory a, string memory b) internal pure returns (string memory)
     {
         bytes memory ba = bytes(a);
@@ -22,7 +25,10 @@ library StringHelper {
         return string(ret);
     } 
     
-    // Convert number into a string, if less than 4 digits, make up 0 in front, from NEST v3.0
+    /// @dev 将整形转化为字符串，如果长度小于指定长度，则在前面补0
+    /// @param iv 要转化的整形值
+    /// @param minLength 最小长度
+    /// @return 转化结果字符串
     function toString(uint iv, uint minLength) internal pure returns (string memory) 
     {
         bytes memory buf = new bytes(64);
@@ -38,6 +44,9 @@ library StringHelper {
         return string(str);
     }
 
+    /// @dev 将字符串转为大写形式
+    /// @param str 目标字符串
+    /// @return 目标字符串的大写
     function toUpper(string memory str) internal pure returns (string memory) {
         bytes memory bs = bytes(str);
         for (uint i = 0; i < bs.length; ++i) {
@@ -49,6 +58,9 @@ library StringHelper {
         return str;
     }
 
+    /// @dev 将字符串转为小写形式
+    /// @param str 目标字符串
+    /// @return 目标字符串的小写
     function toLower(string memory str) internal pure returns (string memory) {
         bytes memory bs = bytes(str);
         for (uint i = 0; i < bs.length; ++i) {
@@ -60,6 +72,11 @@ library StringHelper {
         return str;
     }
 
+    /// @dev 截取字符串
+    /// @param str 目标字符串
+    /// @param start 截取开始索引
+    /// @param count 截取长度（如果长度不够，则取剩余长度）
+    /// @return 截取结果
     function substring(string memory str, uint start, uint count) internal pure returns (string memory) {
         bytes memory bs = bytes(str);
         uint length = bs.length;
@@ -77,6 +94,10 @@ library StringHelper {
         return string(re);
     }
 
+    /// @dev 截取字符串
+    /// @param str 目标字符串
+    /// @param start 截取开始索引
+    /// @return 截取结果
     function substring(string memory str, uint start) internal pure returns (string memory) {
         bytes memory bs = bytes(str);
         uint length = bs.length;

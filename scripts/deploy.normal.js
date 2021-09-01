@@ -73,11 +73,14 @@ exports.deploy = async function() {
     await fortLever.update(fortGovernance.address);
     await fortVaultForStaking.update(fortGovernance.address);
 
-    await fortEuropeanOption.setConfig('175482725206', 10000);
+    await fortEuropeanOption.setConfig('4168125400', '175482725206', 10000);
     
     await fort.setMinter(fortEuropeanOption.address, 1);
     await fort.setMinter(fortLever.address, 1);
     await fort.setMinter(fortVaultForStaking.address, 1);
+
+    await fortEuropeanOption.setUsdtTokenAddress(usdt.address);
+    await fortLever.setUsdtTokenAddress(usdt.address);
 
     console.log('---------- OK ----------');
 

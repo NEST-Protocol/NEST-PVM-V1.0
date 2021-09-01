@@ -13,7 +13,7 @@ interface IFortLever {
     function list(uint offset, uint count, uint order) external view returns (address[] memory leverArray);
 
     /// @dev 创建杠杆币
-    /// @param tokenAddress 杠杆币的标的地产代币地址
+    /// @param tokenAddress 杠杆币的标的地产代币地址，0表示eth
     /// @param lever 杠杆倍数
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     function create(
@@ -27,7 +27,7 @@ interface IFortLever {
     function getTokenCount() external view returns (uint);
 
     /// @dev 获取杠杆币地址
-    /// @param tokenAddress 杠杆币的标的地产代币地址
+    /// @param tokenAddress 杠杆币的标的地产代币地址，0表示eth
     /// @param lever 杠杆倍数
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     /// @return 杠杆币地址
@@ -38,7 +38,7 @@ interface IFortLever {
     ) external view returns (address);
 
     /// @dev 买入杠杆币
-    /// @param tokenAddress 杠杆币的标的地产代币地址
+    /// @param tokenAddress 杠杆币的标的地产代币地址，0表示eth
     /// @param lever 杠杆倍数
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     /// @param fortAmount 支付的fort数量

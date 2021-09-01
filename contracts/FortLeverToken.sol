@@ -24,15 +24,18 @@ contract FortLeverToken {
         uint128 balance;
         // 账本-价格
         uint64 price;
-        // 账本-价格所在区块号
-        uint32 blockNumber;
         // 解锁区块
         uint32 unlockBlock;
     }
 
+    // USDT代币的基数
+    uint constant USDT_BASE = 1000000;
+
     // 杠杆币创建者
     address immutable OWNER;
     
+    address immutable USDT_TOKEN_ADDRESS;
+
     // 目标代币地址
     address immutable TOKEN_ADDRESS;
 
@@ -55,12 +58,13 @@ contract FortLeverToken {
     uint64 _price;
     
     // 最后更新的区块
-    uint32 _blockNumber;
+    uint32 _updateBlock;
 
-    constructor(string memory name_, address tokenAddress, uint lever, bool orientation) {
+    constructor(string memory name_, address usdtTokenAddress, address tokenAddress, uint lever, bool orientation) {
 
         _name = name_;
         OWNER = msg.sender;
+        USDT_TOKEN_ADDRESS = usdtTokenAddress;
         TOKEN_ADDRESS = tokenAddress;
         LEVER = lever;
         ORIENTATION = orientation;
@@ -87,26 +91,60 @@ contract FortLeverToken {
     /// @return 触发更新的区块间隔（以此作为奖励依据）
     function update(address payback) external payable returns (uint) {
 
-        uint blockNumber = uint(_blockNumber);
+        uint blockNumber = uint(_updateBlock);
         (uint newBlock,) = _update(payback);
         return newBlock - blockNumber;
+    }
+
+    function _getDecimals(address tokenAddress) private view returns (uint) {
+        if (tokenAddress == address(0)) {
+            return 18;
+        }
+        return uint(ERC20(tokenAddress).decimals());
     }
 
     // 更新杠杆币全局信息
     function _update(address payback) private returns (uint blockNumber, uint oraclePrice) {
 
+        // 获取token相对于eth的价格
+        uint tokenAmount = 1 ether;
+        uint fee = msg.value;
+        address NEST_PRICE_FACADE_ADDRESS = _nestPriceFacade;
+        if (TOKEN_ADDRESS != address(0)) {
+            fee = msg.value >> 1;
+            (
+                ,//uint blockNumber, 
+                tokenAmount,
+                ,
+                //uint sigmaSQ
+            ) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).triggeredPriceInfo {
+                value: fee
+            } (
+                TOKEN_ADDRESS, 
+                payback
+            );
+        }
+
+        // 获取usdt相对于eth的价格
         (
-            blockNumber, 
-            oraclePrice
-        ) = INestPriceFacade(_nestPriceFacade).triggeredPrice {
-            value: msg.value
+            ,//uint blockNumber, 
+            uint usdtAmount,
+            ,
+            //uint sigmaSQ
+        ) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).triggeredPriceInfo {
+            value: fee
         } (
-            TOKEN_ADDRESS, 
+            USDT_TOKEN_ADDRESS, 
             payback
         );
 
+        // 将token价格转化为以usdt为单位计算的价格
+        oraclePrice = usdtAmount * 10 ** (_getDecimals(TOKEN_ADDRESS)) / tokenAmount;
+        //oraclePrice = usdtAmount * 1 ether / tokenAmount;
+
         _price = _encodeFloat(oraclePrice);
-        _blockNumber = uint32(blockNumber);
+        _updateBlock = uint32(block.number);
+        blockNumber = block.number;
     }
 
     /// @dev 获取杠杆币信息
@@ -114,7 +152,7 @@ contract FortLeverToken {
     /// @return price 已经更新的最新价格
     /// @return blockNumber 已经更新的最新价格所在区块
     function getLeverInfo() external view returns (address tokenAddress, uint price, uint blockNumber) {
-        return (TOKEN_ADDRESS, _decodeFloat(_price), uint(_blockNumber));
+        return (TOKEN_ADDRESS, _decodeFloat(_price), uint(_updateBlock));
     }
 
     /// @dev 查看余额
@@ -128,25 +166,27 @@ contract FortLeverToken {
     function _balanceOf(Account memory account, uint oraclePrice) private view returns (uint balance) {
 
         balance = uint(account.balance);
-        uint price = _decodeFloat(account.price);
+        if (balance > 0) {
+            uint price = _decodeFloat(account.price);
 
-        uint left;
-        uint right;
-        // 看涨
-        if (ORIENTATION) {
-            left = balance + balance * price * LEVER / oraclePrice;
-            right = balance * LEVER;
-        } 
-        // 看跌
-        else {
-            left = balance * (1 + LEVER);
-            right = balance * price * LEVER / oraclePrice;
-        }
+            uint left;
+            uint right;
+            // 看涨
+            if (ORIENTATION) {
+                left = balance + balance * oraclePrice * LEVER / price;
+                right = balance * LEVER;
+            } 
+            // 看跌
+            else {
+                left = balance * (1 + LEVER);
+                right = balance * oraclePrice * LEVER / price;
+            }
 
-        if (left > right) {
-            balance = left - right;
-        } else {
-            balance = 0;
+            if (left > right) {
+                balance = left - right;
+            } else {
+                balance = 0;
+            }
         }
     }
 
@@ -160,7 +200,7 @@ contract FortLeverToken {
         require(block.number > uint(_accounts[msg.sender].unlockBlock), "FLT:period not expired");
 
         // 更新杠杆币信息
-        (uint blockNumber, uint oraclePrice) = _update(msg.sender);
+        (, uint oraclePrice) = _update(msg.sender);
 
         mapping(address=>Account) storage accounts = _accounts;
         Account memory fromAccount = accounts[msg.sender];
@@ -170,7 +210,7 @@ contract FortLeverToken {
         fromAccount.balance = _toUInt128(_balanceOf(fromAccount, oraclePrice) - value);
         toAccount.balance = _toUInt128(_balanceOf(toAccount, oraclePrice) + value);
         fromAccount.price = toAccount.price = _encodeFloat(oraclePrice);
-        fromAccount.blockNumber = toAccount.blockNumber = uint32(blockNumber);
+        //fromAccount.blockNumber = toAccount.blockNumber = uint32(blockNumber);
 
         accounts[msg.sender] = fromAccount;
         accounts[to] = toAccount;
@@ -184,14 +224,14 @@ contract FortLeverToken {
     function mint(address to, uint value, uint unlockBlock, address payback) external payable onlyOwner {
 
         // 更新杠杆币信息
-        (uint blockNumber, uint oraclePrice) = _update(payback);
+        (, uint oraclePrice) = _update(payback);
 
         // 更新接收账号信息
         mapping(address=>Account) storage accounts = _accounts;
         Account memory account = accounts[to];
         account.balance = _toUInt128(_balanceOf(account, oraclePrice) + value);
         account.price = _encodeFloat(oraclePrice);
-        account.blockNumber = uint32(blockNumber);
+        //account.blockNumber = uint32(blockNumber);
         account.unlockBlock = uint32(unlockBlock);
         
         accounts[to] = account;
@@ -207,14 +247,14 @@ contract FortLeverToken {
         require(msg.sender == OWNER, "FLT:not owner");
 
         // 更新杠杆币信息
-        (uint blockNumber, uint oraclePrice) = _update(payback);
+        (, uint oraclePrice) = _update(payback);
 
         // 更新目标账号信息
         mapping(address=>Account) storage accounts = _accounts;
         Account memory account = accounts[from];
         account.balance = _toUInt128(_balanceOf(account, oraclePrice) - value);
         account.price = _encodeFloat(oraclePrice);
-        account.blockNumber = uint32(blockNumber);
+        //account.blockNumber = uint32(blockNumber);
 
         accounts[from] = account;
     }
@@ -236,7 +276,7 @@ contract FortLeverToken {
         // 杠杆倍数大于1，并且余额小于最小额度时，可以清算
         if (LEVER > 1 && balance < minValue) {
             
-            _accounts[acc] = Account(uint128(0), uint64(0), uint32(0), uint32(0));
+            _accounts[acc] = Account(uint128(0), uint64(0), uint32(0));
             return balance;
         }
         

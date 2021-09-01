@@ -5,6 +5,30 @@ pragma solidity ^0.8.6;
 /// @dev 定义欧式期权接口
 interface IFortEuropeanOption {
     
+    struct Config {
+        // 波动率
+        uint96 sigmaSQ;
+
+        // 64位二进制精度
+        // 0.3/365/86400 = 9.512937595129377E-09
+        // 175482725206
+        int128 miu;
+
+        // TODO: 通过数值计算过程，确定期权行权时间最大间隔
+        // 期权行权时间和当前时间的最小间隔
+        uint32 minPeriod;
+    }
+
+    /// @dev Modify configuration
+    /// @param tokenAddress 目标代币地址
+    /// @param config Configuration object
+    function setConfig(address tokenAddress, Config calldata config) external;
+
+    /// @dev Get configuration
+    /// @param tokenAddress 目标代币地址
+    /// @return Configuration object
+    function getConfig(address tokenAddress) external view returns (Config memory);
+
     /// @dev 列出历史期权代币地址
     /// @param offset Skip previous (offset) records
     /// @param count Return (count) records
@@ -17,7 +41,7 @@ interface IFortEuropeanOption {
     function getTokenCount() external view returns (uint);
 
     /// @dev 获取欧式期权代币地址
-    /// @param tokenAddress 目前Fort系统支持ETH/USDT、NEST/ETH、COFI/ETH、HBTC/ETH
+    /// @param tokenAddress 目标代币地址，0表示eth
     /// @param price 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     /// @param endblock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
@@ -30,24 +54,24 @@ interface IFortEuropeanOption {
     ) external view returns (address);
 
     /// @dev 预估开仓可以买到的期权币数量
+    /// @param tokenAddress 目标代币地址，0表示eth
     /// @param price 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     /// @param endblock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
     /// @param fortAmount 支付的fort数量
     /// @param oraclePrice 当前预言机价格价
-    /// @param sigmaSQ 波动率
     /// @return amount 预估可以获得的期权币数量
     function estimate(
+        address tokenAddress,
         uint oraclePrice,
         uint price,
         bool orientation,
         uint endblock,
-        uint fortAmount,
-        uint sigmaSQ
+        uint fortAmount
     ) external view returns (uint amount);
 
     /// @dev 开仓
-    /// @param tokenAddress 目前Fort系统支持ETH/USDT、NEST/ETH、COFI/ETH、HBTC/ETH
+    /// @param tokenAddress 目标代币地址，0表示eth
     /// @param price 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     /// @param endblock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录

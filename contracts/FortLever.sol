@@ -61,6 +61,7 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         }
     }
 
+    // 根据杠杆信息计算索引key
     function _getKey(
         address tokenAddress, 
         uint lever,
@@ -70,7 +71,7 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
     }
     
     /// @dev 创建杠杆币
-    /// @param tokenAddress 杠杆币的标的地产代币地址
+    /// @param tokenAddress 杠杆币的标的地产代币地址，0表示eth
     /// @param lever 杠杆倍数
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     function create(
@@ -83,21 +84,22 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         address leverAddress = _leverMapping[key];
         require(leverAddress == address(0), "FortLever:exists");
 
-        // TODO: 代币命名问题
-        string memory name = StringHelper.toUpper(
+        // 代币命名问题
+        string memory name = StringHelper.stringConcat(
             StringHelper.stringConcat(
                 StringHelper.stringConcat(
-                    StringHelper.stringConcat(
-                        "E/", 
-                        StringHelper.substring(ERC20(tokenAddress).symbol(), 0, 1)
+                    tokenAddress == address(0) ? "ETH" : StringHelper.toUpper(
+                        StringHelper.substring(ERC20(tokenAddress).symbol(), 0, 4)
                     ),
-                    orientation ? "+F" : "-F"
+                    "/USDT"
                 ),
-                StringHelper.toString(lever, 1)
-            )
+                orientation ? "+F" : "-F"
+            ),
+            StringHelper.toString(lever, 1)
         );
         leverAddress = address(new FortLeverToken(
             name,
+            USDT_TOKEN_ADDRESS,
             tokenAddress, 
             lever, 
             orientation
@@ -125,7 +127,7 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
     }
 
     /// @dev 获取杠杆币地址
-    /// @param tokenAddress 杠杆币的标的地产代币地址
+    /// @param tokenAddress 杠杆币的标的地产代币地址，0表示eth
     /// @param lever 杠杆倍数
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     /// @return 杠杆币地址
@@ -149,7 +151,7 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
     }
 
     /// @dev 买入杠杆币
-    /// @param tokenAddress 杠杆币的标的地产代币地址
+    /// @param tokenAddress 杠杆币的标的地产代币地址，0表示eth
     /// @param lever 杠杆倍数
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     /// @param fortAmount 支付的fort数量

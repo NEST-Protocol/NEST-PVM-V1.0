@@ -47,7 +47,7 @@
 
 ```javascript
     /// @dev 开仓
-    /// @param tokenAddress 目前Fort系统支持ETH/USDT、NEST/ETH、COFI/ETH、HBTC/ETH
+    /// @param tokenAddress 目标代币地址，0表示eth
     /// @param lever 杠杆倍数
     /// @param bond 保证金数量
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
