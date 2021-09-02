@@ -61,15 +61,6 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         }
     }
 
-    // 根据杠杆信息计算索引key
-    function _getKey(
-        address tokenAddress, 
-        uint lever,
-        bool orientation
-    ) private pure returns (bytes32) {
-        return keccak256(abi.encodePacked(tokenAddress, lever, orientation));
-    }
-    
     /// @dev 创建杠杆币
     /// @param tokenAddress 杠杆币的标的地产代币地址，0表示eth
     /// @param lever 杠杆倍数
@@ -85,18 +76,32 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         require(leverAddress == address(0), "FortLever:exists");
 
         // 代币命名问题
-        string memory name = StringHelper.stringConcat(
-            StringHelper.stringConcat(
-                StringHelper.stringConcat(
-                    tokenAddress == address(0) ? "ETH" : StringHelper.toUpper(
-                        StringHelper.substring(ERC20(tokenAddress).symbol(), 0, 4)
-                    ),
-                    "/USDT"
-                ),
-                orientation ? "+F" : "-F"
-            ),
-            StringHelper.toString(lever, 1)
+        // string memory name = StringHelper.stringConcat(
+        //     StringHelper.stringConcat(
+        //         StringHelper.stringConcat(
+        //             tokenAddress == address(0) ? "ETH" : StringHelper.toUpper(
+        //                 StringHelper.substring(ERC20(tokenAddress).symbol(), 0, 4)
+        //             ),
+        //             "/USDT"
+        //         ),
+        //         orientation ? "+F" : "-F"
+        //     ),
+        //     StringHelper.toString(lever, 1)
+        // );
+
+        bytes memory buf = new bytes(31);
+        uint index = 0;
+        index = StringHelper.writeString(
+            buf,
+            index,
+            tokenAddress == address(0) ? "ETH" : StringHelper.toUpper(ERC20(tokenAddress).symbol()),
+            0, 
+            4
         );
+        index = StringHelper.writeString(buf, index, orientation ? "/USDT+F" : "/USDT-F", 0, 7);
+        index = StringHelper.writeUIntDec(buf, index, lever, 1);
+        string memory name = string(StringHelper.segment(buf, 0, index));
+
         leverAddress = address(new FortLeverToken(
             name,
             USDT_TOKEN_ADDRESS,
@@ -253,5 +258,14 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
     ) external payable override {
         uint blocks = FortLeverToken(leverAddress).update(payback);
         FortToken(FORT_TOKEN_ADDRESS).mint(msg.sender, blocks * 1 ether);
+    }
+
+    // 根据杠杆信息计算索引key
+    function _getKey(
+        address tokenAddress, 
+        uint lever,
+        bool orientation
+    ) private pure returns (bytes32) {
+        return keccak256(abi.encodePacked(tokenAddress, lever, orientation));
     }
 }

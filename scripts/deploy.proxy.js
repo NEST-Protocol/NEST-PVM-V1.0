@@ -125,6 +125,7 @@ exports.deploy = async function() {
     console.log('---------- OK ----------');
     
     const contracts = {
+        eth: eth,
         usdt: usdt,
         hbtc: hbtc,
 
@@ -137,4 +138,4 @@ exports.deploy = async function() {
     };
 
     return contracts;
-}
+};

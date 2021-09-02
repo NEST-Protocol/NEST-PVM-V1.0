@@ -90,26 +90,6 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         return _options.length;
     }
 
-    // 对齐价格，保留7位有效数字
-    function _align(uint price) private pure returns (uint) {
-        uint decimals = 0;
-        while (price >= 10000000) {
-            price /= 10;
-            ++decimals;
-        }
-        return price * 10 ** decimals;
-    }
-
-    // 根据期权信息获取索引key
-    function _getKey(
-        address tokenAddress, 
-        uint price, 
-        bool orientation, 
-        uint endblock
-    ) private pure returns (bytes32) {
-        return keccak256(abi.encodePacked(tokenAddress, price, orientation, endblock));
-    }
-
     /// @dev 获取欧式期权代币地址
     /// @param tokenAddress 目标代币地址，0表示eth
     /// @param price 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
@@ -125,6 +105,252 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         return _optionMapping[_getKey(tokenAddress, _align(price), orientation, endblock)];
     }
 
+    /// @dev 开仓
+    /// @param tokenAddress 目标代币地址，0表示eth
+    /// @param price 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
+    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
+    /// @param endblock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
+    /// @param fortAmount 支付的fort数量
+    function open(
+        address tokenAddress,
+        uint price,
+        bool orientation,
+        uint endblock,
+        uint fortAmount
+    ) external payable override {
+
+        price = _align(price);
+
+        // 1. 调用预言机获取价格
+        // 1.1. 获取token相对于eth的价格
+        uint tokenAmount = 1 ether;
+        uint fee = msg.value;
+        if (tokenAddress != address(0)) {
+            fee = msg.value >> 1;
+            (
+                ,//uint blockNumber, 
+                tokenAmount,
+                ,
+                //uint sigmaSQ
+            ) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).triggeredPriceInfo {
+                value: fee
+            } (
+                tokenAddress, 
+                msg.sender
+            );
+        }
+
+        // 1.2. 获取usdt相对于eth的价格
+        (
+            ,//uint blockNumber, 
+            uint usdtAmount,
+            ,
+            //uint sigmaSQ
+        ) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).triggeredPriceInfo {
+            value: fee
+        } (
+            USDT_TOKEN_ADDRESS, 
+            msg.sender
+        );
+
+        // 1.3. 将token价格转化为以usdt为单位计算的价格
+        uint oraclePrice = usdtAmount * 10 ** (_getDecimals(tokenAddress)) / tokenAmount;
+
+        // 2. 计算可以买到的期权份数
+        uint amount = estimate(tokenAddress, oraclePrice, price, orientation, endblock, fortAmount);
+        require(amount > 0.1 ether, "FEO:at least 0.1");
+
+        // 3. 获取或创建期权代币
+        bytes32 key = _getKey(tokenAddress, price, orientation, endblock);
+        address option = _optionMapping[key];
+        if (option == address(0)) {
+            
+            // 生成期权代币名称
+            string memory name = _optionName(
+                tokenAddress == address(0) ? "ETH" : StringHelper.toUpper(ERC20(tokenAddress).symbol()),
+                price, 
+                orientation, 
+                endblock
+            );
+
+            // 生成期权代币合约
+            option = address(new FortOptionToken(
+                name,
+                name,
+                tokenAddress, 
+                price, 
+                orientation, 
+                endblock
+            ));
+            _optionMapping[key] = option;
+            _options.push(option);
+        }
+
+        // 4. 销毁权利金
+        FortToken(FORT_TOKEN_ADDRESS).burn(msg.sender, fortAmount);
+
+        // 5. 分发期权凭证
+        FortOptionToken(option).mint(msg.sender, amount);
+    }
+
+    /// @dev 预估开仓可以买到的期权币数量
+    /// @param tokenAddress 目标代币地址，0表示eth
+    /// @param price 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
+    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
+    /// @param endblock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
+    /// @param fortAmount 支付的fort数量
+    /// @param oraclePrice 当前预言机价格价
+    /// @return amount 预估可以获得的期权币数量
+    function estimate(
+        address tokenAddress,
+        uint oraclePrice,
+        uint price,
+        bool orientation,
+        uint endblock,
+        uint fortAmount
+    ) public view override returns (uint amount) {
+
+        Config memory config = _configs[tokenAddress];
+        uint minPeriod = uint(config.minPeriod);
+        require(minPeriod > 0, "FEO:not allowed");
+        //require(fortAmount < 0x100000000000000000000000000000000, "FEO:fortAmount too large");
+        require(endblock > block.number + minPeriod, "FEO:endblock to small");
+
+        // 1. 获取或创建期权代币
+        //price = _align(price);
+
+        // 2. 调用预言机获取价格
+
+        // 3. 计算权利金（需要的fort数量）
+        // 按照平均每14秒出一个块计算
+        // TODO: 确定时间间隔，是从block.number算起，还是从预言机价格所在区块算起
+        uint T = (endblock - block.number) * 14;
+        // TODO: 测试代码
+        // TODO: 验证计算值，和C#代码比较
+        // TODO: 重新分析数据取值范围
+        //T = 1000 * 14;
+        // console.log("open-oraclePrice", oraclePrice);
+        // console.log("open-price", price);
+        // console.log("open-T", T);
+        // console.log("open-sigmaSQ", uint(config.sigmaSQ));
+        // {
+        //     uint vc = _calcVc(config, oraclePrice, T, price);
+        //     uint vp = _calcVp(config, oraclePrice, T, price);
+        //     console.log("open-vc", vc);
+        //     console.log("open-vp", vp);
+        // }
+
+        amount = (USDT_BASE << 64) * fortAmount / (
+            orientation 
+                ? _calcVc(config, oraclePrice, T, price)
+                : _calcVp(config, oraclePrice, T, price)
+        );
+    }
+    
+    /// @dev 行权
+    /// @param optionAddress 期权合约地址
+    /// @param amount 结算的期权分数
+    function exercise(address optionAddress, uint amount) external payable override {
+
+        // 1. 获取期权信息
+        (
+            address tokenAddress, 
+            uint price, 
+            bool orientation, 
+            uint endblock
+        ) = FortOptionToken(optionAddress).getOptionInfo();
+
+        // TODO: 测试期间不检查
+        //require(block.number >= endblock, "FEO:at maturity");
+
+        // 2. 销毁期权代币
+        FortOptionToken(optionAddress).burn(msg.sender, amount);
+
+        // 3. 调用预言机获取价格，读取预言机在指定区块的价格
+        // 3.1. 获取token相对于eth的价格
+        uint tokenAmount = 1 ether;
+        uint fee = msg.value;
+        if (tokenAddress != address(0)) {
+            fee = msg.value >> 1;
+            (
+                ,//uint blockNumber, 
+                tokenAmount
+            ) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).findPrice {
+                value: fee
+            } (
+                tokenAddress, 
+                endblock,
+                msg.sender
+            );
+        }
+
+        // 3.2. 获取usdt相对于eth的价格
+        (
+            ,//uint blockNumber, 
+            uint usdtAmount
+        ) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).findPrice {
+            value: fee
+        } (
+            USDT_TOKEN_ADDRESS, 
+            endblock,
+            msg.sender
+        );
+
+        // 将token价格转化为以usdt为单位计算的价格
+        uint oraclePrice = usdtAmount * 10 ** (_getDecimals(tokenAddress)) / tokenAmount;
+        // 4. 分情况计算用户可以获得的fort数量
+        uint gain = 0;
+        // 计算结算结果
+        // 看涨期权
+        if (orientation) {
+            // 赌赢了
+            if (oraclePrice > price) {
+                gain = amount * (oraclePrice - price) / USDT_BASE;
+            }
+        } 
+        // 看跌期权
+        else {
+            // 赌赢了
+            if (oraclePrice < price) {
+                gain = amount * (price - oraclePrice) / USDT_BASE;
+            }
+        }
+
+        // 5. 用户赌赢了，给其增发赢得的fort
+        if (gain > 0) {
+            FortToken(FORT_TOKEN_ADDRESS).mint(msg.sender, gain);
+        }
+    }
+
+    // TODO: 测试方法，需要删掉
+    function log(string memory m, int v) private view {
+        if (v < 0) {
+            console.log(m, "-", uint(-v));
+        } else {
+            console.log(m, uint(v));
+        }
+    }
+
+    // 根据期权信息获取索引key
+    function _getKey(
+        address tokenAddress, 
+        uint price, 
+        bool orientation, 
+        uint endblock
+    ) private pure returns (bytes32) {
+        return keccak256(abi.encodePacked(tokenAddress, price, orientation, endblock));
+    }
+
+    // 对齐价格，保留7位有效数字
+    function _align(uint price) private pure returns (uint) {
+        uint decimals = 0;
+        while (price >= 10000000) {
+            price /= 10;
+            ++decimals;
+        }
+        return price * 10 ** decimals;
+    }
+
     // 获取代币的小数位数
     function _getDecimals(address tokenAddress) private view returns (uint) {
         if (tokenAddress == address(0)) {
@@ -133,10 +359,11 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         return uint(ERC20(tokenAddress).decimals());
     }
 
+    // TODO: 位了测试写成public的，部署时需要改为private的
     // C2.006-7ETH1000877
     // 那就7位有效数字 然后+-10的幂次
     // 最多或者6位也行 代币名称
-    function _getName(
+    function _optionName(
         string memory name, 
         uint price, 
         bool orientation, 
@@ -159,223 +386,58 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
 
         // 2. 期权方向，看涨C，看跌P
         if (orientation) {
-            re[index++] = bytes1(uint8(67));
+            //re[index++] = bytes1(uint8(67));
+            index = StringHelper.writeString(re, index, "C", 0, 1);
         } else {
-            re[index++] = bytes1(uint8(80));
+            //re[index++] = bytes1(uint8(80));
+            index = StringHelper.writeString(re, index, "P", 0, 1);
         }
 
         // 3. 期权行权价格
         // 3.1 行权价格整数部分
-        uint c = price / 1000000;
-        re[index++] = bytes1(uint8(48 + c));
-        re[index++] = bytes1(uint8(46));
+        //uint c = price / 1000000;
+        //re[index++] = bytes1(uint8(48 + c));
+        index = StringHelper.writeUIntDec(re, index, price / 1000000, 1);
+        //re[index++] = bytes1(uint8(46));
+        index = StringHelper.writeString(re, index, ".", 0, 1);
         // 3.2 行权价格小数部分
-        for (uint b = 1000000; b > 1; b /= 10) {
-            c = (price % b) / (b / 10);
-            re[index++] = bytes1(uint8(48 + c));
-        }
+        // for (uint b = 1000000; b > 1; b /= 10) {
+        //     c = (price % b) / (b / 10);
+        //     re[index++] = bytes1(uint8(48 + c));
+        // }
+        index = StringHelper.writeUIntDec(re, index, price % 1000000, 6);
+
         // 3.3 行权价格指数部分
         if (decimals < 6) {
-            re[index++] = bytes1(uint8(45));
             decimals = 6 - decimals;
+            //re[index++] = bytes1(uint8(45));
+            index = StringHelper.writeString(re, index, "-", 0, 1);
         } else {
-            re[index++] = bytes1(uint8(43));
             decimals = decimals - 6;
+            //re[index++] = bytes1(uint8(43));
+            index = StringHelper.writeString(re, index, "+", 0, 1);
         }
-        require(decimals < 10, "FEO:price to large");
-        re[index++] = bytes1(uint8(decimals + 48));
+        //require(decimals < 10, "FEO:price to large");
+        //re[index++] = bytes1(uint8(decimals + 48));
+        index = StringHelper.writeUIntDec(re, index, decimals, 1);
         
         // 4. 目标代币名称
-        bytes memory str = bytes(name);
-        for (uint i = 0; i < str.length; ++i) {
-            re[index++] = str[i];
-        }
+        // bytes memory str = bytes(name);
+        // for (uint i = 0; i < str.length; ++i) {
+        //     re[index++] = str[i];
+        // }
+        index = StringHelper.writeString(re, index, name, 0, 4);
 
         // 5. 行权区块号
-        str = bytes(StringHelper.toString(endblock, 1));
-        for (uint i = 0; i < str.length; ++i) {
-            re[index++] = str[i];
-        }
-
-        return string(re);
-    }
-
-    /// @dev 开仓
-    /// @param tokenAddress 目标代币地址，0表示eth
-    /// @param price 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
-    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
-    /// @param endblock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
-    /// @param fortAmount 支付的fort数量
-    function open(
-        address tokenAddress,
-        uint price,
-        bool orientation,
-        uint endblock,
-        uint fortAmount
-    ) external payable override {
-
-        Config memory config = _configs[tokenAddress];
-        require(uint(config.minPeriod) > 0, "FEO:not allowed");
-        require(fortAmount < 0x100000000000000000000000000000000, "FEO:fortAmount too large");
-        require(endblock > block.number + uint(config.minPeriod), "FEO:endblock to small");
-
-        // 1. 获取或创建期权代币
-        price = _align(price);
-        bytes32 key = _getKey(tokenAddress, price, orientation, endblock);
-        address option = _optionMapping[key];
-        if (option == address(0)) {
-            
-            // 生成代币名称
-            string memory name = _getName(
-                tokenAddress == address(0) ? "ETH" : StringHelper.substring(
-                    StringHelper.toUpper(ERC20(tokenAddress).symbol()),
-                    0,
-                    4
-                ),
-                price, 
-                orientation, 
-                endblock
-            );
-            // 生成期权代币合约
-            option = address(new FortOptionToken(
-                name,
-                name,
-                tokenAddress, 
-                price, 
-                orientation, 
-                endblock
-            ));
-            _optionMapping[key] = option;
-            _options.push(option);
-        }
-
-        // 2. 调用预言机获取价格
-        // 2.1 获取token相对于eth的价格
-        uint oraclePrice;
-        {
-            uint tokenAmount = 1 ether;
-            uint fee = msg.value;
-            if (tokenAddress != address(0)) {
-                fee = msg.value >> 1;
-                (
-                    ,//uint blockNumber, 
-                    tokenAmount,
-                    ,
-                    //uint sigmaSQ
-                ) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).triggeredPriceInfo {
-                    value: fee
-                } (
-                    tokenAddress, 
-                    msg.sender
-                );
-            }
-
-            // 2.2 获取usdt相对于eth的价格
-            (
-                ,//uint blockNumber, 
-                uint usdtAmount,
-                ,
-                //uint sigmaSQ
-            ) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).triggeredPriceInfo {
-                value: fee
-            } (
-                USDT_TOKEN_ADDRESS, 
-                msg.sender
-            );
-
-            // 将token价格转化为以usdt为单位计算的价格
-            oraclePrice = usdtAmount * 10 ** (_getDecimals(tokenAddress)) / tokenAmount;
-        }
-
-        // 3. 计算权利金（需要的fort数量）
-        // 按照平均每14秒出一个块计算
-        // TODO: 确定时间间隔，是从block.number算起，还是从预言机价格所在区块算起
-        uint T = (endblock - block.number) * 14;
-        // TODO: 测试代码
-        // TODO: 验证计算值，和C#代码比较
-        // TODO: 重新分析数据取值范围
-        //T = 1000 * 14;
-        // console.log("open-oraclePrice", oraclePrice);
-        // console.log("open-price", price);
-        // console.log("open-T", T);
-        // console.log("open-sigmaSQ", uint(config.sigmaSQ));
-        // {
-        //     uint vc = _calcVc(config, oraclePrice, T, price);
-        //     uint vp = _calcVp(config, oraclePrice, T, price);
-        //     console.log("open-vc", vc);
-        //     console.log("open-vp", vp);
+        // str = bytes(StringHelper.toString(endblock, 1));
+        // for (uint i = 0; i < str.length; ++i) {
+        //     re[index++] = str[i];
         // }
+        index = StringHelper.writeUIntDec(re, index, endblock, 1);
 
-        uint v;
-        // 看涨
-        if (orientation) {
-            v = _calcVc(config, oraclePrice, T, price);
-            // Vc>=S0*1%; Vp>=K*1%
-            require(v * 100 >= oraclePrice << 64, "FEO:vc must greater than S0*1%");
-        }
-        // 看跌
-        else {
-            v = _calcVp(config, oraclePrice, T, price);
-            // Vc>=S0*1%; Vp>=K*1%
-            require(v * 100 >= price << 64, "FEO:vp must greater than K*1%");
-        }
-        v = (fortAmount << 64) * USDT_BASE / v;
-        require(v > 0.1 ether, "FEO:at least 0.1");
-
-        // 4. 销毁权利金
-        FortToken(FORT_TOKEN_ADDRESS).burn(msg.sender, fortAmount);
-
-        // 5. 分发期权凭证
-        FortOptionToken(option).mint(msg.sender, v);
+        return string(StringHelper.segment(re, 0, index));
     }
 
-    /// @dev 预估开仓可以买到的期权币数量
-    /// @param tokenAddress 目标代币地址，0表示eth
-    /// @param price 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
-    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
-    /// @param endblock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
-    /// @param fortAmount 支付的fort数量
-    /// @param oraclePrice 当前预言机价格价
-    /// @return amount 预估可以获得的期权币数量
-    function estimate(
-        address tokenAddress,
-        uint oraclePrice,
-        uint price,
-        bool orientation,
-        uint endblock,
-        uint fortAmount
-    ) external view override returns (uint amount) {
-
-        Config memory config = _configs[tokenAddress];
-        require(uint(config.minPeriod) > 0, "FEO:not allowed");
-        require(fortAmount < 0x100000000000000000000000000000000, "FEO:fortAmount too large");
-        require(endblock > block.number + uint(config.minPeriod), "FEO:endblock to small");
-
-        // 1. 获取或创建期权代币
-        price = _align(price);
-        
-        // 2. 调用预言机获取价格
-        // 2.1 获取token相对于eth的价格
-
-        // 3. 计算权利金（需要的fort数量）
-        uint T = (endblock - block.number) * 14;
-
-        uint v;
-        // 看涨
-        if (orientation) {
-            v = _calcVc(config, oraclePrice, T, price);
-            // Vc>=S0*1%; Vp>=K*1%
-            require(v * 100 >= oraclePrice << 64, "FEO:vc must greater than S0*1%");
-        }
-        // 看跌
-        else {
-            v = _calcVp(config, oraclePrice, T, price);
-            // Vc>=S0*1%; Vp>=K*1%
-            require(v * 100 >= price << 64, "FEO:vp must greater than K*1%");
-        }
-        amount = (fortAmount << 64) * USDT_BASE / v;
-    }
-    
     // 将18位十进制定点数转化为64位二级制定点数
     function _d18TOb64(uint v) private pure returns (int128) {
         //require(v < 0x1000000000000000000000000000000000000000000000000, "FEO:value can't ROL 64bits");
@@ -393,59 +455,6 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     function _toUInt(int128 v) private pure returns (uint) {
         require(v >= 0, "FEO:can't convert to uint");
         return uint(int(v));
-    }
-
-    // 计算看涨期权价格
-    function _calcVc(Config memory config, uint S0, uint T, uint K) private pure returns (uint) {
-
-        int128 sigmaSQ_T = _d18TOb64(uint(config.sigmaSQ) * T);
-        int128 miu_T = _toInt128(uint(int(config.miu)) * T);
-        int128 sigma_t = ABDKMath64x64.sqrt(sigmaSQ_T);
-        int128 D1 = _D1(S0, K, sigmaSQ_T, miu_T);
-        int128 d = ABDKMath64x64.div(D1, sigma_t);
-
-        uint left = _toUInt(ABDKMath64x64.mul(
-            ABDKMath64x64.exp(miu_T), 
-            ABDKMath64x64.sub(
-                ONE,
-                _snd(ABDKMath64x64.sub(d, sigma_t))
-            )
-        )) * S0;
-        uint right = _toUInt(ABDKMath64x64.sub(ONE, _snd(d))) * K;
-
-        return left - right;
-    }
-
-    // 计算看跌期权价格
-    function _calcVp(Config memory config, uint S0, uint T, uint K) private pure returns (uint) {
-
-        int128 sigmaSQ_T = _d18TOb64(uint(config.sigmaSQ) * T);
-        int128 miu_T = _toInt128(uint(int(config.miu)) * T);
-        int128 sigma_t = ABDKMath64x64.sqrt(sigmaSQ_T);
-        int128 D1 = _D1(S0, K, sigmaSQ_T, miu_T);
-        int128 d = ABDKMath64x64.div(D1, sigma_t);
-
-        uint left = _toUInt(_snd(d)) * K;
-        uint right = _toUInt(ABDKMath64x64.mul(
-            ABDKMath64x64.exp(miu_T), 
-            _snd(ABDKMath64x64.sub(d, sigma_t))
-        )) * S0;
-
-        return left - right;
-    }
-
-    // 计算公式种的d1，因为没有除以σ，所以命名为D1
-    function _D1(uint S0, uint K, int128 sigmaSQ_T, int128 miu_T) private pure returns (int128) {
-
-        require(K < 0x1000000000000000000000000000000000000000000000000, "FEO:K can't ROL 64bits");
-        return
-            ABDKMath64x64.sub(
-                ABDKMath64x64.add(
-                    ABDKMath64x64.ln(_toInt128((K << 64) / S0)),
-                    sigmaSQ_T >> 1
-                ),
-                miu_T
-            );
     }
 
     // 通过查表的方法计算标准正态分布函数
@@ -562,87 +571,60 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         return int128(int(v / 100000));
     }
 
-    /// @dev 行权
-    /// @param optionAddress 期权合约地址
-    /// @param amount 结算的期权分数
-    function exercise(address optionAddress, uint amount) external payable override {
+    // 计算看涨期权价格
+    function _calcVc(Config memory config, uint S0, uint T, uint K) private pure returns (uint) {
 
-        // 1. 获取期权信息
-        (
-            address tokenAddress, 
-            uint price, 
-            bool orientation, 
-            uint endblock
-        ) = FortOptionToken(optionAddress).getOptionInfo();
+        int128 sigmaSQ_T = _d18TOb64(uint(config.sigmaSQ) * T);
+        int128 miu_T = _toInt128(uint(int(config.miu)) * T);
+        int128 sigma_t = ABDKMath64x64.sqrt(sigmaSQ_T);
+        int128 D1 = _D1(S0, K, sigmaSQ_T, miu_T);
+        int128 d = ABDKMath64x64.div(D1, sigma_t);
 
-        // TODO: 测试期间不检查
-        //require(block.number >= endblock, "FEO:at maturity");
-
-        // 2. 销毁期权代币
-        FortOptionToken(optionAddress).burn(msg.sender, amount);
-
-        // 3. 调用预言机获取价格，读取预言机在指定区块的价格
-        // 3.1 获取token相对于eth的价格
-        uint tokenAmount = 1 ether;
-        uint fee = msg.value;
-        if (tokenAddress != address(0)) {
-            fee = msg.value >> 1;
-            (
-                ,//uint blockNumber, 
-                tokenAmount
-            ) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).findPrice {
-                value: fee
-            } (
-                tokenAddress, 
-                endblock,
-                msg.sender
-            );
-        }
-
-        // 3.2 获取usdt相对于eth的价格
-        (
-            ,//uint blockNumber, 
-            uint usdtAmount
-        ) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).findPrice {
-            value: fee
-        } (
-            USDT_TOKEN_ADDRESS, 
-            endblock,
-            msg.sender
-        );
-
-        // 将token价格转化为以usdt为单位计算的价格
-        uint oraclePrice = usdtAmount * 10 ** (_getDecimals(tokenAddress)) / tokenAmount;
-        // 4. 分情况计算用户可以获得的fort数量
-        uint gain = 0;
-        // 计算结算结果
-        // 看涨期权
-        if (orientation) {
-            // 赌赢了
-            if (oraclePrice > price) {
-                gain = amount * (oraclePrice - price) / USDT_BASE;
-            }
-        } 
-        // 看跌期权
-        else {
-            // 赌赢了
-            if (oraclePrice < price) {
-                gain = amount * (price - oraclePrice) / USDT_BASE;
-            }
-        }
-
-        // 5. 用户赌赢了，给其增发赢得的fort
-        if (gain > 0) {
-            FortToken(FORT_TOKEN_ADDRESS).mint(msg.sender, gain);
-        }
+        uint left = _toUInt(ABDKMath64x64.mul(
+            ABDKMath64x64.exp(miu_T), 
+            ABDKMath64x64.sub(
+                ONE,
+                _snd(ABDKMath64x64.sub(d, sigma_t))
+            )
+        )) * S0;
+        uint right = _toUInt(ABDKMath64x64.sub(ONE, _snd(d))) * K;
+        
+        // Vc>=S0*1%; Vp>=K*1%
+        require((left - right) * 100 >= S0 << 64, "FEO:vc must greater than S0*1%");
+        return left - right;
     }
 
-    // TODO: 测试方法，需要删掉
-    function log(string memory m, int v) private view {
-        if (v < 0) {
-            console.log(m, "-", uint(-v));
-        } else {
-            console.log(m, uint(v));
-        }
+    // 计算看跌期权价格
+    function _calcVp(Config memory config, uint S0, uint T, uint K) private pure returns (uint) {
+
+        int128 sigmaSQ_T = _d18TOb64(uint(config.sigmaSQ) * T);
+        int128 miu_T = _toInt128(uint(int(config.miu)) * T);
+        int128 sigma_t = ABDKMath64x64.sqrt(sigmaSQ_T);
+        int128 D1 = _D1(S0, K, sigmaSQ_T, miu_T);
+        int128 d = ABDKMath64x64.div(D1, sigma_t);
+
+        uint left = _toUInt(_snd(d)) * K;
+        uint right = _toUInt(ABDKMath64x64.mul(
+            ABDKMath64x64.exp(miu_T), 
+            _snd(ABDKMath64x64.sub(d, sigma_t))
+        )) * S0;
+
+        // Vc>=S0*1%; Vp>=K*1%
+        require((left - right) * 100 >= K << 64, "FEO:vp must greater than K*1%");
+        return left - right;
+    }
+
+    // 计算公式种的d1，因为没有除以σ，所以命名为D1
+    function _D1(uint S0, uint K, int128 sigmaSQ_T, int128 miu_T) private pure returns (int128) {
+
+        require(K < 0x1000000000000000000000000000000000000000000000000, "FEO:K can't ROL 64bits");
+        return
+            ABDKMath64x64.sub(
+                ABDKMath64x64.add(
+                    ABDKMath64x64.ln(_toInt128((K << 64) / S0)),
+                    sigmaSQ_T >> 1
+                ),
+                miu_T
+            );
     }
 }
