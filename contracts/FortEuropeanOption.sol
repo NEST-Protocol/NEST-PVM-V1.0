@@ -40,13 +40,6 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     constructor() {
     }
 
-    function test() external view {
-         console.log("test-str", StringHelper.dec(StringHelper.enc(bytes("ChenFei"))));
-         bytes memory buffer = new bytes(128);
-         StringHelper.sprintf(buffer, 0, bytes("a=%x, b=%6d, na%%me=%s, d=%d"), [uint(100),200, StringHelper.enc("ChenFang"), 400,0,0,0]);
-         console.log("printf:", string(buffer));
-    }
-
     /// @dev Modify configuration
     /// @param tokenAddress 目标代币地址
     /// @param config Configuration object
@@ -174,7 +167,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
             
             // 生成期权代币名称
             string memory name = _optionName(
-                tokenAddress == address(0) ? "ETH" : StringHelper.toUpper(ERC20(tokenAddress).symbol()),
+                tokenAddress == address(0) ? "ETH" : ERC20(tokenAddress).symbol(),
                 price, 
                 orientation, 
                 endblock
@@ -236,16 +229,13 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         // TODO: 验证计算值，和C#代码比较
         // TODO: 重新分析数据取值范围
         //T = 1000 * 14;
-        // console.log("open-oraclePrice", oraclePrice);
-        // console.log("open-price", price);
-        // console.log("open-T", T);
-        // console.log("open-sigmaSQ", uint(config.sigmaSQ));
-        // {
-        //     uint vc = _calcVc(config, oraclePrice, T, price);
-        //     uint vp = _calcVp(config, oraclePrice, T, price);
-        //     console.log("open-vc", vc);
-        //     console.log("open-vp", vp);
-        // }
+        
+        // console.log(StringHelper.sprintf("open-oraclePrice=%6f", oraclePrice));
+        // console.log(StringHelper.sprintf("open-price=%6f", price));
+        // console.log(StringHelper.sprintf("open-T=%u", T));
+        // console.log(StringHelper.sprintf("open-sigmaSQ=%18f", uint(config.sigmaSQ)));
+        // console.log(StringHelper.sprintf("open-Vc=%18f", _calcVc(config, oraclePrice, T, price) * 1 ether >> 64));
+        // console.log(StringHelper.sprintf("open-Vp=%18f", _calcVp(config, oraclePrice, T, price) * 1 ether >> 64));
 
         amount = (USDT_BASE << 64) * fortAmount / (
             orientation 
@@ -329,15 +319,6 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         }
     }
 
-    // TODO: 测试方法，需要删掉
-    function log(string memory m, int v) private view {
-        if (v < 0) {
-            console.log(m, "-", uint(-v));
-        } else {
-            console.log(m, uint(v));
-        }
-    }
-
     // 根据期权信息获取索引key
     function _getKey(
         address tokenAddress, 
@@ -378,7 +359,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     ) public pure returns (string memory) {
 
         // 1. 将价格保留7位有效数字，并计算指数部分
-        uint decimals = 6;
+        int decimals = 0;
         while (price < 1000000) {
             price = price * 10;
             --decimals;
@@ -388,12 +369,10 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
             ++decimals;
         }
 
-        return StringHelper.sprintf("%s%d.%6d%s%d%4s%d", [
+        return StringHelper.sprintf("%s%6f%d%4S%u", [
             StringHelper.enc(bytes(orientation ? "C" : "P")),
-            price / 1000000,
-            price % 1000000,
-            StringHelper.enc(bytes(decimals < 6 ? "-" : "+")),
-            decimals < 6 ? 6 - decimals : decimals - 6,
+            price,
+            uint(decimals),
             StringHelper.enc(bytes(name)),
             endblock
         ]);
