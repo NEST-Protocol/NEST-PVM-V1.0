@@ -18,6 +18,7 @@ describe('FortEuropeanOption', function() {
         await nestPriceFacade.setPrice(hbtc.address, '74000000000000000', 1);
         await nestPriceFacade.setPrice(usdt.address, '3510000000', 1);
 
+        await fortEuropeanOption.test();
         const BLOCK = 100000;
         await fortEuropeanOption.open(eth.address, '2450000000', true, BLOCK, toBigInt(1000), {
             value: toBigInt(0.01)

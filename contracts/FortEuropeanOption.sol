@@ -40,6 +40,13 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     constructor() {
     }
 
+    function test() external view {
+         console.log("test-str", StringHelper.dec(StringHelper.enc(bytes("ChenFei"))));
+         bytes memory buffer = new bytes(128);
+         StringHelper.sprintf(buffer, 0, bytes("a=%x, b=%6d, na%%me=%s, d=%d"), [uint(100),200, StringHelper.enc("ChenFang"), 400,0,0,0]);
+         console.log("printf:", string(buffer));
+    }
+
     /// @dev Modify configuration
     /// @param tokenAddress 目标代币地址
     /// @param config Configuration object
@@ -370,9 +377,6 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         uint endblock
     ) public pure returns (string memory) {
 
-        bytes memory re = new bytes(31);
-        uint index = 0;
-
         // 1. 将价格保留7位有效数字，并计算指数部分
         uint decimals = 6;
         while (price < 1000000) {
@@ -384,58 +388,71 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
             ++decimals;
         }
 
-        // 2. 期权方向，看涨C，看跌P
-        if (orientation) {
-            //re[index++] = bytes1(uint8(67));
-            index = StringHelper.writeString(re, index, "C", 0, 1);
-        } else {
-            //re[index++] = bytes1(uint8(80));
-            index = StringHelper.writeString(re, index, "P", 0, 1);
-        }
-
-        // 3. 期权行权价格
-        // 3.1 行权价格整数部分
-        //uint c = price / 1000000;
-        //re[index++] = bytes1(uint8(48 + c));
-        index = StringHelper.writeUIntDec(re, index, price / 1000000, 1);
-        //re[index++] = bytes1(uint8(46));
-        index = StringHelper.writeString(re, index, ".", 0, 1);
-        // 3.2 行权价格小数部分
-        // for (uint b = 1000000; b > 1; b /= 10) {
-        //     c = (price % b) / (b / 10);
-        //     re[index++] = bytes1(uint8(48 + c));
-        // }
-        index = StringHelper.writeUIntDec(re, index, price % 1000000, 6);
-
-        // 3.3 行权价格指数部分
-        if (decimals < 6) {
-            decimals = 6 - decimals;
-            //re[index++] = bytes1(uint8(45));
-            index = StringHelper.writeString(re, index, "-", 0, 1);
-        } else {
-            decimals = decimals - 6;
-            //re[index++] = bytes1(uint8(43));
-            index = StringHelper.writeString(re, index, "+", 0, 1);
-        }
-        //require(decimals < 10, "FEO:price to large");
-        //re[index++] = bytes1(uint8(decimals + 48));
-        index = StringHelper.writeUIntDec(re, index, decimals, 1);
+        return StringHelper.sprintf("%s%d.%6d%s%d%4s%d", [
+            StringHelper.enc(bytes(orientation ? "C" : "P")),
+            price / 1000000,
+            price % 1000000,
+            StringHelper.enc(bytes(decimals < 6 ? "-" : "+")),
+            decimals < 6 ? 6 - decimals : decimals - 6,
+            StringHelper.enc(bytes(name)),
+            endblock
+        ]);
         
-        // 4. 目标代币名称
-        // bytes memory str = bytes(name);
-        // for (uint i = 0; i < str.length; ++i) {
-        //     re[index++] = str[i];
-        // }
-        index = StringHelper.writeString(re, index, name, 0, 4);
+        // bytes memory re = new bytes(31);
+        // uint index = 0;
 
-        // 5. 行权区块号
-        // str = bytes(StringHelper.toString(endblock, 1));
-        // for (uint i = 0; i < str.length; ++i) {
-        //     re[index++] = str[i];
+        // // 2. 期权方向，看涨C，看跌P
+        // if (orientation) {
+        //     //re[index++] = bytes1(uint8(67));
+        //     index = StringHelper.writeString(re, index, "C", 0, 1);
+        // } else {
+        //     //re[index++] = bytes1(uint8(80));
+        //     index = StringHelper.writeString(re, index, "P", 0, 1);
         // }
-        index = StringHelper.writeUIntDec(re, index, endblock, 1);
 
-        return string(StringHelper.segment(re, 0, index));
+        // // 3. 期权行权价格
+        // // 3.1 行权价格整数部分
+        // //uint c = price / 1000000;
+        // //re[index++] = bytes1(uint8(48 + c));
+        // index = StringHelper.writeUIntDec(re, index, price / 1000000, 1);
+        // //re[index++] = bytes1(uint8(46));
+        // index = StringHelper.writeString(re, index, ".", 0, 1);
+        // // 3.2 行权价格小数部分
+        // // for (uint b = 1000000; b > 1; b /= 10) {
+        // //     c = (price % b) / (b / 10);
+        // //     re[index++] = bytes1(uint8(48 + c));
+        // // }
+        // index = StringHelper.writeUIntDec(re, index, price % 1000000, 6);
+
+        // // 3.3 行权价格指数部分
+        // if (decimals < 6) {
+        //     decimals = 6 - decimals;
+        //     //re[index++] = bytes1(uint8(45));
+        //     index = StringHelper.writeString(re, index, "-", 0, 1);
+        // } else {
+        //     decimals = decimals - 6;
+        //     //re[index++] = bytes1(uint8(43));
+        //     index = StringHelper.writeString(re, index, "+", 0, 1);
+        // }
+        // //require(decimals < 10, "FEO:price to large");
+        // //re[index++] = bytes1(uint8(decimals + 48));
+        // index = StringHelper.writeUIntDec(re, index, decimals, 1);
+        
+        // // 4. 目标代币名称
+        // // bytes memory str = bytes(name);
+        // // for (uint i = 0; i < str.length; ++i) {
+        // //     re[index++] = str[i];
+        // // }
+        // index = StringHelper.writeString(re, index, name, 0, 4);
+
+        // // 5. 行权区块号
+        // // str = bytes(StringHelper.toString(endblock, 1));
+        // // for (uint i = 0; i < str.length; ++i) {
+        // //     re[index++] = str[i];
+        // // }
+        // index = StringHelper.writeUIntDec(re, index, endblock, 1);
+
+        // return string(StringHelper.segment(re, 0, index));
     }
 
     // 将18位十进制定点数转化为64位二级制定点数

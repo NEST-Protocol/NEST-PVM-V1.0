@@ -89,21 +89,31 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         //     StringHelper.toString(lever, 1)
         // );
 
-        bytes memory buf = new bytes(31);
-        uint index = 0;
-        index = StringHelper.writeString(
-            buf,
-            index,
-            tokenAddress == address(0) ? "ETH" : StringHelper.toUpper(ERC20(tokenAddress).symbol()),
-            0, 
-            4
-        );
-        index = StringHelper.writeString(buf, index, orientation ? "/USDT+F" : "/USDT-F", 0, 7);
-        index = StringHelper.writeUIntDec(buf, index, lever, 1);
-        string memory name = string(StringHelper.segment(buf, 0, index));
+        // bytes memory buf = new bytes(31);
+        // uint index = 0;
+        // index = StringHelper.writeString(
+        //     buf,
+        //     index,
+        //     tokenAddress == address(0) ? "ETH" : StringHelper.toUpper(ERC20(tokenAddress).symbol()),
+        //     0, 
+        //     4
+        // );
+        // index = StringHelper.writeString(buf, index, orientation ? "/USDT+F" : "/USDT-F", 0, 7);
+        // index = StringHelper.writeUIntDec(buf, index, lever, 1);
+        // string memory name = string(StringHelper.segment(buf, 0, index));
 
         leverAddress = address(new FortLeverToken(
-            name,
+            //name,
+            StringHelper.sprintf("%4s/USDT%sF%d", [
+                StringHelper.enc(bytes(
+                    tokenAddress == address(0) 
+                        ? "ETH" 
+                        : StringHelper.toUpper(ERC20(tokenAddress).symbol())
+                )),
+                StringHelper.enc(bytes(orientation ? "+" : "-")),
+                lever,
+                0, 0, 0, 0
+            ]),
             USDT_TOKEN_ADDRESS,
             tokenAddress, 
             lever, 

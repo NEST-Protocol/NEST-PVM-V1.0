@@ -11,6 +11,7 @@
         "keccak",
         "math",
         "spdx",
+        "sprintf",
         "staking",
         "staking xtoken",
         "string",

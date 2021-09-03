@@ -213,4 +213,136 @@ library StringHelper {
         }
         return re;
     }
+
+    /// @dev 将参数按照格式化字符串指定的内容解析并输出
+    /// @param format 格式化描述字符串
+    /// @param args 参数表（字符串需要使用StringHelper.enc进行编码，并且长度不能超过31）
+    /// @return 格式化结果
+    function sprintf(string memory format, uint[7] memory args) internal pure returns (string memory) {
+        bytes memory buffer = new bytes(31);
+        uint index = sprintf(buffer, 0, bytes(format), args);
+        return string(segment(buffer, 0, index));
+    }
+
+    /// @dev 将参数按照格式化字符串指定的内容解析并输出到内存数组的指定位置
+    /// @param buffer 目标内存数组
+    /// @param index 目标内存数组起始位置
+    /// @param format 格式化描述字符串
+    /// @param args 参数表（字符串需要使用StringHelper.enc进行编码，并且长度不能超过31）
+    /// @return 写入后的新的内存数组偏移位置
+    function sprintf(
+        bytes memory buffer, 
+        uint index, 
+        bytes memory format, 
+        uint[7] memory args
+    ) internal pure returns (uint) {
+
+        uint i = 0;
+        uint pi = 0;
+        uint ai = 0;
+        uint state = 0;
+        uint w = 32;
+
+        while (i < format.length) {
+            uint c = uint(uint8(format[i]));
+			// 0 正常                                             
+            if (state == 0) {
+                // %
+                if (c == 37) {
+                    while (pi < i) {
+                        buffer[index++] = format[pi++];
+                    }
+                    state = 1;
+                }
+                ++i;
+                continue;
+            }
+			// 1, 确认是否有 -
+            else if (state == 1) {
+                // %
+                if (c == 37) {
+                    buffer[index++] = bytes1(uint8(37));
+                    pi = ++i;
+                    state = 0;
+                    continue;
+                }
+                // -
+                if (c == 45) {
+                    ++i;
+                }
+                state = 2;
+                continue;
+            }
+			// 2, 确认是否有 0  
+            else if (state == 2) {
+                if (c == 48) {
+                    ++i;
+                }
+                state = 3;
+                continue;
+            }
+			// 3 找数据宽度
+            else if (state == 3) {
+                // 宽度暂时只支持一位数字
+                if (c >= 48 && c <= 57) {
+                    w = c - 48;
+                    ++i;
+                }
+                state = 4;
+                continue;
+            }
+            // 4, 找格式类型   
+			else if (state == 4) {
+                uint arg = args[ai++];
+                // d
+                if (c == 100) {
+                    index = writeUIntDec(buffer, index, arg, w == 32 ? 1 : w);
+                }
+                // x
+                else if (c == 120) {
+                    index = writeUIntHex(buffer, index, arg, w == 32 ? 1 : w);
+                }
+                // s
+                else if (c == 115) {
+                    index = writeString(buffer, index, dec(arg), 0, w);
+                }
+                pi = ++i;
+                state = 0;
+                w = 32;
+            }
+        }
+
+        while (pi < i) {
+            buffer[index++] = format[pi++];
+        }
+
+        return index;
+    }
+
+    /// @dev 将字符串编码成uint（字符串长度不能超过31）
+    /// @param str 目标字符串
+    /// @return 编码结果
+    function enc(bytes memory str) internal pure returns (uint) {
+        uint i = str.length;
+        require(i < 32, "StringHelper:string too long");
+        uint v = 0;
+        while (i > 0) {
+            v = (v << 8) | uint(uint8(str[--i]));
+        }
+        return (v << 8) | str.length;
+    }
+
+    /// @dev 将使用enc编码的uint解码成字符串
+    /// @param v 使用enc编码过的字符串
+    /// @return 解码结果
+    function dec(uint v) internal pure returns (string memory) {
+        uint length = v & 0xFF;
+        v >>= 8;
+        bytes memory buffer = new bytes(length);
+        for (uint i = 0; i < length;) {
+            buffer[i++] = bytes1(uint8(v & 0xFF));
+            v >>= 8;
+        }
+        return string(buffer);
+    }
 }
