@@ -44,8 +44,7 @@ describe('FortEuropeanOption', function() {
         await fortEuropeanOption.exercise(bot.address, await bot.balanceOf(owner.address), {
             value: toBigInt(0.01)
         });
-        console.log('_getName(uint price, bool orientation, uint endblock)=[' + await fortEuropeanOption._optionName(
-            'USDT', 1234567890123, false, 99999) + ']');
+
         console.log('owner: ' + toDecimal(await fort.balanceOf(owner.address)) + 'fort');
         console.log('owner: ' + toDecimal(await bot.balanceOf(owner.address)) + 'bot');
 

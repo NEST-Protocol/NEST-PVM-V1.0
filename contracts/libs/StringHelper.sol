@@ -321,7 +321,7 @@ library StringHelper {
                     state = 1;
                 }
                 ++i;
-                continue;
+                //continue;
             }
 			// 1, 确认是否有 -
             else if (state == 1) {
@@ -330,15 +330,16 @@ library StringHelper {
                     buffer[index++] = bytes1(uint8(37));
                     pi = ++i;
                     state = 0;
-                    continue;
+                    //continue;
+                } else {
+                    // // -
+                    // if (c == 45) {
+                    //     ++i;
+                    // }
+                    // state = 2;
+                    state = 3;
+                    //continue;
                 }
-                // // -
-                // if (c == 45) {
-                //     ++i;
-                // }
-                // state = 2;
-                state = 3;
-                continue;
             }
 			// // 2, 确认是否有 0  
             // else if (state == 2) {
@@ -355,7 +356,7 @@ library StringHelper {
                     c = uint(uint8(format[++i]));
                 }
                 state = 4;
-                continue;
+                //continue;
             }
             // 4, 找格式类型   
 			else if (state == 4) {
@@ -465,7 +466,7 @@ library StringHelper {
             v >>= 8;
             --length;
         }
-        
+
         return index;
     }
 }

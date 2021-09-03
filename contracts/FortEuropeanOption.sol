@@ -356,16 +356,16 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         uint price, 
         bool orientation, 
         uint endblock
-    ) public pure returns (string memory) {
+    ) private pure returns (string memory) {
 
         // 1. 将价格保留7位有效数字，并计算指数部分
         int decimals = 0;
         while (price < 1000000) {
-            price = price * 10;
+            price *= 10;
             --decimals;
         }
         while (price >= 10000000) {
-            price = price / 10;
+            price /= 10;
             ++decimals;
         }
 
