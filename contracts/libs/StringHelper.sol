@@ -5,45 +5,6 @@ pragma solidity ^0.8.6;
 /// @dev 字符串工具
 library StringHelper {
 
-    /// @dev 连接两个字符串
-    /// @param a 字符串a
-    /// @param b 字符串b
-    /// @return 连接后的字符串
-    function stringConcat(string memory a, string memory b) internal pure returns (string memory)
-    {
-        bytes memory ba = bytes(a);
-        bytes memory bb = bytes(b);
-        string memory ret = new string(ba.length + bb.length);
-        bytes memory bret = bytes(ret);
-        uint k = 0;
-        for (uint i = 0; i < ba.length; ++i) {
-            bret[k++] = ba[i];
-        } 
-        for (uint i = 0; i < bb.length; ++i) {
-            bret[k++] = bb[i];
-        } 
-        return string(ret);
-    } 
-    
-    /// @dev 将整形转化为字符串，如果长度小于指定长度，则在前面补0
-    /// @param iv 要转化的整形值
-    /// @param minLength 最小长度
-    /// @return 转化结果字符串
-    function toString(uint iv, uint minLength) internal pure returns (string memory) 
-    {
-        bytes memory buffer = new bytes(64);
-        uint index = 0;
-        while (iv > 0 || index < minLength) {
-            buffer[index++] = bytes1(uint8(iv % 10 + 48));
-            iv /= 10;
-        }
-        bytes memory str = new bytes(index);
-        for(uint i = 0; i < index; ++i) {
-            str[i] = buffer[index - i - 1];
-        }
-        return string(str);
-    }
-
     /// @dev 将字符串转为大写形式
     /// @param str 目标字符串
     /// @return 目标字符串的大写
@@ -161,15 +122,23 @@ library StringHelper {
     /// @param index 目标内存数组起始位置
     /// @param iv 要转化的整形值
     /// @param minLength 最小长度
+    /// @param upper 是否大写
     /// @return 写入后的新的内存数组偏移位置
-    function writeUIntHex(bytes memory buffer, uint index, uint iv, uint minLength) internal pure returns (uint) 
+    function writeUIntHex(
+        bytes memory buffer, 
+        uint index, 
+        uint iv, 
+        uint minLength, 
+        bool upper
+    ) internal pure returns (uint) 
     {
         uint i = index;
+        uint B = upper ? 55 : 87;
         minLength += index;
         while (iv > 0 || index < minLength) {
             uint c = iv & 0xF;
             if (c > 9) {
-                buffer[index++] = bytes1(uint8(c + 87));
+                buffer[index++] = bytes1(uint8(c + B));
             } else {
                 buffer[index++] = bytes1(uint8(c + 48));
             }
@@ -375,9 +344,9 @@ library StringHelper {
                 if (c == 117) {
                     index = writeUIntDec(buffer, index, arg, w == 0 ? 1 : w);
                 }
-                // x
-                else if (c == 120) {
-                    index = writeUIntHex(buffer, index, arg, w == 0 ? 1 : w);
+                // x/X
+                else if (c == 120 || c == 88) {
+                    index = writeUIntHex(buffer, index, arg, w == 0 ? 1 : w, c == 88);
                 }
                 // s/S
                 else if (c == 115 || c == 83) {
@@ -407,16 +376,16 @@ library StringHelper {
     /// @dev 将字符串编码成uint（字符串长度不能超过31）
     /// @param str 目标字符串
     /// @return 编码结果
-    function enc(bytes memory str) internal pure returns (uint) {
+    function enc(string memory str) internal pure returns (uint) {
 
-        uint i = str.length;
+        uint i = bytes(str).length;
         require(i < 32, "StringHelper:string too long");
         uint v = 0;
         while (i > 0) {
-            v = (v << 8) | uint(uint8(str[--i]));
+            v = (v << 8) | uint(uint8(bytes(str)[--i]));
         }
 
-        return (v << 8) | str.length;
+        return (v << 8) | bytes(str).length;
     }
 
     // /// @dev 将使用enc编码的uint解码成字符串
