@@ -369,13 +369,13 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
             ++decimals;
         }
 
-        return StringHelper.sprintf("%s%6f%d%4S%u", [
-            StringHelper.enc((orientation ? "C" : "P")),
+        return StringHelper.sprintf("%s%6f%d%4S%u", abi.encode(
+            orientation ? "C" : "P",
             price,
             uint(decimals),
-            StringHelper.enc((name)),
+            name,
             endblock
-        ]);
+        ));
         
         // bytes memory re = new bytes(31);
         // uint index = 0;

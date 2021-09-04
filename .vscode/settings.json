@@ -10,6 +10,7 @@
         "hbtc",
         "keccak",
         "math",
+        "mload",
         "spdx",
         "sprintf",
         "staking",

@@ -438,4 +438,190 @@ library StringHelper {
 
         return index;
     }
+
+    // ******** 使用abi编码解决动态参数问题 ******** //
+
+    /// @dev 将参数按照格式化字符串指定的内容解析并输出
+    /// @param format 格式化描述字符串
+    /// @param abiArgs 使用abi.encode()编码的参数数组
+    /// @return 格式化结果
+    function sprintf(string memory format, bytes memory abiArgs) internal pure returns (string memory) {
+        bytes memory buffer = new bytes(63);
+        uint index = sprintf(buffer, 0, bytes(format), abiArgs);
+        return string(segment(buffer, 0, index));
+    }
+
+    /// @dev 将参数按照格式化字符串指定的内容解析并输出到内存数组的指定位置
+    /// @param buffer 目标内存数组
+    /// @param index 目标内存数组起始位置
+    /// @param format 格式化描述字符串
+    /// @param abiArgs 使用abi.encode()编码的参数数组
+    /// @return 写入后的新的内存数组偏移位置
+    function sprintf(
+        bytes memory buffer, 
+        uint index, 
+        bytes memory format, 
+        bytes memory abiArgs
+    ) internal pure returns (uint) {
+
+        uint i = 0;
+        uint pi = 0;
+        uint ai = 0;
+        uint state = 0;
+        uint w = 0;
+
+        while (i < format.length) {
+            uint c = uint(uint8(format[i]));
+			// 0 正常                                             
+            if (state == 0) {
+                // %
+                if (c == 37) {
+                    while (pi < i) {
+                        buffer[index++] = format[pi++];
+                    }
+                    state = 1;
+                }
+                ++i;
+                //continue;
+            }
+			// 1, 确认是否有 -
+            else if (state == 1) {
+                // %
+                if (c == 37) {
+                    buffer[index++] = bytes1(uint8(37));
+                    pi = ++i;
+                    state = 0;
+                    //continue;
+                } else {
+                    // // -
+                    // if (c == 45) {
+                    //     ++i;
+                    // }
+                    // state = 2;
+                    state = 3;
+                    //continue;
+                }
+            }
+			// // 2, 确认是否有 0  
+            // else if (state == 2) {
+            //     if (c == 48) {
+            //         ++i;
+            //     }
+            //     state = 3;
+            //     continue;
+            // }
+			// 3 找数据宽度
+            else if (state == 3) {
+                while (c >= 48 && c <= 57) {
+                    w = w * 10 + c - 48;
+                    c = uint(uint8(format[++i]));
+                }
+                state = 4;
+                //continue;
+            }
+            // 4, 找格式类型   
+			else if (state == 4) {
+                uint arg = abiReadUInt(abiArgs, ai);
+                // d
+                if (c == 100) {
+                    if (arg >> 255 == 1) {
+                        buffer[index++] = bytes1(uint8(45));
+                        arg = uint(-int(arg));
+                    } else {
+                        buffer[index++] = bytes1(uint8(43));
+                    }
+                    c = 117;
+                }
+                // u
+                if (c == 117) {
+                    index = writeUIntDec(buffer, index, arg, w == 0 ? 1 : w);
+                }
+                // x/X
+                else if (c == 120 || c == 88) {
+                    index = writeUIntHex(buffer, index, arg, w == 0 ? 1 : w, c == 88);
+                }
+                // s/S
+                else if (c == 115 || c == 83) {
+                    index = writeAbiString(buffer, index, abiArgs, arg, w == 0 ? 31 : w, c == 83 ? 1 : 0);
+                }
+                // f
+                else if (c == 102) {
+                    if (arg >> 255 == 1) {
+                        buffer[index++] = bytes1(uint8(45));
+                        arg = uint(-int(arg));
+                    }
+                    index = writeFloat(buffer, index, arg, w == 0 ? 8 : w);
+                }
+                pi = ++i;
+                state = 0;
+                w = 0;
+                ai += 32;
+            }
+        }
+
+        while (pi < i) {
+            buffer[index++] = format[pi++];
+        }
+
+        return index;
+    }
+
+    /// @dev 从abi编码的数据中的指定位置解码uint
+    /// @param data abi编码的数据
+    /// @param index 目标字符串在abi编码中的起始位置
+    /// @return v 解码结果
+    function abiReadUInt(bytes memory data, uint index) internal pure returns (uint v) {
+        // uint v = 0;
+        // for (uint i = 0; i < 32; ++i) {
+        //     v = (v << 8) | uint(uint8(data[index + i]));
+        // }
+        // return v;
+        assembly {
+            v := mload(add(add(data, 0x20), index))
+        }
+    }
+
+    /// @dev 从abi编码的数据中的指定位置解码字符串
+    /// @param data abi编码的数据
+    /// @param index 目标字符串在abi编码中的起始位置
+    /// @return 解码结果
+    function abiReadString(bytes memory data, uint index) internal pure returns (string memory) {
+        return string(segment(data, index + 32, abiReadUInt(data, index)));
+    }
+
+    /// @dev 从abi编码的数据中的指定位置解码字符串并写入内存数组
+    /// @param buffer 目标内存数组
+    /// @param index 目标内存数组起始位置
+    /// @param data 目标字符串
+    /// @param start 字符串数据在data中的开始位置
+    /// @param count 截取长度（如果长度不够，则取剩余长度）
+    /// @param charCase 字符的大小写，0不改变，1大小，2小写
+    /// @return 写入后的新的内存数组偏移位置
+    function writeAbiString(
+        bytes memory buffer, 
+        uint index, 
+        bytes memory data, 
+        uint start, 
+        uint count,
+        uint charCase
+    ) internal pure returns (uint) 
+    {
+        uint length = abiReadUInt(data, start);
+        if (count > length) {
+            count = length;
+        }
+        uint i = 0;
+        start += 32;
+        while (i < count) {
+            uint c = uint(uint8(data[start + i]));
+            if (charCase == 1 && c >= 97 && c <= 122) {
+                c -= 32;
+            } else if (charCase == 2 && c >= 65 && c <= 90) {
+                c -= 32;
+            }
+            buffer[index + i] = bytes1(uint8(data[start + i]));
+            ++i;
+        }
+        return index + i;
+    }
 }

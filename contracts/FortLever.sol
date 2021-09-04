@@ -104,12 +104,12 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
 
         leverAddress = address(new FortLeverToken(
             //name,
-            StringHelper.sprintf("%4S/USDT%sF%u", [
-                StringHelper.enc((tokenAddress == address(0) ? "ETH" : ERC20(tokenAddress).symbol())),
-                StringHelper.enc((orientation ? "+" : "-")),
+            StringHelper.sprintf("%4S/USDT%sF%u", abi.encode(
+                tokenAddress == address(0) ? "ETH" : ERC20(tokenAddress).symbol(),
+                orientation ? "+" : "-",
                 lever,
                 0, 0
-            ]),
+            )),
             USDT_TOKEN_ADDRESS,
             tokenAddress, 
             lever, 
