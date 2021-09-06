@@ -280,7 +280,7 @@ library StringHelper {
 
         while (i < format.length) {
             uint c = uint(uint8(format[i]));
-			// 0 正常                                             
+			// 0. 正常                                             
             if (state == 0) {
                 // %
                 if (c == 37) {
@@ -290,44 +290,27 @@ library StringHelper {
                     state = 1;
                 }
                 ++i;
-                //continue;
             }
-			// 1, 确认是否有 -
+			// 1. 确认是否有 -
             else if (state == 1) {
                 // %
                 if (c == 37) {
                     buffer[index++] = bytes1(uint8(37));
                     pi = ++i;
                     state = 0;
-                    //continue;
                 } else {
-                    // // -
-                    // if (c == 45) {
-                    //     ++i;
-                    // }
-                    // state = 2;
                     state = 3;
-                    //continue;
                 }
             }
-			// // 2, 确认是否有 0  
-            // else if (state == 2) {
-            //     if (c == 48) {
-            //         ++i;
-            //     }
-            //     state = 3;
-            //     continue;
-            // }
-			// 3 找数据宽度
+			// 3. 找数据宽度
             else if (state == 3) {
                 while (c >= 48 && c <= 57) {
                     w = w * 10 + c - 48;
                     c = uint(uint8(format[++i]));
                 }
                 state = 4;
-                //continue;
             }
-            // 4, 找格式类型   
+            // 4. 找格式类型   
 			else if (state == 4) {
                 uint arg = args[ai++];
                 // d
@@ -388,19 +371,19 @@ library StringHelper {
         return (v << 8) | bytes(str).length;
     }
 
-    // /// @dev 将使用enc编码的uint解码成字符串
-    // /// @param v 使用enc编码过的字符串
-    // /// @return 解码结果
-    // function dec(uint v) internal pure returns (string memory) {
-    //     uint length = v & 0xFF;
-    //     v >>= 8;
-    //     bytes memory buffer = new bytes(length);
-    //     for (uint i = 0; i < length;) {
-    //         buffer[i++] = bytes1(uint8(v & 0xFF));
-    //         v >>= 8;
-    //     }
-    //     return string(buffer);
-    // }
+    /// @dev 将使用enc编码的uint解码成字符串
+    /// @param v 使用enc编码过的字符串
+    /// @return 解码结果
+    function dec(uint v) internal pure returns (string memory) {
+        uint length = v & 0xFF;
+        v >>= 8;
+        bytes memory buffer = new bytes(length);
+        for (uint i = 0; i < length;) {
+            buffer[i++] = bytes1(uint8(v & 0xFF));
+            v >>= 8;
+        }
+        return string(buffer);
+    }
 
     /// @dev 将使用enc编码的uint解码成字符串
     /// @param buffer 目标内存数组
@@ -472,7 +455,7 @@ library StringHelper {
 
         while (i < format.length) {
             uint c = uint(uint8(format[i]));
-			// 0 正常                                             
+			// 0. 正常                                             
             if (state == 0) {
                 // %
                 if (c == 37) {
@@ -482,46 +465,29 @@ library StringHelper {
                     state = 1;
                 }
                 ++i;
-                //continue;
             }
-			// 1, 确认是否有 -
+			// 1. 确认是否有 -
             else if (state == 1) {
                 // %
                 if (c == 37) {
                     buffer[index++] = bytes1(uint8(37));
                     pi = ++i;
                     state = 0;
-                    //continue;
                 } else {
-                    // // -
-                    // if (c == 45) {
-                    //     ++i;
-                    // }
-                    // state = 2;
                     state = 3;
-                    //continue;
                 }
             }
-			// // 2, 确认是否有 0  
-            // else if (state == 2) {
-            //     if (c == 48) {
-            //         ++i;
-            //     }
-            //     state = 3;
-            //     continue;
-            // }
-			// 3 找数据宽度
+			// 3. 找数据宽度
             else if (state == 3) {
                 while (c >= 48 && c <= 57) {
                     w = w * 10 + c - 48;
                     c = uint(uint8(format[++i]));
                 }
                 state = 4;
-                //continue;
             }
-            // 4, 找格式类型   
+            // 4. 找格式类型   
 			else if (state == 4) {
-                uint arg = abiReadUInt(abiArgs, ai);
+                uint arg = readAbiUInt(abiArgs, ai);
                 // d
                 if (c == 100) {
                     if (arg >> 255 == 1) {
@@ -570,7 +536,7 @@ library StringHelper {
     /// @param data abi编码的数据
     /// @param index 目标字符串在abi编码中的起始位置
     /// @return v 解码结果
-    function abiReadUInt(bytes memory data, uint index) internal pure returns (uint v) {
+    function readAbiUInt(bytes memory data, uint index) internal pure returns (uint v) {
         // uint v = 0;
         // for (uint i = 0; i < 32; ++i) {
         //     v = (v << 8) | uint(uint8(data[index + i]));
@@ -585,8 +551,8 @@ library StringHelper {
     /// @param data abi编码的数据
     /// @param index 目标字符串在abi编码中的起始位置
     /// @return 解码结果
-    function abiReadString(bytes memory data, uint index) internal pure returns (string memory) {
-        return string(segment(data, index + 32, abiReadUInt(data, index)));
+    function readAbiString(bytes memory data, uint index) internal pure returns (string memory) {
+        return string(segment(data, index + 32, readAbiUInt(data, index)));
     }
 
     /// @dev 从abi编码的数据中的指定位置解码字符串并写入内存数组
@@ -606,7 +572,7 @@ library StringHelper {
         uint charCase
     ) internal pure returns (uint) 
     {
-        uint length = abiReadUInt(data, start);
+        uint length = readAbiUInt(data, start);
         if (count > length) {
             count = length;
         }

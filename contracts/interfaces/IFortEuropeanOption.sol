@@ -5,6 +5,7 @@ pragma solidity ^0.8.6;
 /// @dev 定义欧式期权接口
 interface IFortEuropeanOption {
     
+    // 代币通道配置结构体
     struct Config {
         // 波动率
         uint96 sigmaSQ;
@@ -19,14 +20,14 @@ interface IFortEuropeanOption {
         uint32 minPeriod;
     }
 
-    /// @dev Modify configuration
+    /// @dev 修改指定代币通道的配置
     /// @param tokenAddress 目标代币地址
-    /// @param config Configuration object
+    /// @param config 配置对象
     function setConfig(address tokenAddress, Config calldata config) external;
 
-    /// @dev Get configuration
+    /// @dev 获取指定代币通道的配置
     /// @param tokenAddress 目标代币地址
-    /// @return Configuration object
+    /// @return 配置对象
     function getConfig(address tokenAddress) external view returns (Config memory);
 
     /// @dev 列出历史期权代币地址

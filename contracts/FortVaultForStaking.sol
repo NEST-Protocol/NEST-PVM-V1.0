@@ -94,7 +94,7 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
     }
 
     /// @dev Get stake channel information
-    /// @param xtoken xtoken address (or CNode address)
+    /// @param xtoken xtoken address
     /// @param cycle cycle
     /// @return totalStaked Total lock volume of target xtoken
     /// @return totalRewards 通道总出矿量
@@ -119,7 +119,7 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
     }
 
     /// @dev Get staked amount of target address
-    /// @param xtoken xtoken address (or CNode address)
+    /// @param xtoken xtoken address
     /// @param addr Target address
     /// @return Staked amount of target address
     function balanceOf(address xtoken, uint96 cycle, address addr) external view override returns (uint) {
@@ -127,7 +127,7 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
     }
 
     /// @dev Get the number of fort to be collected by the target address on the designated transaction pair lock
-    /// @param xtoken xtoken address (or CNode address)
+    /// @param xtoken xtoken address
     /// @param addr Target address
     /// @return The number of fort to be collected by the target address on the designated transaction lock
     function earned(address xtoken, uint96 cycle, address addr) external view override returns (uint) {
@@ -141,7 +141,7 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
     }
 
     /// @dev Stake xtoken to earn fort
-    /// @param xtoken xtoken address (or CNode address)
+    /// @param xtoken xtoken address
     /// @param amount Stake amount
     function stake(address xtoken, uint96 cycle, uint amount) external override {
 
@@ -163,7 +163,7 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
     }
 
     /// @dev Withdraw xtoken, and claim earned fort
-    /// @param xtoken xtoken address (or CNode address)
+    /// @param xtoken xtoken address
     /// @param amount Withdraw amount
     function withdraw(address xtoken, uint96 cycle, uint amount) external override {
 
@@ -183,7 +183,7 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
     }
 
     /// @dev Claim fort
-    /// @param xtoken xtoken address (or CNode address)
+    /// @param xtoken xtoken address
     function getReward(address xtoken, uint96 cycle) external override {
         StakeChannel storage channel = _channels[_getKey(xtoken, cycle)];
         channel.accounts[msg.sender] = _getReward(channel, msg.sender);

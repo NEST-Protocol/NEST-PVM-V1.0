@@ -75,33 +75,6 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         address leverAddress = _leverMapping[key];
         require(leverAddress == address(0), "FortLever:exists");
 
-        // 代币命名问题
-        // string memory name = StringHelper.stringConcat(
-        //     StringHelper.stringConcat(
-        //         StringHelper.stringConcat(
-        //             tokenAddress == address(0) ? "ETH" : StringHelper.toUpper(
-        //                 StringHelper.substring(ERC20(tokenAddress).symbol(), 0, 4)
-        //             ),
-        //             "/USDT"
-        //         ),
-        //         orientation ? "+F" : "-F"
-        //     ),
-        //     StringHelper.toString(lever, 1)
-        // );
-
-        // bytes memory buf = new bytes(31);
-        // uint index = 0;
-        // index = StringHelper.writeString(
-        //     buf,
-        //     index,
-        //     tokenAddress == address(0) ? "ETH" : StringHelper.toUpper(ERC20(tokenAddress).symbol()),
-        //     0, 
-        //     4
-        // );
-        // index = StringHelper.writeString(buf, index, orientation ? "/USDT+F" : "/USDT-F", 0, 7);
-        // index = StringHelper.writeUIntDec(buf, index, lever, 1);
-        // string memory name = string(StringHelper.segment(buf, 0, index));
-
         leverAddress = address(new FortLeverToken(
             //name,
             StringHelper.sprintf("%4S/USDT%sF%u", abi.encode(

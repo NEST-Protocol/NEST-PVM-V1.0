@@ -40,16 +40,16 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     constructor() {
     }
 
-    /// @dev Modify configuration
+    /// @dev 修改指定代币通道的配置
     /// @param tokenAddress 目标代币地址
-    /// @param config Configuration object
+    /// @param config 配置对象
     function setConfig(address tokenAddress, Config calldata config) external override {
         _configs[tokenAddress] = config;
     }
 
-    /// @dev Get configuration
+    /// @dev 获取指定代币通道的配置
     /// @param tokenAddress 目标代币地址
-    /// @return Configuration object
+    /// @return 配置对象
     function getConfig(address tokenAddress) external view override returns (Config memory) {
         return _configs[tokenAddress];
     }
@@ -119,6 +119,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         uint fortAmount
     ) external payable override {
 
+        // 将价格对齐为7位有效数字，避免精度过高导致期权代币数量过多
         price = _align(price);
 
         // 1. 调用预言机获取价格
@@ -127,38 +128,22 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         uint fee = msg.value;
         if (tokenAddress != address(0)) {
             fee = msg.value >> 1;
-            (
-                ,//uint blockNumber, 
-                tokenAmount,
-                ,
-                //uint sigmaSQ
-            ) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).triggeredPriceInfo {
+            (, tokenAmount) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).triggeredPrice {
                 value: fee
-            } (
-                tokenAddress, 
-                msg.sender
-            );
+            } (tokenAddress, msg.sender);
         }
 
         // 1.2. 获取usdt相对于eth的价格
-        (
-            ,//uint blockNumber, 
-            uint usdtAmount,
-            ,
-            //uint sigmaSQ
-        ) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).triggeredPriceInfo {
+        (, uint usdtAmount) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).triggeredPrice {
             value: fee
-        } (
-            USDT_TOKEN_ADDRESS, 
-            msg.sender
-        );
+        } (USDT_TOKEN_ADDRESS, msg.sender);
 
         // 1.3. 将token价格转化为以usdt为单位计算的价格
         uint oraclePrice = usdtAmount * 10 ** (_getDecimals(tokenAddress)) / tokenAmount;
 
         // 2. 计算可以买到的期权份数
         uint amount = estimate(tokenAddress, oraclePrice, price, orientation, endblock, fortAmount);
-        require(amount > 0.1 ether, "FEO:at least 0.1");
+        require(amount >= 0.1 ether, "FEO:at least 0.1");
 
         // 3. 获取或创建期权代币
         bytes32 key = _getKey(tokenAddress, price, orientation, endblock);
@@ -182,6 +167,8 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
                 orientation, 
                 endblock
             ));
+
+            // 将期权代币地址存入映射和数组，便于后面检索
             _optionMapping[key] = option;
             _options.push(option);
         }
@@ -228,7 +215,6 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         // TODO: 测试代码
         // TODO: 验证计算值，和C#代码比较
         // TODO: 重新分析数据取值范围
-        //T = 1000 * 14;
         
         // console.log(StringHelper.sprintf("open-oraclePrice=%6f", oraclePrice));
         // console.log(StringHelper.sprintf("open-price=%6f", price));
@@ -269,29 +255,15 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         uint fee = msg.value;
         if (tokenAddress != address(0)) {
             fee = msg.value >> 1;
-            (
-                ,//uint blockNumber, 
-                tokenAmount
-            ) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).findPrice {
+            (, tokenAmount) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).findPrice {
                 value: fee
-            } (
-                tokenAddress, 
-                endblock,
-                msg.sender
-            );
+            } (tokenAddress, endblock,msg.sender);
         }
 
         // 3.2. 获取usdt相对于eth的价格
-        (
-            ,//uint blockNumber, 
-            uint usdtAmount
-        ) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).findPrice {
+        (, uint usdtAmount) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).findPrice {
             value: fee
-        } (
-            USDT_TOKEN_ADDRESS, 
-            endblock,
-            msg.sender
-        );
+        } (USDT_TOKEN_ADDRESS, endblock,msg.sender);
 
         // 将token价格转化为以usdt为单位计算的价格
         uint oraclePrice = usdtAmount * 10 ** (_getDecimals(tokenAddress)) / tokenAmount;
@@ -331,12 +303,18 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
 
     // 对齐价格，保留7位有效数字
     function _align(uint price) private pure returns (uint) {
-        uint decimals = 0;
-        while (price >= 10000000) {
-            price /= 10;
-            ++decimals;
+        // uint decimals = 0;
+        // while (price >= 10000000) {
+        //     price /= 10;
+        //     ++decimals;
+        // }
+        // return price * 10 ** decimals;
+
+        uint base = 10000000;
+        while (price >= base) {
+            base *= 10;
         }
-        return price * 10 ** decimals;
+        return price - price % (base / 10000000);
     }
 
     // 获取代币的小数位数
@@ -369,6 +347,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
             ++decimals;
         }
 
+        // 2. 生成格式化的期权代币名称
         return StringHelper.sprintf("%s%6f%d%4S%u", abi.encode(
             orientation ? "C" : "P",
             price,
@@ -376,62 +355,6 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
             name,
             endblock
         ));
-        
-        // bytes memory re = new bytes(31);
-        // uint index = 0;
-
-        // // 2. 期权方向，看涨C，看跌P
-        // if (orientation) {
-        //     //re[index++] = bytes1(uint8(67));
-        //     index = StringHelper.writeString(re, index, "C", 0, 1);
-        // } else {
-        //     //re[index++] = bytes1(uint8(80));
-        //     index = StringHelper.writeString(re, index, "P", 0, 1);
-        // }
-
-        // // 3. 期权行权价格
-        // // 3.1 行权价格整数部分
-        // //uint c = price / 1000000;
-        // //re[index++] = bytes1(uint8(48 + c));
-        // index = StringHelper.writeUIntDec(re, index, price / 1000000, 1);
-        // //re[index++] = bytes1(uint8(46));
-        // index = StringHelper.writeString(re, index, ".", 0, 1);
-        // // 3.2 行权价格小数部分
-        // // for (uint b = 1000000; b > 1; b /= 10) {
-        // //     c = (price % b) / (b / 10);
-        // //     re[index++] = bytes1(uint8(48 + c));
-        // // }
-        // index = StringHelper.writeUIntDec(re, index, price % 1000000, 6);
-
-        // // 3.3 行权价格指数部分
-        // if (decimals < 6) {
-        //     decimals = 6 - decimals;
-        //     //re[index++] = bytes1(uint8(45));
-        //     index = StringHelper.writeString(re, index, "-", 0, 1);
-        // } else {
-        //     decimals = decimals - 6;
-        //     //re[index++] = bytes1(uint8(43));
-        //     index = StringHelper.writeString(re, index, "+", 0, 1);
-        // }
-        // //require(decimals < 10, "FEO:price to large");
-        // //re[index++] = bytes1(uint8(decimals + 48));
-        // index = StringHelper.writeUIntDec(re, index, decimals, 1);
-        
-        // // 4. 目标代币名称
-        // // bytes memory str = bytes(name);
-        // // for (uint i = 0; i < str.length; ++i) {
-        // //     re[index++] = str[i];
-        // // }
-        // index = StringHelper.writeString(re, index, name, 0, 4);
-
-        // // 5. 行权区块号
-        // // str = bytes(StringHelper.toString(endblock, 1));
-        // // for (uint i = 0; i < str.length; ++i) {
-        // //     re[index++] = str[i];
-        // // }
-        // index = StringHelper.writeUIntDec(re, index, endblock, 1);
-
-        // return string(StringHelper.segment(re, 0, index));
     }
 
     // 将18位十进制定点数转化为64位二级制定点数
@@ -489,58 +412,6 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
             /* */ 0xC350C350C350C350C350C350C34FC34FC34FC34FC34FC34FC34FC34FC34FC34F  //
             /* */ //////////////////// MADE IN CHINA 2021-08-24 ////////////////////////
         ];
-
-        //  uint[448] memory tableOld = [
-        //  uint(0), 399, 798, 1197, 1595, 1994, 2392, 2790, 3188, 3586,
-		//  3983, 4380, 4776, 5172, 5567, 5962, 6356, 6749, 7142, 7535,
-		//  7926, 8317, 8706, 9095, 9483, 9871, 10257, 10642, 11026, 11409,
-		//  11791, 12172, 12552, 12930, 13307, 13683, 14058, 14431, 14803, 15173,
-		//  15542, 15910, 16276, 16640, 17003, 17364, 17724, 18082, 18439, 18793,
-		//  19146, 19497, 19847, 20194, 20540, 20884, 21226, 21566, 21904, 22240,
-		//  22575, 22907, 23237, 23565, 23891, 24215, 24537, 24857, 25175, 25490,
-		//  25804, 26115, 26424, 26730, 27035, 27337, 27637, 27935, 28230, 28524,
-		//  28814, 29103, 29389, 29673, 29955, 30234, 30511, 30785, 31057, 31327,
-		//  31594, 31859, 32121, 32381, 32639, 32894, 33147, 33398, 33646, 33891,
-		//  34134, 34375, 34614, 34849, 35083, 35314, 35543, 35769, 35993, 36214,
-		//  36433, 36650, 36864, 37076, 37286, 37493, 37698, 37900, 38100, 38298,
-		//  38493, 38686, 38877, 39065, 39251, 39435, 39617, 39796, 39973, 40147,
-		//  40320, 40490, 40658, 40824, 40988, 41149, 41309, 41466, 41621, 41774,
-		//  41924, 42073, 42220, 42364, 42507, 42647, 42785, 42922, 43056, 43189,
-		//  43319, 43448, 43574, 43699, 43822, 43943, 44062, 44179, 44295, 44408,
-		//  44520, 44630, 44738, 44845, 44950, 45053, 45154, 45254, 45352, 45449,
-		//  45543, 45637, 45728, 45818, 45907, 45994, 46080, 46164, 46246, 46327,
-		//  46407, 46485, 46562, 46638, 46712, 46784, 46856, 46926, 46995, 47062,
-		//  47128, 47193, 47257, 47320, 47381, 47441, 47500, 47558, 47615, 47670,
-		//  47725, 47778, 47831, 47882, 47932, 47982, 48030, 48077, 48124, 48169,
-		//  48214, 48257, 48300, 48341, 48382, 48422, 48461, 48500, 48537, 48574,
-		//  48610, 48645, 48679, 48713, 48745, 48778, 48809, 48840, 48870, 48899,
-		//  48928, 48956, 48983, 49010, 49036, 49061, 49086, 49111, 49134, 49158,
-		//  49180, 49202, 49224, 49245, 49266, 49286, 49305, 49324, 49343, 49361,
-		//  49379, 49396, 49413, 49430, 49446, 49461, 49477, 49492, 49506, 49520,
-		//  49534, 49547, 49560, 49573, 49585, 49598, 49609, 49621, 49632, 49643,
-		//  49653, 49664, 49674, 49683, 49693, 49702, 49711, 49720, 49728, 49736,
-		//  49744, 49752, 49760, 49767, 49774, 49781, 49788, 49795, 49801, 49807,
-		//  49813, 49819, 49825, 49831, 49836, 49841, 49846, 49851, 49856, 49861,
-		//  49865, 49869, 49874, 49878, 49882, 49886, 49889, 49893, 49896, 49900,
-		//  49903, 49906, 49910, 49913, 49916, 49918, 49921, 49924, 49926, 49929,
-		//  49931, 49934, 49936, 49938, 49940, 49942, 49944, 49946, 49948, 49950,
-		//  49952, 49953, 49955, 49957, 49958, 49960, 49961, 49962, 49964, 49965,
-		//  49966, 49968, 49969, 49970, 49971, 49972, 49973, 49974, 49975, 49976,
-		//  49977, 49978, 49978, 49979, 49980, 49981, 49981, 49982, 49983, 49983,
-		//  49984, 49985, 49985, 49986, 49986, 49987, 49987, 49988, 49988, 49989,
-		//  49989, 49990, 49990, 49990, 49991, 49991, 49992, 49992, 49992, 49992,
-		//  49993, 49993, 49993, 49994, 49994, 49994, 49994, 49995, 49995, 49995,
-		//  49995, 49995, 49996, 49996, 49996, 49996, 49996, 49996, 49997, 49997,
-		//  49997, 49997, 49997, 49997, 49997, 49997, 49998, 49998, 49998, 49998,
-		//  49998, 49998, 49998, 49998, 49998, 49998, 49998, 49998, 49999, 49999,
-		//  49999, 49999, 49999, 49999, 49999, 49999, 49999, 49999, 49999, 49999,
-		//  49999, 49999, 49999, 49999, 49999, 49999, 49999, 49999, 49999, 49999,
-		//  49999, 49999, 50000, 50000, 50000, 50000, 50000, 50000
-        //  ];
-
-        // for (uint i = 0; i < 448; ++i) {
-        //     require(uint(tableOld[i]) == uint((table[i >> 4] >> ((i & 0xF) << 4)) & 0xFFFF), "FEO:not equal");
-        // }
 
         uint ux = uint(int(x < 0 ? -x : x)) * 100;
         uint i = ux >> 64;

@@ -10,8 +10,8 @@ contract FortOptionToken is ERC20 {
 
     address immutable OWNER;
     address immutable TOKEN_ADDRESS;
-    uint immutable PRICE;
     bool immutable ORIENTATION;
+    uint immutable PRICE;
     uint immutable ENDBLOCK;
 
     constructor(

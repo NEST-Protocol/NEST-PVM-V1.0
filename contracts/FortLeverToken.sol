@@ -112,35 +112,18 @@ contract FortLeverToken {
         address NEST_PRICE_FACADE_ADDRESS = _nestPriceFacade;
         if (TOKEN_ADDRESS != address(0)) {
             fee = msg.value >> 1;
-            (
-                ,//uint blockNumber, 
-                tokenAmount,
-                ,
-                //uint sigmaSQ
-            ) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).triggeredPriceInfo {
+            (, tokenAmount) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).triggeredPrice {
                 value: fee
-            } (
-                TOKEN_ADDRESS, 
-                payback
-            );
+            } (TOKEN_ADDRESS, payback);
         }
 
         // 获取usdt相对于eth的价格
-        (
-            ,//uint blockNumber, 
-            uint usdtAmount,
-            ,
-            //uint sigmaSQ
-        ) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).triggeredPriceInfo {
+        (, uint usdtAmount) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).triggeredPrice {
             value: fee
-        } (
-            USDT_TOKEN_ADDRESS, 
-            payback
-        );
+        } (USDT_TOKEN_ADDRESS, payback);
 
         // 将token价格转化为以usdt为单位计算的价格
         oraclePrice = usdtAmount * 10 ** (_getDecimals(TOKEN_ADDRESS)) / tokenAmount;
-        //oraclePrice = usdtAmount * 1 ether / tokenAmount;
 
         _price = _encodeFloat(oraclePrice);
         _updateBlock = uint32(block.number);
