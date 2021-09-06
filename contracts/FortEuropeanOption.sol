@@ -65,21 +65,26 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         address[] storage options = _options;
         // 创建结果数组
         optionArray = new address[](count);
-
+        uint length = options.length;
         uint i = 0;
+
         // 倒序
         if (order == 0) {
-            uint end = options.length - offset - 1;
-            while (i < count) {
-                optionArray[i] = options[end - i];
-                ++i;
+            uint index = length - offset;
+            uint end = index > count ? index - count : 0;
+            while (index > end) {
+                optionArray[i++] = options[--index];
             }
         } 
         // 正序
         else {
-            while (i < count) {
-                optionArray[i] = options[i + offset];
-                ++i;
+            uint index = offset;
+            uint end = index + count;
+            if (end > length) {
+                end = length;
+            }
+            while (index < end) {
+                optionArray[i++] = options[index++];
             }
         }
     }
@@ -297,12 +302,12 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         uint price, 
         bool orientation, 
         uint endblock
-    ) private pure returns (bytes32) {
+    ) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(tokenAddress, price, orientation, endblock));
     }
 
     // 对齐价格，保留7位有效数字
-    function _align(uint price) private pure returns (uint) {
+    function _align(uint price) public pure returns (uint) {
         // uint decimals = 0;
         // while (price >= 10000000) {
         //     price /= 10;
@@ -318,7 +323,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     }
 
     // 获取代币的小数位数
-    function _getDecimals(address tokenAddress) private view returns (uint) {
+    function _getDecimals(address tokenAddress) public view returns (uint) {
         if (tokenAddress == address(0)) {
             return 18;
         }
@@ -334,7 +339,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         uint price, 
         bool orientation, 
         uint endblock
-    ) private pure returns (string memory) {
+    ) public pure returns (string memory) {
 
         // 1. 将价格保留7位有效数字，并计算指数部分
         int decimals = 0;
@@ -358,7 +363,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     }
 
     // 将18位十进制定点数转化为64位二级制定点数
-    function _d18TOb64(uint v) private pure returns (int128) {
+    function _d18TOb64(uint v) public pure returns (int128) {
         //require(v < 0x1000000000000000000000000000000000000000000000000, "FEO:value can't ROL 64bits");
         require(v < 0x0DE0B6B3A764000000000000000000000000000000000000, "FEO:can't convert to 64bits");
         return int128(int((v << 64) / 1 ether));

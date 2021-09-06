@@ -585,7 +585,7 @@ library StringHelper {
             } else if (charCase == 2 && c >= 65 && c <= 90) {
                 c -= 32;
             }
-            buffer[index + i] = bytes1(uint8(data[start + i]));
+            buffer[index + i] = bytes1(uint8(c));
             ++i;
         }
         return index + i;
