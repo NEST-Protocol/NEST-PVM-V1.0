@@ -103,10 +103,10 @@
 
 ```javascript
     /// @dev 触发更新价格，获取FORT奖励
-    /// @param leverAddress 目标杠杆币地址
+    /// @param leverAddressArray 要更新的杠杆币合约地址
     /// @param payback 多余的预言机费用退回地址
     function updateLeverInfo(
-        address leverAddress, 
+        address[] memory leverAddressArray, 
         address payback
     ) external payable;
 ```

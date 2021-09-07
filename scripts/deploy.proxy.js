@@ -129,6 +129,7 @@ exports.deploy = async function() {
         usdt: usdt,
         hbtc: hbtc,
 
+        fortGovernance: fortGovernance,
         fort: fort,
         fortDAO: fortDAO,
         fortEuropeanOption: fortEuropeanOption,

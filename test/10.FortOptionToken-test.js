@@ -63,6 +63,18 @@ describe('FortEuropeanOption', function() {
                 await showReceipt(receipt);
                 let fot = await FortOptionToken.attach(await fortEuropeanOption.getEuropeanToken(hbtc.address, 45000000000, true, 100000));
                 console.log('fot: ' + toDecimal(await fot.balanceOf(owner.address)));
+                let info = await fot.getOptionInfo();
+                console.log({
+                    tokenAddress: info.tokenAddress.toString(), 
+                    price: info.price.toString(),
+                    orientation: info.orientation.toString(),
+                    endblock: info.endblock.toString()
+                });
+
+                // await fot.mint(owner.address, toBigInt(10));
+                // console.log('fot: ' + toDecimal(await fot.balanceOf(owner.address)));
+                // await fot.burn(owner.address, toBigInt(10));
+                // console.log('fot: ' + toDecimal(await fot.balanceOf(owner.address)));
             }
         }
     });

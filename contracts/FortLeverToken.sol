@@ -34,10 +34,14 @@ contract FortLeverToken {
     // 杠杆币创建者
     address immutable OWNER;
     
+    // USDT代币地址
     address immutable USDT_TOKEN_ADDRESS;
 
     // 目标代币地址
     address immutable TOKEN_ADDRESS;
+
+    // 代币基数
+    uint immutable TOKEN_BASE;
 
     // 杠杆倍数
     uint immutable LEVER;
@@ -60,7 +64,14 @@ contract FortLeverToken {
     // 最后更新的区块
     uint32 _updateBlock;
 
-    constructor(string memory name_, address usdtTokenAddress, address tokenAddress, uint lever, bool orientation) {
+    constructor(
+        string memory name_, 
+        address usdtTokenAddress, 
+        address tokenAddress, 
+        uint lever, 
+        bool orientation,
+        uint tokenBase
+    ) {
 
         _name = name_;
         OWNER = msg.sender;
@@ -68,6 +79,7 @@ contract FortLeverToken {
         TOKEN_ADDRESS = tokenAddress;
         LEVER = lever;
         ORIENTATION = orientation;
+        TOKEN_BASE = tokenBase;
     }
     
     modifier onlyOwner {
@@ -96,13 +108,6 @@ contract FortLeverToken {
         return newBlock - blockNumber;
     }
 
-    function _getDecimals(address tokenAddress) private view returns (uint) {
-        if (tokenAddress == address(0)) {
-            return 18;
-        }
-        return uint(ERC20(tokenAddress).decimals());
-    }
-
     // 更新杠杆币全局信息
     function _update(address payback) private returns (uint blockNumber, uint oraclePrice) {
 
@@ -123,7 +128,7 @@ contract FortLeverToken {
         } (USDT_TOKEN_ADDRESS, payback);
 
         // 将token价格转化为以usdt为单位计算的价格
-        oraclePrice = usdtAmount * 10 ** (_getDecimals(TOKEN_ADDRESS)) / tokenAmount;
+        oraclePrice = usdtAmount * TOKEN_BASE / tokenAmount;
 
         _price = _encodeFloat(oraclePrice);
         _updateBlock = uint32(block.number);
@@ -143,6 +148,14 @@ contract FortLeverToken {
     /// @return balance 余额
     function balanceOf(address acc) external view returns (uint balance) {
         balance = _balanceOf(_accounts[acc], _decodeFloat(_price));
+    }
+
+    /// @dev 根据指定的预言机价格估算余额
+    /// @param acc 目标账号
+    /// @param oraclePrice 预言机价格
+    /// @return balance 余额
+    function estimateBalance(address acc, uint oraclePrice) external view returns (uint balance) {
+        balance = _balanceOf(_accounts[acc], oraclePrice);
     }
 
     // 根据新价格计算账户余额
@@ -270,7 +283,7 @@ contract FortLeverToken {
     /// @dev Encode the uint value as a floating-point representation in the form of fraction * 16 ^ exponent
     /// @param value Destination uint value
     /// @return float format
-    function _encodeFloat(uint value) private pure returns (uint64) {
+    function _encodeFloat(uint value) public pure returns (uint64) {
 
         uint exponent = 0; 
         while (value > 0x3FFFFFFFFFFFFFF) {
@@ -283,13 +296,13 @@ contract FortLeverToken {
     /// @dev Decode the floating-point representation of fraction * 16 ^ exponent to uint
     /// @param floatValue fraction value
     /// @return decode format
-    function _decodeFloat(uint64 floatValue) private pure returns (uint) {
+    function _decodeFloat(uint64 floatValue) public pure returns (uint) {
         return (uint(floatValue) >> 6) << ((uint(floatValue) & 0x3F) << 2);
     }
 
     // 将uint转化为uint128，有截断检查
-    function _toUInt128(uint value) private pure returns (uint128) {
-        require(value < 100000000000000000000000000000000);
+    function _toUInt128(uint value) public pure returns (uint128) {
+        require(value < 0x100000000000000000000000000000000);
         return uint128(value);
     }
 }

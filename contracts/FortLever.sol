@@ -17,7 +17,7 @@ import "./FortLeverToken.sol";
 contract FortLever is FortFrequentlyUsed, IFortLever {
     
     // 最小余额数量，余额小于此值会被清算
-    uint constant MIN_VALUE = 1 ether;
+    uint constant MIN_VALUE = 20 ether;
 
     // 买入杠杆币和其他交易之间最小的间隔区块数
     uint constant MIN_PERIOD = 10;
@@ -42,21 +42,26 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         address[] storage levers = _levers;
         // 创建结果数组
         leverArray = new address[](count);
-
+        uint length = levers.length;
         uint i = 0;
+
         // 倒序
         if (order == 0) {
-            uint end = levers.length - offset - 1;
-            while (i < count) {
-                leverArray[i] = levers[end - i];
-                ++i;
+            uint index = length - offset;
+            uint end = index > count ? index - count : 0;
+            while (index > end) {
+                leverArray[i++] = levers[--index];
             }
         } 
         // 正序
         else {
-            while (i < count) {
-                leverArray[i] = levers[i + offset];
-                ++i;
+            uint index = offset;
+            uint end = index + count;
+            if (end > length) {
+                end = length;
+            }
+            while (index < end) {
+                leverArray[i++] = levers[index++];
             }
         }
     }
@@ -69,12 +74,16 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         address tokenAddress, 
         uint lever,
         bool orientation
-    ) external override {
+    ) external override onlyGovernance {
 
         bytes32 key = _getKey(tokenAddress, lever, orientation);
         address leverAddress = _leverMapping[key];
         require(leverAddress == address(0), "FortLever:exists");
 
+        uint tokenBase = 1 ether;
+        if (tokenAddress != address(0)) {
+            tokenBase = 10 ** ERC20(tokenAddress).decimals();
+        }
         leverAddress = address(new FortLeverToken(
             //name,
             StringHelper.sprintf("%4S/USDT%sF%u", abi.encode(
@@ -86,7 +95,8 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
             USDT_TOKEN_ADDRESS,
             tokenAddress, 
             lever, 
-            orientation
+            orientation,
+            tokenBase
         ));
         // 使用create2创建合约，会导致杠杆币内不能使用immutable变量来保存杠杆信息，从而增加gas消耗，放弃此方法
         // leverAddress = address(new FortLeverToken { 
@@ -155,10 +165,9 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         FortToken(FORT_TOKEN_ADDRESS).burn(msg.sender, fortAmount);
 
         // 3. 给用户分发杠杆币
-        uint leverAmount = fortAmount;
         FortLeverToken(leverAddress).mint { 
             value: msg.value 
-        } (msg.sender, leverAmount, block.number + MIN_PERIOD, msg.sender);
+        } (msg.sender, fortAmount, block.number + MIN_PERIOD, msg.sender);
     }
 
     /// @dev 买入杠杆币
@@ -175,10 +184,9 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         FortToken(FORT_TOKEN_ADDRESS).burn(msg.sender, fortAmount);
 
         // 2. 给用户分发杠杆币
-        uint leverAmount = fortAmount;
         FortLeverToken(leverAddress).mint { 
             value: msg.value 
-        } (msg.sender, leverAmount, block.number + MIN_PERIOD, msg.sender);
+        } (msg.sender, fortAmount, block.number + MIN_PERIOD, msg.sender);
     }
 
     /// @dev 卖出杠杆币
@@ -194,10 +202,8 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
             value: msg.value 
         } (msg.sender, amount, msg.sender);
 
-        uint fortAmount = amount;
-
         // 2. 给用户分发fort
-        FortToken(FORT_TOKEN_ADDRESS).mint(msg.sender, fortAmount);
+        FortToken(FORT_TOKEN_ADDRESS).mint(msg.sender, amount);
     }
 
     /// @dev 清算
@@ -229,14 +235,18 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
 
     // TODO: 主动触发更新的人，按照区块奖励FORT
     /// @dev 触发更新价格，获取FORT奖励
-    /// @param leverAddress 目标杠杆币地址
+    /// @param leverAddressArray 要更新的杠杆币合约地址
     /// @param payback 多余的预言机费用退回地址
     function updateLeverInfo(
-        address leverAddress, 
+        address[] memory leverAddressArray, 
         address payback
     ) external payable override {
-        uint blocks = FortLeverToken(leverAddress).update(payback);
-        FortToken(FORT_TOKEN_ADDRESS).mint(msg.sender, blocks * 1 ether);
+        uint unitFee = msg.value / leverAddressArray.length;
+        uint blocks = 0;
+        for (uint i = leverAddressArray.length; i > 0; ) {
+            blocks += FortLeverToken(leverAddressArray[--i]).update { value: unitFee } (payback);
+        }
+        FortToken(FORT_TOKEN_ADDRESS).mint(msg.sender, blocks * 0.1 ether);
     }
 
     // 根据杠杆信息计算索引key
@@ -244,7 +254,7 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         address tokenAddress, 
         uint lever,
         bool orientation
-    ) private pure returns (bytes32) {
+    ) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(tokenAddress, lever, orientation));
     }
 }
