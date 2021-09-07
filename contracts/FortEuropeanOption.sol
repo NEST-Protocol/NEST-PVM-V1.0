@@ -34,6 +34,9 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     // 配置参数
     mapping(address=>Config) _configs;
 
+    // 缓存代币的基数值
+    mapping(address=>uint) _bases;
+
     // 期权代币数组
     address[] _options;
 
@@ -144,7 +147,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         } (USDT_TOKEN_ADDRESS, msg.sender);
 
         // 1.3. 将token价格转化为以usdt为单位计算的价格
-        uint oraclePrice = usdtAmount * 10 ** (_getDecimals(tokenAddress)) / tokenAmount;
+        uint oraclePrice = usdtAmount * _getBase(tokenAddress) / tokenAmount;
 
         // 2. 计算可以买到的期权份数
         uint amount = estimate(tokenAddress, oraclePrice, price, orientation, endblock, fortAmount);
@@ -228,11 +231,18 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         // console.log(StringHelper.sprintf("open-Vc=%18f", _calcVc(config, oraclePrice, T, price) * 1 ether >> 64));
         // console.log(StringHelper.sprintf("open-Vp=%18f", _calcVp(config, oraclePrice, T, price) * 1 ether >> 64));
 
-        amount = (USDT_BASE << 64) * fortAmount / (
-            orientation 
-                ? _calcVc(config, oraclePrice, T, price)
-                : _calcVp(config, oraclePrice, T, price)
-        );
+        uint v;
+        if (orientation) {
+            v = _calcVc(config, oraclePrice, T, price);
+            // Vc>=S0*1%; Vp>=K*1%
+            require(v * 100 >> 64 >= oraclePrice, "FEO:vc must greater than S0*1%");
+        } else {
+            v = _calcVp(config, oraclePrice, T, price);
+            // Vc>=S0*1%; Vp>=K*1%
+            require(v * 100 >> 64 >= price, "FEO:vp must greater than K*1%");
+        }
+
+        amount = (USDT_BASE << 64) * fortAmount / v;
     }
     
     /// @dev 行权
@@ -271,7 +281,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         } (USDT_TOKEN_ADDRESS, endblock,msg.sender);
 
         // 将token价格转化为以usdt为单位计算的价格
-        uint oraclePrice = usdtAmount * 10 ** (_getDecimals(tokenAddress)) / tokenAmount;
+        uint oraclePrice = usdtAmount * _getBase(tokenAddress) / tokenAmount;
         // 4. 分情况计算用户可以获得的fort数量
         uint gain = 0;
         // 计算结算结果
@@ -322,12 +332,25 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         return price - price % (base / 10000000);
     }
 
-    // 获取代币的小数位数
-    function _getDecimals(address tokenAddress) public view returns (uint) {
+    // // 获取代币的小数位数
+    // function _getDecimals(address tokenAddress) public view returns (uint) {
+    //     if (tokenAddress == address(0)) {
+    //         return 18;
+    //     }
+    //     return uint(ERC20(tokenAddress).decimals());
+    // }
+
+    // 获取代币的基数值
+    function _getBase(address tokenAddress) private returns (uint base) {
         if (tokenAddress == address(0)) {
-            return 18;
+            base = 1 ether;
+        } else {
+            base = _bases[tokenAddress];
+            if (base == 0) {
+                base = 10 ** ERC20(tokenAddress).decimals();
+                _bases[tokenAddress] = base;
+            }
         }
-        return uint(ERC20(tokenAddress).decimals());
     }
 
     // TODO: 位了测试写成public的，部署时需要改为private的
@@ -364,25 +387,24 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
 
     // 将18位十进制定点数转化为64位二级制定点数
     function _d18TOb64(uint v) public pure returns (int128) {
-        //require(v < 0x1000000000000000000000000000000000000000000000000, "FEO:value can't ROL 64bits");
-        require(v < 0x0DE0B6B3A764000000000000000000000000000000000000, "FEO:can't convert to 64bits");
+        require(v < 0x6F05B59D3B200000000000000000000, "FEO:can't convert to 64bits");
         return int128(int((v << 64) / 1 ether));
     }
 
     // 将uint转化为int128
-    function _toInt128(uint v) private pure returns (int128) {
-        require(v < 0x100000000000000000000000000000000, "FEO:can't convert to int128");
+    function _toInt128(uint v) public pure returns (int128) {
+        require(v < 0x80000000000000000000000000000000, "FEO:can't convert to int128");
         return int128(int(v));
     }
 
     // 将int128转化为uint
-    function _toUInt(int128 v) private pure returns (uint) {
+    function _toUInt(int128 v) public pure returns (uint) {
         require(v >= 0, "FEO:can't convert to uint");
         return uint(int(v));
     }
 
     // 通过查表的方法计算标准正态分布函数
-    function _snd(int128 x) private pure returns (int128) {
+    function _snd(int128 x) public pure returns (int128) {
         uint[28] memory table = [
             /* */ ///////////////////// STANDARD NORMAL TABLE //////////////////////////
             /* */ 0x174A15BF143412A8111C0F8F0E020C740AE6095807CA063B04AD031E018F0000, //
@@ -429,7 +451,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
                         (
                             (uint((table[(i + 1) >> 4] >> (((i + 1) & 0xF) << 4)) & 0xFFFF) << 64)
                             - v
-                        ) * (ux - (i << 64))
+                        ) * (ux & 0xFFFFFFFFFFFFFFFF) //(ux - (i << 64))
                     ) >> 64
                 ) + v;
         }
@@ -444,7 +466,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     }
 
     // 计算看涨期权价格
-    function _calcVc(Config memory config, uint S0, uint T, uint K) private pure returns (uint) {
+    function _calcVc(Config memory config, uint S0, uint T, uint K) public pure returns (uint) {
 
         int128 sigmaSQ_T = _d18TOb64(uint(config.sigmaSQ) * T);
         int128 miu_T = _toInt128(uint(int(config.miu)) * T);
@@ -461,13 +483,11 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         )) * S0;
         uint right = _toUInt(ABDKMath64x64.sub(ONE, _snd(d))) * K;
         
-        // Vc>=S0*1%; Vp>=K*1%
-        require((left - right) * 100 >= S0 << 64, "FEO:vc must greater than S0*1%");
         return left - right;
     }
 
     // 计算看跌期权价格
-    function _calcVp(Config memory config, uint S0, uint T, uint K) private pure returns (uint) {
+    function _calcVp(Config memory config, uint S0, uint T, uint K) public pure returns (uint) {
 
         int128 sigmaSQ_T = _d18TOb64(uint(config.sigmaSQ) * T);
         int128 miu_T = _toInt128(uint(int(config.miu)) * T);
@@ -481,8 +501,6 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
             _snd(ABDKMath64x64.sub(d, sigma_t))
         )) * S0;
 
-        // Vc>=S0*1%; Vp>=K*1%
-        require((left - right) * 100 >= K << 64, "FEO:vp must greater than K*1%");
         return left - right;
     }
 

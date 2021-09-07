@@ -39,7 +39,7 @@ const sqrt2pi = Math.sqrt(2 * Math.PI);
 exports.snd = function(x) {
     let ux = x < 0 ? -x : x;
     let sum = 0;
-    const D = 0.0000001;
+    const D = 0.00001;
     for (let i = 0; i < ux;)
     {
         sum += Math.exp(-i * i / 2) * D / sqrt2pi;
@@ -131,7 +131,7 @@ exports.d1 = function(S0, K, sigma, miu, T) {
     return (Math.log(K / S0) + (sigma * sigma / 2 - miu) * T) / sigma;
 };
 
-const snd = exports.tableSnd;
+const snd = exports.snd;
 
 exports.Vc = function(S0, K, sigma, miu, T) {
     let d1v = exports.d1(S0, K, sigma, miu, T);

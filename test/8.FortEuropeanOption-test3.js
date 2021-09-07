@@ -156,23 +156,180 @@ describe('FortEuropeanOption', function() {
                 expect(x).to.eq(r);
             };
 
-            test(BigInt('0'));
-            test(BigInt('1'));
-            test(BigInt('2'));
-            test(BigInt('3'));
-            test(BigInt('4'));
-            test(BigInt('5'));
-            test(BigInt('6'));
-            test(BigInt('7'));
-            test(BigInt('8'));
-            test(BigInt('9'));
-            test(BigInt('10'));
+            await test(BigInt('0'));
+            await test(BigInt('1'));
+            await test(BigInt('2'));
+            await test(BigInt('3'));
+            await test(BigInt('4'));
+            await test(BigInt('5'));
+            await test(BigInt('6'));
+            await test(BigInt('7'));
+            await test(BigInt('8'));
+            await test(BigInt('9'));
+            await test(BigInt('10'));
 
-            for (var bi = BigInt(1); bi < BigInt('0x0DE0B6B3A764000000000000000000000000000000000000');) {
-                test(bi);
+            for (var bi = BigInt(1); bi < BigInt('0x6F05B59D3B200000000000000000000');) {
+                await test(bi);
                 bi = bi * BigInt(77);
             }
+            await test(BigInt('0x6F05B59D3B200000000000000000000') - BigInt('1'));
+        }
 
+        if (TEST_PRIVATE) {
+            console.log('6. _toInt128');
+
+            const test = async function(v) {
+                let x = v;
+                let r = BigInt(await fortEuropeanOption._toInt128(v));
+                console.log(v + '; ' + r + ':' + x);
+                expect(x).to.eq(r);
+            };
+
+            await test(BigInt('0'));
+            await test(BigInt('1'));
+            await test(BigInt('2'));
+            await test(BigInt('3'));
+            await test(BigInt('4'));
+            await test(BigInt('5'));
+            await test(BigInt('6'));
+            await test(BigInt('7'));
+            await test(BigInt('8'));
+            await test(BigInt('9'));
+            await test(BigInt('10'));
+
+            for (var bi = BigInt(1); bi < BigInt('0x80000000000000000000000000000000');) {
+                await test(bi);
+                bi = bi * BigInt(77);
+            }
+            await test(BigInt('0x80000000000000000000000000000000') - BigInt('1'));
+        }
+
+        if (TEST_PRIVATE) {
+            console.log('7. _toUInt');
+
+            const test = async function(v) {
+                let x = v;
+                let r = BigInt(await fortEuropeanOption._toUInt(v));
+                console.log(v + '; ' + r + ':' + x);
+                expect(x).to.eq(r);
+            };
+
+            await test(BigInt('0'));
+            await test(BigInt('1'));
+            await test(BigInt('2'));
+            await test(BigInt('3'));
+            await test(BigInt('4'));
+            await test(BigInt('5'));
+            await test(BigInt('6'));
+            await test(BigInt('7'));
+            await test(BigInt('8'));
+            await test(BigInt('9'));
+            await test(BigInt('10'));
+
+            for (var bi = BigInt(1); bi < BigInt('0x80000000000000000000000000000000');) {
+                await test(bi);
+                bi = bi * BigInt(77);
+            }
+            await test(BigInt('0x80000000000000000000000000000000') - BigInt('1'));
+            //test(BigInt('-1'));
+            //test(BigInt('-10'));
+        }
+
+        if (TEST_PRIVATE) {
+            console.log('8. _snd');
+
+            const test = async function(v) {
+                let s1 = snd(v);
+                let vi = BigInt(Math.floor(v * 1e18));
+                let s2 = await fortEuropeanOption._snd((vi << BigInt(64)) / BigInt(1e18));
+                s2 = BigInt(s2) * BigInt(1e18) / (BigInt(1) << BigInt(64));
+                s2 = parseFloat(toDecimal(s2));
+
+                console.log('v=' + v + '; s1=' + s1 + '; s2=' + s2);
+                expect(Math.abs(s1 - s2)).to.lt(0.00001);
+            };
+
+            await test(0.5);
+            for (var x = 1000; x > 0.00001;) {
+                await test(x);
+                await test(-x);
+
+                x *= 0.7;
+            }
+        }
+
+        if (TEST_PRIVATE) {
+            console.log('9. _calcVc');
+
+            const test = async function(sigma, miu, S0, T, K) {
+                console.log({ sigma, miu, S0, T, K });
+                let s1 = Vc(S0, K, sigma, miu, T);
+                console.log('s1=' + s1);
+                let s2 = await fortEuropeanOption._calcVc({
+                    sigmaSQ: Math.floor(sigma * sigma * 1e18),
+                    miu: (BigInt(Math.floor(miu * 1e18)) << BigInt(64)) / BigInt(1e18),
+                    minPeriod: 10
+                }, S0, T, K);
+
+                s2 = parseFloat(toDecimal(BigInt(s2) * BigInt(1e18))) / (4294967296.0) / (4294967296.0);
+
+                //console.log('s1=' + s1 + '; s2=' + s2);
+                console.log('s2=' + s2);
+                console.log();  
+                if (s1 / S0 < 0.01 && s2 / S0 < 0.01 ) {} else
+                expect(Math.abs(s1 - s2) / s1).to.lt(0.1);
+            };
+
+            let MIU = 0.3 / 86400 / 365;
+            await test(0.00001, MIU, 2450000000, 14 * 10000, 2450000000);
+            for (var sigma = 0.00005; sigma < 0.1; sigma = sigma * 3.1) {
+                for (var miu = MIU / 10; miu < MIU * 20; miu *= 7.1) {
+                    for (var S0 = 10000000; S0 < 1e10; S0 *= 137) {
+                        for (var T = 1000 * 14; T < 100000000 * 14; T *= 61) {
+                            for (var b = 0.7; b < 1.5; b *= 1.9) {
+                                await test(sigma, miu, S0, T, Math.floor(S0 * b));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (TEST_PRIVATE) {
+            console.log('10. _calcVp');
+
+            const test = async function(sigma, miu, S0, T, K) {
+                console.log({ sigma, miu, S0, T, K });
+                let s1 = Vp(S0, K, sigma, miu, T);
+                console.log('s1=' + s1);
+                let s2 = await fortEuropeanOption._calcVp({
+                    sigmaSQ: Math.floor(sigma * sigma * 1e18),
+                    miu: (BigInt(Math.floor(miu * 1e18)) << BigInt(64)) / BigInt(1e18),
+                    minPeriod: 10
+                }, S0, T, K);
+
+                s2 = parseFloat(toDecimal(BigInt(s2) * BigInt(1e18))) / (4294967296.0) / (4294967296.0);
+
+                //console.log('s1=' + s1 + '; s2=' + s2);
+                console.log('s2=' + s2);
+                console.log();  
+                if (s1 / S0 < 0.01 && s2 / S0 < 0.01 ) {} else
+                expect(Math.abs(s1 - s2) / s1).to.lt(0.1);
+            };
+
+            let MIU = 0.3 / 86400 / 365;
+            await test(0.00001, MIU, 2450000000, 14 * 10000, 2450000000);
+            for (var sigma = 0.00005; sigma < 0.1; sigma = sigma * 3.1) {
+                for (var miu = MIU / 10; miu < MIU * 20; miu *= 7.1) {
+                    for (var S0 = 10000000; S0 < 1e10; S0 *= 137) {
+                        for (var T = 1000 * 14; T < 100000000 * 14; T *= 61) {
+                            for (var b = 0.7; b < 1.5; b *= 1.9) {
+                                await test(sigma, miu, S0, T, Math.floor(S0 * b));
+                            }
+                        }
+                    }
+                }
+            }
         }
     });
 });
