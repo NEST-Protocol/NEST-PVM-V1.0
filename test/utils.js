@@ -131,7 +131,7 @@ exports.d1 = function(S0, K, sigma, miu, T) {
     return (Math.log(K / S0) + (sigma * sigma / 2 - miu) * T) / sigma;
 };
 
-const snd = exports.snd;
+const snd = exports.tableSnd;
 
 exports.Vc = function(S0, K, sigma, miu, T) {
     let d1v = exports.d1(S0, K, sigma, miu, T);

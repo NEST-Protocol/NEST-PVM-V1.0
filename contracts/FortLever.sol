@@ -10,7 +10,7 @@ import "./libs/StringHelper.sol";
 import "./interfaces/IFortLever.sol";
 
 import "./FortFrequentlyUsed.sol";
-import "./FortToken.sol";
+import "./FortDCU.sol";
 import "./FortLeverToken.sol";
 
 /// @dev 杠杆币交易
@@ -162,7 +162,7 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         require(leverAddress != address(0), "FortLever:not exist");
 
         // 2. 销毁用户的fort
-        FortToken(FORT_TOKEN_ADDRESS).burn(msg.sender, fortAmount);
+        FortDCU(FORT_TOKEN_ADDRESS).burn(msg.sender, fortAmount);
 
         // 3. 给用户分发杠杆币
         FortLeverToken(leverAddress).mint { 
@@ -181,7 +181,7 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         require(fortAmount >= 100 ether, "FortLever:at least 100 FORT");
 
         // 1. 销毁用户的fort
-        FortToken(FORT_TOKEN_ADDRESS).burn(msg.sender, fortAmount);
+        FortDCU(FORT_TOKEN_ADDRESS).burn(msg.sender, fortAmount);
 
         // 2. 给用户分发杠杆币
         FortLeverToken(leverAddress).mint { 
@@ -203,7 +203,7 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         } (msg.sender, amount, msg.sender);
 
         // 2. 给用户分发fort
-        FortToken(FORT_TOKEN_ADDRESS).mint(msg.sender, amount);
+        FortDCU(FORT_TOKEN_ADDRESS).mint(msg.sender, amount);
     }
 
     /// @dev 清算
@@ -221,7 +221,7 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
 
         // 2. 跟用户分发fort
         if (fortAmount > 0) {
-            FortToken(FORT_TOKEN_ADDRESS).mint(msg.sender, fortAmount);
+            FortDCU(FORT_TOKEN_ADDRESS).mint(msg.sender, fortAmount);
         }
     }
 
@@ -246,7 +246,7 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         for (uint i = leverAddressArray.length; i > 0; ) {
             blocks += FortLeverToken(leverAddressArray[--i]).update { value: unitFee } (payback);
         }
-        FortToken(FORT_TOKEN_ADDRESS).mint(msg.sender, blocks * 0.1 ether);
+        FortDCU(FORT_TOKEN_ADDRESS).mint(msg.sender, blocks * 0.1 ether);
     }
 
     // 根据杠杆信息计算索引key

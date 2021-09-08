@@ -114,19 +114,19 @@ describe('FortEuropeanOption', function() {
             expect(await fortEuropeanOption._align(245000001)).to.eq(245000000);
         }
 
-        if (TEST_PRIVATE) {
-            console.log("3. getDecimals");
+        // if (TEST_PRIVATE) {
+        //     console.log("3. getDecimals");
 
-            console.log('getDecimals(eth.address)=' + await fortEuropeanOption._getDecimals(eth.address));
-            console.log('getDecimals(usdt.address)=' + await fortEuropeanOption._getDecimals(usdt.address));
-            console.log('getDecimals(hbtc.address)=' + await fortEuropeanOption._getDecimals(hbtc.address));
-            console.log('getDecimals(fort.address)=' + await fortEuropeanOption._getDecimals(fort.address));
+        //     console.log('getDecimals(eth.address)=' + await fortEuropeanOption._getDecimals(eth.address));
+        //     console.log('getDecimals(usdt.address)=' + await fortEuropeanOption._getDecimals(usdt.address));
+        //     console.log('getDecimals(hbtc.address)=' + await fortEuropeanOption._getDecimals(hbtc.address));
+        //     console.log('getDecimals(fort.address)=' + await fortEuropeanOption._getDecimals(fort.address));
 
-            expect(await fortEuropeanOption._getDecimals(eth.address)).to.equal(18);
-            expect(await fortEuropeanOption._getDecimals(usdt.address)).to.equal(6);
-            expect(await fortEuropeanOption._getDecimals(hbtc.address)).to.equal(18);
-            expect(await fortEuropeanOption._getDecimals(fort.address)).to.equal(18);
-        }
+        //     expect(await fortEuropeanOption._getDecimals(eth.address)).to.equal(18);
+        //     expect(await fortEuropeanOption._getDecimals(usdt.address)).to.equal(6);
+        //     expect(await fortEuropeanOption._getDecimals(hbtc.address)).to.equal(18);
+        //     expect(await fortEuropeanOption._getDecimals(fort.address)).to.equal(18);
+        // }
 
         if (TEST_PRIVATE) {
             console.log('4. optionName');

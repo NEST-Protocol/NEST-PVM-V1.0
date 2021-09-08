@@ -10,7 +10,7 @@ import "./libs/ABDKMath64x64.sol";
 import "./interfaces/IFortEuropeanOption.sol";
 import "./interfaces/INestPriceFacade.sol";
 
-import "./FortToken.sol";
+import "./FortDCU.sol";
 import "./FortOptionToken.sol";
 
 import "hardhat/console.sol";

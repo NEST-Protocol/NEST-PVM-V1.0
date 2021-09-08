@@ -5,11 +5,14 @@ pragma solidity ^0.8.6;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "./libs/TransferHelper.sol";
+import "./libs/StringHelper.sol";
 
 import "./interfaces/IFortVaultForStaking.sol";
 
 import "./FortFrequentlyUsed.sol";
-import "./FortToken.sol";
+import "./FortDCU.sol";
+
+import "hardhat/console.sol";
 
 /// @dev Stake xtoken, earn fort
 contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
@@ -17,7 +20,7 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
     /// @dev Account information
     struct Account {
         // Staked of current account
-        uint160 balance;
+        uint balance;
     }
     
     /// @dev Stake channel information
@@ -61,10 +64,6 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
         return _fortUnit;
     }
 
-    function _getKey(address xtoken, uint96 cycle) private pure returns (uint){
-        return (uint160(xtoken) << 96) | uint(cycle);
-    }
-
     // TODO: 周期改为固定区块
     /// @dev Initialize ore drawing weight
     /// @param startblock 锁仓起始区块
@@ -79,15 +78,16 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
     ) external override onlyGovernance {
 
         uint cnt = xtokens.length;
-        require(cnt == weights.length, "FVFS:mismatch len");
+        require(cnt == weights.length && cnt == cycles.length, "FVFS:mismatch len");
 
         for (uint i = 0; i < cnt; ++i) {
             address xtoken = xtokens[i];
-            require(xtoken != address(0), "FVFS:invalid xtoken");
+            //require(xtoken != address(0), "FVFS:invalid xtoken");
             uint key = _getKey(xtoken, cycles[i]);
             StakeChannel storage channel = _channels[key];
             channel.endblock = startblock + uint(cycles[i]);
             channel.weight = weights[i];
+            channel.totalStaked = 0;
         }
 
         _startblock = startblock;
@@ -158,36 +158,36 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
         channel.totalStaked += amount;
 
         // Update stake balance of account
-        account.balance = uint160(uint(account.balance) + amount);
+        account.balance += amount;
         channel.accounts[msg.sender] = account;
     }
 
     /// @dev Withdraw xtoken, and claim earned fort
     /// @param xtoken xtoken address
-    /// @param amount Withdraw amount
-    function withdraw(address xtoken, uint96 cycle, uint amount) external override {
+    function withdraw(address xtoken, uint96 cycle) external override {
 
         // Load stake channel
         StakeChannel storage channel = _channels[_getKey(xtoken, cycle)];
         // Settle reward for account
         Account memory account = _getReward(channel, msg.sender);
+        uint amount = account.balance;
 
         // Update totalStaked
-        channel.totalStaked -= amount;
+        //channel.totalStaked -= amount;
         // Update stake balance of account
-        account.balance = uint160(uint(account.balance) - amount);
+        account.balance = 0; //uint160(uint(account.balance) - amount);
         channel.accounts[msg.sender] = account;
 
         // Transfer xtoken to msg.sender
         TransferHelper.safeTransfer(xtoken, msg.sender, amount);
     }
 
-    /// @dev Claim fort
-    /// @param xtoken xtoken address
-    function getReward(address xtoken, uint96 cycle) external override {
-        StakeChannel storage channel = _channels[_getKey(xtoken, cycle)];
-        channel.accounts[msg.sender] = _getReward(channel, msg.sender);
-    }
+    // /// @dev Claim fort
+    // /// @param xtoken xtoken address
+    // function getReward(address xtoken, uint96 cycle) external override {
+    //     StakeChannel storage channel = _channels[_getKey(xtoken, cycle)];
+    //     channel.accounts[msg.sender] = _getReward(channel, msg.sender);
+    // }
 
     // Calculate reward, and settle the target account
     function _getReward(
@@ -202,8 +202,12 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
             uint reward = channel.weight * _fortUnit * account.balance / channel.totalStaked;
             // Transfer fort to account
             if (reward > 0) {
-                FortToken(FORT_TOKEN_ADDRESS).mint(to, reward);
+                FortDCU(FORT_TOKEN_ADDRESS).mint(to, reward);
             }
         }
+    }
+
+    function _getKey(address xtoken, uint96 cycle) public pure returns (uint){
+        return (uint(uint160(xtoken)) << 96) | uint(cycle);
     }
 }

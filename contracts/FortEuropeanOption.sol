@@ -11,7 +11,7 @@ import "./libs/ABDKMath64x64.sol";
 import "./interfaces/IFortEuropeanOption.sol";
 
 import "./FortFrequentlyUsed.sol";
-import "./FortToken.sol";
+import "./FortDCU.sol";
 import "./FortOptionToken.sol";
 
 import "hardhat/console.sol";
@@ -182,7 +182,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         }
 
         // 4. 销毁权利金
-        FortToken(FORT_TOKEN_ADDRESS).burn(msg.sender, fortAmount);
+        FortDCU(FORT_TOKEN_ADDRESS).burn(msg.sender, fortAmount);
 
         // 5. 分发期权凭证
         FortOptionToken(option).mint(msg.sender, amount);
@@ -302,7 +302,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
 
         // 5. 用户赌赢了，给其增发赢得的fort
         if (gain > 0) {
-            FortToken(FORT_TOKEN_ADDRESS).mint(msg.sender, gain);
+            FortDCU(FORT_TOKEN_ADDRESS).mint(msg.sender, gain);
         }
     }
 

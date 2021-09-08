@@ -11,7 +11,7 @@ exports.deploy = async function() {
     const TestERC20 = await ethers.getContractFactory('TestERC20');
     const NestPriceFacade = await ethers.getContractFactory('NestPriceFacade');
     const FortGovernance = await ethers.getContractFactory('FortGovernance');
-    const FortToken = await ethers.getContractFactory('FortToken');
+    const FortDCU = await ethers.getContractFactory('FortDCU');
     const FortDAO = await ethers.getContractFactory('FortDAO');
     const FortEuropeanOption = await ethers.getContractFactory('FortEuropeanOption');
     const FortLever = await ethers.getContractFactory('FortLever');
@@ -68,8 +68,8 @@ exports.deploy = async function() {
     const fortGovernance = await FortGovernance.attach('0xDD61E5604580AfeEe202d533eefE688091b8127e');
     console.log('fortGovernance: ' + fortGovernance.address);
 
-    //const fort = await FortToken.deploy();
-    const fort = await FortToken.attach('0xDB7b4FdF99eEE8E4Cb8373630c923c51c1275382');
+    //const fort = await FortDCU.deploy();
+    const fort = await FortDCU.attach('0xDB7b4FdF99eEE8E4Cb8373630c923c51c1275382');
     console.log('fort: ' + fort.address);
 
     //const fortDAO = await upgrades.deployProxy(FortDAO, [fortGovernance.address], { initializer: 'initialize' });
@@ -175,6 +175,7 @@ exports.deploy = async function() {
         usdt: usdt,
         hbtc: hbtc,
 
+        fortGovernance: fortGovernance,
         fort: fort,
         fortDAO: fortDAO,
         fortEuropeanOption: fortEuropeanOption,

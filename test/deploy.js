@@ -5,6 +5,6 @@ describe('FortEuropeanOption', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
 
-        const { eht, usdt, fort, fortEuropeanOption, fortLever } = await deploy();
+        const { eht, usdt, fort, fortEuropeanOption, fortLever, fortGovernance } = await deploy();
     });
 });

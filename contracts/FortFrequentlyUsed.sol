@@ -9,7 +9,7 @@ import "./FortBase.sol";
 /// @dev Base contract of Fort
 contract FortFrequentlyUsed is FortBase {
 
-    // Address of FortToken contract
+    // Address of FortDCU contract
     //address constant FORT_TOKEN_ADDRESS = ;
     address FORT_TOKEN_ADDRESS;
 
@@ -24,7 +24,7 @@ contract FortFrequentlyUsed is FortBase {
     uint constant USDT_BASE = 1000000;
 
     // Genesis block number of fort
-    // FortToken contract is created at block height TODO: 11040156. However, because the mining algorithm of Fort v1.0
+    // FortDCU contract is created at block height TODO: 11040156. However, because the mining algorithm of Fort v1.0
     // is different from that at present, a new mining algorithm is adopted from Fort v2.1. The new algorithm
     // includes the attenuation logic according to the block. Therefore, it is necessary to trace the block
     // where the fort begins to decay. According to the circulation when Fort v1.0 is online, the new mining

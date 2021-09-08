@@ -10,7 +10,7 @@ import "./FortBase.sol";
 
 // TODO: 命名问题
 /// @dev Fort代币
-contract FortToken is FortBase, ERC20("Decentralized Derivatives Unit", "DCU") {
+contract FortDCU is FortBase, ERC20("Decentralized Derivatives Unit", "DCU") {
 
     // 保存挖矿权限地址
     mapping(address=>uint) _minters;
@@ -19,7 +19,7 @@ contract FortToken is FortBase, ERC20("Decentralized Derivatives Unit", "DCU") {
     }
 
     modifier onlyMinter {
-        require(_minters[msg.sender] == 1, "FortToken:not minter");
+        require(_minters[msg.sender] == 1, "FortDCU:not minter");
         _;
     }
 
@@ -46,5 +46,10 @@ contract FortToken is FortBase, ERC20("Decentralized Derivatives Unit", "DCU") {
     /// @param value 销毁数量
     function burn(address from, uint value) external onlyMinter {
         _burn(from, value);
+    }
+
+    // TODO: 测试代码，删除
+    function test() external payable {
+
     }
 }
