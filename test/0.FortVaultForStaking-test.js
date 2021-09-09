@@ -65,11 +65,11 @@ describe('FortEuropeanOption', function() {
             let config = await fortVaultForStaking.getConfig();
             console.log(config.toString());
 
-            await fortVaultForStaking.setConfig('123456789123');
+            await fortVaultForStaking.setConfig(toBigInt(0.7), 10, 9527);
             config = await fortVaultForStaking.getConfig();
             console.log(config.toString());
 
-            await fortVaultForStaking.setConfig(toBigInt(0.1));
+            await fortVaultForStaking.setConfig(toBigInt(0.1), 10, 60);
             config = await fortVaultForStaking.getConfig();
             console.log(config.toString());
         }
@@ -104,7 +104,6 @@ describe('FortEuropeanOption', function() {
             console.log('2. batchSetPoolWeight');
             console.log(tokens.map(e=>e.address));
             await fortVaultForStaking.batchSetPoolWeight(
-                50,
                 tokens.map(e=>e.address), 
                 cycles,
                 weights
@@ -119,8 +118,7 @@ describe('FortEuropeanOption', function() {
                     address: token.address,
                     totalStaked: toDecimal(ti.totalStaked.toString(), token.address == usdt.address ? 6 : 18),
                     totalRewards: toDecimal(ti.totalRewards.toString()),
-                    startblock: ti.startblock.toString(),
-                    endblock: ti.endblock.toString()
+                    unlockBlock: ti.unlockBlock.toString()
                 }
                 console.log(ts);
             }
@@ -141,25 +139,50 @@ describe('FortEuropeanOption', function() {
             await fortVaultForStaking.connect(addr1).stake(usdt.address, 10, toBigInt(50, 6));
             console.log(await getStatus());
         }
-
+        
         if (true) {
-            console.log('4. withdraw');
+            console.log('4. getReward');
             for (var i = 0; i < 7; ++i) {
                 await usdt.transfer(owner.address, toBigInt(0, 6));
             }
-
-            // await fortVaultForStaking.withdraw(usdt.address, 10, await fortVaultForStaking.balanceOf(
-            //     usdt.address,
-            //     10,
-            //     owner.address
-            // ) / 2);
 
             console.log('owner earned:' + await fortVaultForStaking.earned(usdt.address, 10, owner.address));
             console.log('addr1 earned:' + await fortVaultForStaking.earned(usdt.address, 10, addr1.address));
             console.log('owner balance:' + await fortVaultForStaking.balanceOf(usdt.address, 10, owner.address));
             console.log('addr1 balance:' + await fortVaultForStaking.balanceOf(usdt.address, 10, addr1.address));
-            await fortVaultForStaking.withdraw(usdt.address, 10);
-            await fortVaultForStaking.connect(addr1).withdraw(usdt.address, 10);
+
+            for (var i = 0; i < 5; ++i) {
+                console.log('getReward ' + i);
+                await fortVaultForStaking.getReward(usdt.address, 10);
+                await fortVaultForStaking.connect(addr1).getReward(usdt.address, 10);
+                console.log(await getStatus());
+                console.log('owner earned:' + await fortVaultForStaking.earned(usdt.address, 10, owner.address));
+                console.log('addr1 earned:' + await fortVaultForStaking.earned(usdt.address, 10, addr1.address));
+                console.log('owner balance:' + await fortVaultForStaking.balanceOf(usdt.address, 10, owner.address));
+                console.log('addr1 balance:' + await fortVaultForStaking.balanceOf(usdt.address, 10, addr1.address));
+            }
+        }
+
+        if (true) {
+            console.log('5. withdraw');
+            for (var i = 0; i < 7; ++i) {
+                await usdt.transfer(owner.address, toBigInt(0, 6));
+            }
+
+            console.log('owner earned:' + await fortVaultForStaking.earned(usdt.address, 10, owner.address));
+            console.log('addr1 earned:' + await fortVaultForStaking.earned(usdt.address, 10, addr1.address));
+            console.log('owner balance:' + await fortVaultForStaking.balanceOf(usdt.address, 10, owner.address));
+            console.log('addr1 balance:' + await fortVaultForStaking.balanceOf(usdt.address, 10, addr1.address));
+            await fortVaultForStaking.withdraw(usdt.address, 10, await fortVaultForStaking.balanceOf(
+                usdt.address,
+                10,
+                owner.address
+            ));
+            await fortVaultForStaking.connect(addr1).withdraw(usdt.address, 10, await fortVaultForStaking.balanceOf(
+                usdt.address,
+                10,
+                addr1.address
+            ));
             console.log(await getStatus());
             console.log('owner earned:' + await fortVaultForStaking.earned(usdt.address, 10, owner.address));
             console.log('addr1 earned:' + await fortVaultForStaking.earned(usdt.address, 10, addr1.address));

@@ -17,35 +17,58 @@ import "hardhat/console.sol";
 /// @dev Stake xtoken, earn fort
 contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
 
+    /* *******************************************************************
+        定义三个操作：锁仓，领取fort，取回
+
+        ----------------[1]-----[2]---------------[3]------------------->
+
+        a.  一共三个时间节点：1， 2， 3。
+            对于所有质押通道：1和2时间节点都是一样的，不同的质押通道3是不一样的。
+            质押周期表示2~3之间的时间
+            时间折算成区块估算
+
+        b. 1节点之前啥都不能操作
+        c. 1节点到2节点期间可以质押
+        d. 2节点以后可以执行领取操作
+        e. 3节点以后可以执行取回操作
+    ******************************************************************* */
+
     /// @dev Account information
     struct Account {
         // Staked of current account
-        uint balance;
+        uint160 balance;
+        // Token dividend value mark of the unit that the account has received
+        uint96 rewardCursor;
     }
     
     /// @dev Stake channel information
     struct StakeChannel{
 
-        // Mining amount weight
-        uint weight;
-        // 结束区块号
-        uint endblock;
         // Total staked amount
-        uint totalStaked;
+        uint192 totalStaked;
+
+        // 解锁区块号
+        uint64 unlockBlock;
+
+        // Mining amount weight
+        uint160 weight;
+
+        // The dividend mark that the settled company token can receive
+        uint96 rewardPerToken;
 
         // Accounts
         // address=>balance
         mapping(address=>Account) accounts;
     }
     
-    // // fort mining speed weight base
-    // uint constant FORT_WEIGHT_BASE = 1e9;
+    // Fort出矿单位
+    uint128 _fortUnit;
+    // staking开始区块号
+    uint64 _startBlock;
+    // staking截止区块号
+    uint64 _stopBlock;
 
-    // fort mining unit
-    uint _fortUnit;
-    uint _startblock;
-
-    // staking通道信息xtoken|cycle=>StakeChannel
+    // staking通道信息xtoken=>StakeChannel
     mapping(uint=>StakeChannel) _channels;
     
     /// @dev Create FortVaultForStaking
@@ -53,44 +76,45 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
     }
 
     /// @dev Modify configuration
-    /// @param fortUnit fort mining unit
-    function setConfig(uint fortUnit) external onlyGovernance {
+    /// @param fortUnit Fort出矿单位
+    /// @param startBlock staking开始区块号
+    /// @param stopBlock staking截止区块号
+    function setConfig(uint128 fortUnit, uint64 startBlock, uint64 stopBlock) external onlyGovernance {
         _fortUnit = fortUnit;
+        _startBlock = startBlock;
+        _stopBlock = stopBlock;
     }
 
     /// @dev Get configuration
-    /// @return fortUnit fort mining unit
-    function getConfig() external view returns (uint fortUnit) {
-        return _fortUnit;
+    /// @return fortUnit Fort出矿单位
+    /// @return startBlock staking开始区块号
+    /// @return stopBlock staking截止区块号
+    function getConfig() external view returns (uint fortUnit, uint startBlock, uint stopBlock) {
+        return (uint(_fortUnit), uint(_startBlock), uint(_stopBlock));
     }
 
-    // TODO: 周期改为固定区块
     /// @dev Initialize ore drawing weight
-    /// @param startblock 锁仓起始区块
     /// @param xtokens xtoken array
     /// @param cycles cycle array
     /// @param weights weight array
     function batchSetPoolWeight(
-        uint startblock,
         address[] calldata xtokens, 
-        uint96[] calldata cycles, 
-        uint[] calldata weights
+        uint64[] calldata cycles, 
+        uint160[] calldata weights
     ) external override onlyGovernance {
-
+        uint64 stopBlock = _stopBlock;
         uint cnt = xtokens.length;
         require(cnt == weights.length && cnt == cycles.length, "FVFS:mismatch len");
 
         for (uint i = 0; i < cnt; ++i) {
             address xtoken = xtokens[i];
             //require(xtoken != address(0), "FVFS:invalid xtoken");
-            uint key = _getKey(xtoken, cycles[i]);
-            StakeChannel storage channel = _channels[key];
-            channel.endblock = startblock + uint(cycles[i]);
-            channel.weight = weights[i];
-            channel.totalStaked = 0;
-        }
+            StakeChannel storage channel = _channels[_getKey(xtoken, cycles[i])];
+            _updateReward(channel);
 
-        _startblock = startblock;
+            channel.weight = weights[i];
+            channel.unlockBlock = stopBlock + cycles[i];
+        }
     }
 
     /// @dev Get stake channel information
@@ -98,116 +122,183 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
     /// @param cycle cycle
     /// @return totalStaked Total lock volume of target xtoken
     /// @return totalRewards 通道总出矿量
-    /// @return startblock 锁仓起始区块
-    /// @return endblock 锁仓结束区块（达到结束区块后可以领取分红）
+    /// @return unlockBlock 解锁区块号
     function getChannelInfo(
         address xtoken, 
-        uint96 cycle
+        uint64 cycle
     ) external view override returns (
         uint totalStaked, 
         uint totalRewards,
-        uint startblock,
-        uint endblock
+        uint unlockBlock
     ) {
         StakeChannel storage channel = _channels[_getKey(xtoken, cycle)];
         return (
-            channel.totalStaked, 
-            channel.weight * _fortUnit, 
-            _startblock, 
-            channel.endblock
+            uint(channel.totalStaked), 
+            uint(channel.weight) * uint(_fortUnit), 
+            uint(channel.unlockBlock) 
         );
     }
 
     /// @dev Get staked amount of target address
     /// @param xtoken xtoken address
+    /// @param cycle cycle
     /// @param addr Target address
     /// @return Staked amount of target address
-    function balanceOf(address xtoken, uint96 cycle, address addr) external view override returns (uint) {
+    function balanceOf(address xtoken, uint64 cycle, address addr) external view override returns (uint) {
         return uint(_channels[_getKey(xtoken, cycle)].accounts[addr].balance);
     }
 
-    /// @dev Get the number of fort to be collected by the target address on the designated transaction pair lock
-    /// @param xtoken xtoken address
+    /// @dev Get the number of Fort to be collected by the target address on the designated transaction pair lock
+    /// @param xtoken xtoken address (or CNode address)
+    /// @param cycle cycle
     /// @param addr Target address
-    /// @return The number of fort to be collected by the target address on the designated transaction lock
-    function earned(address xtoken, uint96 cycle, address addr) external view override returns (uint) {
-
+    /// @return The number of Fort to be collected by the target address on the designated transaction lock
+    function earned(address xtoken, uint64 cycle, address addr) external view override returns (uint) {
         // Load staking channel
         StakeChannel storage channel = _channels[_getKey(xtoken, cycle)];
-        if (block.number < channel.endblock) {
-            return 0;
+        // Call _calcReward() to calculate new reward
+        uint newReward = _calcReward(channel);
+        
+        // Load account
+        Account memory account = channel.accounts[addr];
+        uint balance = uint(account.balance);
+        // Load total amount of staked
+        uint totalStaked = uint(channel.totalStaked);
+
+        // Unit token dividend
+        uint rewardPerToken = _decodeFloat(channel.rewardPerToken);
+        if (totalStaked > 0) {
+            rewardPerToken += newReward * 1 ether / totalStaked;
         }
-        return channel.weight * _fortUnit * channel.accounts[addr].balance / channel.totalStaked;
+        
+        return (rewardPerToken - _decodeFloat(account.rewardCursor)) * balance / 1 ether;
     }
 
-    /// @dev Stake xtoken to earn fort
-    /// @param xtoken xtoken address
+    /// @dev Stake xtoken to earn Fort
+    /// @param xtoken xtoken address (or CNode address)
+    /// @param cycle cycle
     /// @param amount Stake amount
-    function stake(address xtoken, uint96 cycle, uint amount) external override {
+    function stake(address xtoken, uint64 cycle, uint amount) external override {
 
         // Load stake channel
         StakeChannel storage channel = _channels[_getKey(xtoken, cycle)];
-        // TODO: 结束时间不一样?
-        require(block.number >= _startblock && block.number < channel.endblock, "FVFS:!block");
+        require(block.number >= uint(_startBlock) && block.number <= uint(_stopBlock), "FVFS:!block");
         // Settle reward for account
-        Account memory account = channel.accounts[msg.sender];
+        Account memory account = _getReward(channel, msg.sender);
 
         // Transfer xtoken from msg.sender to this
         TransferHelper.safeTransferFrom(xtoken, msg.sender, address(this), amount);
         // Update totalStaked
-        channel.totalStaked += amount;
+        channel.totalStaked += uint192(amount);
 
         // Update stake balance of account
-        account.balance += amount;
+        account.balance += uint160(amount);
         channel.accounts[msg.sender] = account;
     }
 
-    /// @dev Withdraw xtoken, and claim earned fort
-    /// @param xtoken xtoken address
-    function withdraw(address xtoken, uint96 cycle) external override {
-
+    /// @dev Withdraw xtoken, and claim earned Fort
+    /// @param xtoken xtoken address (or CNode address)
+    /// @param cycle cycle
+    /// @param amount Withdraw amount
+    function withdraw(address xtoken, uint64 cycle, uint amount) external override {
         // Load stake channel
         StakeChannel storage channel = _channels[_getKey(xtoken, cycle)];
         // Settle reward for account
         Account memory account = _getReward(channel, msg.sender);
-        uint amount = account.balance;
 
         // Update totalStaked
-        //channel.totalStaked -= amount;
+        channel.totalStaked -= uint192(amount);
         // Update stake balance of account
-        account.balance = 0; //uint160(uint(account.balance) - amount);
+        account.balance -= uint160(amount);
         channel.accounts[msg.sender] = account;
 
         // Transfer xtoken to msg.sender
         TransferHelper.safeTransfer(xtoken, msg.sender, amount);
     }
 
-    // /// @dev Claim fort
-    // /// @param xtoken xtoken address
-    // function getReward(address xtoken, uint96 cycle) external override {
-    //     StakeChannel storage channel = _channels[_getKey(xtoken, cycle)];
-    //     channel.accounts[msg.sender] = _getReward(channel, msg.sender);
-    // }
+    /// @dev Claim Fort
+    /// @param xtoken xtoken address (or CNode address)
+    /// @param cycle cycle
+    function getReward(address xtoken, uint64 cycle) external override {
+        StakeChannel storage channel = _channels[_getKey(xtoken, cycle)];
+        channel.accounts[msg.sender] = _getReward(channel, msg.sender);
+    }
 
     // Calculate reward, and settle the target account
     function _getReward(
         StakeChannel storage channel, 
         address to
     ) private returns (Account memory account) {
-
         // Load account
         account = channel.accounts[to];
+        // Update the global dividend information and get the new unit token dividend amount
+        uint rewardPerToken = _updateReward(channel);
+        
+        // Calculate reward for account
+        uint balance = uint(account.balance);
+        uint reward = (rewardPerToken - _decodeFloat(account.rewardCursor)) * balance / 1 ether;
+        
+        // Update sign of account
+        account.rewardCursor = _encodeFloat(rewardPerToken);
+        //channel.accounts[to] = account;
 
-        if (block.number >= channel.endblock) {
-            uint reward = channel.weight * _fortUnit * account.balance / channel.totalStaked;
-            // Transfer fort to account
-            if (reward > 0) {
-                FortDCU(FORT_TOKEN_ADDRESS).mint(to, reward);
-            }
+        // Transfer Fort to account
+        if (reward > 0) {
+            FortDCU(FORT_TOKEN_ADDRESS).mint(to, reward);
         }
     }
 
-    function _getKey(address xtoken, uint96 cycle) public pure returns (uint){
+    // Update the global dividend information and return the new unit token dividend amount
+    function _updateReward(StakeChannel storage channel) private returns (uint rewardPerToken) {
+        // Call _calcReward() to calculate new reward
+        uint newReward = _calcReward(channel);
+
+        // Load total amount of staked
+        uint totalStaked = uint(channel.totalStaked);
+        
+        rewardPerToken = _decodeFloat(channel.rewardPerToken);
+        if (totalStaked > 0) {
+            rewardPerToken += newReward * 1 ether / totalStaked;
+        }
+
+        // Update the dividend value of unit share
+        channel.rewardPerToken = _encodeFloat(rewardPerToken);
+        if (newReward > 0) {
+            channel.weight = uint160(0);
+        }
+    }
+
+    // Calculate new reward
+    function _calcReward(StakeChannel storage channel) private view returns (uint newReward) {
+
+        if (block.number > uint(_stopBlock)) {
+            newReward = uint(channel.weight) * uint(_fortUnit);
+        } else {
+            newReward = 0;
+        }
+    }
+
+    /// @dev Encode the uint value as a floating-point representation in the form of fraction * 16 ^ exponent
+    /// @param value Destination uint value
+    /// @return float format
+    function _encodeFloat(uint value) private pure returns (uint96) {
+
+        uint exponent = 0; 
+        while (value > 0x3FFFFFFFFFFFFFFFFFFFFFF) {
+            value >>= 4;
+            ++exponent;
+        }
+        return uint96((value << 6) | exponent);
+    }
+
+    /// @dev Decode the floating-point representation of fraction * 16 ^ exponent to uint
+    /// @param floatValue fraction value
+    /// @return decode format
+    function _decodeFloat(uint96 floatValue) private pure returns (uint) {
+        return (uint(floatValue) >> 6) << ((uint(floatValue) & 0x3F) << 2);
+    }
+
+    function _getKey(address xtoken, uint64 cycle) public pure returns (uint){
         return (uint(uint160(xtoken)) << 96) | uint(cycle);
     }
 }

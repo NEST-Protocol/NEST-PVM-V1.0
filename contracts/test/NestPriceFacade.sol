@@ -51,7 +51,7 @@ contract NestPriceFacade is INestPriceFacade {
         if (msg.value > 0.01 ether) {
             payable(payback).transfer(msg.value - 0.01 ether);
         } else {
-            require(msg.value == 0.01 ether, "CoFiXController: Error fee");
+            require(msg.value == 0.01 ether, "NestPriceFacade:Error fee");
         }
 
         // if (height > 90) {
@@ -74,7 +74,7 @@ contract NestPriceFacade is INestPriceFacade {
         if (msg.value > 0.01 ether) {
             payable(payback).transfer(msg.value - 0.01 ether);
         } else {
-            require(msg.value == 0.01 ether, "CoFiXController: Error fee");
+            require(msg.value == 0.01 ether, "NestPriceFacade:Error fee");
         }
 
         // if (block.number > 90) {
@@ -101,7 +101,7 @@ contract NestPriceFacade is INestPriceFacade {
         if (msg.value > 0.01 ether) {
             payable(payback).transfer(msg.value - 0.01 ether);
         } else {
-            require(msg.value == 0.01 ether, "CoFiXController: Error fee");
+            require(msg.value == 0.01 ether, "NestPriceFacade:Error fee");
         }
 
         (blockNumber, price) = latestPriceView(tokenAddress);
