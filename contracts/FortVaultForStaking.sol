@@ -206,6 +206,8 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
     function withdraw(address xtoken, uint64 cycle, uint160 amount) external override {
         // Load stake channel
         StakeChannel storage channel = _channels[_getKey(xtoken, cycle)];
+        require(block.number >= uint(channel.unlockBlock), "FVFS:!block");
+
         // Settle reward for account
         Account memory account = _getReward(channel, msg.sender);
 
@@ -302,7 +304,7 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
     }
 
     // TODO: 以下方发定义为public的是为了测试，发布时需要改为私有的
-    
+
     function _getKey(address xtoken, uint64 cycle) public pure returns (uint){
         return (uint(uint160(xtoken)) << 96) | uint(cycle);
     }
