@@ -9,6 +9,9 @@ import "./FortBase.sol";
 /// @dev Base contract of Fort
 contract FortFrequentlyUsed is FortBase {
 
+    // TODO: 改为正确的地址
+    // TODO: 先部署FortDCU，确定地址后，再修改
+      
     // Address of FortDCU contract
     //address constant FORT_TOKEN_ADDRESS = ;
     address FORT_TOKEN_ADDRESS;

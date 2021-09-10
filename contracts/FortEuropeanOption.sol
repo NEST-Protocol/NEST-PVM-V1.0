@@ -14,6 +14,7 @@ import "./FortFrequentlyUsed.sol";
 import "./FortDCU.sol";
 import "./FortOptionToken.sol";
 
+// TODO: 测试代码
 import "hardhat/console.sol";
 
 /// @dev 欧式期权
@@ -305,6 +306,8 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
             FortDCU(FORT_TOKEN_ADDRESS).mint(msg.sender, gain);
         }
     }
+
+    // TODO: 以下方发定义为public的是为了测试，发布时需要改为私有的
 
     // 根据期权信息获取索引key
     function _getKey(

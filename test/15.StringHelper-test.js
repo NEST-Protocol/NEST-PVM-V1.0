@@ -63,7 +63,7 @@ describe('FortEuropeanOption', function() {
         const StringHelper = await ethers.getContractFactory('StringHelper');
         const sh = await StringHelper.deploy();
 
-        let TEST_PRIVATE = true;
+        let TEST_PRIVATE = false;
         if (TEST_PRIVATE) {
             console.log('1. toUpper');
             console.log(await sh.toUpper('ChenFei'));

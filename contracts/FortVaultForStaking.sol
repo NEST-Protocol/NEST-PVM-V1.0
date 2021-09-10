@@ -12,6 +12,7 @@ import "./interfaces/IFortVaultForStaking.sol";
 import "./FortFrequentlyUsed.sol";
 import "./FortDCU.sol";
 
+// TODO: 测试代码
 import "hardhat/console.sol";
 
 /// @dev Stake xtoken, earn fort
@@ -61,6 +62,8 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
         mapping(address=>Account) accounts;
     }
     
+    uint constant UI128 = 0x100000000000000000000000000000000;
+
     // Fort出矿单位
     uint128 _fortUnit;
     // staking开始区块号
@@ -168,17 +171,17 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
         // Unit token dividend
         uint rewardPerToken = _decodeFloat(channel.rewardPerToken);
         if (totalStaked > 0) {
-            rewardPerToken += newReward * 1 ether / totalStaked;
+            rewardPerToken += newReward * UI128 / totalStaked;
         }
         
-        return (rewardPerToken - _decodeFloat(account.rewardCursor)) * balance / 1 ether;
+        return (rewardPerToken - _decodeFloat(account.rewardCursor)) * balance / UI128;
     }
 
     /// @dev Stake xtoken to earn Fort
     /// @param xtoken xtoken address (or CNode address)
     /// @param cycle cycle
     /// @param amount Stake amount
-    function stake(address xtoken, uint64 cycle, uint amount) external override {
+    function stake(address xtoken, uint64 cycle, uint160 amount) external override {
 
         // Load stake channel
         StakeChannel storage channel = _channels[_getKey(xtoken, cycle)];
@@ -192,7 +195,7 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
         channel.totalStaked += uint192(amount);
 
         // Update stake balance of account
-        account.balance += uint160(amount);
+        account.balance += amount;
         channel.accounts[msg.sender] = account;
     }
 
@@ -200,7 +203,7 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
     /// @param xtoken xtoken address (or CNode address)
     /// @param cycle cycle
     /// @param amount Withdraw amount
-    function withdraw(address xtoken, uint64 cycle, uint amount) external override {
+    function withdraw(address xtoken, uint64 cycle, uint160 amount) external override {
         // Load stake channel
         StakeChannel storage channel = _channels[_getKey(xtoken, cycle)];
         // Settle reward for account
@@ -209,7 +212,7 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
         // Update totalStaked
         channel.totalStaked -= uint192(amount);
         // Update stake balance of account
-        account.balance -= uint160(amount);
+        account.balance -= amount;
         channel.accounts[msg.sender] = account;
 
         // Transfer xtoken to msg.sender
@@ -236,7 +239,7 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
         
         // Calculate reward for account
         uint balance = uint(account.balance);
-        uint reward = (rewardPerToken - _decodeFloat(account.rewardCursor)) * balance / 1 ether;
+        uint reward = (rewardPerToken - _decodeFloat(account.rewardCursor)) * balance / UI128;
         
         // Update sign of account
         account.rewardCursor = _encodeFloat(rewardPerToken);
@@ -258,7 +261,7 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
         
         rewardPerToken = _decodeFloat(channel.rewardPerToken);
         if (totalStaked > 0) {
-            rewardPerToken += newReward * 1 ether / totalStaked;
+            rewardPerToken += newReward * UI128 / totalStaked;
         }
 
         // Update the dividend value of unit share
@@ -298,6 +301,8 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
         return (uint(floatValue) >> 6) << ((uint(floatValue) & 0x3F) << 2);
     }
 
+    // TODO: 以下方发定义为public的是为了测试，发布时需要改为私有的
+    
     function _getKey(address xtoken, uint64 cycle) public pure returns (uint){
         return (uint(uint160(xtoken)) << 96) | uint(cycle);
     }

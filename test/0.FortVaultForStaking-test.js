@@ -120,7 +120,7 @@ describe('FortEuropeanOption', function() {
                     totalRewards: toDecimal(ti.totalRewards.toString()),
                     unlockBlock: ti.unlockBlock.toString()
                 }
-                console.log(ts);
+                //console.log(ts);
             }
         }
 
@@ -151,7 +151,7 @@ describe('FortEuropeanOption', function() {
             console.log('owner balance:' + await fortVaultForStaking.balanceOf(usdt.address, 10, owner.address));
             console.log('addr1 balance:' + await fortVaultForStaking.balanceOf(usdt.address, 10, addr1.address));
 
-            for (var i = 0; i < 5; ++i) {
+            for (var i = 0; i < 1; ++i) {
                 console.log('getReward ' + i);
                 await fortVaultForStaking.getReward(usdt.address, 10);
                 await fortVaultForStaking.connect(addr1).getReward(usdt.address, 10);
@@ -204,6 +204,76 @@ describe('FortEuropeanOption', function() {
             await test(usdt.address, 10);
             await test(hbtc.address, 10);
             await test(fort.address, 10);
+        }
+
+        if (true) {
+            console.log('6. 第二轮');
+            
+            await fortVaultForStaking.setConfig(toBigInt(0.1), 70, 80);
+            config = await fortVaultForStaking.getConfig();
+            console.log(config.toString());
+
+            if (true) {
+                console.log('2. batchSetPoolWeight');
+                console.log(tokens.map(e=>e.address));
+                await fortVaultForStaking.batchSetPoolWeight(
+                    tokens.map(e=>e.address), 
+                    cycles,
+                    weights
+                );
+    
+                for (var i = 0; i < tokens.length; ++i) {
+                    let token = tokens[i];
+                    let cycle = cycles[i];
+                    let ti = await fortVaultForStaking.getChannelInfo(token.address, cycle);
+                    let ts = {
+                        name: token.name,
+                        address: token.address,
+                        totalStaked: toDecimal(ti.totalStaked.toString(), token.address == usdt.address ? 6 : 18),
+                        totalRewards: toDecimal(ti.totalRewards.toString()),
+                        unlockBlock: ti.unlockBlock.toString()
+                    }
+                    //console.log(ts);
+                }
+            }
+    
+            if (true) {
+                console.log('3. stake');
+    
+                //await usdt.transfer(addr1.address, toBigInt(10000000, 6));
+                //await usdt.transfer(owner.address, toBigInt(10000000, 6));
+                await usdt.approve(fortVaultForStaking.address, toBigInt(100, 6));
+                await usdt.connect(addr1).approve(fortVaultForStaking.address, toBigInt(100, 6));
+                for (var i = 0; i < 2; ++i) {
+                //    await usdt.transfer(owner.address, toBigInt(10000000, 6));
+                }
+                await fortVaultForStaking.stake(usdt.address, 10, toBigInt(50, 6));
+                await fortVaultForStaking.connect(addr1).stake(usdt.address, 10, toBigInt(100, 6));
+                console.log(await getStatus());
+            }
+            
+            if (true) {
+                console.log('4. getReward');
+                for (var i = 0; i < 7; ++i) {
+                    await usdt.transfer(owner.address, toBigInt(0, 6));
+                }
+    
+                console.log('owner earned:' + await fortVaultForStaking.earned(usdt.address, 10, owner.address));
+                console.log('addr1 earned:' + await fortVaultForStaking.earned(usdt.address, 10, addr1.address));
+                console.log('owner balance:' + await fortVaultForStaking.balanceOf(usdt.address, 10, owner.address));
+                console.log('addr1 balance:' + await fortVaultForStaking.balanceOf(usdt.address, 10, addr1.address));
+    
+                for (var i = 0; i < 1; ++i) {
+                    console.log('getReward ' + i);
+                    await fortVaultForStaking.getReward(usdt.address, 10);
+                    await fortVaultForStaking.connect(addr1).getReward(usdt.address, 10);
+                    console.log(await getStatus());
+                    console.log('owner earned:' + await fortVaultForStaking.earned(usdt.address, 10, owner.address));
+                    console.log('addr1 earned:' + await fortVaultForStaking.earned(usdt.address, 10, addr1.address));
+                    console.log('owner balance:' + await fortVaultForStaking.balanceOf(usdt.address, 10, owner.address));
+                    console.log('addr1 balance:' + await fortVaultForStaking.balanceOf(usdt.address, 10, addr1.address));
+                }
+            }
         }
     });
 });

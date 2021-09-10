@@ -45,12 +45,12 @@ interface IFortVaultForStaking {
     /// @dev Stake xtoken to earn fort
     /// @param xtoken xtoken address
     /// @param amount Stake amount
-    function stake(address xtoken, uint64 cycle, uint amount) external;
+    function stake(address xtoken, uint64 cycle, uint160 amount) external;
 
     /// @dev Withdraw xtoken, and claim earned fort
     /// @param xtoken xtoken address
     /// @param amount Withdraw amount
-    function withdraw(address xtoken, uint64 cycle, uint amount) external;
+    function withdraw(address xtoken, uint64 cycle, uint160 amount) external;
 
     /// @dev Claim fort
     /// @param xtoken xtoken address

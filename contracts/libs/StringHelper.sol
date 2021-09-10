@@ -8,7 +8,7 @@ library StringHelper {
     /// @dev 将字符串转为大写形式
     /// @param str 目标字符串
     /// @return 目标字符串的大写
-    function toUpper(string memory str) public pure returns (string memory) 
+    function toUpper(string memory str) internal pure returns (string memory) 
     {
         bytes memory bs = bytes(str);
         for (uint i = 0; i < bs.length; ++i) {
@@ -23,7 +23,7 @@ library StringHelper {
     /// @dev 将字符串转为小写形式
     /// @param str 目标字符串
     /// @return 目标字符串的小写
-    function toLower(string memory str) public pure returns (string memory) 
+    function toLower(string memory str) internal pure returns (string memory) 
     {
         bytes memory bs = bytes(str);
         for (uint i = 0; i < bs.length; ++i) {
@@ -40,7 +40,7 @@ library StringHelper {
     /// @param start 截取开始索引
     /// @param count 截取长度（如果长度不够，则取剩余长度）
     /// @return 截取结果
-    function substring(string memory str, uint start, uint count) public pure returns (string memory) 
+    function substring(string memory str, uint start, uint count) internal pure returns (string memory) 
     {
         bytes memory bs = bytes(str);
         uint length = bs.length;
@@ -61,7 +61,7 @@ library StringHelper {
     /// @param str 目标字符串
     /// @param start 截取开始索引
     /// @return 截取结果
-    function substring(string memory str, uint start) public pure returns (string memory) 
+    function substring(string memory str, uint start) internal pure returns (string memory) 
     {
         bytes memory bs = bytes(str);
         uint length = bs.length;
@@ -83,7 +83,7 @@ library StringHelper {
     /// @param iv 要转化的整形值
     /// @param minLength 最小长度
     /// @return 写入后的新的内存数组偏移位置
-    function writeUIntDec(bytes memory buffer, uint index, uint iv, uint minLength) public pure returns (uint) 
+    function writeUIntDec(bytes memory buffer, uint index, uint iv, uint minLength) internal pure returns (uint) 
     {
         uint i = index;
         minLength += index;
@@ -107,7 +107,7 @@ library StringHelper {
     /// @param fv 要转化的浮点值
     /// @param decimals 小数位数
     /// @return 写入后的新的内存数组偏移位置
-    function writeFloat(bytes memory buffer, uint index, uint fv, uint decimals) public pure returns (uint) 
+    function writeFloat(bytes memory buffer, uint index, uint fv, uint decimals) internal pure returns (uint) 
     {
         uint base = 10 ** decimals;
         index = writeUIntDec(buffer, index, fv / base, 1);
@@ -130,7 +130,7 @@ library StringHelper {
         uint iv, 
         uint minLength, 
         bool upper
-    ) public pure returns (uint) 
+    ) internal pure returns (uint) 
     {
         uint i = index;
         uint B = upper ? 55 : 87;
@@ -167,7 +167,7 @@ library StringHelper {
         string memory str, 
         uint start, 
         uint count
-    ) public pure returns (uint) 
+    ) private pure returns (uint) 
     {
         bytes memory bs = bytes(str);
         uint i = 0;
@@ -183,7 +183,7 @@ library StringHelper {
     /// @param start 截取开始索引
     /// @param count 截取长度（如果长度不够，则取剩余长度）
     /// @return 截取结果
-    function segment(bytes memory buffer, uint start, uint count) public pure returns (bytes memory) 
+    function segment(bytes memory buffer, uint start, uint count) internal pure returns (bytes memory) 
     {
         uint length = buffer.length;
         if (start >= length) {
@@ -203,7 +203,7 @@ library StringHelper {
     /// @param format 格式化描述字符串
     /// @param arg0 参数0（字符串需要使用StringHelper.enc进行编码，并且长度不能超过31）
     /// @return 格式化结果
-    function sprintf(string memory format, uint arg0) public pure returns (string memory) {
+    function sprintf(string memory format, uint arg0) internal pure returns (string memory) {
         return sprintf(format, [arg0, 0, 0, 0, 0]);
     }
 
