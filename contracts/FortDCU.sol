@@ -10,7 +10,7 @@ import "./FortBase.sol";
 
 // TODO: 命名问题
 /// @dev Fort代币
-contract FortDCU is FortBase, ERC20("Decentralized Derivatives Unit", "DCU") {
+contract FortDCU is FortBase, ERC20("Decentralized Currency Unit", "DCU") {
 
     // 保存挖矿权限地址
     mapping(address=>uint) _minters;

@@ -19,6 +19,14 @@ import "hardhat/console.sol";
 /// @dev 杠杆币交易
 contract FortLeverToken {
 
+    /**
+     * @dev Emitted when `value` tokens are moved from one account (`from`) to
+     * another (`to`).
+     *
+     * Note that `value` may be zero.
+     */
+    event Transfer(address indexed from, address indexed to, uint value);
+
     // 用户账本
     struct Account {
         // 账本-余额
@@ -211,6 +219,8 @@ contract FortLeverToken {
 
         accounts[msg.sender] = fromAccount;
         accounts[to] = toAccount;
+
+        emit Transfer(msg.sender, to, value);
     }
 
     /// @dev 铸币
@@ -232,6 +242,8 @@ contract FortLeverToken {
         account.unlockBlock = uint32(unlockBlock);
         
         accounts[to] = account;
+
+        emit Transfer(address(0), to, value);
     }
 
     /// @dev 销毁
@@ -254,6 +266,8 @@ contract FortLeverToken {
         //account.blockNumber = uint32(blockNumber);
 
         accounts[from] = account;
+
+        emit Transfer(from, address(0), value);
     }
 
     /// @dev 清算账号
@@ -274,6 +288,9 @@ contract FortLeverToken {
         if (LEVER > 1 && balance < minValue) {
             
             _accounts[acc] = Account(uint128(0), uint64(0), uint32(0));
+
+            emit Transfer(acc, address(0), balance);
+
             return balance;
         }
         
