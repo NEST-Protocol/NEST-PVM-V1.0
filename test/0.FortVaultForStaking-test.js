@@ -173,16 +173,8 @@ describe('FortEuropeanOption', function() {
             console.log('addr1 earned:' + await fortVaultForStaking.earned(usdt.address, 10, addr1.address));
             console.log('owner balance:' + await fortVaultForStaking.balanceOf(usdt.address, 10, owner.address));
             console.log('addr1 balance:' + await fortVaultForStaking.balanceOf(usdt.address, 10, addr1.address));
-            await fortVaultForStaking.withdraw(usdt.address, 10, await fortVaultForStaking.balanceOf(
-                usdt.address,
-                10,
-                owner.address
-            ));
-            await fortVaultForStaking.connect(addr1).withdraw(usdt.address, 10, await fortVaultForStaking.balanceOf(
-                usdt.address,
-                10,
-                addr1.address
-            ));
+            await fortVaultForStaking.withdraw(usdt.address, 10);
+            await fortVaultForStaking.connect(addr1).withdraw(usdt.address, 10);
             console.log(await getStatus());
             console.log('owner earned:' + await fortVaultForStaking.earned(usdt.address, 10, owner.address));
             console.log('addr1 earned:' + await fortVaultForStaking.earned(usdt.address, 10, addr1.address));

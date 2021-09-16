@@ -183,14 +183,17 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
     /// @param amount Stake amount
     function stake(address xtoken, uint64 cycle, uint160 amount) external override {
 
+        require(block.number >= uint(_startBlock) && block.number <= uint(_stopBlock), "FVFS:!block");
         // Load stake channel
         StakeChannel storage channel = _channels[_getKey(xtoken, cycle)];
-        require(block.number >= uint(_startBlock) && block.number <= uint(_stopBlock), "FVFS:!block");
+        require(uint(channel.weight) > 0, "FVFS:no reward");
+        
+        // Transfer xtoken from msg.sender to this
+        TransferHelper.safeTransferFrom(xtoken, msg.sender, address(this), uint(amount));
+        
         // Settle reward for account
         Account memory account = _getReward(channel, msg.sender);
 
-        // Transfer xtoken from msg.sender to this
-        TransferHelper.safeTransferFrom(xtoken, msg.sender, address(this), amount);
         // Update totalStaked
         channel.totalStaked += uint192(amount);
 
@@ -202,19 +205,19 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
     /// @dev Withdraw xtoken, and claim earned Fort
     /// @param xtoken xtoken address (or CNode address)
     /// @param cycle cycle
-    /// @param amount Withdraw amount
-    function withdraw(address xtoken, uint64 cycle, uint160 amount) external override {
+    function withdraw(address xtoken, uint64 cycle) external override {
         // Load stake channel
         StakeChannel storage channel = _channels[_getKey(xtoken, cycle)];
         require(block.number >= uint(channel.unlockBlock), "FVFS:!block");
 
         // Settle reward for account
         Account memory account = _getReward(channel, msg.sender);
+        uint amount = uint(account.balance);
 
         // Update totalStaked
         channel.totalStaked -= uint192(amount);
         // Update stake balance of account
-        account.balance -= amount;
+        account.balance = uint160(0);
         channel.accounts[msg.sender] = account;
 
         // Transfer xtoken to msg.sender
