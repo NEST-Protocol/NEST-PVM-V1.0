@@ -208,16 +208,16 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
 
     /// @dev 清算
     /// @param leverAddress 目标杠杆币地址
-    /// @param account 清算账号
+    /// @param addresses 清算目标账号数组
     function settle(
         address leverAddress,
-        address account
+        address[] calldata addresses
     ) external payable override {
 
         // 1. 销毁用户的杠杆币
         uint fortAmount = FortLeverToken(leverAddress).settle { 
             value: msg.value 
-        } (account, MIN_VALUE, msg.sender);
+        } (addresses, MIN_VALUE, msg.sender);
 
         // 2. 跟用户分发fort
         if (fortAmount > 0) {

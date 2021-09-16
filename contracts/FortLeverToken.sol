@@ -271,31 +271,40 @@ contract FortLeverToken {
     }
 
     /// @dev 清算账号
-    /// @param acc 清算目标账号
+    /// @param addresses 清算目标账号数组
     /// @param payback 多余的预言机费用退回地址
     /// @param minValue 最小余额，杠杆倍数超过一时，余额小于此值会被清算
-    /// @return 清算可以获得的奖励数量
-    function settle(address acc, uint minValue, address payback) external payable onlyOwner returns (uint) {
+    /// @return reward 清算可以获得的奖励数量
+    function settle(
+        address[] memory addresses, 
+        uint minValue, 
+        address payback
+    ) external payable onlyOwner returns (uint reward) {
 
         // 更新杠杆币信息
         (, uint oraclePrice) = _update(payback);
 
-        // 更新目标账号信息
-        Account memory account = _accounts[acc];
-        uint balance = _balanceOf(account, oraclePrice);
+        if (LEVER > 1) {
+            mapping(address=>Account) storage accounts = _accounts;
 
-        // 杠杆倍数大于1，并且余额小于最小额度时，可以清算
-        if (LEVER > 1 && balance < minValue) {
-            
-            _accounts[acc] = Account(uint128(0), uint64(0), uint32(0));
+            for (uint i = addresses.length; i > 0;) {
+                address acc = addresses[--i];
 
-            emit Transfer(acc, address(0), balance);
+                // 更新目标账号信息
+                Account memory account = _accounts[acc];
+                uint balance = _balanceOf(account, oraclePrice);
 
-            return balance;
+                // 杠杆倍数大于1，并且余额小于最小额度时，可以清算
+                if (balance < minValue) {
+                    
+                    _accounts[acc] = Account(uint128(0), uint64(0), uint32(0));
+
+                    emit Transfer(acc, address(0), balance);
+
+                    reward += balance;
+                }
+            }
         }
-        
-        // 不能清算
-        return 0;
     }
 
     // TODO: 以下方发定义为public的是为了测试，发布时需要改为私有的

@@ -67,10 +67,10 @@ interface IFortLever {
 
     /// @dev 清算
     /// @param leverAddress 目标杠杆币地址
-    /// @param account 清算账号
+    /// @param addresses 清算目标账号数组
     function settle(
         address leverAddress,
-        address account
+        address[] calldata addresses
     ) external payable;
 
     /// @dev 触发更新价格，获取FORT奖励

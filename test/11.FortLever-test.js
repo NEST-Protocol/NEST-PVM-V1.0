@@ -181,7 +181,7 @@ describe('FortEuropeanOption', function() {
                         let lot = await FortLeverToken.attach(lotAddress);
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
 
-                        await fortLever.settle(lot.address, owner.address, { value: toBigInt(0.02) });
+                        await fortLever.settle(lot.address, [owner.address], { value: toBigInt(0.02) });
                         console.log(toDecimal(await lot.balanceOf(owner.address)) + await lot.name() + ' ' + (await lot.getLeverInfo()).price);
 
                         let x = 100 * (1 + levers[lever] * (2000 - 3510) / 3510 * (oriens[orien] ? 1 : -1));
