@@ -40,7 +40,8 @@ module.exports = {
     ropsten: {
       url: `https://eth-ropsten.alchemyapi.io/v2/${config.alchemy.ropsten.apiKey}`,
       accounts: [config.account.ropsten.key, config.account.ropsten.userA, config.account.ropsten.userB],
-      gasPrice: 1e9,
+      gas: 6e6,
+      initialBaseFeePerGas: 1e9,
       timeout: 2000000000
     },
     rinkeby: {

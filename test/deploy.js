@@ -13,6 +13,7 @@ describe('FortEuropeanOption', function() {
         } = await deploy();
 
         const ERC20 = await ethers.getContractFactory('ERC20_LIB');
+        
         // 1. 设置挖矿通道参数
         // @FLY @依维柯大金杯～ 第一期 4000万fort
         // 锁仓1个月（或者2周）：nest 150万 nhbtc 50w  cofi 50w pusd 50w  peth 50w  for 50w   3000w用于nest 1年期锁仓
@@ -53,19 +54,19 @@ describe('FortEuropeanOption', function() {
         ];
 
         let weights = [
-            2500000,
+            1500000,
             500000,
             500000,
             500000,
             500000,
             500000,
-            35000000,
+            36000000,
         ];
 
-        await fortVaultForStaking.batchSetPoolWeight(xtokens, cycles, weights);
+        // await fortVaultForStaking.batchSetPoolWeight(xtokens, cycles, weights);
 
-        // 2. 设置挖矿启动参数
-        await fortVaultForStaking.setConfig(toBigInt(1), 0, 1000);
+        // // 2. 设置挖矿启动参数
+        // await fortVaultForStaking.setConfig(toBigInt(1), 0, 1000);
 
         let total = 0n;
         for (var i = 0; i < xtokens.length; ++i) {
