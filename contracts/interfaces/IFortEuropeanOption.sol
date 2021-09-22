@@ -15,7 +15,6 @@ interface IFortEuropeanOption {
         // 175482725206
         int128 miu;
 
-        // TODO: 通过数值计算过程，确定期权行权时间最大间隔
         // 期权行权时间和当前时间的最小间隔
         uint32 minPeriod;
     }

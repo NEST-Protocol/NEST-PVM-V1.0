@@ -8,7 +8,6 @@ import "./interfaces/INestPriceFacade.sol";
 
 import "./FortBase.sol";
 
-// TODO: 命名问题
 /// @dev Fort代币
 contract FortDCU is FortBase, ERC20("Decentralized Currency Unit", "DCU") {
 

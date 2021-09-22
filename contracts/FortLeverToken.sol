@@ -100,13 +100,17 @@ contract FortLeverToken {
     /// @return 代币名称
     function name() external view returns (string memory) { return _name; }
 
+    /// @dev 十进制小数位数
+    function decimals() external view returns (uint8) {
+        return 18;
+    }
+
     /// @dev 设置价格查询合约地址
     /// @param nestPriceFacade 价格查询合约地址
     function setNestPriceFacade(address nestPriceFacade) external onlyOwner {
         _nestPriceFacade = nestPriceFacade;
     }
 
-    // TODO: 主动触发更新的人，按照区块奖励FORT
     /// @dev 触发更新杠杆币全局信息
     /// @param payback 多余的预言机费用退回地址
     /// @return 触发更新的区块间隔（以此作为奖励依据）

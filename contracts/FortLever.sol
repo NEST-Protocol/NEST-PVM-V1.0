@@ -233,7 +233,6 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         }
     }
 
-    // TODO: 主动触发更新的人，按照区块奖励FORT
     /// @dev 触发更新价格，获取FORT奖励
     /// @param leverAddressArray 要更新的杠杆币合约地址
     /// @param payback 多余的预言机费用退回地址
