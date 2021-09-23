@@ -17,10 +17,10 @@ import "./FortLeverToken.sol";
 contract FortLever is FortFrequentlyUsed, IFortLever {
     
     // 最小余额数量，余额小于此值会被清算
-    uint constant MIN_VALUE = 20 ether;
+    uint constant MIN_VALUE = 5 ether;
 
     // 买入杠杆币和其他交易之间最小的间隔区块数
-    uint constant MIN_PERIOD = 10;
+    uint constant MIN_PERIOD = 100;
 
     // 杠杆币映射
     mapping(bytes32=>address) _leverMapping;

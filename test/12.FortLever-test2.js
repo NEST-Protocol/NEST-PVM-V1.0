@@ -259,6 +259,9 @@ describe('FortEuropeanOption', function() {
 
         if (true) {
             console.log('10. sell');
+            for(var i = 0; i < 90; ++i) {
+                await usdt.transfer(owner.address, 0);
+            }
             await nestPriceFacade.setPrice(usdt.address, '1000000000', 1);
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < levers.length; ++lever) {

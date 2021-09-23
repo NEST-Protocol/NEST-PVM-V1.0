@@ -89,13 +89,13 @@ exports.deploy = async function() {
     await fortEuropeanOption.setConfig(eth.address, { 
         sigmaSQ: '4168125400', 
         miu: '175482725206', 
-        minPeriod: 10000 
+        minPeriod: 6000 
     });
     console.log('8.1. fortEuropeanOption.setConfig()');
     await fortEuropeanOption.setConfig(hbtc.address, { 
         sigmaSQ: '4168125400', 
         miu: '175482725206', 
-        minPeriod: 10000 
+        minPeriod: 6000 
     });
 
     console.log('9. fort.setMinter(fortEuropeanOption.address, 1)');

@@ -20,9 +20,6 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     // 64位二进制精度的1
     int128 constant ONE = 0x10000000000000000;
 
-    // 64位二进制精度的2
-    int128 constant TWO = 0x20000000000000000;
-
     // 64位二进制精度的50000
     uint constant V50000 = 0x0C3500000000000000000;
 
@@ -149,7 +146,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
 
         // 2. 计算可以买到的期权份数
         uint amount = estimate(tokenAddress, oraclePrice, price, orientation, endblock, fortAmount);
-        require(amount >= 0.1 ether, "FEO:at least 0.1");
+        //require(amount >= 0.1 ether, "FEO:at least 0.1");
 
         // 3. 获取或创建期权代币
         bytes32 key = _getKey(tokenAddress, price, orientation, endblock);

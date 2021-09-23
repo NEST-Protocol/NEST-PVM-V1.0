@@ -204,7 +204,7 @@ describe('FortEuropeanOption', function() {
                 balance2: toDecimal(await lot.balanceOf(addr1.address))
             });
 
-            for (var i = 0; i < 10; ++i) {
+            for (var i = 0; i < 100; ++i) {
                 await fort.transfer(owner.address, 0);
             }
             await lot.transfer(addr1.address, toBigInt(30), { value: toBigInt(0.02)});
