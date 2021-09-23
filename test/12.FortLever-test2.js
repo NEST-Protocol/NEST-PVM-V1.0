@@ -284,7 +284,7 @@ describe('FortEuropeanOption', function() {
             }
         }
 
-        if (true) {
+        if (false) {
             console.log('12. getKey');
             const test = async function(tokenAddress, lever, orientation) {
                 let key = await fortLever._getKey(tokenAddress, lever, orientation);

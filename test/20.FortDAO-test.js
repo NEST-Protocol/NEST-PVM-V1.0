@@ -73,7 +73,7 @@ describe('FortEuropeanOption', function() {
             await fort.update(fortGovernance.address);
         }
 
-        if (true) {
+        if (false) {
             console.log('2. migrate');
             console.log(await getStatus());
 
@@ -93,7 +93,7 @@ describe('FortEuropeanOption', function() {
             console.log(await getStatus());
         }
 
-        if (true) {
+        if (false) {
             console.log('3. settle');
             console.log('app: ' + await fortDAO.checkApplication(owner.address));
             await fortDAO.setApplication(owner.address, 1);

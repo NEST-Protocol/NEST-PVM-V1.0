@@ -248,14 +248,12 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         FortDCU(FORT_TOKEN_ADDRESS).mint(msg.sender, blocks * 0.1 ether);
     }
 
-    // TODO: 以下方发定义为public的是为了测试，发布时需要改为私有的
-    
     // 根据杠杆信息计算索引key
     function _getKey(
         address tokenAddress, 
         uint lever,
         bool orientation
-    ) public pure returns (bytes32) {
+    ) private pure returns (bytes32) {
         return keccak256(abi.encodePacked(tokenAddress, lever, orientation));
     }
 }

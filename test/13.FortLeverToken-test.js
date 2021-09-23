@@ -264,7 +264,7 @@ describe('FortEuropeanOption', function() {
             await test(BigInt('0x100000000000000000000000000000000') - BigInt(1));
         }
 
-        if (true) {
+        if (false) {
             console.log('7. _encodeFloat');
             let lotAddress = await fortLever.getLeverToken(hbtc.address, 1, true);
             let lot = await FortLeverToken.attach(lotAddress);

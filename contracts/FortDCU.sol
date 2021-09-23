@@ -46,9 +46,4 @@ contract FortDCU is FortBase, ERC20("Decentralized Currency Unit", "DCU") {
     function burn(address from, uint value) external onlyMinter {
         _burn(from, value);
     }
-
-    // TODO: 测试代码，删除
-    function test() external payable {
-
-    }
 }

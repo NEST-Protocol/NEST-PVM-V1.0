@@ -12,9 +12,6 @@ import "./interfaces/IFortVaultForStaking.sol";
 import "./FortFrequentlyUsed.sol";
 import "./FortDCU.sol";
 
-// TODO: 测试代码
-import "hardhat/console.sol";
-
 /// @dev Stake xtoken, earn fort
 contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
 
@@ -306,9 +303,7 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
         return (uint(floatValue) >> 6) << ((uint(floatValue) & 0x3F) << 2);
     }
 
-    // TODO: 以下方发定义为public的是为了测试，发布时需要改为私有的
-
-    function _getKey(address xtoken, uint64 cycle) public pure returns (uint){
+    function _getKey(address xtoken, uint64 cycle) private pure returns (uint){
         return (uint(uint160(xtoken)) << 96) | uint(cycle);
     }
 }

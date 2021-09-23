@@ -13,9 +13,6 @@ import "./interfaces/INestPriceFacade.sol";
 import "./FortDCU.sol";
 import "./FortOptionToken.sol";
 
-// TODO: 测试代码
-import "hardhat/console.sol";
-
 /// @dev 杠杆币交易
 contract FortLeverToken {
 
@@ -101,7 +98,7 @@ contract FortLeverToken {
     function name() external view returns (string memory) { return _name; }
 
     /// @dev 十进制小数位数
-    function decimals() external view returns (uint8) {
+    function decimals() external pure returns (uint8) {
         return 18;
     }
 
@@ -295,13 +292,13 @@ contract FortLeverToken {
                 address acc = addresses[--i];
 
                 // 更新目标账号信息
-                Account memory account = _accounts[acc];
+                Account memory account = accounts[acc];
                 uint balance = _balanceOf(account, oraclePrice);
 
                 // 杠杆倍数大于1，并且余额小于最小额度时，可以清算
                 if (balance < minValue) {
                     
-                    _accounts[acc] = Account(uint128(0), uint64(0), uint32(0));
+                    accounts[acc] = Account(uint128(0), uint64(0), uint32(0));
 
                     emit Transfer(acc, address(0), balance);
 
@@ -311,12 +308,10 @@ contract FortLeverToken {
         }
     }
 
-    // TODO: 以下方发定义为public的是为了测试，发布时需要改为私有的
-    
     /// @dev Encode the uint value as a floating-point representation in the form of fraction * 16 ^ exponent
     /// @param value Destination uint value
     /// @return float format
-    function _encodeFloat(uint value) public pure returns (uint64) {
+    function _encodeFloat(uint value) private pure returns (uint64) {
 
         uint exponent = 0; 
         while (value > 0x3FFFFFFFFFFFFFF) {
@@ -329,12 +324,12 @@ contract FortLeverToken {
     /// @dev Decode the floating-point representation of fraction * 16 ^ exponent to uint
     /// @param floatValue fraction value
     /// @return decode format
-    function _decodeFloat(uint64 floatValue) public pure returns (uint) {
+    function _decodeFloat(uint64 floatValue) private pure returns (uint) {
         return (uint(floatValue) >> 6) << ((uint(floatValue) & 0x3F) << 2);
     }
 
     // 将uint转化为uint128，有截断检查
-    function _toUInt128(uint value) public pure returns (uint128) {
+    function _toUInt128(uint value) private pure returns (uint128) {
         require(value < 0x100000000000000000000000000000000);
         return uint128(value);
     }

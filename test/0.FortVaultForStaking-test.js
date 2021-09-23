@@ -182,7 +182,7 @@ describe('FortEuropeanOption', function() {
             console.log('addr1 balance:' + await fortVaultForStaking.balanceOf(usdt.address, 10, addr1.address));
         }
 
-        if (true) {
+        if (false) {
             console.log('5. getKey');
 
             const test = async function(xtoken, cycle) {

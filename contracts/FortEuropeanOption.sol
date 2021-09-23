@@ -14,9 +14,6 @@ import "./FortFrequentlyUsed.sol";
 import "./FortDCU.sol";
 import "./FortOptionToken.sol";
 
-// TODO: 测试代码
-import "hardhat/console.sol";
-
 /// @dev 欧式期权
 contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
 
@@ -219,19 +216,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
 
         // 3. 计算权利金（需要的fort数量）
         // 按照平均每14秒出一个块计算
-        // TODO: 确定时间间隔，是从block.number算起，还是从预言机价格所在区块算起
         uint T = (endblock - block.number) * 14;
-        // TODO: 测试代码
-        // TODO: 验证计算值，和C#代码比较
-        // TODO: 重新分析数据取值范围
-        
-        // console.log(StringHelper.sprintf("open-oraclePrice=%6f", oraclePrice));
-        // console.log(StringHelper.sprintf("open-price=%6f", price));
-        // console.log(StringHelper.sprintf("open-T=%u", T));
-        // console.log(StringHelper.sprintf("open-sigmaSQ=%18f", uint(config.sigmaSQ)));
-        // console.log(StringHelper.sprintf("open-Vc=%18f", _calcVc(config, oraclePrice, T, price) * 1 ether >> 64));
-        // console.log(StringHelper.sprintf("open-Vp=%18f", _calcVp(config, oraclePrice, T, price) * 1 ether >> 64));
-
         uint v;
         if (orientation) {
             v = _calcVc(config, oraclePrice, T, price);
@@ -307,20 +292,18 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         }
     }
 
-    // TODO: 以下方发定义为public的是为了测试，发布时需要改为私有的
-
     // 根据期权信息获取索引key
     function _getKey(
         address tokenAddress, 
         uint price, 
         bool orientation, 
         uint endblock
-    ) public pure returns (bytes32) {
+    ) private pure returns (bytes32) {
         return keccak256(abi.encodePacked(tokenAddress, price, orientation, endblock));
     }
 
     // 对齐价格，保留7位有效数字
-    function _align(uint price) public pure returns (uint) {
+    function _align(uint price) private pure returns (uint) {
         // uint decimals = 0;
         // while (price >= 10000000) {
         //     price /= 10;
@@ -335,14 +318,6 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         return price - price % (base / 10000000);
     }
 
-    // // 获取代币的小数位数
-    // function _getDecimals(address tokenAddress) public view returns (uint) {
-    //     if (tokenAddress == address(0)) {
-    //         return 18;
-    //     }
-    //     return uint(ERC20(tokenAddress).decimals());
-    // }
-
     // 获取代币的基数值
     function _getBase(address tokenAddress) private returns (uint base) {
         if (tokenAddress == address(0)) {
@@ -356,7 +331,6 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         }
     }
 
-    // TODO: 位了测试写成public的，部署时需要改为private的
     // C2.006-7ETH1000877
     // 那就7位有效数字 然后+-10的幂次
     // 最多或者6位也行 代币名称
@@ -365,7 +339,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         uint price, 
         bool orientation, 
         uint endblock
-    ) public pure returns (string memory) {
+    ) private pure returns (string memory) {
 
         // 1. 将价格保留7位有效数字，并计算指数部分
         int decimals = 0;
@@ -389,25 +363,25 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     }
 
     // 将18位十进制定点数转化为64位二级制定点数
-    function _d18TOb64(uint v) public pure returns (int128) {
+    function _d18TOb64(uint v) private pure returns (int128) {
         require(v < 0x6F05B59D3B200000000000000000000, "FEO:can't convert to 64bits");
         return int128(int((v << 64) / 1 ether));
     }
 
     // 将uint转化为int128
-    function _toInt128(uint v) public pure returns (int128) {
+    function _toInt128(uint v) private pure returns (int128) {
         require(v < 0x80000000000000000000000000000000, "FEO:can't convert to int128");
         return int128(int(v));
     }
 
     // 将int128转化为uint
-    function _toUInt(int128 v) public pure returns (uint) {
+    function _toUInt(int128 v) private pure returns (uint) {
         require(v >= 0, "FEO:can't convert to uint");
         return uint(int(v));
     }
 
     // 通过查表的方法计算标准正态分布函数
-    function _snd(int128 x) public pure returns (int128) {
+    function _snd(int128 x) private pure returns (int128) {
         uint[28] memory table = [
             /* */ ///////////////////// STANDARD NORMAL TABLE //////////////////////////
             /* */ 0x174A15BF143412A8111C0F8F0E020C740AE6095807CA063B04AD031E018F0000, //
@@ -469,7 +443,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     }
 
     // 计算看涨期权价格
-    function _calcVc(Config memory config, uint S0, uint T, uint K) public pure returns (uint) {
+    function _calcVc(Config memory config, uint S0, uint T, uint K) private pure returns (uint) {
 
         int128 sigmaSQ_T = _d18TOb64(uint(config.sigmaSQ) * T);
         int128 miu_T = _toInt128(uint(int(config.miu)) * T);
@@ -490,7 +464,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     }
 
     // 计算看跌期权价格
-    function _calcVp(Config memory config, uint S0, uint T, uint K) public pure returns (uint) {
+    function _calcVp(Config memory config, uint S0, uint T, uint K) private pure returns (uint) {
 
         int128 sigmaSQ_T = _d18TOb64(uint(config.sigmaSQ) * T);
         int128 miu_T = _toInt128(uint(int(config.miu)) * T);

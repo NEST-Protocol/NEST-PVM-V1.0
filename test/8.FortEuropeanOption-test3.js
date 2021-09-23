@@ -46,7 +46,7 @@ describe('FortEuropeanOption', function() {
             }
         }
         
-        let TEST_PRIVATE = true;
+        let TEST_PRIVATE = false;
 
         if (TEST_PRIVATE) {
             console.log('1. getKey');
