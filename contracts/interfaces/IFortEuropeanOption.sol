@@ -19,6 +19,16 @@ interface IFortEuropeanOption {
         uint32 minPeriod;
     }
 
+    /// @dev 期权结构
+    struct OptionView {
+        uint index;
+        address tokenAddress;
+        uint56 price;
+        bool orientation;
+        uint32 endblock;
+        uint balance;
+    }
+
     /// @dev 修改指定代币通道的配置
     /// @param tokenAddress 目标代币地址
     /// @param config 配置对象
@@ -34,7 +44,7 @@ interface IFortEuropeanOption {
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
     /// @return optionArray List of price sheets
-    function list(uint offset, uint count, uint order) external view returns (address[] memory optionArray);
+    function list(uint offset, uint count, uint order) external view returns (OptionView[] memory optionArray);
     
     /// @dev 获取已经开通的欧式期权代币数量
     /// @return 已经开通的欧式期权代币数量
@@ -45,13 +55,13 @@ interface IFortEuropeanOption {
     /// @param price 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     /// @param endblock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
-    /// @return 欧式期权代币地址
+    /// @return 欧式期权
     function getEuropeanToken(
         address tokenAddress, 
         uint price, 
         bool orientation, 
         uint endblock
-    ) external view returns (address);
+    ) external view returns (OptionView memory);
 
     /// @dev 预估开仓可以买到的期权币数量
     /// @param tokenAddress 目标代币地址，0表示eth
@@ -85,7 +95,7 @@ interface IFortEuropeanOption {
     ) external payable;
 
     /// @dev 行权
-    /// @param optionAddress 期权合约地址
+    /// @param index 期权编号
     /// @param amount 结算的期权分数
-    function exercise(address optionAddress, uint amount) external payable;
+    function exercise(uint index, uint amount) external payable;
 }

@@ -11,7 +11,6 @@ import "./interfaces/IFortEuropeanOption.sol";
 import "./interfaces/INestPriceFacade.sol";
 
 import "./FortDCU.sol";
-import "./FortOptionToken.sol";
 
 /// @dev 杠杆币交易
 contract FortLeverToken {

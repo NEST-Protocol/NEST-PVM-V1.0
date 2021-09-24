@@ -12,10 +12,20 @@ import "./interfaces/IFortEuropeanOption.sol";
 
 import "./FortFrequentlyUsed.sol";
 import "./FortDCU.sol";
-import "./FortOptionToken.sol";
 
 /// @dev 欧式期权
 contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
+
+    /// @dev 期权结构
+    struct Option {
+        address tokenAddress;
+        uint56 price;
+        bool orientation;
+        uint32 endblock;
+        
+        //uint totalSupply;
+        mapping(address=>uint) balances;
+    }
 
     // 64位二进制精度的1
     int128 constant ONE = 0x10000000000000000;
@@ -24,7 +34,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     uint constant V50000 = 0x0C3500000000000000000;
 
     // 期权代币映射
-    mapping(bytes32=>address) _optionMapping;
+    mapping(bytes32=>uint) _optionMapping;
 
     // 配置参数
     mapping(address=>Config) _configs;
@@ -33,9 +43,16 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     mapping(address=>uint) _bases;
 
     // 期权代币数组
-    address[] _options;
+    Option[] _options;
 
     constructor() {
+    }
+
+    /// @dev To support open-zeppelin/upgrades
+    /// @param governance IFortGovernance implementation contract address
+    function initialize(address governance) public override {
+        super.initialize(governance);
+        _options.push();
     }
 
     /// @dev 修改指定代币通道的配置
@@ -52,17 +69,24 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         return _configs[tokenAddress];
     }
 
+    /// @dev 返回指定期权的余额
+    /// @param addr 目标地址
+    /// @param index 目标期权索引号
+    function balanceOf(address addr, uint index) external view returns (uint) {
+        return _options[index].balances[addr];
+    }
+
     /// @dev 列出历史期权代币地址
     /// @param offset Skip previous (offset) records
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
     /// @return optionArray List of price sheets
-    function list(uint offset, uint count, uint order) external view override returns (address[] memory optionArray) {
+    function list(uint offset, uint count, uint order) external view override returns (OptionView[] memory optionArray) {
 
         // 加载代币数组
-        address[] storage options = _options;
+        Option[] storage options = _options;
         // 创建结果数组
-        optionArray = new address[](count);
+        optionArray = new OptionView[](count);
         uint length = options.length;
         uint i = 0;
 
@@ -71,7 +95,15 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
             uint index = length - offset;
             uint end = index > count ? index - count : 0;
             while (index > end) {
-                optionArray[i++] = options[--index];
+                Option storage option = options[--index];
+                optionArray[i++] = OptionView(
+                    index,
+                    option.tokenAddress,
+                    option.price,
+                    option.orientation,
+                    option.endblock,
+                    option.balances[msg.sender]
+                );
             }
         } 
         // 正序
@@ -82,7 +114,16 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
                 end = length;
             }
             while (index < end) {
-                optionArray[i++] = options[index++];
+                Option storage option = options[index];
+                optionArray[i++] = OptionView(
+                    index,
+                    option.tokenAddress,
+                    option.price,
+                    option.orientation,
+                    option.endblock,
+                    option.balances[msg.sender]
+                );
+                ++index;
             }
         }
     }
@@ -104,8 +145,19 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         uint price, 
         bool orientation, 
         uint endblock
-    ) external view override returns (address) {
-        return _optionMapping[_getKey(tokenAddress, _align(price), orientation, endblock)];
+    ) external view override returns (OptionView memory) {
+        
+        uint index = _optionMapping[_getKey(tokenAddress, _align(price), orientation, endblock)];
+        Option storage option = _options[index];
+
+        return OptionView(
+            index,
+            option.tokenAddress,
+            option.price,
+            option.orientation,
+            option.endblock,
+            option.balances[msg.sender]
+        );
     }
 
     /// @dev 开仓
@@ -150,37 +202,28 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
 
         // 3. 获取或创建期权代币
         bytes32 key = _getKey(tokenAddress, price, orientation, endblock);
-        address option = _optionMapping[key];
-        if (option == address(0)) {
+        uint optionIndex = _optionMapping[key];
+        Option storage option = _options[optionIndex];
+        if (optionIndex == 0) {
             
-            // 生成期权代币名称
-            string memory name = _optionName(
-                tokenAddress == address(0) ? "ETH" : ERC20(tokenAddress).symbol(),
-                price, 
-                orientation, 
-                endblock
-            );
-
-            // 生成期权代币合约
-            option = address(new FortOptionToken(
-                name,
-                name,
-                tokenAddress, 
-                price, 
-                orientation, 
-                endblock
-            ));
+            optionIndex = _options.length;
+            option = _options.push();
+            option.tokenAddress = tokenAddress;
+            // TODO: 浮点编码
+            option.price = uint56(price);
+            option.orientation = orientation;
+            // TODO: 截断检查
+            option.endblock = uint32(endblock);
 
             // 将期权代币地址存入映射和数组，便于后面检索
-            _optionMapping[key] = option;
-            _options.push(option);
+            _optionMapping[key] = optionIndex;
         }
 
         // 4. 销毁权利金
         FortDCU(FORT_TOKEN_ADDRESS).burn(msg.sender, fortAmount);
 
         // 5. 分发期权凭证
-        FortOptionToken(option).mint(msg.sender, amount);
+        option.balances[msg.sender] += amount;
     }
 
     /// @dev 预估开仓可以买到的期权币数量
@@ -229,23 +272,22 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     }
     
     /// @dev 行权
-    /// @param optionAddress 期权合约地址
+    /// @param index 期权编号
     /// @param amount 结算的期权分数
-    function exercise(address optionAddress, uint amount) external payable override {
+    function exercise(uint index, uint amount) external payable override {
 
         // 1. 获取期权信息
-        (
-            address tokenAddress, 
-            uint price, 
-            bool orientation, 
-            uint endblock
-        ) = FortOptionToken(optionAddress).getOptionInfo();
+        Option storage option = _options[index];
+        address tokenAddress = option.tokenAddress;
+        uint price = uint(option.price);
+        bool orientation = option.orientation;
+        uint endblock = uint(option.endblock);
 
         // TODO: 测试期间不检查
         //require(block.number >= endblock, "FEO:at maturity");
 
         // 2. 销毁期权代币
-        FortOptionToken(optionAddress).burn(msg.sender, amount);
+        option.balances[msg.sender] -= amount;
 
         // 3. 调用预言机获取价格，读取预言机在指定区块的价格
         // 3.1. 获取token相对于eth的价格
@@ -326,37 +368,6 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
                 _bases[tokenAddress] = base;
             }
         }
-    }
-
-    // C2.006-7ETH1000877
-    // 那就7位有效数字 然后+-10的幂次
-    // 最多或者6位也行 代币名称
-    function _optionName(
-        string memory name, 
-        uint price, 
-        bool orientation, 
-        uint endblock
-    ) private pure returns (string memory) {
-
-        // 1. 将价格保留7位有效数字，并计算指数部分
-        int decimals = 0;
-        while (price < 1000000) {
-            price *= 10;
-            --decimals;
-        }
-        while (price >= 10000000) {
-            price /= 10;
-            ++decimals;
-        }
-
-        // 2. 生成格式化的期权代币名称
-        return StringHelper.sprintf("%s%6f%d%4S%u", abi.encode(
-            orientation ? "C" : "P",
-            price,
-            uint(decimals),
-            name,
-            endblock
-        ));
     }
 
     // 将18位十进制定点数转化为64位二级制定点数

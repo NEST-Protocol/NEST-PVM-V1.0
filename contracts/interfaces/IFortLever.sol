@@ -5,12 +5,21 @@ pragma solidity ^0.8.6;
 /// @dev 定义杠杆币交易接口
 interface IFortLever {
     
+    struct LeverView {
+        uint index;
+        address tokenAddress;
+        uint lever;
+        bool orientation;
+        
+        uint balance;
+    }
+
     /// @dev 列出历史杠杆币地址
     /// @param offset Skip previous (offset) records
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
     /// @return leverArray List of price sheets
-    function list(uint offset, uint count, uint order) external view returns (address[] memory leverArray);
+    function list(uint offset, uint count, uint order) external view returns (LeverView[] memory leverArray);
 
     /// @dev 创建杠杆币
     /// @param tokenAddress 杠杆币的标的地产代币地址，0表示eth
@@ -35,7 +44,7 @@ interface IFortLever {
         address tokenAddress, 
         uint lever,
         bool orientation
-    ) external view returns (address);
+    ) external view returns (LeverView memory);
 
     /// @dev 买入杠杆币
     /// @param tokenAddress 杠杆币的标的地产代币地址，0表示eth
@@ -50,26 +59,26 @@ interface IFortLever {
     ) external payable;
 
     /// @dev 买入杠杆币
-    /// @param leverAddress 目标杠杆币地址
+    /// @param index 杠杆币编号
     /// @param fortAmount 支付的fort数量
     function buyDirect(
-        address leverAddress,
+        uint index,
         uint fortAmount
     ) external payable;
 
     /// @dev 卖出杠杆币
-    /// @param leverAddress 目标杠杆币地址
+    /// @param index 杠杆币编号
     /// @param amount 卖出数量
     function sell(
-        address leverAddress,
+        uint index,
         uint amount
     ) external payable;
 
     /// @dev 清算
-    /// @param leverAddress 目标杠杆币地址
+    /// @param index 杠杆币编号
     /// @param addresses 清算目标账号数组
     function settle(
-        address leverAddress,
+        uint index,
         address[] calldata addresses
     ) external payable;
 
