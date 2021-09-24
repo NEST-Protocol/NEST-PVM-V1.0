@@ -36,8 +36,8 @@ describe('FortEuropeanOption', function() {
         {
             let S0 = 3510;
             let K = 2450.123456;
-            let sigma = Math.sqrt(4168125400/1e18);
-            let miu  =9.5129375951011E-09;
+            let sigma = 0.00021368; //Math.sqrt(4168125400/1e18);
+            let miu = 0.000000025367; //9.5129375951011E-09;
             let T = (BLOCK - await ethers.provider.getBlockNumber()) * 14;
 
             let vc = Vc(S0, K, sigma, miu, T);
@@ -73,8 +73,8 @@ describe('FortEuropeanOption', function() {
         {
             let S0 = 47432.432432;
             let K = 47215.471234;
-            let sigma = Math.sqrt(4168125400/1e18);
-            let miu  =9.5129375951011E-09;
+            let sigma = 0.00021368; //Math.sqrt(4168125400/1e18);
+            let miu = 0.000000025367; //9.5129375951011E-09;
             let T = (BLOCK - await ethers.provider.getBlockNumber()) * 14;
 
             let vc = Vc(S0, K, sigma, miu, T);

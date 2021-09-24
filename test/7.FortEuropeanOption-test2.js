@@ -7,6 +7,8 @@ describe('FortEuropeanOption', function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
         const { eth, usdt, hbtc, fort, fortEuropeanOption, fortLever, nestPriceFacade } = await deploy();
+        const sigma = 0.00021368;
+        const miu = 0.000000025367;
 
         await fort.setMinter(owner.address, 1);
         await fort.mint(owner.address, '10000000000000000000000000');
@@ -132,7 +134,7 @@ describe('FortEuropeanOption', function() {
                 });
                 let fot = await FortOptionToken.attach(await fortEuropeanOption.getEuropeanToken(eth.address, i, true, BLOCK));
                 console.log('fot: ' + toDecimal(await fot.balanceOf(owner.address)));
-                let vc = Vc(oraclePrice, i, Math.sqrt(4168125400.0 / 1e18), 9.5129375951011E-09, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
+                let vc = Vc(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
                 let cal = 1000 * 1000000 / vc;
                 console.log('cal: ' + cal);
 
@@ -171,7 +173,7 @@ describe('FortEuropeanOption', function() {
                 });
                 let fot = await FortOptionToken.attach(await fortEuropeanOption.getEuropeanToken(eth.address, i, false, BLOCK));
                 console.log('fot: ' + toDecimal(await fot.balanceOf(owner.address)));
-                let vp = Vp(oraclePrice, i, Math.sqrt(4168125400.0 / 1e18), 9.5129375951011E-09, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
+                let vp = Vp(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
                 let put = 1000 * 1000000 / vp;
                 console.log('put: ' + put);
 
@@ -211,7 +213,7 @@ describe('FortEuropeanOption', function() {
                 });
                 let fot = await FortOptionToken.attach(await fortEuropeanOption.getEuropeanToken(eth.address, i, true, BLOCK));
                 console.log('fot: ' + toDecimal(await fot.balanceOf(owner.address)));
-                let vc = Vc(oraclePrice, i, Math.sqrt(4168125400.0 / 1e18), 9.5129375951011E-09, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
+                let vc = Vc(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
                 let cal = 1000 * 1000000 / vc;
                 console.log('cal: ' + cal);
 
@@ -250,7 +252,7 @@ describe('FortEuropeanOption', function() {
                 });
                 let fot = await FortOptionToken.attach(await fortEuropeanOption.getEuropeanToken(eth.address, i, false, BLOCK));
                 console.log('fot: ' + toDecimal(await fot.balanceOf(owner.address)));
-                let vp = Vp(oraclePrice, i, Math.sqrt(4168125400.0 / 1e18), 9.5129375951011E-09, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
+                let vp = Vp(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
                 let put = 1000 * 1000000 / vp;
                 console.log('put: ' + put);
 
@@ -289,7 +291,7 @@ describe('FortEuropeanOption', function() {
                 });
                 let fot = await FortOptionToken.attach(await fortEuropeanOption.getEuropeanToken(hbtc.address, i, true, BLOCK));
                 console.log('fot: ' + toDecimal(await fot.balanceOf(owner.address)));
-                let vc = Vc(oraclePrice, i, Math.sqrt(4168125400.0 / 1e18), 9.5129375951011E-09, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
+                let vc = Vc(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
                 let cal = 100000 * 1000000 / vc;
                 console.log('cal: ' + cal);
 
@@ -328,11 +330,11 @@ describe('FortEuropeanOption', function() {
                 });
                 let fot = await FortOptionToken.attach(await fortEuropeanOption.getEuropeanToken(hbtc.address, i, false, BLOCK));
                 console.log('fot: ' + toDecimal(await fot.balanceOf(owner.address)));
-                let vp = Vp(oraclePrice, i, Math.sqrt(4168125400.0 / 1e18), 9.5129375951011E-09, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
+                let vp = Vp(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
                 let put = 100000 * 1000000 / vp;
                 console.log('put: ' + put);
 
-                expect(Math.abs(parseFloat(toDecimal(await fot.balanceOf(owner.address))) - put)).to.lt(0.00001);
+                expect(Math.abs(parseFloat(toDecimal(await fot.balanceOf(owner.address))) - put)).to.lt(0.002);
                 
                 // 行权
                 let fotBalance = await fot.balanceOf(owner.address);
@@ -368,7 +370,7 @@ describe('FortEuropeanOption', function() {
                 });
                 let fot = await FortOptionToken.attach(await fortEuropeanOption.getEuropeanToken(hbtc.address, i, true, BLOCK));
                 console.log('fot: ' + toDecimal(await fot.balanceOf(owner.address)));
-                let vc = Vc(oraclePrice, i, Math.sqrt(4168125400.0 / 1e18), 9.5129375951011E-09, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
+                let vc = Vc(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
                 let cal = 100000 * 1000000 / vc;
                 console.log('cal: ' + cal);
 
@@ -407,7 +409,7 @@ describe('FortEuropeanOption', function() {
                 });
                 let fot = await FortOptionToken.attach(await fortEuropeanOption.getEuropeanToken(hbtc.address, i, false, BLOCK));
                 console.log('fot: ' + toDecimal(await fot.balanceOf(owner.address)));
-                let vp = Vp(oraclePrice, i, Math.sqrt(4168125400.0 / 1e18), 9.5129375951011E-09, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
+                let vp = Vp(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
                 let put = 100000 * 1000000 / vp;
                 console.log('put: ' + put);
 
@@ -447,7 +449,7 @@ describe('FortEuropeanOption', function() {
                 });
                 let fot = await FortOptionToken.attach(await fortEuropeanOption.getEuropeanToken(hbtc.address, i, true, BLOCK));
                 console.log('fot: ' + toDecimal(await fot.balanceOf(owner.address)));
-                let vc = Vc(oraclePrice, i, Math.sqrt(4168125400.0 / 1e18), 9.5129375951011E-09, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
+                let vc = Vc(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
                 let cal = 100000 * 1000000 / vc;
                 console.log('cal: ' + cal);
 
@@ -486,7 +488,7 @@ describe('FortEuropeanOption', function() {
                 });
                 let fot = await FortOptionToken.attach(await fortEuropeanOption.getEuropeanToken(hbtc.address, i, false, BLOCK));
                 console.log('fot: ' + toDecimal(await fot.balanceOf(owner.address)));
-                let vp = Vp(oraclePrice, i, Math.sqrt(4168125400.0 / 1e18), 9.5129375951011E-09, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
+                let vp = Vp(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
                 let put = 100000 * 1000000 / vp;
                 console.log('put: ' + put);
 
