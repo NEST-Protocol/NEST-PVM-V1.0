@@ -14,23 +14,23 @@ describe('FortEuropeanOption', function() {
         console.log('owner: ' + toDecimal(await fort.balanceOf(owner.address) )+ 'fort');
         console.log('owner: ' + owner.address);
 
-        const FortLeverToken = await ethers.getContractFactory('FortLeverToken');
         await nestPriceFacade.setPrice(hbtc.address, '74000000000000000', 1);
         await nestPriceFacade.setPrice(usdt.address, '3510000000', 1);
 
         const BLOCK = 100000;
-
+        const oraclePrice = 3510000000n;
+        
         const leverTest = async function(tokenAddress, lever, orientation, amount, fee) {
             await fortLever.buy(tokenAddress, lever, orientation, amount, { value: fee });
-            let lot = await FortLeverToken.attach(await fortLever.getLeverToken(tokenAddress, lever, orientation));
-            console.log('owner: ' + toDecimal(await lot.balanceOf(owner.address)) + '(' + await lot.name() + ')');
+            let lot = await fortLever.getLeverInfo(tokenAddress, lever, orientation);
+            console.log('owner: ' + toDecimal(await fortLever.balanceOf(lot.index, oraclePrice, owner.address)) + '(lot)');
         } 
 
         const show = async function(tokenAddress, lever, orientation, amount, fee) {
             //await fortLever.buy(tokenAddress, lever, orientation, amount, { value: fee });
-            let lot = await FortLeverToken.attach(await fortLever.getLeverToken(tokenAddress, lever, orientation));
-            await lot.update(owner.address, { value: fee });
-            console.log('owner: ' + toDecimal(await lot.balanceOf(owner.address)) + '(' + await lot.name() + ')');
+            let lot = await fortLever.getLeverInfo(tokenAddress, lever, orientation);
+            //await lot.update(owner.address, { value: fee });
+            console.log('owner: ' + toDecimal(await fortLever.balanceOf(lot.index, oraclePrice, owner.address)) + '(lot)');
         } 
 
         await leverTest(eth.address, 1, true, toBigInt(100),   toBigInt(0.01));

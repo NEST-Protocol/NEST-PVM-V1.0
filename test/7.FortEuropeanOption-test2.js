@@ -16,7 +16,6 @@ describe('FortEuropeanOption', function() {
         console.log('owner: ' + toDecimal(await fort.balanceOf(owner.address) )+ 'fort');
         console.log('owner: ' + owner.address);
 
-        const FortOptionToken = await ethers.getContractFactory('FortOptionToken');
         await nestPriceFacade.setPrice(hbtc.address, '74000000000000000', 1);
         await nestPriceFacade.setPrice(usdt.address, '3510000000', 1);
 
@@ -100,26 +99,24 @@ describe('FortEuropeanOption', function() {
             options = await fortEuropeanOption.list(0, 5, 1);
             console.log(options);
 
-            let fot1 = await FortOptionToken.attach(await fortEuropeanOption.getEuropeanToken(eth.address, 2450000000, true, 100000));
-            let fot2 = await FortOptionToken.attach(await fortEuropeanOption.getEuropeanToken(hbtc.address, 52450000000, false, 100000));
+            let fot1 = await fortEuropeanOption.getOptionInfo(eth.address, 2450000000, true, 100000);
+            let fot2 = await fortEuropeanOption.getOptionInfo(hbtc.address, 52450000000, false, 100000);
 
-            console.log('fot1: ' + fot1.address);
-            console.log('fot2: ' + fot2.address);
+            console.log('fot1: ' + fot1.index);
+            console.log('fot2: ' + fot2.index);
 
-            console.log('fot1-name: ' + await fot1.name());
-            console.log('fot2-name: ' + await fot2.name());
-
-            console.log('fot1-symbol: ' + await fot1.symbol());
-            console.log('fot2-symbol: ' + await fot2.symbol());
+            console.log('fot1-name: ' + fot1);
+            console.log('fot2-name: ' + fot2);
         }
 
         const align = function(price) {
-            let decimals = 0;
-            while (price >= 10000000) {
-                price = Math.floor(price / 10);
-                ++decimals;
-            }
-            return price * 10 ** decimals;
+            // let decimals = 0;
+            // while (price >= 10000000) {
+            //     price = Math.floor(price / 10);
+            //     ++decimals;
+            // }
+            // return price * 10 ** decimals;
+            return price;
         }
 
         let oraclePrice = 3510000000;
@@ -132,18 +129,18 @@ describe('FortEuropeanOption', function() {
                 await fortEuropeanOption.open(eth.address, i, true, BLOCK, toBigInt(1000), {
                     value: toBigInt(0.01)
                 });
-                let fot = await FortOptionToken.attach(await fortEuropeanOption.getEuropeanToken(eth.address, i, true, BLOCK));
-                console.log('fot: ' + toDecimal(await fot.balanceOf(owner.address)));
+                let fot = await fortEuropeanOption.getOptionInfo(eth.address, i, true, BLOCK);
+                console.log('fot: ' + toDecimal(await fortEuropeanOption.balanceOf(fot.index, owner.address)));
                 let vc = Vc(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
                 let cal = 1000 * 1000000 / vc;
                 console.log('cal: ' + cal);
 
-                expect(Math.abs(parseFloat(toDecimal(await fot.balanceOf(owner.address))) - cal)).to.lt(0.0001);
+                expect(Math.abs(parseFloat(toDecimal(await fortEuropeanOption.balanceOf(fot.index, owner.address))) - cal)).to.lt(0.0001);
                 
                 // 行权
-                let fotBalance = await fot.balanceOf(owner.address);
+                let fotBalance = await fortEuropeanOption.balanceOf(fot.index, owner.address);
                 let before = BigInt(await fort.balanceOf(owner.address));
-                await fortEuropeanOption.exercise(fot.address, await fot.balanceOf(owner.address), {
+                await fortEuropeanOption.exercise(fot.index, await fortEuropeanOption.balanceOf(fot.index, owner.address), {
                     value: toBigInt(0.01)
                 });
                 let earn = BigInt(await fort.balanceOf(owner.address)) - before;
@@ -171,18 +168,18 @@ describe('FortEuropeanOption', function() {
                 await fortEuropeanOption.open(eth.address, i, false, BLOCK, toBigInt(1000), {
                     value: toBigInt(0.01)
                 });
-                let fot = await FortOptionToken.attach(await fortEuropeanOption.getEuropeanToken(eth.address, i, false, BLOCK));
-                console.log('fot: ' + toDecimal(await fot.balanceOf(owner.address)));
+                let fot = await fortEuropeanOption.getOptionInfo(eth.address, i, false, BLOCK);
+                console.log('fot: ' + toDecimal(await fortEuropeanOption.balanceOf(fot.index, owner.address)));
                 let vp = Vp(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
                 let put = 1000 * 1000000 / vp;
                 console.log('put: ' + put);
 
-                expect(Math.abs(parseFloat(toDecimal(await fot.balanceOf(owner.address))) - put)).to.lt(0.00001);
+                expect(Math.abs(parseFloat(toDecimal(await fortEuropeanOption.balanceOf(fot.index, owner.address))) - put)).to.lt(0.00001);
                 
                 // 行权
-                let fotBalance = await fot.balanceOf(owner.address);
+                let fotBalance = await fortEuropeanOption.balanceOf(fot.index, owner.address);
                 let before = BigInt(await fort.balanceOf(owner.address));
-                await fortEuropeanOption.exercise(fot.address, await fot.balanceOf(owner.address), {
+                await fortEuropeanOption.exercise(fot.index, await fortEuropeanOption.balanceOf(fot.index, owner.address), {
                     value: toBigInt(0.01)
                 });
                 let earn = BigInt(await fort.balanceOf(owner.address)) - before;
@@ -211,18 +208,18 @@ describe('FortEuropeanOption', function() {
                 await fortEuropeanOption.open(eth.address, i, true, BLOCK, toBigInt(1000), {
                     value: toBigInt(0.01)
                 });
-                let fot = await FortOptionToken.attach(await fortEuropeanOption.getEuropeanToken(eth.address, i, true, BLOCK));
-                console.log('fot: ' + toDecimal(await fot.balanceOf(owner.address)));
+                let fot = await fortEuropeanOption.getOptionInfo(eth.address, i, true, BLOCK);
+                console.log('fot: ' + toDecimal(await fortEuropeanOption.balanceOf(fot.index, owner.address)));
                 let vc = Vc(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
                 let cal = 1000 * 1000000 / vc;
                 console.log('cal: ' + cal);
 
-                expect(Math.abs(parseFloat(toDecimal(await fot.balanceOf(owner.address))) - cal)).to.lt(0.0001);
+                expect(Math.abs(parseFloat(toDecimal(await fortEuropeanOption.balanceOf(fot.index, owner.address))) - cal)).to.lt(0.0001);
                 
                 // 行权
-                let fotBalance = await fot.balanceOf(owner.address);
+                let fotBalance = await fortEuropeanOption.balanceOf(fot.index, owner.address);
                 let before = BigInt(await fort.balanceOf(owner.address));
-                await fortEuropeanOption.exercise(fot.address, await fot.balanceOf(owner.address), {
+                await fortEuropeanOption.exercise(fot.index, await fortEuropeanOption.balanceOf(fot.index, owner.address), {
                     value: toBigInt(0.01)
                 });
                 let earn = BigInt(await fort.balanceOf(owner.address)) - before;
@@ -250,18 +247,18 @@ describe('FortEuropeanOption', function() {
                 await fortEuropeanOption.open(eth.address, i, false, BLOCK, toBigInt(1000), {
                     value: toBigInt(0.01)
                 });
-                let fot = await FortOptionToken.attach(await fortEuropeanOption.getEuropeanToken(eth.address, i, false, BLOCK));
-                console.log('fot: ' + toDecimal(await fot.balanceOf(owner.address)));
+                let fot = await fortEuropeanOption.getOptionInfo(eth.address, i, false, BLOCK);
+                console.log('fot: ' + toDecimal(await fortEuropeanOption.balanceOf(fot.index, owner.address)));
                 let vp = Vp(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
                 let put = 1000 * 1000000 / vp;
                 console.log('put: ' + put);
 
-                expect(Math.abs(parseFloat(toDecimal(await fot.balanceOf(owner.address))) - put)).to.lt(0.00001);
+                expect(Math.abs(parseFloat(toDecimal(await fortEuropeanOption.balanceOf(fot.index, owner.address))) - put)).to.lt(0.00001);
                 
                 // 行权
-                let fotBalance = await fot.balanceOf(owner.address);
+                let fotBalance = await fortEuropeanOption.balanceOf(fot.index, owner.address);
                 let before = BigInt(await fort.balanceOf(owner.address));
-                await fortEuropeanOption.exercise(fot.address, await fot.balanceOf(owner.address), {
+                await fortEuropeanOption.exercise(fot.index, await fortEuropeanOption.balanceOf(fot.index, owner.address), {
                     value: toBigInt(0.01)
                 });
                 let earn = BigInt(await fort.balanceOf(owner.address)) - before;
@@ -289,18 +286,18 @@ describe('FortEuropeanOption', function() {
                 await fortEuropeanOption.open(hbtc.address, i, true, BLOCK, toBigInt(100000), {
                     value: toBigInt(0.02)
                 });
-                let fot = await FortOptionToken.attach(await fortEuropeanOption.getEuropeanToken(hbtc.address, i, true, BLOCK));
-                console.log('fot: ' + toDecimal(await fot.balanceOf(owner.address)));
+                let fot = await fortEuropeanOption.getOptionInfo(hbtc.address, i, true, BLOCK);
+                console.log('fot: ' + toDecimal(await fortEuropeanOption.balanceOf(fot.index, owner.address)));
                 let vc = Vc(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
                 let cal = 100000 * 1000000 / vc;
                 console.log('cal: ' + cal);
 
-                expect(Math.abs(parseFloat(toDecimal(await fot.balanceOf(owner.address))) - cal)).to.lt(0.001);
+                expect(Math.abs(parseFloat(toDecimal(await fortEuropeanOption.balanceOf(fot.index, owner.address))) - cal)).to.lt(0.001);
                 
                 // 行权
-                let fotBalance = await fot.balanceOf(owner.address);
+                let fotBalance = await fortEuropeanOption.balanceOf(fot.index, owner.address);
                 let before = BigInt(await fort.balanceOf(owner.address));
-                await fortEuropeanOption.exercise(fot.address, await fot.balanceOf(owner.address), {
+                await fortEuropeanOption.exercise(fot.index, await fortEuropeanOption.balanceOf(fot.index, owner.address), {
                     value: toBigInt(0.02)
                 });
                 let earn = BigInt(await fort.balanceOf(owner.address)) - before;
@@ -328,18 +325,18 @@ describe('FortEuropeanOption', function() {
                 await fortEuropeanOption.open(hbtc.address, i, false, BLOCK, toBigInt(100000), {
                     value: toBigInt(0.02)
                 });
-                let fot = await FortOptionToken.attach(await fortEuropeanOption.getEuropeanToken(hbtc.address, i, false, BLOCK));
-                console.log('fot: ' + toDecimal(await fot.balanceOf(owner.address)));
+                let fot = await fortEuropeanOption.getOptionInfo(hbtc.address, i, false, BLOCK);
+                console.log('fot: ' + toDecimal(await fortEuropeanOption.balanceOf(fot.index, owner.address)));
                 let vp = Vp(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
                 let put = 100000 * 1000000 / vp;
                 console.log('put: ' + put);
 
-                expect(Math.abs(parseFloat(toDecimal(await fot.balanceOf(owner.address))) - put)).to.lt(0.002);
+                expect(Math.abs(parseFloat(toDecimal(await fortEuropeanOption.balanceOf(fot.index, owner.address))) - put)).to.lt(0.002);
                 
                 // 行权
-                let fotBalance = await fot.balanceOf(owner.address);
+                let fotBalance = await fortEuropeanOption.balanceOf(fot.index, owner.address);
                 let before = BigInt(await fort.balanceOf(owner.address));
-                await fortEuropeanOption.exercise(fot.address, await fot.balanceOf(owner.address), {
+                await fortEuropeanOption.exercise(fot.index, await fortEuropeanOption.balanceOf(fot.index, owner.address), {
                     value: toBigInt(0.02)
                 });
                 let earn = BigInt(await fort.balanceOf(owner.address)) - before;
@@ -368,18 +365,18 @@ describe('FortEuropeanOption', function() {
                 await fortEuropeanOption.open(hbtc.address, i, true, BLOCK, toBigInt(100000), {
                     value: toBigInt(0.02)
                 });
-                let fot = await FortOptionToken.attach(await fortEuropeanOption.getEuropeanToken(hbtc.address, i, true, BLOCK));
-                console.log('fot: ' + toDecimal(await fot.balanceOf(owner.address)));
+                let fot = await fortEuropeanOption.getOptionInfo(hbtc.address, i, true, BLOCK);
+                console.log('fot: ' + toDecimal(await fortEuropeanOption.balanceOf(fot.index, owner.address)));
                 let vc = Vc(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
                 let cal = 100000 * 1000000 / vc;
                 console.log('cal: ' + cal);
 
-                expect(Math.abs(parseFloat(toDecimal(await fot.balanceOf(owner.address))) - cal)).to.lt(0.001);
+                expect(Math.abs(parseFloat(toDecimal(await fortEuropeanOption.balanceOf(fot.index, owner.address))) - cal)).to.lt(0.001);
                 
                 // 行权
-                let fotBalance = await fot.balanceOf(owner.address);
+                let fotBalance = await fortEuropeanOption.balanceOf(fot.index, owner.address);
                 let before = BigInt(await fort.balanceOf(owner.address));
-                await fortEuropeanOption.exercise(fot.address, await fot.balanceOf(owner.address), {
+                await fortEuropeanOption.exercise(fot.index, await fortEuropeanOption.balanceOf(fot.index, owner.address), {
                     value: toBigInt(0.02)
                 });
                 let earn = BigInt(await fort.balanceOf(owner.address)) - before;
@@ -407,18 +404,18 @@ describe('FortEuropeanOption', function() {
                 await fortEuropeanOption.open(hbtc.address, i, false, BLOCK, toBigInt(100000), {
                     value: toBigInt(0.02)
                 });
-                let fot = await FortOptionToken.attach(await fortEuropeanOption.getEuropeanToken(hbtc.address, i, false, BLOCK));
-                console.log('fot: ' + toDecimal(await fot.balanceOf(owner.address)));
+                let fot = await fortEuropeanOption.getOptionInfo(hbtc.address, i, false, BLOCK);
+                console.log('fot: ' + toDecimal(await fortEuropeanOption.balanceOf(fot.index, owner.address)));
                 let vp = Vp(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
                 let put = 100000 * 1000000 / vp;
                 console.log('put: ' + put);
 
-                expect(Math.abs(parseFloat(toDecimal(await fot.balanceOf(owner.address))) - put)).to.lt(0.00001);
+                expect(Math.abs(parseFloat(toDecimal(await fortEuropeanOption.balanceOf(fot.index, owner.address))) - put)).to.lt(0.00001);
                 
                 // 行权
-                let fotBalance = await fot.balanceOf(owner.address);
+                let fotBalance = await fortEuropeanOption.balanceOf(fot.index, owner.address);
                 let before = BigInt(await fort.balanceOf(owner.address));
-                await fortEuropeanOption.exercise(fot.address, await fot.balanceOf(owner.address), {
+                await fortEuropeanOption.exercise(fot.index, await fortEuropeanOption.balanceOf(fot.index, owner.address), {
                     value: toBigInt(0.02)
                 });
                 let earn = BigInt(await fort.balanceOf(owner.address)) - before;
@@ -447,18 +444,18 @@ describe('FortEuropeanOption', function() {
                 await fortEuropeanOption.open(hbtc.address, i, true, BLOCK, toBigInt(100000), {
                     value: toBigInt(0.02)
                 });
-                let fot = await FortOptionToken.attach(await fortEuropeanOption.getEuropeanToken(hbtc.address, i, true, BLOCK));
-                console.log('fot: ' + toDecimal(await fot.balanceOf(owner.address)));
+                let fot = await fortEuropeanOption.getOptionInfo(hbtc.address, i, true, BLOCK);
+                console.log('fot: ' + toDecimal(await fortEuropeanOption.balanceOf(fot.index, owner.address)));
                 let vc = Vc(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
                 let cal = 100000 * 1000000 / vc;
                 console.log('cal: ' + cal);
 
-                expect(Math.abs(parseFloat(toDecimal(await fot.balanceOf(owner.address))) - cal)).to.lt(0.001);
+                expect(Math.abs(parseFloat(toDecimal(await fortEuropeanOption.balanceOf(fot.index, owner.address))) - cal)).to.lt(0.001);
                 
                 // 行权
-                let fotBalance = await fot.balanceOf(owner.address);
+                let fotBalance = await fortEuropeanOption.balanceOf(fot.index, owner.address);
                 let before = BigInt(await fort.balanceOf(owner.address));
-                await fortEuropeanOption.exercise(fot.address, await fot.balanceOf(owner.address), {
+                await fortEuropeanOption.exercise(fot.index, await fortEuropeanOption.balanceOf(fot.index, owner.address), {
                     value: toBigInt(0.02)
                 });
                 let earn = BigInt(await fort.balanceOf(owner.address)) - before;
@@ -486,18 +483,18 @@ describe('FortEuropeanOption', function() {
                 await fortEuropeanOption.open(hbtc.address, i, false, BLOCK, toBigInt(100000), {
                     value: toBigInt(0.02)
                 });
-                let fot = await FortOptionToken.attach(await fortEuropeanOption.getEuropeanToken(hbtc.address, i, false, BLOCK));
-                console.log('fot: ' + toDecimal(await fot.balanceOf(owner.address)));
+                let fot = await fortEuropeanOption.getOptionInfo(hbtc.address, i, false, BLOCK);
+                console.log('fot: ' + toDecimal(await fortEuropeanOption.balanceOf(fot.index, owner.address)));
                 let vp = Vp(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
                 let put = 100000 * 1000000 / vp;
                 console.log('put: ' + put);
 
-                expect(Math.abs(parseFloat(toDecimal(await fot.balanceOf(owner.address))) - put)).to.lt(0.0001);
+                expect(Math.abs(parseFloat(toDecimal(await fortEuropeanOption.balanceOf(fot.index, owner.address))) - put)).to.lt(0.0001);
                 
                 // 行权
-                let fotBalance = await fot.balanceOf(owner.address);
+                let fotBalance = await fortEuropeanOption.balanceOf(fot.index, owner.address);
                 let before = BigInt(await fort.balanceOf(owner.address));
-                await fortEuropeanOption.exercise(fot.address, await fot.balanceOf(owner.address), {
+                await fortEuropeanOption.exercise(fot.index, await fortEuropeanOption.balanceOf(fot.index, owner.address), {
                     value: toBigInt(0.02)
                 });
                 let earn = BigInt(await fort.balanceOf(owner.address)) - before;

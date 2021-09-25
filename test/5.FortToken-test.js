@@ -14,7 +14,6 @@ describe('FortEuropeanOption', function() {
         console.log('owner: ' + toDecimal(await fort.balanceOf(owner.address) )+ 'fort');
         console.log('owner: ' + owner.address);
 
-        const FortOptionToken = await ethers.getContractFactory('FortOptionToken');
         await nestPriceFacade.setPrice(hbtc.address, '74000000000000000', 1);
         await nestPriceFacade.setPrice(usdt.address, '3510000000', 1);
 

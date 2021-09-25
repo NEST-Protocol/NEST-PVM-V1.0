@@ -19,13 +19,13 @@ interface IFortEuropeanOption {
         uint32 minPeriod;
     }
 
-    /// @dev 期权结构
+    /// @dev 期权信息
     struct OptionView {
         uint index;
         address tokenAddress;
-        uint56 price;
+        uint price;
         bool orientation;
-        uint32 endblock;
+        uint endblock;
         uint balance;
     }
 
@@ -38,25 +38,43 @@ interface IFortEuropeanOption {
     /// @param tokenAddress 目标代币地址
     /// @return 配置对象
     function getConfig(address tokenAddress) external view returns (Config memory);
+    
+    /// @dev 返回指定期权的余额
+    /// @param index 目标期权索引号
+    /// @param addr 目标地址
+    function balanceOf(uint index, address addr) external view returns (uint);
 
-    /// @dev 列出历史期权代币地址
+    /// @dev 查找目标账户的期权（倒序）
+    /// @param start 从给定的合约地址对应的索引向前查询（不包含start对应的记录）
+    /// @param count 最多返回的记录条数
+    /// @param maxFindCount 最多查找maxFindCount记录
+    /// @param owner 目标账户地址
+    /// @return optionArray 期权信息列表
+    function find(
+        uint start, 
+        uint count, 
+        uint maxFindCount, 
+        address owner
+    ) external view returns (OptionView[] memory optionArray);
+
+    /// @dev 列出历史期权信息
     /// @param offset Skip previous (offset) records
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
-    /// @return optionArray List of price sheets
+    /// @return optionArray 期权信息列表
     function list(uint offset, uint count, uint order) external view returns (OptionView[] memory optionArray);
     
     /// @dev 获取已经开通的欧式期权代币数量
     /// @return 已经开通的欧式期权代币数量
     function getTokenCount() external view returns (uint);
 
-    /// @dev 获取欧式期权代币地址
+    /// @dev 获取期权信息
     /// @param tokenAddress 目标代币地址，0表示eth
     /// @param price 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     /// @param endblock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
-    /// @return 欧式期权
-    function getEuropeanToken(
+    /// @return 期权信息
+    function getOptionInfo(
         address tokenAddress, 
         uint price, 
         bool orientation, 

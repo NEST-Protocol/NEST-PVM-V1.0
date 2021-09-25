@@ -14,7 +14,6 @@ describe('FortEuropeanOption', function() {
         console.log('owner: ' + toDecimal(await fort.balanceOf(owner.address) )+ 'fort');
         console.log('owner: ' + owner.address);
 
-        const FortOptionToken = await ethers.getContractFactory('FortOptionToken');
         await nestPriceFacade.setPrice(hbtc.address, '74000000000000000', 1);
         await nestPriceFacade.setPrice(usdt.address, '3510000000', 1);
 
@@ -22,15 +21,15 @@ describe('FortEuropeanOption', function() {
         await fortEuropeanOption.open(eth.address, '2450000000', true, BLOCK, toBigInt(1000), {
             value: toBigInt(0.01)
         });
-        let fot = await FortOptionToken.attach(await fortEuropeanOption.getEuropeanToken(
+        let fot = await fortEuropeanOption.getOptionInfo(
             eth.address,
             '2450000000',
             true,
             BLOCK
-        ));
+        );
 
         console.log('owner: ' + toDecimal(await fort.balanceOf(owner.address)) + 'fort');
-        console.log('owner: ' + toDecimal(await fot.balanceOf(owner.address)) + '(' + await fot.name() + ')');
+        console.log('owner: ' + toDecimal(await fortEuropeanOption.balanceOf(fot.index, owner.address)) + '(fot)');
         let v;
         {
             let S0 = 3510;
@@ -44,30 +43,30 @@ describe('FortEuropeanOption', function() {
             console.log('vc=' + vc);
             //console.log('vp=' + vp);
             console.log('FOT=' + 1000 / vc);
-            expect(Math.abs(1000 / vc - (await fot.balanceOf(owner.address))/1e18)).to.lt(1e-5);
+            expect(Math.abs(1000 / vc - (await fortEuropeanOption.balanceOf(fot.index, owner.address))/1e18)).to.lt(1e-5);
             console.log('gained=' + 1000 / vc * (3510 - 2450));
             v = 1000 / vc * (3510 - 2450) + (await fort.balanceOf(owner.address)) / 1e18;
         }
 
-        await fortEuropeanOption.exercise(fot.address, await fot.balanceOf(owner.address), {
+        await fortEuropeanOption.exercise(fot.index, await fortEuropeanOption.balanceOf(fot.index, owner.address), {
             value: toBigInt(0.01)
         });
         console.log('owner: ' + toDecimal(await fort.balanceOf(owner.address)) + 'fort');
-        console.log('owner: ' + toDecimal(await fot.balanceOf(owner.address)) + '(' + await fot.name() + ')');
+        console.log('owner: ' + toDecimal(await fortEuropeanOption.balanceOf(fot.index, owner.address)) + '(fot)');
         expect(Math.abs(v - (await fort.balanceOf(owner.address)) / 1e18)).to.lt(1e-4);
         console.log();
 
         await fortEuropeanOption.open(hbtc.address, '47215470000', true, BLOCK, toBigInt(100000), {
             value: toBigInt(0.02)
         });
-        fot = await FortOptionToken.attach(await fortEuropeanOption.getEuropeanToken(
+        fot = await fortEuropeanOption.getOptionInfo(
             hbtc.address,
             '47215470000',
             true,
             BLOCK
-        ));
+        );
         console.log('owner: ' + toDecimal(await fort.balanceOf(owner.address)) + 'fort');
-        console.log('owner: ' + toDecimal(await fot.balanceOf(owner.address)) + '(' + await fot.name() + ')');
+        console.log('owner: ' + toDecimal(await fortEuropeanOption.balanceOf(fot.index, owner.address)) + '(fot)');
         {
             let S0 = 47432.432432;
             let K = 47215.470000;
@@ -80,16 +79,16 @@ describe('FortEuropeanOption', function() {
             console.log('vc=' + vc);
             //console.log('vp=' + vp);
             console.log('FOT=' + 100000 / vc);
-            expect(Math.abs(100000 / vc - (await fot.balanceOf(owner.address))/1e18)).to.lt(1e-2);
+            expect(Math.abs(100000 / vc - (await fortEuropeanOption.balanceOf(fot.index, owner.address))/1e18)).to.lt(1e-2);
             console.log('gained=' + 100000 / vc * (47432.432432 - 47215.470000));
             v = 100000 / vc * (47432.432432 - 47215.470000) + (await fort.balanceOf(owner.address)) / 1e18;
         }
 
-        await fortEuropeanOption.exercise(fot.address, await fot.balanceOf(owner.address), {
+        await fortEuropeanOption.exercise(fot.index, await fortEuropeanOption.balanceOf(fot.index, owner.address), {
             value: toBigInt(0.02)
         });
         console.log('owner: ' + toDecimal(await fort.balanceOf(owner.address)) + 'fort');
-        console.log('owner: ' + toDecimal(await fot.balanceOf(owner.address)) + '(' + await fot.name() + ')');
+        console.log('owner: ' + toDecimal(await fortEuropeanOption.balanceOf(fot.index, owner.address)) + '(fot)');
         expect(Math.abs(v - (await fort.balanceOf(owner.address)) / 1e18)).to.lt(1e0);
         console.log();
     });

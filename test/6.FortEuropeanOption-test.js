@@ -14,7 +14,6 @@ describe('FortEuropeanOption', function() {
         console.log('owner: ' + toDecimal(await fort.balanceOf(owner.address) )+ 'fort');
         console.log('owner: ' + owner.address);
 
-        const FortOptionToken = await ethers.getContractFactory('FortOptionToken');
         await nestPriceFacade.setPrice(hbtc.address, '74000000000000000', 1);
         await nestPriceFacade.setPrice(usdt.address, '3510000000', 1);
 
@@ -100,17 +99,14 @@ describe('FortEuropeanOption', function() {
             options = await fortEuropeanOption.list(0, 5, 1);
             console.log(options);
 
-            let fot1 = await FortOptionToken.attach(await fortEuropeanOption.getEuropeanToken(eth.address, 2450000000, true, 100000));
-            let fot2 = await FortOptionToken.attach(await fortEuropeanOption.getEuropeanToken(hbtc.address, 52450000000, false, 100000));
+            let fot1 = await fortEuropeanOption.getOptionInfo(eth.address, 2450000000, true, 100000);
+            let fot2 = await fortEuropeanOption.getOptionInfo(hbtc.address, 52450000000, false, 100000);
 
-            console.log('fot1: ' + fot1.address);
-            console.log('fot2: ' + fot2.address);
+            console.log('fot1: ' + fot1.index);
+            console.log('fot2: ' + fot2.index);
 
-            console.log('fot1-name: ' + await fot1.name());
-            console.log('fot2-name: ' + await fot2.name());
-
-            console.log('fot1-symbol: ' + await fot1.symbol());
-            console.log('fot2-symbol: ' + await fot2.symbol());
+            console.log('fot1-name: ' + fot1);
+            console.log('fot2-name: ' + fot2);
         }
     });
 });

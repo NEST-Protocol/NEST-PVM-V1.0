@@ -70,17 +70,65 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     }
 
     /// @dev 返回指定期权的余额
-    /// @param addr 目标地址
     /// @param index 目标期权索引号
-    function balanceOf(address addr, uint index) external view returns (uint) {
+    /// @param addr 目标地址
+    function balanceOf(uint index, address addr) external view override returns (uint) {
         return _options[index].balances[addr];
     }
 
-    /// @dev 列出历史期权代币地址
+    function _toOptionView(Option storage option, uint index) private view returns (OptionView memory) {
+        return OptionView(
+            index,
+            option.tokenAddress,
+            _decodeFloat(option.price),
+            option.orientation,
+            uint32(option.endblock),
+            option.balances[msg.sender]
+        );
+    }
+
+    /// @dev 查找目标账户的期权（倒序）
+    /// @param start 从给定的合约地址对应的索引向前查询（不包含start对应的记录）
+    /// @param count 最多返回的记录条数
+    /// @param maxFindCount 最多查找maxFindCount记录
+    /// @param owner 目标账户地址
+    /// @return optionArray 期权信息列表
+    function find(
+        uint start, 
+        uint count, 
+        uint maxFindCount, 
+        address owner
+    ) external view override returns (OptionView[] memory optionArray) {
+        
+        optionArray = new OptionView[](count);
+        uint index = 0;
+        
+        // 计算查找区间i和end
+        Option[] storage options = _options;
+        uint i = options.length;
+        uint end = 0;
+        if (start > 0) {
+            i = start;
+        }
+        if (i > maxFindCount) {
+            end = i - maxFindCount;
+        }
+        
+        // 循环查找，将符合条件的记录写入缓冲区
+        while (count > 0 && i-- > end) {
+            Option storage option = options[i];
+            if (option.balances[owner] > 0) {
+                --count;
+                optionArray[index++] = _toOptionView(option, i);
+            }
+        }
+    }
+
+    /// @dev 列出历史期权信息
     /// @param offset Skip previous (offset) records
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
-    /// @return optionArray List of price sheets
+    /// @return optionArray 期权信息列表
     function list(uint offset, uint count, uint order) external view override returns (OptionView[] memory optionArray) {
 
         // 加载代币数组
@@ -96,14 +144,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
             uint end = index > count ? index - count : 0;
             while (index > end) {
                 Option storage option = options[--index];
-                optionArray[i++] = OptionView(
-                    index,
-                    option.tokenAddress,
-                    option.price,
-                    option.orientation,
-                    option.endblock,
-                    option.balances[msg.sender]
-                );
+                optionArray[i++] = _toOptionView(option, index);
             }
         } 
         // 正序
@@ -114,15 +155,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
                 end = length;
             }
             while (index < end) {
-                Option storage option = options[index];
-                optionArray[i++] = OptionView(
-                    index,
-                    option.tokenAddress,
-                    option.price,
-                    option.orientation,
-                    option.endblock,
-                    option.balances[msg.sender]
-                );
+                optionArray[i++] = _toOptionView(options[index], index);
                 ++index;
             }
         }
@@ -134,30 +167,20 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         return _options.length;
     }
 
-    /// @dev 获取欧式期权代币地址
+    /// @dev 获取期权信息
     /// @param tokenAddress 目标代币地址，0表示eth
     /// @param price 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     /// @param endblock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
-    /// @return 欧式期权代币地址
-    function getEuropeanToken(
+    /// @return 期权信息
+    function getOptionInfo(
         address tokenAddress, 
         uint price, 
         bool orientation, 
         uint endblock
-    ) external view override returns (OptionView memory) {
-        
-        uint index = _optionMapping[_getKey(tokenAddress, _align(price), orientation, endblock)];
-        Option storage option = _options[index];
-
-        return OptionView(
-            index,
-            option.tokenAddress,
-            option.price,
-            option.orientation,
-            option.endblock,
-            option.balances[msg.sender]
-        );
+    ) external view override returns (OptionView memory) {        
+        uint index = _optionMapping[_getKey(tokenAddress, price, orientation, endblock)];
+        return _toOptionView(_options[index], index);
     }
 
     /// @dev 开仓
@@ -175,7 +198,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     ) external payable override {
 
         // 将价格对齐为7位有效数字，避免精度过高导致期权代币数量过多
-        price = _align(price);
+        //price = _align(price);
 
         // 1. 调用预言机获取价格
         // 1.1. 获取token相对于eth的价格
@@ -209,10 +232,9 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
             optionIndex = _options.length;
             option = _options.push();
             option.tokenAddress = tokenAddress;
-            // TODO: 浮点编码
-            option.price = uint56(price);
+            option.price = _encodeFloat(price);
             option.orientation = orientation;
-            // TODO: 截断检查
+            require(endblock < 0x100000000, "FEO:endblock to large");
             option.endblock = uint32(endblock);
 
             // 将期权代币地址存入映射和数组，便于后面检索
@@ -279,7 +301,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         // 1. 获取期权信息
         Option storage option = _options[index];
         address tokenAddress = option.tokenAddress;
-        uint price = uint(option.price);
+        uint price = _decodeFloat(option.price);
         bool orientation = option.orientation;
         uint endblock = uint(option.endblock);
 
@@ -341,21 +363,21 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         return keccak256(abi.encodePacked(tokenAddress, price, orientation, endblock));
     }
 
-    // 对齐价格，保留7位有效数字
-    function _align(uint price) private pure returns (uint) {
-        // uint decimals = 0;
-        // while (price >= 10000000) {
-        //     price /= 10;
-        //     ++decimals;
-        // }
-        // return price * 10 ** decimals;
+    // // 对齐价格，保留7位有效数字
+    // function _align(uint price) private pure returns (uint) {
+    //     // uint decimals = 0;
+    //     // while (price >= 10000000) {
+    //     //     price /= 10;
+    //     //     ++decimals;
+    //     // }
+    //     // return price * 10 ** decimals;
 
-        uint base = 10000000;
-        while (price >= base) {
-            base *= 10;
-        }
-        return price - price % (base / 10000000);
-    }
+    //     uint base = 10000000;
+    //     while (price >= base) {
+    //         base *= 10;
+    //     }
+    //     return price - price % (base / 10000000);
+    // }
 
     // 获取代币的基数值
     function _getBase(address tokenAddress) private returns (uint base) {
@@ -501,5 +523,25 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
                 ),
                 miu_T
             );
+    }
+    
+    /// @dev Encode the uint value as a floating-point representation in the form of fraction * 16 ^ exponent
+    /// @param value Destination uint value
+    /// @return float format
+    function _encodeFloat(uint value) private pure returns (uint56) {
+
+        uint exponent = 0; 
+        while (value > 0x3FFFFFFFFFFFF) {
+            value >>= 4;
+            ++exponent;
+        }
+        return uint56((value << 6) | exponent);
+    }
+
+    /// @dev Decode the floating-point representation of fraction * 16 ^ exponent to uint
+    /// @param floatValue fraction value
+    /// @return decode format
+    function _decodeFloat(uint56 floatValue) private pure returns (uint) {
+        return (uint(floatValue) >> 6) << ((uint(floatValue) & 0x3F) << 2);
     }
 }

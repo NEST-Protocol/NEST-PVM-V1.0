@@ -13,6 +13,25 @@ interface IFortLever {
         
         uint balance;
     }
+    
+    /// @dev 返回指定期权的余额
+    /// @param index 目标期权索引号
+    /// @param oraclePrice 预言机价格
+    /// @param addr 目标地址
+    function balanceOf(uint index, uint oraclePrice, address addr) external view returns (uint);
+
+    /// @dev 查找目标账户的合约
+    /// @param start 从给定的合约地址对应的索引向前查询（不包含start对应的记录）
+    /// @param count 最多返回的记录条数
+    /// @param maxFindCount 最多查找maxFindCount记录
+    /// @param owner 目标账户地址
+    /// @return leverArray 合约信息列表
+    function find(
+        uint start, 
+        uint count, 
+        uint maxFindCount, 
+        address owner
+    ) external view returns (LeverView[] memory leverArray);
 
     /// @dev 列出历史杠杆币地址
     /// @param offset Skip previous (offset) records
@@ -40,7 +59,7 @@ interface IFortLever {
     /// @param lever 杠杆倍数
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     /// @return 杠杆币地址
-    function getLeverToken(
+    function getLeverInfo(
         address tokenAddress, 
         uint lever,
         bool orientation
@@ -80,13 +99,5 @@ interface IFortLever {
     function settle(
         uint index,
         address[] calldata addresses
-    ) external payable;
-
-    /// @dev 触发更新价格，获取FORT奖励
-    /// @param leverAddressArray 要更新的杠杆币合约地址
-    /// @param payback 多余的预言机费用退回地址
-    function updateLeverInfo(
-        address[] memory leverAddressArray, 
-        address payback
     ) external payable;
 }
