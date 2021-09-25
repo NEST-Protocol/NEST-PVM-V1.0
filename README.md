@@ -2,6 +2,19 @@
 
 ## Contract Addresses
 
+### 2021-09-25@rinkeby
+| Name | Interfaces | rinkeby |
+| ---- | ---- | ---- |
+| usdt | IERC20 | 0x2d750210c0b5343a0b79beff8F054C9add7d2411 |
+| hbtc | IERC20 | 0xaE73d363Cb4aC97734E07e48B01D0a1FF5D1190B |
+| fort | IERC20 | 0xDB7b4FdF99eEE8E4Cb8373630c923c51c1275382 |
+| nestPriceFacade | INestPriceFacade, INestQuery | 0x40C3EB032f27fDa7AdcF1B753c75B84e27f26838 |
+| fortGovernance | IFortGovernance | 0x43E8330d1725a2978122B49d41197e7Dc073cdf1 |
+| fortDAO | IFortDAO | 0x57E481f193df1e69639171506b2c38136e53B7d1 |
+| fortEuropeanOption | IFortEuropeanOption | 0x7557E34f05193b8Ee1edC1A4c0d4f8A158D1Ab61 |
+| fortLever | IFortLever | 0x183C6068f6e3c25912f0D054e2cC34D11f217f50 |
+| fortVaultForStaking | IFortVaultForStaking | 0x3254D21C38c6b8ea4A256A5B474622852F8B6d2A |
+
 ### 2021-09-01@rinkeby
 | Name | Interfaces | rinkeby |
 | ---- | ---- | ---- |

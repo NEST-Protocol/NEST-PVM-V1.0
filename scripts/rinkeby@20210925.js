@@ -17,23 +17,34 @@ exports.deploy = async function() {
     const FortLever = await ethers.getContractFactory('FortLever');
     const FortVaultForStaking = await ethers.getContractFactory('FortVaultForStaking');
 
-    console.log('** 开始部署合约 deploy.proxy.js **');
+    console.log('** 开始部署合约 rinkeby@20210925.js **');
+    
+    // ** 开始部署合约 rinkeby@20210925.js **
+    // usdt: 0x2d750210c0b5343a0b79beff8F054C9add7d2411
+    // hbtc: 0xaE73d363Cb4aC97734E07e48B01D0a1FF5D1190B
+    // fort: 0xDB7b4FdF99eEE8E4Cb8373630c923c51c1275382
+    // nestPriceFacade: 0x40C3EB032f27fDa7AdcF1B753c75B84e27f26838
+    // fortGovernance: 0x43E8330d1725a2978122B49d41197e7Dc073cdf1
+    // fortDAO: 0x57E481f193df1e69639171506b2c38136e53B7d1
+    // fortEuropeanOption: 0x7557E34f05193b8Ee1edC1A4c0d4f8A158D1Ab61
+    // fortLever: 0x183C6068f6e3c25912f0D054e2cC34D11f217f50
+    // fortVaultForStaking: 0x3254D21C38c6b8ea4A256A5B474622852F8B6d2A
     
     // 1. 部署依赖合约
-    const usdt = await TestERC20.deploy('USDT', 'USDT', 6);
-    //const usdt = await TestERC20.attach('0x0000000000000000000000000000000000000000');
+    //const usdt = await TestERC20.deploy('USDT', 'USDT', 6);
+    const usdt = await TestERC20.attach('0x2d750210c0b5343a0b79beff8F054C9add7d2411');
     console.log('usdt: ' + usdt.address);
 
-    const hbtc = await TestERC20.deploy('HBTC', 'HBTC', 18);
-    //const hbtc = await TestERC20.attach('0x0000000000000000000000000000000000000000');
+    //const hbtc = await TestERC20.deploy('HBTC', 'HBTC', 18);
+    const hbtc = await TestERC20.attach('0xaE73d363Cb4aC97734E07e48B01D0a1FF5D1190B');
     console.log('hbtc: ' + hbtc.address);
 
-    const fort = await FortDCU.deploy();
-    //const fort = await FortDCU.attach('0x0000000000000000000000000000000000000000');
+    //const fort = await FortDCU.deploy();
+    const fort = await FortDCU.attach('0xDB7b4FdF99eEE8E4Cb8373630c923c51c1275382');
     console.log('fort: ' + fort.address);
-
-    const nestPriceFacade = await NestPriceFacade.deploy();
-    //const nestPriceFacade = await NestPriceFacade.attach('0x0000000000000000000000000000000000000000');
+    
+    //const nestPriceFacade = await NestPriceFacade.deploy();
+    const nestPriceFacade = await NestPriceFacade.attach('0x40C3EB032f27fDa7AdcF1B753c75B84e27f26838');
     console.log('nestPriceFacade: ' + nestPriceFacade.address);
 
     const fortGovernance = await upgrades.deployProxy(FortGovernance, ['0x0000000000000000000000000000000000000000'], { initializer: 'initialize' });

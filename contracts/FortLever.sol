@@ -35,6 +35,8 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         mapping(address=>Account) accounts;
     }
 
+    uint constant MIU = 467938556917;
+    
     // 最小余额数量，余额小于此值会被清算
     uint constant MIN_VALUE = 5 ether;
 
