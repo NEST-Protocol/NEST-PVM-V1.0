@@ -29,7 +29,7 @@ exports.deploy = async function() {
     // fortEuropeanOption: 0x7557E34f05193b8Ee1edC1A4c0d4f8A158D1Ab61
     // fortLever: 0x183C6068f6e3c25912f0D054e2cC34D11f217f50
     // fortVaultForStaking: 0x3254D21C38c6b8ea4A256A5B474622852F8B6d2A
-    
+
     // 1. 部署依赖合约
     //const usdt = await TestERC20.deploy('USDT', 'USDT', 6);
     const usdt = await TestERC20.attach('0x2d750210c0b5343a0b79beff8F054C9add7d2411');
@@ -47,91 +47,91 @@ exports.deploy = async function() {
     const nestPriceFacade = await NestPriceFacade.attach('0x40C3EB032f27fDa7AdcF1B753c75B84e27f26838');
     console.log('nestPriceFacade: ' + nestPriceFacade.address);
 
-    const fortGovernance = await upgrades.deployProxy(FortGovernance, ['0x0000000000000000000000000000000000000000'], { initializer: 'initialize' });
-    //const fortGovernance = await FortGovernance.attach('0x0000000000000000000000000000000000000000');
+    //const fortGovernance = await upgrades.deployProxy(FortGovernance, ['0x0000000000000000000000000000000000000000'], { initializer: 'initialize' });
+    const fortGovernance = await FortGovernance.attach('0x43E8330d1725a2978122B49d41197e7Dc073cdf1');
     console.log('fortGovernance: ' + fortGovernance.address);
 
-    const fortDAO = await upgrades.deployProxy(FortDAO, [fortGovernance.address], { initializer: 'initialize' });
-    //const fortDAO = await FortDAO.attach('0x0000000000000000000000000000000000000000');
+    //const fortDAO = await upgrades.deployProxy(FortDAO, [fortGovernance.address], { initializer: 'initialize' });
+    const fortDAO = await FortDAO.attach('0x57E481f193df1e69639171506b2c38136e53B7d1');
     console.log('fortDAO: ' + fortDAO.address);
 
-    const fortEuropeanOption = await upgrades.deployProxy(FortEuropeanOption, [fortGovernance.address], { initializer: 'initialize' });
-    //const fortEuropeanOption = await FortEuropeanOption.attach('0x0000000000000000000000000000000000000000');
+    //const fortEuropeanOption = await upgrades.deployProxy(FortEuropeanOption, [fortGovernance.address], { initializer: 'initialize' });
+    const fortEuropeanOption = await FortEuropeanOption.attach('0x7557E34f05193b8Ee1edC1A4c0d4f8A158D1Ab61');
     console.log('fortEuropeanOption: ' + fortEuropeanOption.address);
 
-    const fortLever = await upgrades.deployProxy(FortLever, [fortGovernance.address], { initializer: 'initialize' });
-    //const fortLever = await FortLever.attach('0x0000000000000000000000000000000000000000');
+    //const fortLever = await upgrades.deployProxy(FortLever, [fortGovernance.address], { initializer: 'initialize' });
+    const fortLever = await FortLever.attach('0x183C6068f6e3c25912f0D054e2cC34D11f217f50');
     console.log('fortLever: ' + fortLever.address);
 
-    const fortVaultForStaking = await upgrades.deployProxy(FortVaultForStaking, [fortGovernance.address], { initializer: 'initialize' });
-    //const fortVaultForStaking = await FortVaultForStaking.attach('0x0000000000000000000000000000000000000000');
+    //const fortVaultForStaking = await upgrades.deployProxy(FortVaultForStaking, [fortGovernance.address], { initializer: 'initialize' });
+    const fortVaultForStaking = await FortVaultForStaking.attach('0x3254D21C38c6b8ea4A256A5B474622852F8B6d2A');
     console.log('fortVaultForStaking: ' + fortVaultForStaking.address);
 
-    // await fortGovernance.initialize('0x0000000000000000000000000000000000000000');
-    console.log('1. fort.initialize(fortGovernance.address)');
-    await fort.initialize(fortGovernance.address);
-    // await fortDAO.initialize(fortGovernance.address);
-    // await fortEuropeanOption.initialize(fortGovernance.address);
-    // await fortLever.initialize(fortGovernance.address);
-    // await fortVaultForStaking.initialize(fortGovernance.address);
+    // // await fortGovernance.initialize('0x0000000000000000000000000000000000000000');
+    // console.log('1. fort.initialize(fortGovernance.address)');
+    // await fort.initialize(fortGovernance.address);
+    // // await fortDAO.initialize(fortGovernance.address);
+    // // await fortEuropeanOption.initialize(fortGovernance.address);
+    // // await fortLever.initialize(fortGovernance.address);
+    // // await fortVaultForStaking.initialize(fortGovernance.address);
 
-    console.log('2. fortGovernance.setBuiltinAddress()');
-    await fortGovernance.setBuiltinAddress(
-        fort.address,
-        fortDAO.address,
-        fortEuropeanOption.address,
-        fortLever.address,
-        fortVaultForStaking.address,
-        nestPriceFacade.address
-    );
+    // console.log('2. fortGovernance.setBuiltinAddress()');
+    // await fortGovernance.setBuiltinAddress(
+    //     fort.address,
+    //     fortDAO.address,
+    //     fortEuropeanOption.address,
+    //     fortLever.address,
+    //     fortVaultForStaking.address,
+    //     nestPriceFacade.address
+    // );
 
-    console.log('3. fort.update()');
-    await fort.update(fortGovernance.address);
-    console.log('4. fortDAO.update()');
-    await fortDAO.update(fortGovernance.address);
-    console.log('5. fortEuropeanOption.update()');
-    await fortEuropeanOption.update(fortGovernance.address);
-    console.log('6. fortLever.update()');
-    await fortLever.update(fortGovernance.address);
-    console.log('7. fortVaultForStaking.update()');
-    await fortVaultForStaking.update(fortGovernance.address);
+    // console.log('3. fort.update()');
+    // await fort.update(fortGovernance.address);
+    // console.log('4. fortDAO.update()');
+    // await fortDAO.update(fortGovernance.address);
+    // console.log('5. fortEuropeanOption.update()');
+    // await fortEuropeanOption.update(fortGovernance.address);
+    // console.log('6. fortLever.update()');
+    // await fortLever.update(fortGovernance.address);
+    // console.log('7. fortVaultForStaking.update()');
+    // await fortVaultForStaking.update(fortGovernance.address);
 
-    console.log('8. fortEuropeanOption.setConfig()');
-    await fortEuropeanOption.setConfig(eth.address, { 
-        sigmaSQ: '45659142400', 
-        miu: '467938556917', 
-        minPeriod: 6000 
-    });
-    console.log('8.1. fortEuropeanOption.setConfig()');
-    await fortEuropeanOption.setConfig(hbtc.address, { 
-        sigmaSQ: '45659142400', 
-        miu: '467938556917', 
-        minPeriod: 6000 
-    });
+    // console.log('8. fortEuropeanOption.setConfig()');
+    // await fortEuropeanOption.setConfig(eth.address, { 
+    //     sigmaSQ: '45659142400', 
+    //     miu: '467938556917', 
+    //     minPeriod: 6000 
+    // });
+    // console.log('8.1. fortEuropeanOption.setConfig()');
+    // await fortEuropeanOption.setConfig(hbtc.address, { 
+    //     sigmaSQ: '45659142400', 
+    //     miu: '467938556917', 
+    //     minPeriod: 6000 
+    // });
 
-    console.log('9. fort.setMinter(fortEuropeanOption.address, 1)');
-    await fort.setMinter(fortEuropeanOption.address, 1);
-    console.log('10. fort.setMinter(fortLever.address, 1)');
-    await fort.setMinter(fortLever.address, 1);
-    console.log('11. fort.setMinter(fortVaultForStaking.address, 1)');
-    await fort.setMinter(fortVaultForStaking.address, 1);
+    // console.log('9. fort.setMinter(fortEuropeanOption.address, 1)');
+    // await fort.setMinter(fortEuropeanOption.address, 1);
+    // console.log('10. fort.setMinter(fortLever.address, 1)');
+    // await fort.setMinter(fortLever.address, 1);
+    // console.log('11. fort.setMinter(fortVaultForStaking.address, 1)');
+    // await fort.setMinter(fortVaultForStaking.address, 1);
 
-    await fortEuropeanOption.setUsdtTokenAddress(usdt.address);
-    await fortLever.setUsdtTokenAddress(usdt.address);
+    // await fortEuropeanOption.setUsdtTokenAddress(usdt.address);
+    // await fortLever.setUsdtTokenAddress(usdt.address);
 
-    console.log('8.2 create lever');
-    await fortLever.create(eth.address, 1, true);
-    await fortLever.create(eth.address, 2, true);
-    await fortLever.create(eth.address, 5, true);
-    await fortLever.create(eth.address, 1, false);
-    await fortLever.create(eth.address, 2, false);
-    await fortLever.create(eth.address, 5, false);
-    await fortLever.create(hbtc.address, 1, true);
-    await fortLever.create(hbtc.address, 2, true);
-    await fortLever.create(hbtc.address, 5, true);
-    await fortLever.create(hbtc.address, 1, false);
-    await fortLever.create(hbtc.address, 2, false);
-    await fortLever.create(hbtc.address, 5, false);
+    // console.log('8.2 create lever');
+    // await fortLever.create(eth.address, 1, true);
+    // await fortLever.create(eth.address, 2, true);
+    // await fortLever.create(eth.address, 5, true);
+    // await fortLever.create(eth.address, 1, false);
+    // await fortLever.create(eth.address, 2, false);
+    // await fortLever.create(eth.address, 5, false);
+    // await fortLever.create(hbtc.address, 1, true);
+    // await fortLever.create(hbtc.address, 2, true);
+    // await fortLever.create(hbtc.address, 5, true);
+    // await fortLever.create(hbtc.address, 1, false);
+    // await fortLever.create(hbtc.address, 2, false);
+    // await fortLever.create(hbtc.address, 5, false);
 
     console.log('---------- OK ----------');
     

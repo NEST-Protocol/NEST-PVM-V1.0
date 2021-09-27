@@ -12,6 +12,10 @@ interface IFortLever {
         bool orientation;
         
         uint balance;
+        // 账本-价格
+        uint price;
+        // 结算区块
+        uint settleBlock;
     }
     
     /// @dev 返回指定期权的余额

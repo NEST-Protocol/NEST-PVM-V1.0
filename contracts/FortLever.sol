@@ -6,12 +6,12 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "./libs/TransferHelper.sol";
 import "./libs/StringHelper.sol";
+import "./libs/ABDKMath64x64.sol";
 
 import "./interfaces/IFortLever.sol";
 
 import "./FortFrequentlyUsed.sol";
 import "./FortDCU.sol";
-import "./FortLeverToken.sol";
 
 /// @dev 杠杆币交易
 contract FortLever is FortFrequentlyUsed, IFortLever {
@@ -22,19 +22,24 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         uint128 balance;
         // 账本-价格
         uint64 price;
-        // 解锁区块
-        uint32 unlockBlock;
+        // 结算区块
+        uint32 settleBlock;
     }
 
     /// @dev 杠杆币信息
     struct LeverInfo {
+        // 目标代币地址
         address tokenAddress; 
+        // 杠杆倍数
         uint32 lever;
+        // 看涨:true | 看跌:false
         bool orientation;
         
+        // 账号信息
         mapping(address=>Account) accounts;
     }
 
+    // 漂移系数，64位二进制小数。年华80%
     uint constant MIU = 467938556917;
     
     // 最小余额数量，余额小于此值会被清算
@@ -65,49 +70,14 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
     /// @param addr 目标地址
     function balanceOf(uint index, uint oraclePrice, address addr) external view override returns (uint) {
         LeverInfo storage li = _levers[index];
-        return _balanceOf(li.accounts[addr], oraclePrice, li.orientation, uint(li.lever));
-    }
-
-    // 根据新价格计算账户余额
-    function _balanceOf(
-        Account memory account, 
-        uint oraclePrice, 
-        bool ORIENTATION, 
-        uint LEVER
-    ) private pure returns (uint balance) {
-
-        balance = uint(account.balance);
-        if (balance > 0) {
-            uint price = _decodeFloat(account.price);
-
-            uint left;
-            uint right;
-            // 看涨
-            if (ORIENTATION) {
-                left = balance + balance * oraclePrice * LEVER / price;
-                right = balance * LEVER;
-            } 
-            // 看跌
-            else {
-                left = balance * (1 + LEVER);
-                right = balance * oraclePrice * LEVER / price;
-            }
-
-            if (left > right) {
-                balance = left - right;
-            } else {
-                balance = 0;
-            }
-        }
-    }
-
-    function _toLeverView(LeverInfo storage li, uint index) private view returns (LeverView memory) {
-        return LeverView(
-            index,
-            li.tokenAddress,
-            uint(li.lever),
-            li.orientation,
-            uint(li.accounts[msg.sender].balance)
+        Account memory account = li.accounts[addr];
+        return _balanceOf(
+            uint(account.balance), 
+            _decodeFloat(account.price), 
+            uint(account.settleBlock),
+            oraclePrice, 
+            li.orientation, 
+            uint(li.lever)
         );
     }
 
@@ -209,39 +179,6 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         li.lever = uint32(lever);
         li.orientation = orientation;
         _leverMapping[key] = index;
-
-        // uint tokenBase = 1 ether;
-        // if (tokenAddress != address(0)) {
-        //     tokenBase = 10 ** ERC20(tokenAddress).decimals();
-        // }
-        // leverAddress = address(new FortLeverToken(
-        //     //name,
-        //     StringHelper.sprintf("%4S/USDT%sF%u", abi.encode(
-        //         tokenAddress == address(0) ? "ETH" : ERC20(tokenAddress).symbol(),
-        //         orientation ? "+" : "-",
-        //         lever,
-        //         0, 0
-        //     )),
-        //     USDT_TOKEN_ADDRESS,
-        //     tokenAddress, 
-        //     lever, 
-        //     orientation,
-        //     tokenBase
-        // ));
-        // // 使用create2创建合约，会导致杠杆币内不能使用immutable变量来保存杠杆信息，从而增加gas消耗，放弃此方法
-        // // leverAddress = address(new FortLeverToken { 
-        // //         salt: keccak256(abi.encodePacked(tokenAddress, lever, orientation)) 
-        // //     } (
-        // //         StringHelper.stringConcat("LEVER-", StringHelper.toString(_levers.length)),
-        // //         tokenAddress, 
-        // //         lever, 
-        // //         orientation
-        // //     )
-        // // );
-        
-        // FortLeverToken(leverAddress).setNestPriceFacade(NEST_PRICE_FACADE_ADDRESS);
-        // _leverMapping[key] = leverAddress;
-        // _levers.push(leverAddress);
     }
 
     /// @dev 获取已经开通的杠杆币数量
@@ -275,58 +212,18 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         bool orientation,
         uint fortAmount
     ) external payable override {
-
-        require(fortAmount >= 100 ether, "FortLever:at least 100 FORT");
-
-        // 1. 找到杠杆币
         uint index = _leverMapping[_getKey(tokenAddress, lever, orientation)];
         require(index != 0, "FortLever:not exist");
-        LeverInfo storage li = _levers[index];
-        // 2. 销毁用户的fort
-        FortDCU(FORT_TOKEN_ADDRESS).burn(msg.sender, fortAmount);
-
-        // 3. 给用户分发杠杆币
-        // FortLeverToken(leverAddress).mint { 
-        //     value: msg.value 
-        // } (msg.sender, fortAmount, block.number + MIN_PERIOD, msg.sender);
-        uint oraclePrice = _queryPrice(tokenAddress, msg.sender);
-
-        // 更新接收账号信息
-        Account memory account = li.accounts[msg.sender];
-        account.balance = _toUInt128(_balanceOf(account, oraclePrice, li.orientation, uint(li.lever)) + fortAmount);
-        account.price = _encodeFloat(oraclePrice);
-        account.unlockBlock = uint32(block.number + MIN_PERIOD);
-        
-        li.accounts[msg.sender] = account;
+        _buy(_levers[index], fortAmount, tokenAddress);
     }
 
     /// @dev 买入杠杆币
     /// @param index 杠杆币编号
     /// @param fortAmount 支付的fort数量
-    function buyDirect(uint index, uint fortAmount) external payable override {
-
-        require(fortAmount >= 100 ether, "FortLever:at least 100 FORT");
-
+    function buyDirect(uint index, uint fortAmount) public payable override {
         require(index != 0, "FortLever:not exist");
         LeverInfo storage li = _levers[index];
-
-        // 1. 销毁用户的fort
-        FortDCU(FORT_TOKEN_ADDRESS).burn(msg.sender, fortAmount);
-
-        // 2. 给用户分发杠杆币
-        // FortLeverToken(leverAddress).mint { 
-        //     value: msg.value 
-        // } (msg.sender, fortAmount, block.number + MIN_PERIOD, msg.sender);
-
-        uint oraclePrice = _queryPrice(li.tokenAddress, msg.sender);
-
-        // 更新接收账号信息
-        Account memory account = li.accounts[msg.sender];
-        account.balance = _toUInt128(_balanceOf(account, oraclePrice, li.orientation, uint(li.lever)) + fortAmount);
-        account.price = _encodeFloat(oraclePrice);
-        account.unlockBlock = uint32(block.number + MIN_PERIOD);
-        
-        li.accounts[msg.sender] = account;
+        _buy(li, fortAmount, li.tokenAddress);
     }
 
     /// @dev 卖出杠杆币
@@ -345,13 +242,19 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         uint oraclePrice = _queryPrice(li.tokenAddress, msg.sender);
 
         Account memory account = li.accounts[msg.sender];
-        account.balance = _toUInt128(_balanceOf(account, oraclePrice, li.orientation, uint(li.lever)) - amount);
-        account.price = _encodeFloat(oraclePrice);
-        account.unlockBlock = uint32(block.number + MIN_PERIOD);
+
+        account.balance -= _toUInt128(amount);
         li.accounts[msg.sender] = account;
 
         // 2. 给用户分发fort
-        FortDCU(FORT_TOKEN_ADDRESS).mint(msg.sender, amount);
+        FortDCU(FORT_TOKEN_ADDRESS).mint(msg.sender, _balanceOf(
+            amount, 
+            _decodeFloat(account.price), 
+            uint(account.settleBlock),
+            oraclePrice, 
+            li.orientation, 
+            uint(li.lever)
+        ));
     }
 
     /// @dev 清算
@@ -374,7 +277,14 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
 
                 // 更新目标账号信息
                 Account memory account = accounts[acc];
-                uint balance = _balanceOf(account, oraclePrice, li.orientation, uint(li.lever));
+                uint balance = _balanceOf(
+                    uint(account.balance), 
+                    _decodeFloat(account.price), 
+                    uint(account.settleBlock),
+                    oraclePrice, 
+                    li.orientation, 
+                    uint(li.lever)
+                );
 
                 // 杠杆倍数大于1，并且余额小于最小额度时，可以清算
                 if (balance < MIN_VALUE) {
@@ -407,6 +317,35 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         return keccak256(abi.encodePacked(tokenAddress, lever, orientation));
     }
 
+    // 买入杠杆币
+    function _buy(LeverInfo storage li, uint fortAmount, address tokenAddress) private {
+
+        require(fortAmount >= 100 ether, "FortLever:at least 100 FORT");
+
+        // 1. 销毁用户的fort
+        FortDCU(FORT_TOKEN_ADDRESS).burn(msg.sender, fortAmount);
+
+        // 2. 给用户分发杠杆币
+        uint oraclePrice = _queryPrice(tokenAddress, msg.sender);
+        Account memory account = li.accounts[msg.sender];
+        uint price = _decodeFloat(account.price);
+        uint balance = uint(account.balance);
+        uint newPrice = oraclePrice;
+        if (uint(account.settleBlock) > 0) {
+            newPrice = (balance + fortAmount) * oraclePrice * price / (
+                price * fortAmount + (oraclePrice * balance << 64) / _expMiuT(uint(account.settleBlock))
+            );
+        }
+        
+        // 更新接收账号信息
+        account.balance += _toUInt128(balance + fortAmount);
+        account.price = _encodeFloat(newPrice);
+        account.settleBlock = uint32(block.number);
+        
+        li.accounts[msg.sender] = account;
+    }
+
+    // 查询预言机价格
     function _queryPrice(address tokenAddress, address payback) private returns (uint oraclePrice) {
         // 获取token相对于eth的价格
         uint tokenAmount = 1 ether;
@@ -456,5 +395,72 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
     function _toUInt128(uint value) private pure returns (uint128) {
         require(value < 0x100000000000000000000000000000000);
         return uint128(value);
+    }
+
+    // 将uint转化为int128
+    function _toInt128(uint v) private pure returns (int128) {
+        require(v < 0x80000000000000000000000000000000, "FEO:can't convert to int128");
+        return int128(int(v));
+    }
+
+    // 将int128转化为uint
+    function _toUInt(int128 v) private pure returns (uint) {
+        require(v >= 0, "FEO:can't convert to uint");
+        return uint(int(v));
+    }
+    
+    // 根据新价格计算账户余额
+    function _balanceOf(
+        uint balance,
+        uint price,
+        uint settleBlock,
+        uint oraclePrice, 
+        bool ORIENTATION, 
+        uint LEVER
+    ) private view returns (uint) {
+
+        if (balance > 0) {
+            //uint price = _decodeFloat(account.price);
+
+            uint left;
+            uint right;
+            // 看涨
+            if (ORIENTATION) {
+                left = balance + (balance * oraclePrice * LEVER << 64) / price / _expMiuT(settleBlock);
+                right = balance * LEVER;
+            } 
+            // 看跌
+            else {
+                left = balance * (1 + LEVER);
+                right = (balance * oraclePrice * LEVER << 64) / price / _expMiuT(settleBlock);
+            }
+
+            if (left > right) {
+                balance = left - right;
+            } else {
+                balance = 0;
+            }
+        }
+
+        return balance;
+    }
+
+    // 计算 e^μT
+    function _expMiuT(uint settleBlock) private view returns (uint) {
+        return _toUInt(ABDKMath64x64.exp(_toInt128(MIU * (block.number - settleBlock) * 14)));
+    }
+
+    // 转换杠杆币信息
+    function _toLeverView(LeverInfo storage li, uint index) private view returns (LeverView memory) {
+        Account memory account = li.accounts[msg.sender];
+        return LeverView(
+            index,
+            li.tokenAddress,
+            uint(li.lever),
+            li.orientation,
+            uint(account.balance),
+            _decodeFloat(account.price),
+            uint(account.settleBlock)
+        );
     }
 }
