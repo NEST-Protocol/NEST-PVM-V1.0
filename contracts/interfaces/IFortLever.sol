@@ -12,13 +12,58 @@ interface IFortLever {
         bool orientation;
         
         uint balance;
-        // 账本-价格
-        uint price;
-        // 结算区块
-        uint settleBlock;
+        // 基准价格
+        uint basePrice;
+        // 基准区块号
+        uint baseBlock;
     }
+
+    /// @dev 新杠杆币事件
+    /// @param tokenAddress 杠杆币的标的地产代币地址，0表示eth
+    /// @param lever 杠杆倍数
+    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
+    /// @param index 杠杆币编号
+    event New(
+        address tokenAddress, 
+        uint lever,
+        bool orientation,
+        uint index
+    );
+
+    /// @dev 买入杠杆币
+    /// @param index 杠杆币编号
+    /// @param fortAmount 支付的fort数量
+    event Buy(
+        uint index,
+        uint fortAmount,
+        address owner
+    );
+
+    /// @dev 卖出杠杆币
+    /// @param index 杠杆币编号
+    /// @param amount 卖出数量
+    /// @param owner 所有者
+    /// @param value 获得的fort数量
+    event Sell(
+        uint index,
+        uint amount,
+        address owner,
+        uint value
+    );
+
+    /// @dev 清算
+    /// @param index 杠杆币编号
+    /// @param addr 清算目标账号数组
+    /// @param sender 清算发起账号
+    /// @param reward 清算获得的fort数量
+    event Settle(
+        uint index,
+        address addr,
+        address sender,
+        uint reward
+    );
     
-    /// @dev 返回指定期权的余额
+    /// @dev 返回指定期权当前的价值
     /// @param index 目标期权索引号
     /// @param oraclePrice 预言机价格
     /// @param addr 目标地址

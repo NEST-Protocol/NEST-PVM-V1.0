@@ -506,9 +506,9 @@ describe('FortEuropeanOption', function() {
                 console.log({
                     index: fi.index.toString(),
                     tokenAddress: fi.tokenAddress.toString(),
-                    price: fi.price.toString(),
+                    strikePrice: fi.strikePrice.toString(),
                     orientation: fi.orientation,
-                    endblock: fi.endblock.toString(),
+                    exerciseBlock: fi.exerciseBlock.toString(),
                     balance: fi.balance.toString()
                 });
             }

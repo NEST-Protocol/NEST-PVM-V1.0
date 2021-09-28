@@ -23,11 +23,38 @@ interface IFortEuropeanOption {
     struct OptionView {
         uint index;
         address tokenAddress;
-        uint price;
+        uint strikePrice;
         bool orientation;
-        uint endblock;
+        uint exerciseBlock;
         uint balance;
     }
+    
+    /// @dev 新期权事件
+    /// @param tokenAddress 目标代币地址，0表示eth
+    /// @param strikePrice 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
+    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
+    /// @param exerciseBlock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
+    /// @param index 期权编号
+    event New(address tokenAddress, uint strikePrice, bool orientation, uint exerciseBlock, uint index);
+
+    /// @dev 开仓事件
+    /// @param index 期权编号
+    /// @param fortAmount 支付的fort数量
+    /// @param owner 所有者
+    /// @param amount 买入份数
+    event Open(
+        uint index,
+        uint fortAmount,
+        address owner,
+        uint amount
+    );
+
+    /// @dev 行权事件
+    /// @param index 期权编号
+    /// @param amount 结算的期权分数
+    /// @param owner 所有者
+    /// @param gain 赢得的fort数量
+    event Exercise(uint index, uint amount, address owner, uint gain);
 
     /// @dev 修改指定代币通道的配置
     /// @param tokenAddress 目标代币地址
@@ -70,45 +97,45 @@ interface IFortEuropeanOption {
 
     /// @dev 获取期权信息
     /// @param tokenAddress 目标代币地址，0表示eth
-    /// @param price 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
+    /// @param strikePrice 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
-    /// @param endblock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
+    /// @param exerciseBlock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
     /// @return 期权信息
     function getOptionInfo(
         address tokenAddress, 
-        uint price, 
+        uint strikePrice, 
         bool orientation, 
-        uint endblock
+        uint exerciseBlock
     ) external view returns (OptionView memory);
 
     /// @dev 预估开仓可以买到的期权币数量
     /// @param tokenAddress 目标代币地址，0表示eth
     /// @param oraclePrice 当前预言机价格价
-    /// @param price 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
+    /// @param strikePrice 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
-    /// @param endblock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
+    /// @param exerciseBlock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
     /// @param fortAmount 支付的fort数量
     /// @return amount 预估可以获得的期权币数量
     function estimate(
         address tokenAddress,
         uint oraclePrice,
-        uint price,
+        uint strikePrice,
         bool orientation,
-        uint endblock,
+        uint exerciseBlock,
         uint fortAmount
     ) external view returns (uint amount);
 
     /// @dev 开仓
     /// @param tokenAddress 目标代币地址，0表示eth
-    /// @param price 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
+    /// @param strikePrice 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
-    /// @param endblock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
+    /// @param exerciseBlock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
     /// @param fortAmount 支付的fort数量
     function open(
         address tokenAddress,
-        uint price,
+        uint strikePrice,
         bool orientation,
-        uint endblock,
+        uint exerciseBlock,
         uint fortAmount
     ) external payable;
 

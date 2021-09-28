@@ -13,17 +13,15 @@ import "./interfaces/IFortEuropeanOption.sol";
 import "./FortFrequentlyUsed.sol";
 import "./FortDCU.sol";
 
-import "hardhat/console.sol";
-
 /// @dev 欧式期权
 contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
 
     /// @dev 期权结构
     struct Option {
         address tokenAddress;
-        uint56 price;
+        uint56 strikePrice;
         bool orientation;
-        uint32 endblock;
+        uint32 exerciseBlock;
         
         //uint totalSupply;
         mapping(address=>uint) balances;
@@ -76,17 +74,6 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     /// @param addr 目标地址
     function balanceOf(uint index, address addr) external view override returns (uint) {
         return _options[index].balances[addr];
-    }
-
-    function _toOptionView(Option storage option, uint index, address owner) private view returns (OptionView memory) {
-        return OptionView(
-            index,
-            option.tokenAddress,
-            _decodeFloat(option.price),
-            option.orientation,
-            uint32(option.endblock),
-            option.balances[owner]
-        );
     }
 
     /// @dev 查找目标账户的期权（倒序）
@@ -169,36 +156,33 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
 
     /// @dev 获取期权信息
     /// @param tokenAddress 目标代币地址，0表示eth
-    /// @param price 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
+    /// @param strikePrice 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
-    /// @param endblock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
+    /// @param exerciseBlock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
     /// @return 期权信息
     function getOptionInfo(
         address tokenAddress, 
-        uint price, 
+        uint strikePrice, 
         bool orientation, 
-        uint endblock
+        uint exerciseBlock
     ) external view override returns (OptionView memory) {        
-        uint index = _optionMapping[_getKey(tokenAddress, price, orientation, endblock)];
+        uint index = _optionMapping[_getKey(tokenAddress, strikePrice, orientation, exerciseBlock)];
         return _toOptionView(_options[index], index, msg.sender);
     }
 
     /// @dev 开仓
     /// @param tokenAddress 目标代币地址，0表示eth
-    /// @param price 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
+    /// @param strikePrice 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
-    /// @param endblock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
+    /// @param exerciseBlock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
     /// @param fortAmount 支付的fort数量
     function open(
         address tokenAddress,
-        uint price,
+        uint strikePrice,
         bool orientation,
-        uint endblock,
+        uint exerciseBlock,
         uint fortAmount
     ) external payable override {
-
-        // 将价格对齐为7位有效数字，避免精度过高导致期权代币数量过多
-        //price = _align(price);
 
         // 1. 调用预言机获取价格
         // 1.1. 获取token相对于eth的价格
@@ -220,11 +204,10 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         uint oraclePrice = usdtAmount * _getBase(tokenAddress) / tokenAmount;
 
         // 2. 计算可以买到的期权份数
-        uint amount = estimate(tokenAddress, oraclePrice, price, orientation, endblock, fortAmount);
-        //require(amount >= 0.1 ether, "FEO:at least 0.1");
+        uint amount = estimate(tokenAddress, oraclePrice, strikePrice, orientation, exerciseBlock, fortAmount);
 
         // 3. 获取或创建期权代币
-        bytes32 key = _getKey(tokenAddress, price, orientation, endblock);
+        bytes32 key = _getKey(tokenAddress, strikePrice, orientation, exerciseBlock);
         uint optionIndex = _optionMapping[key];
         Option storage option = _options[optionIndex];
         if (optionIndex == 0) {
@@ -232,13 +215,16 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
             optionIndex = _options.length;
             option = _options.push();
             option.tokenAddress = tokenAddress;
-            option.price = _encodeFloat(price);
+            option.strikePrice = _encodeFloat(strikePrice);
             option.orientation = orientation;
-            require(endblock < 0x100000000, "FEO:endblock to large");
-            option.endblock = uint32(endblock);
+            require(exerciseBlock < 0x100000000, "FEO:exerciseBlock to large");
+            option.exerciseBlock = uint32(exerciseBlock);
 
             // 将期权代币地址存入映射和数组，便于后面检索
             _optionMapping[key] = optionIndex;
+
+            // 新期权
+            emit New(tokenAddress, strikePrice, orientation, exerciseBlock, optionIndex);
         }
 
         // 4. 销毁权利金
@@ -246,48 +232,49 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
 
         // 5. 分发期权凭证
         option.balances[msg.sender] += amount;
+        
+        // 开仓事件
+        emit Open(optionIndex, fortAmount, msg.sender, amount);
     }
 
     /// @dev 预估开仓可以买到的期权币数量
     /// @param tokenAddress 目标代币地址，0表示eth
     /// @param oraclePrice 当前预言机价格价
-    /// @param price 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
+    /// @param strikePrice 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
-    /// @param endblock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
+    /// @param exerciseBlock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
     /// @param fortAmount 支付的fort数量
     /// @return amount 预估可以获得的期权币数量
     function estimate(
         address tokenAddress,
         uint oraclePrice,
-        uint price,
+        uint strikePrice,
         bool orientation,
-        uint endblock,
+        uint exerciseBlock,
         uint fortAmount
     ) public view override returns (uint amount) {
 
         Config memory config = _configs[tokenAddress];
         uint minPeriod = uint(config.minPeriod);
         require(minPeriod > 0, "FEO:not allowed");
-        //require(fortAmount < 0x100000000000000000000000000000000, "FEO:fortAmount too large");
-        require(endblock > block.number + minPeriod, "FEO:endblock to small");
+        require(exerciseBlock > block.number + minPeriod, "FEO:exerciseBlock to small");
 
         // 1. 获取或创建期权代币
-        //price = _align(price);
 
         // 2. 调用预言机获取价格
 
         // 3. 计算权利金（需要的fort数量）
         // 按照平均每14秒出一个块计算
-        uint T = (endblock - block.number) * 14;
+        uint T = (exerciseBlock - block.number) * 14;
         uint v;
         if (orientation) {
-            v = _calcVc(config, oraclePrice, T, price);
+            v = _calcVc(config, oraclePrice, T, strikePrice);
             // Vc>=S0*1%; Vp>=K*1%
             require(v * 100 >> 64 >= oraclePrice, "FEO:vc must greater than S0*1%");
         } else {
-            v = _calcVp(config, oraclePrice, T, price);
+            v = _calcVp(config, oraclePrice, T, strikePrice);
             // Vc>=S0*1%; Vp>=K*1%
-            require(v * 100 >> 64 >= price, "FEO:vp must greater than K*1%");
+            require(v * 100 >> 64 >= strikePrice, "FEO:vp must greater than K*1%");
         }
 
         amount = (USDT_BASE << 64) * fortAmount / v;
@@ -301,9 +288,9 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         // 1. 获取期权信息
         Option storage option = _options[index];
         address tokenAddress = option.tokenAddress;
-        uint price = _decodeFloat(option.price);
+        uint strikePrice = _decodeFloat(option.strikePrice);
         bool orientation = option.orientation;
-        uint endblock = uint(option.endblock);
+        uint exerciseBlock = uint(option.exerciseBlock);
 
         // TODO: 测试期间不检查
         //require(block.number >= endblock, "FEO:at maturity");
@@ -319,13 +306,13 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
             fee = msg.value >> 1;
             (, tokenAmount) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).findPrice {
                 value: fee
-            } (tokenAddress, endblock,msg.sender);
+            } (tokenAddress, exerciseBlock,msg.sender);
         }
 
         // 3.2. 获取usdt相对于eth的价格
         (, uint usdtAmount) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).findPrice {
             value: fee
-        } (USDT_TOKEN_ADDRESS, endblock,msg.sender);
+        } (USDT_TOKEN_ADDRESS, exerciseBlock,msg.sender);
 
         // 将token价格转化为以usdt为单位计算的价格
         uint oraclePrice = usdtAmount * _getBase(tokenAddress) / tokenAmount;
@@ -335,15 +322,15 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         // 看涨期权
         if (orientation) {
             // 赌赢了
-            if (oraclePrice > price) {
-                gain = amount * (oraclePrice - price) / USDT_BASE;
+            if (oraclePrice > strikePrice) {
+                gain = amount * (oraclePrice - strikePrice) / USDT_BASE;
             }
         } 
         // 看跌期权
         else {
             // 赌赢了
-            if (oraclePrice < price) {
-                gain = amount * (price - oraclePrice) / USDT_BASE;
+            if (oraclePrice < strikePrice) {
+                gain = amount * (strikePrice - oraclePrice) / USDT_BASE;
             }
         }
 
@@ -351,33 +338,32 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         if (gain > 0) {
             FortDCU(FORT_TOKEN_ADDRESS).mint(msg.sender, gain);
         }
+
+        // 行权事件
+        emit Exercise(index, amount, msg.sender, gain);
+    }
+
+    // 转化位OptionView
+    function _toOptionView(Option storage option, uint index, address owner) private view returns (OptionView memory) {
+        return OptionView(
+            index,
+            option.tokenAddress,
+            _decodeFloat(option.strikePrice),
+            option.orientation,
+            uint32(option.exerciseBlock),
+            option.balances[owner]
+        );
     }
 
     // 根据期权信息获取索引key
     function _getKey(
         address tokenAddress, 
-        uint price, 
+        uint strikePrice, 
         bool orientation, 
-        uint endblock
+        uint exerciseBlock
     ) private pure returns (bytes32) {
-        return keccak256(abi.encodePacked(tokenAddress, price, orientation, endblock));
+        return keccak256(abi.encodePacked(tokenAddress, strikePrice, orientation, exerciseBlock));
     }
-
-    // // 对齐价格，保留7位有效数字
-    // function _align(uint price) private pure returns (uint) {
-    //     // uint decimals = 0;
-    //     // while (price >= 10000000) {
-    //     //     price /= 10;
-    //     //     ++decimals;
-    //     // }
-    //     // return price * 10 ** decimals;
-
-    //     uint base = 10000000;
-    //     while (price >= base) {
-    //         base *= 10;
-    //     }
-    //     return price - price % (base / 10000000);
-    // }
 
     // 获取代币的基数值
     function _getBase(address tokenAddress) private returns (uint base) {

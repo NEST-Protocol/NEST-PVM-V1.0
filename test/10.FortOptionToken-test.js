@@ -65,9 +65,9 @@ describe('FortEuropeanOption', function() {
                 let info = await fortEuropeanOption.getOptionInfo(hbtc.address, 45000000000, true, 100000);
                 console.log({
                     tokenAddress: info.tokenAddress.toString(), 
-                    price: info.price.toString(),
+                    strikePrice: info.strikePrice.toString(),
                     orientation: info.orientation.toString(),
-                    endblock: info.endblock.toString()
+                    exerciseBlock: info.exerciseBlock.toString()
                 });
 
                 // await fot.mint(owner.address, toBigInt(10));
