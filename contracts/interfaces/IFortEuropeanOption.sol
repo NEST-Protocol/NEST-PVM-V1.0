@@ -66,7 +66,7 @@ interface IFortEuropeanOption {
     
     /// @dev 获取已经开通的欧式期权代币数量
     /// @return 已经开通的欧式期权代币数量
-    function getTokenCount() external view returns (uint);
+    function getOptionCount() external view returns (uint);
 
     /// @dev 获取期权信息
     /// @param tokenAddress 目标代币地址，0表示eth

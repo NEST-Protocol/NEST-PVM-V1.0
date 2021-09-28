@@ -65,8 +65,8 @@ describe('FortEuropeanOption', function() {
         let levers = [1, 2, 5];
         let oriens = [true, false];
         if (true) {
-            console.log('2. getTokenCount');
-            let tokenCount = await fortLever.getTokenCount();
+            console.log('2. getLeverCount');
+            let tokenCount = await fortLever.getLeverCount();
             console.log('tokenCount=' + tokenCount);
             let l = await fortLever.list(0, tokenCount, 0);
             for (var i = 0; i < l.length; ++i) {
@@ -101,7 +101,7 @@ describe('FortEuropeanOption', function() {
             console.log('3. create');
             let receipt = await fortLever.create(hbtc.address, 3, false);
             await showReceipt(receipt);
-            let tokenCount = await fortLever.getTokenCount();
+            let tokenCount = await fortLever.getLeverCount();
             console.log('tokenCount=' + tokenCount);
             let l = await fortLever.list(0, tokenCount, 0);
             for (var i = 0; i < l.length; ++i) {

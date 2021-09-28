@@ -56,7 +56,7 @@ interface IFortLever {
 
     /// @dev 获取已经开通的杠杆币数量
     /// @return 已经开通的杠杆币数量
-    function getTokenCount() external view returns (uint);
+    function getLeverCount() external view returns (uint);
 
     /// @dev 获取杠杆币地址
     /// @param tokenAddress 杠杆币的标的地产代币地址，0表示eth

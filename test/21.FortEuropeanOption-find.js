@@ -490,25 +490,27 @@ describe('FortEuropeanOption', function() {
                 console.log('put: ' + put);
 
                 expect(Math.abs(parseFloat(toDecimal(await fortEuropeanOption.balanceOf(fot.index, owner.address))) - put)).to.lt(0.0001);
-                
-                // 行权
-                let fotBalance = await fortEuropeanOption.balanceOf(fot.index, owner.address);
-                let before = BigInt(await fort.balanceOf(owner.address));
-                await fortEuropeanOption.exercise(fot.index, await fortEuropeanOption.balanceOf(fot.index, owner.address), {
-                    value: toBigInt(0.02)
-                });
-                let earn = BigInt(await fort.balanceOf(owner.address)) - before;
-                earn = toDecimal(earn);
-                console.log('earn: ' + earn);
-
-                let calc = parseFloat(toDecimal(fotBalance)) * (align(i) - oraclePrice) / 1000000;
-                if (calc < 0) {
-                    calc = 0;
-                }
-                console.log('calc: ' + calc);
-                expect(Math.abs(earn - calc)).to.lt(0.0000000001);
 
                 i = i + 40000000000 / 3;
+            }
+        }
+
+        if (true) {
+            console.log();
+            console.log('15. find');
+            console.log('count: ' + await fortEuropeanOption.getOptionCount());
+
+            let find = await fortEuropeanOption.find(0, 3, 410, owner.address);
+            for (var i = 0; i < find.length; ++i) {
+                let fi = find[i];
+                console.log({
+                    index: fi.index.toString(),
+                    tokenAddress: fi.tokenAddress.toString(),
+                    price: fi.price.toString(),
+                    orientation: fi.orientation,
+                    endblock: fi.endblock.toString(),
+                    balance: fi.balance.toString()
+                });
             }
         }
     });

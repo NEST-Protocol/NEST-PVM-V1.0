@@ -95,7 +95,6 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
     ) external view override returns (LeverView[] memory leverArray) {
         
         leverArray = new LeverView[](count);
-        uint index = 0;
         
         // 计算查找区间i和end
         LeverInfo[] storage levers = _levers;
@@ -109,10 +108,9 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         }
         
         // 循环查找，将符合条件的记录写入缓冲区
-        while (count > 0 && i-- > end) {
-            LeverInfo storage li = levers[i];
+        for (uint index = 0; index < count && i > end;) {
+            LeverInfo storage li = levers[--i];
             if (uint(li.accounts[owner].balance) > 0) {
-                --count;
                 leverArray[index++] = _toLeverView(li, i);
             }
         }
@@ -183,7 +181,7 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
 
     /// @dev 获取已经开通的杠杆币数量
     /// @return 已经开通的杠杆币数量
-    function getTokenCount() external view override returns (uint) {
+    function getLeverCount() external view override returns (uint) {
         return _levers.length;
     }
 

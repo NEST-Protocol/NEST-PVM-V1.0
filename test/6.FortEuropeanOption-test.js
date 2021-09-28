@@ -73,7 +73,7 @@ describe('FortEuropeanOption', function() {
 
         if (true) {
             console.log('3. list1');
-            console.log('tokenCount=' + await fortEuropeanOption.getTokenCount());
+            console.log('tokenCount=' + await fortEuropeanOption.getOptionCount());
             let options = await fortEuropeanOption.list(0, 5, 0);
             console.log(options);
 
@@ -84,7 +84,7 @@ describe('FortEuropeanOption', function() {
         if (true) {
             console.log('4. list2');
 
-            console.log('tokenCount=' + await fortEuropeanOption.getTokenCount());
+            console.log('tokenCount=' + await fortEuropeanOption.getOptionCount());
             await fortEuropeanOption.open(eth.address, 2450000000, true, 100000, toBigInt(1000), {
                 value: toBigInt(0.01)
             });
@@ -92,7 +92,7 @@ describe('FortEuropeanOption', function() {
             await fortEuropeanOption.open(hbtc.address, 52450000000, false, 100000, toBigInt(100000), {
                 value: toBigInt(0.02)
             });
-            console.log('tokenCount=' + await fortEuropeanOption.getTokenCount());
+            console.log('tokenCount=' + await fortEuropeanOption.getOptionCount());
             let options = await fortEuropeanOption.list(0, 5, 0);
             console.log(options);
 

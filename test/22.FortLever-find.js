@@ -8,7 +8,6 @@ describe('FortEuropeanOption', function() {
         
         const { eth, usdt, hbtc, fort, fortEuropeanOption, fortLever, nestPriceFacade } = await deploy();
         const TestERC20 = await ethers.getContractFactory('TestERC20');
-
         await fort.setMinter(owner.address, 1);
         await fort.mint(owner.address, '10000000000000000000000000');
         
@@ -71,34 +70,28 @@ describe('FortEuropeanOption', function() {
             console.log('tokenCount=' + tokenCount);
             let l = await fortLever.list(0, tokenCount, 0);
             for (var i = 0; i < l.length; ++i) {
-                // let addr = l[i];
-                // let fot = await FortLeverToken.attach(addr);
-                // let ti = await fot.getLeverInfo();
-                // console.log({
-                //     name: await fot.name(),
-                //     tokenAddress: ti.tokenAddress.toString(),
-                //     price: ti.price.toString(),
-                //     blockNumber: ti.blockNumber.toString()
-                // })
+                //let addr = l[i];
+                //let fot = await FortLeverToken.attach(addr);
+                //let ti = await fot.getLeverInfo();
                 let li = l[i];
                 console.log({
+                    //name: await fot.name(),
+                    // tokenAddress: li.tokenAddress.toString(),
+                    // price: li.price.toString(),
+                    // blockNumber: li.blockNumber.toString()
+
                     index: li.index.toString(),
-                    tokenAddress: li.tokenAddress,
+                    tokenAddress: li.tokenAddress.toString(),
                     lever: li.lever.toString(),
-                    orientation: li.orientation
-                });
+                    orientation: li.orientation.toString()
+                })
             }
 
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < levers.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
-                        let li = await fortLever.getLeverInfo(addrs[addr], levers[lever], oriens[orien]);
-                        console.log({
-                            index: li.index.toString(),
-                            tokenAddress: li.tokenAddress,
-                            lever: li.lever.toString(),
-                            orientation: li.orientation
-                        });
+                        let lot = await fortLever.getLeverInfo(addrs[addr], levers[lever], oriens[orien]);
+                        console.log(await lot.index);
                     }
                 }
             }
@@ -112,13 +105,23 @@ describe('FortEuropeanOption', function() {
             console.log('tokenCount=' + tokenCount);
             let l = await fortLever.list(0, tokenCount, 0);
             for (var i = 0; i < l.length; ++i) {
+                // let addr = l[i];
+                // let fot = await FortLeverToken.attach(addr);
+                // let ti = await fot.getLeverInfo();
+                // console.log({
+                //     name: await fot.name(),
+                //     tokenAddress: ti.tokenAddress.toString(),
+                //     price: ti.price.toString(),
+                //     blockNumber: ti.blockNumber.toString()
+                // })
+
                 let li = l[i];
                 console.log({
                     index: li.index.toString(),
-                    tokenAddress: li.tokenAddress,
+                    tokenAddress: li.tokenAddress.toString(),
                     lever: li.lever.toString(),
-                    orientation: li.orientation
-                });
+                    orientation: li.orientation.toString()
+                })
             }
         }
 
@@ -133,19 +136,19 @@ describe('FortEuropeanOption', function() {
             
             return Math.floor(usdtAmount * 10 ** decimals / tokenAmount);
         };
-
+        
         if (true) {
-            console.log('4. buyDirect');
+            console.log('4. buy');
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < levers.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
-                        let lot = await fortLever.getLeverInfo(addrs[addr], levers[lever], oriens[orien]);
-                        let receipt = await fortLever.buyDirect(lot.index, toBigInt(100), {
+                        let receipt = await fortLever.buy(addrs[addr], levers[lever], oriens[orien], toBigInt(100), {
                             value: addrs[addr] == eth.address ? toBigInt(0.01) : toBigInt(0.02)
                         });
                         await showReceipt(receipt);
-                        
-                        let oraclePrice = queryPrice(addrs[addr]);
+                        let lot = await fortLever.getLeverInfo(addrs[addr], levers[lever], oriens[orien]);
+
+                        let oraclePrice = await queryPrice(addrs[addr]);
                         console.log(toDecimal(await fortLever.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
                     }
                 }
@@ -161,15 +164,20 @@ describe('FortEuropeanOption', function() {
                 for (var lever = 0; lever < levers.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
                         let lot = await fortLever.getLeverInfo(addrs[addr], levers[lever], oriens[orien]);
-                        //let lot = await FortLeverToken.attach(lotAddress);
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
-                        let oraclePrice = queryPrice(addrs[addr]);
-                        console.log(toDecimal(await fortLever.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
 
+                        let oraclePrice = await queryPrice(addrs[addr]);
+                        console.log(toDecimal(await fortLever.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
                         let bn = parseFloat(lot.settleBlock);
                         let nbn = parseFloat(await ethers.provider.getBlockNumber());
                         let x = 100 * (1 + levers[lever] * (3000 / Math.exp(MIU * (nbn - bn) * 14) - 3510) / 3510 * (oriens[orien] ? 1 : -1));
                         let b = parseFloat(toDecimal(await fortLever.balanceOf(lot.index, oraclePrice, owner.address)));
+
+                        console.log({
+                            addr: addrs[addr],
+                            x: x.toString(),
+                            b: b.toString()
+                        });
                         expect(Math.abs(x - b)).to.lt(0.00000001);
                     }
                 }
@@ -182,9 +190,8 @@ describe('FortEuropeanOption', function() {
                 for (var lever = 0; lever < levers.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
                         let lot = await fortLever.getLeverInfo(addrs[addr], levers[lever], oriens[orien]);
-                        //let lot = await FortLeverToken.attach(lotAddress);
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
-                        let oraclePrice = queryPrice(addrs[addr]);
+                        let oraclePrice = await queryPrice(addrs[addr]);
                         console.log(toDecimal(await fortLever.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
 
                         let bn = parseFloat(lot.settleBlock);
@@ -207,13 +214,12 @@ describe('FortEuropeanOption', function() {
                 for (var lever = 0; lever < levers.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
                         let lot = await fortLever.getLeverInfo(addrs[addr], levers[lever], oriens[orien]);
-                        //let lot = await FortLeverToken.attach(lotAddress);
+                        let oraclePrice = await queryPrice(addrs[addr]);
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
 
                         await fortLever.settle(lot.index, [owner.address], { value: toBigInt(0.02) });
-                        let oraclePrice = queryPrice(addrs[addr]);
                         console.log(toDecimal(await fortLever.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
-
+                        
                         let bn = parseFloat(lot.settleBlock);
                         let nbn = parseFloat(await ethers.provider.getBlockNumber());
                         let x = 100 * (1 + levers[lever] * (2000 / Math.exp(MIU * (nbn - bn) * 14) - 3510) / 3510 * (oriens[orien] ? 1 : -1));
@@ -234,9 +240,9 @@ describe('FortEuropeanOption', function() {
                 for (var lever = 0; lever < levers.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
                         let lot = await fortLever.getLeverInfo(addrs[addr], levers[lever], oriens[orien]);
-                        // let lot = await FortLeverToken.attach(lotAddress);
-                        // await lot.update(owner.address, { value: toBigInt(0.02) });
-                        let oraclePrice = queryPrice(addrs[addr]);
+                        //let lot = await FortLeverToken.attach(lotAddress);
+                        //await lot.update(owner.address, { value: toBigInt(0.02) });
+                        let oraclePrice = await queryPrice(addrs[addr]);
                         console.log(toDecimal(await fortLever.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
 
                         let bn = parseFloat(lot.settleBlock);
@@ -253,47 +259,7 @@ describe('FortEuropeanOption', function() {
         }
 
         if (true) {
-            console.log('11. sync');
-            await nestPriceFacade.setPrice(usdt.address, '1000000000', 1);
-            for (var addr = 0; addr < addrs.length; ++addr) {
-                for (var lever = 0; lever < levers.length; ++lever) {
-                    for (var orien = 0; orien < oriens.length; ++orien) {
-                        // let lotAddress = await fortLever.getLeverToken(addrs[addr], levers[lever], oriens[orien]);
-                        // await fortLever.sync([lotAddress]);
-                    }
-                }
-            }
-        }
-
-        if (true) {
-            console.log('9. updateLeverInfo');
-            await nestPriceFacade.setPrice(usdt.address, '1000000000', 1);
-            for (var addr = 0; addr < addrs.length; ++addr) {
-                for (var lever = 0; lever < levers.length; ++lever) {
-                    for (var orien = 0; orien < oriens.length; ++orien) {
-                        let lot = await fortLever.getLeverInfo(addrs[addr], levers[lever], oriens[orien]);
-                        // let lot = await FortLeverToken.attach(lotAddress);
-                        let before = await fort.balanceOf(owner.address); 
-                        console.log(toDecimal(await fort.balanceOf(owner.address)) + 'fort');
-                        // await fortLever.updateLeverInfo([lotAddress], owner.address, {
-                        //     value: toBigInt(0.02)
-                        // });
-                        console.log(toDecimal(await fort.balanceOf(owner.address)) + 'fort');
-                        console.log(toDecimal(await fort.balanceOf(owner.address) - before) + 'earn');
-                        console.log();
-                        // let x = 100 * (1 + levers[lever] * (3510 - 3510) / 3510 * (oriens[orien] ? 1 : -1));
-                        // let b = parseFloat(toDecimal(await lot.balanceOf(owner.address)));
-                        // if (x < 0) {
-                        //     x = 0;
-                        // }
-                        //expect(Math.abs(x - b)).to.lt(0.00000001);
-                    }
-                }
-            }
-        }
-
-        if (true) {
-            console.log('10. sell');
+            console.log('9. sell');
             for(var i = 0; i < 90; ++i) {
                 await usdt.transfer(owner.address, 0);
             }
@@ -302,12 +268,13 @@ describe('FortEuropeanOption', function() {
                 for (var lever = 0; lever < levers.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
                         let lot = await fortLever.getLeverInfo(addrs[addr], levers[lever], oriens[orien]);
+                        //let lot = await FortLeverToken.attach(lotAddress);
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
-                        let oraclePrice = queryPrice(addrs[addr]);
+                        let oraclePrice = await queryPrice(addrs[addr]);
                         console.log(toDecimal(await fortLever.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
-                        await fortLever.sell(lot.index, lot.balance, { 
-                            value: toBigInt(0.02)
-                        });
+                        // await fortLever.sell(lot.index, lot.balance, { 
+                        //     value: toBigInt(0.02)
+                        // });
                         console.log(toDecimal(await fortLever.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
                         console.log(toDecimal(await fort.balanceOf(owner.address)) + 'fort');
                         console.log();
@@ -322,32 +289,26 @@ describe('FortEuropeanOption', function() {
             }
         }
 
-        if (false) {
-            console.log('12. getKey');
-            const test = async function(tokenAddress, lever, orientation) {
-                let key = await fortLever._getKey(tokenAddress, lever, orientation);
-                console.log(key);
-            };
-
-            await test(eth.address, 1, true);
-            await test(eth.address, 2, true);
-            await test(eth.address, 5, true);
-            await test(eth.address, 1, false);
-            await test(eth.address, 2, false);
-            await test(eth.address, 5, false);
-            await test(hbtc.address, 1, true);
-            await test(hbtc.address, 2, true);
-            await test(hbtc.address, 5, true);
-            await test(hbtc.address, 1, false);
-            await test(hbtc.address, 2, false);
-            await test(hbtc.address, 5, false);
-
-            await test(fort.address, 1, true);
-            await test(fort.address, 2, true);
-            await test(fort.address, 5, true);
-            await test(fort.address, 1, false);
-            await test(fort.address, 2, false);
-            await test(fort.address, 5, false);
+        if (true) {
+            console.log();
+            console.log('10. find');
+            console.log('count: ' + await fortLever.getLeverCount());
+            let find = await fortLever.find(0, 3, 100, owner.address);
+            for (var i = 0; i < find.length; ++i) {
+                let fi = find[i];
+                console.log({
+                    index: fi.index.toString(),
+                    tokenAddress: fi.tokenAddress.toString(),
+                    lever: fi.lever.toString(),
+                    orientation: fi.orientation.toString(),
+                    
+                    balance: fi.balance.toString(),
+                    // 账本-价格
+                    price: fi.price.toString(),
+                    // 结算区块
+                    settleBlock: fi.settleBlock.toString()
+                });
+            }
         }
     });
 });

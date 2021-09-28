@@ -13,6 +13,8 @@ import "./interfaces/IFortEuropeanOption.sol";
 import "./FortFrequentlyUsed.sol";
 import "./FortDCU.sol";
 
+import "hardhat/console.sol";
+
 /// @dev 欧式期权
 contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
 
@@ -76,14 +78,14 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         return _options[index].balances[addr];
     }
 
-    function _toOptionView(Option storage option, uint index) private view returns (OptionView memory) {
+    function _toOptionView(Option storage option, uint index, address owner) private view returns (OptionView memory) {
         return OptionView(
             index,
             option.tokenAddress,
             _decodeFloat(option.price),
             option.orientation,
             uint32(option.endblock),
-            option.balances[msg.sender]
+            option.balances[owner]
         );
     }
 
@@ -101,7 +103,6 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     ) external view override returns (OptionView[] memory optionArray) {
         
         optionArray = new OptionView[](count);
-        uint index = 0;
         
         // 计算查找区间i和end
         Option[] storage options = _options;
@@ -115,11 +116,10 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         }
         
         // 循环查找，将符合条件的记录写入缓冲区
-        while (count > 0 && i-- > end) {
-            Option storage option = options[i];
+        for (uint index = 0; index < count && i > end;) {
+            Option storage option = options[--i];
             if (option.balances[owner] > 0) {
-                --count;
-                optionArray[index++] = _toOptionView(option, i);
+                optionArray[index++] = _toOptionView(option, i, owner);
             }
         }
     }
@@ -144,7 +144,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
             uint end = index > count ? index - count : 0;
             while (index > end) {
                 Option storage option = options[--index];
-                optionArray[i++] = _toOptionView(option, index);
+                optionArray[i++] = _toOptionView(option, index, msg.sender);
             }
         } 
         // 正序
@@ -155,7 +155,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
                 end = length;
             }
             while (index < end) {
-                optionArray[i++] = _toOptionView(options[index], index);
+                optionArray[i++] = _toOptionView(options[index], index, msg.sender);
                 ++index;
             }
         }
@@ -163,7 +163,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
 
     /// @dev 获取已经开通的欧式期权代币数量
     /// @return 已经开通的欧式期权代币数量
-    function getTokenCount() external view override returns (uint) {
+    function getOptionCount() external view override returns (uint) {
         return _options.length;
     }
 
@@ -180,7 +180,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         uint endblock
     ) external view override returns (OptionView memory) {        
         uint index = _optionMapping[_getKey(tokenAddress, price, orientation, endblock)];
-        return _toOptionView(_options[index], index);
+        return _toOptionView(_options[index], index, msg.sender);
     }
 
     /// @dev 开仓
