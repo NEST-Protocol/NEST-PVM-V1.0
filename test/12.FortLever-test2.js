@@ -152,6 +152,8 @@ describe('FortEuropeanOption', function() {
             }
         }
 
+        const MIU = 0.000000025367;
+
         if (true) {
             console.log('5. 将eth价格改为3000usdt');
             await nestPriceFacade.setPrice(usdt.address, '3000000000', 1);
@@ -164,7 +166,9 @@ describe('FortEuropeanOption', function() {
                         let oraclePrice = queryPrice(addrs[addr]);
                         console.log(toDecimal(await fortLever.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
 
-                        let x = 100 * (1 + levers[lever] * (3000 - 3510) / 3510 * (oriens[orien] ? 1 : -1));
+                        let bn = parseFloat(lot.settleBlock);
+                        let nbn = parseFloat(await ethers.provider.getBlockNumber());
+                        let x = 100 * (1 + levers[lever] * (3000 / Math.exp(MIU * (nbn - bn) * 14) - 3510) / 3510 * (oriens[orien] ? 1 : -1));
                         let b = parseFloat(toDecimal(await fortLever.balanceOf(lot.index, oraclePrice, owner.address)));
                         expect(Math.abs(x - b)).to.lt(0.00000001);
                     }
@@ -183,7 +187,9 @@ describe('FortEuropeanOption', function() {
                         let oraclePrice = queryPrice(addrs[addr]);
                         console.log(toDecimal(await fortLever.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
 
-                        let x = 100 * (1 + levers[lever] * (2000 - 3510) / 3510 * (oriens[orien] ? 1 : -1));
+                        let bn = parseFloat(lot.settleBlock);
+                        let nbn = parseFloat(await ethers.provider.getBlockNumber());
+                        let x = 100 * (1 + levers[lever] * (2000 / Math.exp(MIU * (nbn - bn) * 14) - 3510) / 3510 * (oriens[orien] ? 1 : -1));
                         let b = parseFloat(toDecimal(await fortLever.balanceOf(lot.index, oraclePrice, owner.address)));
                         if (x < 0) {
                             x = 0;
@@ -208,7 +214,9 @@ describe('FortEuropeanOption', function() {
                         let oraclePrice = queryPrice(addrs[addr]);
                         console.log(toDecimal(await fortLever.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
 
-                        let x = 100 * (1 + levers[lever] * (2000 - 3510) / 3510 * (oriens[orien] ? 1 : -1));
+                        let bn = parseFloat(lot.settleBlock);
+                        let nbn = parseFloat(await ethers.provider.getBlockNumber());
+                        let x = 100 * (1 + levers[lever] * (2000 / Math.exp(MIU * (nbn - bn) * 14) - 3510) / 3510 * (oriens[orien] ? 1 : -1));
                         let b = parseFloat(toDecimal(await fortLever.balanceOf(lot.index, oraclePrice, owner.address)));
                         if (x < 0) {
                             x = 0;
@@ -231,7 +239,9 @@ describe('FortEuropeanOption', function() {
                         let oraclePrice = queryPrice(addrs[addr]);
                         console.log(toDecimal(await fortLever.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
 
-                        let x = 100 * (1 + levers[lever] * (3510 - 3510) / 3510 * (oriens[orien] ? 1 : -1));
+                        let bn = parseFloat(lot.settleBlock);
+                        let nbn = parseFloat(await ethers.provider.getBlockNumber());
+                        let x = 100 * (1 + levers[lever] * (3510 / Math.exp(MIU * (nbn - bn) * 14) - 3510) / 3510 * (oriens[orien] ? 1 : -1));
                         let b = parseFloat(toDecimal(await fortLever.balanceOf(lot.index, oraclePrice, owner.address)));
                         if (x < 0) {
                             x = 0;
@@ -295,7 +305,7 @@ describe('FortEuropeanOption', function() {
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
                         let oraclePrice = queryPrice(addrs[addr]);
                         console.log(toDecimal(await fortLever.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
-                        await fortLever.sell(lot.index, await fortLever.balanceOf(lot.index, oraclePrice, owner.address), { 
+                        await fortLever.sell(lot.index, lot.balance, { 
                             value: toBigInt(0.02)
                         });
                         console.log(toDecimal(await fortLever.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
