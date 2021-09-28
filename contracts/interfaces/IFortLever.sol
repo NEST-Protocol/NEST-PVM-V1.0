@@ -30,7 +30,7 @@ interface IFortLever {
         uint index
     );
 
-    /// @dev 买入杠杆币
+    /// @dev 买入杠杆币事件
     /// @param index 杠杆币编号
     /// @param fortAmount 支付的fort数量
     event Buy(
@@ -39,7 +39,7 @@ interface IFortLever {
         address owner
     );
 
-    /// @dev 卖出杠杆币
+    /// @dev 卖出杠杆币事件
     /// @param index 杠杆币编号
     /// @param amount 卖出数量
     /// @param owner 所有者
@@ -51,7 +51,7 @@ interface IFortLever {
         uint value
     );
 
-    /// @dev 清算
+    /// @dev 清算事件
     /// @param index 杠杆币编号
     /// @param addr 清算目标账号数组
     /// @param sender 清算发起账号
