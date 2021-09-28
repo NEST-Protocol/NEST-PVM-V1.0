@@ -103,7 +103,7 @@ interface IFortLever {
     /// @return 已经开通的杠杆币数量
     function getLeverCount() external view returns (uint);
 
-    /// @dev 获取杠杆币地址
+    /// @dev 获取杠杆币信息
     /// @param tokenAddress 杠杆币的标的地产代币地址，0表示eth
     /// @param lever 杠杆倍数
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
