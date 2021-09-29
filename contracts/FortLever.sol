@@ -49,7 +49,7 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
     uint constant MIN_PERIOD = 100;
 
     // 杠杆币映射
-    mapping(bytes32=>uint) _leverMapping;
+    mapping(uint=>uint) _leverMapping;
 
     // 缓存代币的基数值
     mapping(address=>uint) _bases;
@@ -166,10 +166,8 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         bool orientation
     ) external override onlyGovernance {
 
-        // 参数检查
-        require(lever < 0x100000000, "FL:lever to large");
         // 检查杠杆币是否已经存在
-        bytes32 key = _getKey(tokenAddress, lever, orientation);
+        uint key = _getKey(tokenAddress, lever, orientation);
         uint index = _leverMapping[key];
         require(index == 0, "FortLever:exists");
 
@@ -323,8 +321,10 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         address tokenAddress, 
         uint lever,
         bool orientation
-    ) private pure returns (bytes32) {
-        return keccak256(abi.encodePacked(tokenAddress, lever, orientation));
+    ) private pure returns (uint) {
+        //return keccak256(abi.encodePacked(tokenAddress, lever, orientation));
+        require(lever < 0x100000000, "FL:lever to large");
+        return (uint(uint160(tokenAddress)) << 96) | (lever << 8) | (orientation ? 1 : 0);
     }
 
     // 买入杠杆币

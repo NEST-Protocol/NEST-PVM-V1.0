@@ -34,7 +34,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     uint constant V50000 = 0x0C3500000000000000000;
 
     // 期权代币映射
-    mapping(bytes32=>uint) _optionMapping;
+    mapping(uint=>uint) _optionMapping;
 
     // 配置参数
     mapping(address=>Config) _configs;
@@ -207,7 +207,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         uint amount = estimate(tokenAddress, oraclePrice, strikePrice, orientation, exerciseBlock, fortAmount);
 
         // 3. 获取或创建期权代币
-        bytes32 key = _getKey(tokenAddress, strikePrice, orientation, exerciseBlock);
+        uint key = _getKey(tokenAddress, strikePrice, orientation, exerciseBlock);
         uint optionIndex = _optionMapping[key];
         Option storage option = _options[optionIndex];
         if (optionIndex == 0) {
@@ -217,7 +217,6 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
             option.tokenAddress = tokenAddress;
             option.strikePrice = _encodeFloat(strikePrice);
             option.orientation = orientation;
-            require(exerciseBlock < 0x100000000, "FEO:exerciseBlock to large");
             option.exerciseBlock = uint32(exerciseBlock);
 
             // 将期权代币地址存入映射和数组，便于后面检索
@@ -306,13 +305,13 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
             fee = msg.value >> 1;
             (, tokenAmount) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).findPrice {
                 value: fee
-            } (tokenAddress, exerciseBlock,msg.sender);
+            } (tokenAddress, exerciseBlock, msg.sender);
         }
 
         // 3.2. 获取usdt相对于eth的价格
         (, uint usdtAmount) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).findPrice {
             value: fee
-        } (USDT_TOKEN_ADDRESS, exerciseBlock,msg.sender);
+        } (USDT_TOKEN_ADDRESS, exerciseBlock, msg.sender);
 
         // 将token价格转化为以usdt为单位计算的价格
         uint oraclePrice = usdtAmount * _getBase(tokenAddress) / tokenAmount;
@@ -350,7 +349,7 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
             option.tokenAddress,
             _decodeFloat(option.strikePrice),
             option.orientation,
-            uint32(option.exerciseBlock),
+            uint(option.exerciseBlock),
             option.balances[owner]
         );
     }
@@ -361,8 +360,13 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         uint strikePrice, 
         bool orientation, 
         uint exerciseBlock
-    ) private pure returns (bytes32) {
-        return keccak256(abi.encodePacked(tokenAddress, strikePrice, orientation, exerciseBlock));
+    ) private pure returns (uint) {
+        //return keccak256(abi.encodePacked(tokenAddress, strikePrice, orientation, exerciseBlock));
+        require(exerciseBlock < 0x100000000, "FEO:exerciseBlock to large");
+        return (uint(uint160(tokenAddress)) << 96) 
+                | (uint(_encodeFloat(strikePrice)) << 40) 
+                | (exerciseBlock << 8)
+                | (orientation ? 1 : 0);
     }
 
     // 获取代币的基数值
