@@ -116,7 +116,11 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
     /// @return optionArray 期权信息列表
-    function list(uint offset, uint count, uint order) external view override returns (OptionView[] memory optionArray) {
+    function list(
+        uint offset, 
+        uint count, 
+        uint order
+    ) external view override returns (OptionView[] memory optionArray) {
 
         // 加载代币数组
         Option[] storage options = _options;
@@ -343,7 +347,11 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
     }
 
     // 转化位OptionView
-    function _toOptionView(Option storage option, uint index, address owner) private view returns (OptionView memory) {
+    function _toOptionView(
+        Option storage option, 
+        uint index, 
+        address owner
+    ) private view returns (OptionView memory) {
         return OptionView(
             index,
             option.tokenAddress,
