@@ -165,30 +165,30 @@ interface INestPriceFacade {
     //     uint triggeredSigmaSQ
     // );
 
-    // /// @dev Returns lastPriceList and triggered price info
-    // /// @param tokenAddress Destination token address
-    // /// @param count The number of prices that want to return
-    // /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, 
-    // /// and the excess fees will be returned through this address
-    // /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber｜price
-    // /// @return triggeredPriceBlockNumber The block number of triggered price
-    // /// @return triggeredPriceValue The token triggered price. (1eth equivalent to (price) token)
-    // /// @return triggeredAvgPrice Average price
-    // /// @return triggeredSigmaSQ The square of the volatility (18 decimal places). The current implementation 
-    // /// assumes that the volatility cannot exceed 1. Correspondingly, when the return value is equal to 
-    // /// 999999999999996447, it means that the volatility has exceeded the range that can be expressed
-    // function lastPriceListAndTriggeredPriceInfo(
-    //     address tokenAddress, 
-    //     uint count, 
-    //     address paybackAddress
-    // ) external payable 
-    // returns (
-    //     uint[] memory prices,
-    //     uint triggeredPriceBlockNumber,
-    //     uint triggeredPriceValue,
-    //     uint triggeredAvgPrice,
-    //     uint triggeredSigmaSQ
-    // );
+    /// @dev Returns lastPriceList and triggered price info
+    /// @param tokenAddress Destination token address
+    /// @param count The number of prices that want to return
+    /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, 
+    /// and the excess fees will be returned through this address
+    /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber｜price
+    /// @return triggeredPriceBlockNumber The block number of triggered price
+    /// @return triggeredPriceValue The token triggered price. (1eth equivalent to (price) token)
+    /// @return triggeredAvgPrice Average price
+    /// @return triggeredSigmaSQ The square of the volatility (18 decimal places). The current implementation 
+    /// assumes that the volatility cannot exceed 1. Correspondingly, when the return value is equal to 
+    /// 999999999999996447, it means that the volatility has exceeded the range that can be expressed
+    function lastPriceListAndTriggeredPriceInfo(
+        address tokenAddress, 
+        uint count, 
+        address paybackAddress
+    ) external payable 
+    returns (
+        uint[] memory prices,
+        uint triggeredPriceBlockNumber,
+        uint triggeredPriceValue,
+        uint triggeredAvgPrice,
+        uint triggeredSigmaSQ
+    );
 
     // /// @dev Get the latest trigger price. (token and ntoken)
     // /// @param tokenAddress Destination token address

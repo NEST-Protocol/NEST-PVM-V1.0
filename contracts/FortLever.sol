@@ -13,7 +13,7 @@ import "./interfaces/IFortLever.sol";
 import "./FortFrequentlyUsed.sol";
 import "./FortDCU.sol";
 
-/// @dev 杠杆币交易
+/// @dev 永续合约交易
 contract FortLever is FortFrequentlyUsed, IFortLever {
 
     /// @dev 用户账本
@@ -26,7 +26,7 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         uint32 baseBlock;
     }
 
-    /// @dev 杠杆币信息
+    /// @dev 永续合约信息
     struct LeverInfo {
         // 目标代币地址
         address tokenAddress; 
@@ -45,16 +45,19 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
     // 最小余额数量，余额小于此值会被清算
     uint constant MIN_VALUE = 5 ether;
 
-    // 买入杠杆币和其他交易之间最小的间隔区块数
+    // 买入永续合约和其他交易之间最小的间隔区块数
     uint constant MIN_PERIOD = 100;
 
-    // 杠杆币映射
+    // 区块时间
+    uint constant BLOCK_TIME = 14;
+
+    // 永续合约映射
     mapping(uint=>uint) _leverMapping;
 
     // 缓存代币的基数值
     mapping(address=>uint) _bases;
 
-    // 杠杆币数组
+    // 永续合约数组
     LeverInfo[] _levers;
 
     constructor() {
@@ -119,7 +122,7 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         }
     }
 
-    /// @dev 列出历史杠杆币地址
+    /// @dev 列出历史永续合约地址
     /// @param offset Skip previous (offset) records
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
@@ -156,8 +159,8 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         }
     }
 
-    /// @dev 创建杠杆币
-    /// @param tokenAddress 杠杆币的标的地产代币地址，0表示eth
+    /// @dev 创建永续合约
+    /// @param tokenAddress 永续合约的标的地产代币地址，0表示eth
     /// @param lever 杠杆倍数
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     function create(
@@ -166,12 +169,12 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         bool orientation
     ) external override onlyGovernance {
 
-        // 检查杠杆币是否已经存在
+        // 检查永续合约是否已经存在
         uint key = _getKey(tokenAddress, lever, orientation);
         uint index = _leverMapping[key];
         require(index == 0, "FortLever:exists");
 
-        // 创建杠杆币
+        // 创建永续合约
         index = _levers.length;
         LeverInfo storage li = _levers.push();
         li.tokenAddress = tokenAddress;
@@ -179,21 +182,21 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         li.orientation = orientation;
         _leverMapping[key] = index;
 
-        // 创建杠杆币事件
+        // 创建永续合约事件
         emit New(tokenAddress, lever, orientation, index);
     }
 
-    /// @dev 获取已经开通的杠杆币数量
-    /// @return 已经开通的杠杆币数量
+    /// @dev 获取已经开通的永续合约数量
+    /// @return 已经开通的永续合约数量
     function getLeverCount() external view override returns (uint) {
         return _levers.length;
     }
 
-    /// @dev 获取杠杆币信息
-    /// @param tokenAddress 杠杆币的标的地产代币地址，0表示eth
+    /// @dev 获取永续合约信息
+    /// @param tokenAddress 永续合约的标的地产代币地址，0表示eth
     /// @param lever 杠杆倍数
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
-    /// @return 杠杆币地址
+    /// @return 永续合约地址
     function getLeverInfo(
         address tokenAddress, 
         uint lever,
@@ -203,8 +206,8 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         return _toLeverView(_levers[index], index);
     }
 
-    /// @dev 买入杠杆币
-    /// @param tokenAddress 杠杆币的标的地产代币地址，0表示eth
+    /// @dev 买入永续合约
+    /// @param tokenAddress 永续合约的标的地产代币地址，0表示eth
     /// @param lever 杠杆倍数
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     /// @param fortAmount 支付的fort数量
@@ -216,33 +219,37 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
     ) external payable override {
         uint index = _leverMapping[_getKey(tokenAddress, lever, orientation)];
         require(index != 0, "FortLever:not exist");
-        _buy(_levers[index], index, fortAmount, tokenAddress);
+        _buy(_levers[index], index, fortAmount, tokenAddress, orientation);
     }
 
-    /// @dev 买入杠杆币
-    /// @param index 杠杆币编号
+    /// @dev 买入永续合约
+    /// @param index 永续合约编号
     /// @param fortAmount 支付的fort数量
     function buyDirect(uint index, uint fortAmount) public payable override {
         require(index != 0, "FortLever:not exist");
         LeverInfo storage li = _levers[index];
-        _buy(li, index, fortAmount, li.tokenAddress);
+        _buy(li, index, fortAmount, li.tokenAddress, li.orientation);
     }
 
-    /// @dev 卖出杠杆币
-    /// @param index 杠杆币编号
+    /// @dev 卖出永续合约
+    /// @param index 永续合约编号
     /// @param amount 卖出数量
     function sell(uint index, uint amount) external payable override {
 
-        // 1. 销毁用户的杠杆币
+        // 1. 销毁用户的永续合约
         // FortLeverToken(leverAddress).burn { 
         //     value: msg.value 
         // } (msg.sender, amount, msg.sender);
         require(index != 0, "FortLever:not exist");
         LeverInfo storage li = _levers[index];
+        bool orientation = li.orientation;
+
+        // 看涨的时候，初始价格乘以(1+k)，卖出价格除以(1+k)
+        // 看跌的时候，初始价格除以(1+k)，卖出价格乘以(1+k)
+        // 合并的时候，s0用记录的价格，s1用k修正的
+        uint oraclePrice = _queryPrice(li.tokenAddress, !orientation, msg.sender);
 
         // 更新目标账号信息
-        uint oraclePrice = _queryPrice(li.tokenAddress, msg.sender);
-
         Account memory account = li.accounts[msg.sender];
 
         account.balance -= _toUInt128(amount);
@@ -254,7 +261,7 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
             _decodeFloat(account.basePrice), 
             uint(account.baseBlock),
             oraclePrice, 
-            li.orientation, 
+            orientation, 
             uint(li.lever)
         );
         FortDCU(FORT_TOKEN_ADDRESS).mint(msg.sender, value);
@@ -264,20 +271,25 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
     }
 
     /// @dev 清算
-    /// @param index 杠杆币编号
+    /// @param index 永续合约编号
     /// @param addresses 清算目标账号数组
     function settle(uint index, address[] calldata addresses) external payable override {
 
-        // 1. 销毁用户的杠杆币
+        // 1. 销毁用户的永续合约
         require(index != 0, "FortLever:not exist");
         LeverInfo storage li = _levers[index];
+        uint lever = uint(li.lever);
 
-        if (uint(li.lever) > 1) {
+        if (lever > 1) {
 
-            mapping(address=>Account) storage accounts = li.accounts;
-            uint oraclePrice = _queryPrice(li.tokenAddress, msg.sender);
+            bool orientation = li.orientation;
+            // 看涨的时候，初始价格乘以(1+k)，卖出价格除以(1+k)
+            // 看跌的时候，初始价格除以(1+k)，卖出价格乘以(1+k)
+            // 合并的时候，s0用记录的价格，s1用k修正的
+            uint oraclePrice = _queryPrice(li.tokenAddress, !orientation, msg.sender);
+
             uint reward = 0;
-
+            mapping(address=>Account) storage accounts = li.accounts;
             for (uint i = addresses.length; i > 0;) {
                 address acc = addresses[--i];
 
@@ -288,8 +300,8 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
                     _decodeFloat(account.basePrice), 
                     uint(account.baseBlock),
                     oraclePrice, 
-                    li.orientation, 
-                    uint(li.lever)
+                    orientation, 
+                    lever
                 );
 
                 // 杠杆倍数大于1，并且余额小于最小额度时，可以清算
@@ -327,16 +339,20 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
         return (uint(uint160(tokenAddress)) << 96) | (lever << 8) | (orientation ? 1 : 0);
     }
 
-    // 买入杠杆币
-    function _buy(LeverInfo storage li, uint index, uint fortAmount, address tokenAddress) private {
+    // 买入永续合约
+    function _buy(LeverInfo storage li, uint index, uint fortAmount, address tokenAddress, bool orientation) private {
 
         require(fortAmount >= 100 ether, "FortLever:at least 100 FORT");
 
         // 1. 销毁用户的fort
         FortDCU(FORT_TOKEN_ADDRESS).burn(msg.sender, fortAmount);
 
-        // 2. 给用户分发杠杆币
-        uint oraclePrice = _queryPrice(tokenAddress, msg.sender);
+        // 2. 给用户分发永续合约
+        // 看涨的时候，初始价格乘以(1+k)，卖出价格除以(1+k)
+        // 看跌的时候，初始价格除以(1+k)，卖出价格乘以(1+k)
+        // 合并的时候，s0用记录的价格，s1用k修正的
+        uint oraclePrice = _queryPrice(tokenAddress, orientation, msg.sender);
+
         Account memory account = li.accounts[msg.sender];
         uint basePrice = _decodeFloat(account.basePrice);
         uint balance = uint(account.balance);
@@ -359,36 +375,117 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
     }
 
     // 查询预言机价格
-    function _queryPrice(address tokenAddress, address payback) private returns (uint oraclePrice) {
-        // 获取token相对于eth的价格
-        uint tokenAmount = 1 ether;
-        uint fee = msg.value;
-
-        if (tokenAddress != address(0)) {
-            fee = msg.value >> 1;
-            (, tokenAmount) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).triggeredPrice {
-                value: fee
-            } (tokenAddress, payback);
-        }
+    function _queryPrice(address tokenAddress, bool enlarge, address payback) private returns (uint oraclePrice) {
+        require(tokenAddress == address(0), "FL:only support eth/usdt");
 
         // 获取usdt相对于eth的价格
-        (, uint usdtAmount) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).triggeredPrice {
-            value: fee
-        } (USDT_TOKEN_ADDRESS, payback);
+        (
+            uint[] memory prices,
+            ,//uint triggeredPriceBlockNumber,
+            ,//uint triggeredPriceValue,
+            ,//uint triggeredAvgPrice,
+            uint triggeredSigmaSQ
+        ) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).lastPriceListAndTriggeredPriceInfo {
+            value: msg.value
+        } (USDT_TOKEN_ADDRESS, 2, payback);
         
         // 将token价格转化为以usdt为单位计算的价格
-        oraclePrice = usdtAmount * _getBase(tokenAddress) / tokenAmount;
+        oraclePrice = prices[1];
+        uint k = _calcRevisedK(triggeredSigmaSQ, prices[3], prices[2], oraclePrice, prices[0]);
+
+        // 看涨的时候，初始价格乘以(1+k)，卖出价格除以(1+k)
+        // 看跌的时候，初始价格除以(1+k)，卖出价格乘以(1+k)
+        // 合并的时候，s0用记录的价格，s1用k修正的
+        if (enlarge) {
+            oraclePrice = oraclePrice * (1 ether + k) / 1 ether;
+        } else {
+            oraclePrice = oraclePrice * 1 ether / (1 ether + k);
+        }
     }
 
-    // 获取代币的基数值
-    function _getBase(address tokenAddress) private returns (uint base) {
-        if (tokenAddress == address(0)) {
-            base = 1 ether;
+    /// @dev K value is calculated by revised volatility
+    /// @param sigmaSQ The square of the volatility (18 decimal places).
+    /// @param p0 Last price (number of tokens equivalent to 1 ETH)
+    /// @param bn0 Block number of the last price
+    /// @param p Latest price (number of tokens equivalent to 1 ETH)
+    /// @param bn The block number when (ETH, TOKEN) price takes into effective
+    function _calcRevisedK(uint sigmaSQ, uint p0, uint bn0, uint p, uint bn) private view returns (uint k) {
+        k = _calcK(_calcRevisedSigmaSQ(sigmaSQ, p0, bn0, p, bn), bn);
+    }
+
+    // Calculate the corrected volatility
+    function _calcRevisedSigmaSQ(
+        uint sigmaSQ,
+        uint p0, 
+        uint bn0, 
+        uint p, 
+        uint bn
+    ) private pure returns (uint revisedSigmaSQ) {
+        // sq2 = sq1 * 0.9 + rq2 * dt * 0.1
+        // sq1 = (sq2 - rq2 * dt * 0.1) / 0.9
+        // 1. 
+        // rq2 <= 4 * dt * sq1
+        // sqt = sq2
+        // 2. rq2 > 4 * dt * sq1 && rq2 <= 9 * dt * sq1
+        // sqt = (sq1 + rq2 * dt) / 2
+        // 3. rq2 > 9 * dt * sq1
+        // sqt = sq1 * 0.2 + rq2 * dt * 0.8
+
+        uint rq2 = p * 1 ether / p0;
+        if (rq2 > 1 ether) {
+            rq2 -= 1 ether;
         } else {
-            base = _bases[tokenAddress];
-            if (base == 0) {
-                base = 10 ** ERC20(tokenAddress).decimals();
-                _bases[tokenAddress] = base;
+            rq2 = 1 ether - rq2;
+        }
+        rq2 = rq2 * rq2 / 1 ether;
+
+        uint dt = (bn - bn0) * BLOCK_TIME;
+        uint sq1 = 0;
+        uint rq2dt = rq2 / dt;
+        if (sigmaSQ * 10 > rq2dt) {
+            sq1 = (sigmaSQ * 10 - rq2dt) / 9;
+        }
+
+        uint dds = dt * dt * dt * sq1;
+        if (rq2 <= (dds << 2)) {
+            revisedSigmaSQ = sigmaSQ;
+        } else if (rq2 <= 9 * dds) {
+            revisedSigmaSQ = (sq1 + rq2dt) >> 1;
+        } else {
+            revisedSigmaSQ = (sq1 + (rq2dt << 2)) / 5;
+        }
+    }
+
+    /// @dev Calc K value
+    /// @param sigmaSQ The square of the volatility (18 decimal places).
+    /// @param bn The block number when (ETH, TOKEN) price takes into effective
+    /// @return k The K value
+    function _calcK(uint sigmaSQ, uint bn) private view returns (uint k) {
+        k = 0.002 ether + (_sqrt((block.number - bn) * BLOCK_TIME * sigmaSQ * 1 ether) >> 1);
+    }
+
+    function _sqrt(uint256 x) private pure returns (uint256) {
+        unchecked {
+            if (x == 0) return 0;
+            else {
+                uint256 xx = x;
+                uint256 r = 1;
+                if (xx >= 0x100000000000000000000000000000000) { xx >>= 128; r <<= 64; }
+                if (xx >= 0x10000000000000000) { xx >>= 64; r <<= 32; }
+                if (xx >= 0x100000000) { xx >>= 32; r <<= 16; }
+                if (xx >= 0x10000) { xx >>= 16; r <<= 8; }
+                if (xx >= 0x100) { xx >>= 8; r <<= 4; }
+                if (xx >= 0x10) { xx >>= 4; r <<= 2; }
+                if (xx >= 0x8) { r <<= 1; }
+                r = (r + x / r) >> 1;
+                r = (r + x / r) >> 1;
+                r = (r + x / r) >> 1;
+                r = (r + x / r) >> 1;
+                r = (r + x / r) >> 1;
+                r = (r + x / r) >> 1;
+                r = (r + x / r) >> 1; // Seven iterations should be enough
+                uint256 r1 = x / r;
+                return (r < r1 ? r : r1);
             }
         }
     }
@@ -469,10 +566,10 @@ contract FortLever is FortFrequentlyUsed, IFortLever {
 
     // 计算 e^μT
     function _expMiuT(uint baseBlock) private view returns (uint) {
-        return _toUInt(ABDKMath64x64.exp(_toInt128(MIU * (block.number - baseBlock) * 14)));
+        return _toUInt(ABDKMath64x64.exp(_toInt128(MIU * (block.number - baseBlock) * BLOCK_TIME)));
     }
 
-    // 转换杠杆币信息
+    // 转换永续合约信息
     function _toLeverView(LeverInfo storage li, uint index) private view returns (LeverView memory) {
         Account memory account = li.accounts[msg.sender];
         return LeverView(
