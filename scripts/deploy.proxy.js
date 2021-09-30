@@ -111,16 +111,15 @@ exports.deploy = async function() {
     console.log('8.2 create lever');
     await fortLever.create(eth.address, 1, true);
     await fortLever.create(eth.address, 2, true);
+    await fortLever.create(eth.address, 3, true);
+    await fortLever.create(eth.address, 4, true);
     await fortLever.create(eth.address, 5, true);
     await fortLever.create(eth.address, 1, false);
     await fortLever.create(eth.address, 2, false);
+    await fortLever.create(eth.address, 3, false);
+    await fortLever.create(eth.address, 4, false);
     await fortLever.create(eth.address, 5, false);
-    await fortLever.create(hbtc.address, 1, true);
-    await fortLever.create(hbtc.address, 2, true);
-    await fortLever.create(hbtc.address, 5, true);
-    await fortLever.create(hbtc.address, 1, false);
-    await fortLever.create(hbtc.address, 2, false);
-    await fortLever.create(hbtc.address, 5, false);
+
 
     console.log('---------- OK ----------');
     

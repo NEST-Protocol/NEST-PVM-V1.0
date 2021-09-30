@@ -74,7 +74,7 @@ describe('FortEuropeanOption', function() {
             return Math.floor(usdtAmount * 10 ** decimals / tokenAmount);
         };
 
-        let addrs = [eth.address, hbtc.address];
+        let addrs = [eth.address/*, hbtc.address*/];
         let levers = [1, 2, 5];
         let oriens = [true, false];
         if (true) {
@@ -203,12 +203,12 @@ describe('FortEuropeanOption', function() {
 
         if (true) {
             console.log('6. transfer');
-            let lot = await fortLever.getLeverInfo(hbtc.address, 1, true);
+            let lot = await fortLever.getLeverInfo(eth.address, 1, true);
             // let lot = await FortLeverToken.attach(lotAddress);
             let receipt = await fortLever.buyDirect(lot.index, toBigInt(100), { value: toBigInt(0.02) });
             await showReceipt(receipt);
             
-            let oraclePrice = await queryPrice(hbtc.address);
+            let oraclePrice = await queryPrice(eth.address);
             console.log({
                 name: '[' + lot.index + ']',
                 price: toDecimal(oraclePrice, 6),

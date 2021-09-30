@@ -53,12 +53,12 @@ describe('FortEuropeanOption', function() {
         await leverTest(eth.address, 1, false, toBigInt(100),  toBigInt(0.01));
         await leverTest(eth.address, 2, false, toBigInt(100),  toBigInt(0.01));
         await leverTest(eth.address, 5, false, toBigInt(100),  toBigInt(0.01));
-        await leverTest(hbtc.address, 1, true, toBigInt(100),  toBigInt(0.02));
-        await leverTest(hbtc.address, 2, true, toBigInt(100),  toBigInt(0.02));
-        await leverTest(hbtc.address, 5, true, toBigInt(100),  toBigInt(0.02));
-        await leverTest(hbtc.address, 1, false, toBigInt(100), toBigInt(0.02));
-        await leverTest(hbtc.address, 2, false, toBigInt(100), toBigInt(0.02));
-        await leverTest(hbtc.address, 5, false, toBigInt(100), toBigInt(0.02));
+        // await leverTest(hbtc.address, 1, true, toBigInt(100),  toBigInt(0.02));
+        // await leverTest(hbtc.address, 2, true, toBigInt(100),  toBigInt(0.02));
+        // await leverTest(hbtc.address, 5, true, toBigInt(100),  toBigInt(0.02));
+        // await leverTest(hbtc.address, 1, false, toBigInt(100), toBigInt(0.02));
+        // await leverTest(hbtc.address, 2, false, toBigInt(100), toBigInt(0.02));
+        // await leverTest(hbtc.address, 5, false, toBigInt(100), toBigInt(0.02));
 
         console.log();
         await nestPriceFacade.setPrice(hbtc.address, '75000000000000000', 1);
@@ -68,12 +68,12 @@ describe('FortEuropeanOption', function() {
         await show(eth.address, 1, false, toBigInt(100),  toBigInt(0.01));
         await show(eth.address, 2, false, toBigInt(100),  toBigInt(0.01));
         await show(eth.address, 5, false, toBigInt(100),  toBigInt(0.01));
-        await show(hbtc.address, 1, true, toBigInt(100),  toBigInt(0.02));
-        await show(hbtc.address, 2, true, toBigInt(100),  toBigInt(0.02));
-        await show(hbtc.address, 5, true, toBigInt(100),  toBigInt(0.02));
-        await show(hbtc.address, 1, false, toBigInt(100), toBigInt(0.02));
-        await show(hbtc.address, 2, false, toBigInt(100), toBigInt(0.02));
-        await show(hbtc.address, 5, false, toBigInt(100), toBigInt(0.02));
+        // await show(hbtc.address, 1, true, toBigInt(100),  toBigInt(0.02));
+        // await show(hbtc.address, 2, true, toBigInt(100),  toBigInt(0.02));
+        // await show(hbtc.address, 5, true, toBigInt(100),  toBigInt(0.02));
+        // await show(hbtc.address, 1, false, toBigInt(100), toBigInt(0.02));
+        // await show(hbtc.address, 2, false, toBigInt(100), toBigInt(0.02));
+        // await show(hbtc.address, 5, false, toBigInt(100), toBigInt(0.02));
 
     });
 });

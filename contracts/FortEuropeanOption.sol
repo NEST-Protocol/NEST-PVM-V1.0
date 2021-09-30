@@ -273,11 +273,17 @@ contract FortEuropeanOption is FortFrequentlyUsed, IFortEuropeanOption {
         if (orientation) {
             v = _calcVc(config, oraclePrice, T, strikePrice);
             // Vc>=S0*1%; Vp>=K*1%
-            require(v * 100 >> 64 >= oraclePrice, "FEO:vc must greater than S0*1%");
+            // require(v * 100 >> 64 >= oraclePrice, "FEO:vc must greater than S0*1%");
+            if (v * 100 >> 64 < oraclePrice) {
+                v = (oraclePrice << 64) / 100;
+            }
         } else {
             v = _calcVp(config, oraclePrice, T, strikePrice);
             // Vc>=S0*1%; Vp>=K*1%
-            require(v * 100 >> 64 >= strikePrice, "FEO:vp must greater than K*1%");
+            // require(v * 100 >> 64 >= strikePrice, "FEO:vp must greater than K*1%");
+            if (v * 100 >> 64 < strikePrice) {
+                v = (strikePrice << 64) / 100;
+            }
         }
 
         amount = (USDT_BASE << 64) * fortAmount / v;

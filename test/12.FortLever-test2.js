@@ -62,7 +62,7 @@ describe('FortEuropeanOption', function() {
             console.log(l);
         }
 
-        let addrs = [eth.address, hbtc.address];
+        let addrs = [eth.address/*, hbtc.address*/];
         let levers = [1, 2, 5];
         let oriens = [true, false];
         if (true) {
