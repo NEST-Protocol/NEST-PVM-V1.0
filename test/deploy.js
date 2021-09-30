@@ -2,21 +2,21 @@ const { expect } = require('chai');
 const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, snd, tableSnd, d1, Vc, Vp } = require('./utils.js');
 
-describe('FortEuropeanOption', function() {
+describe('HedgeOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
 
         const { 
-            eth, usdt, fort, 
-            fortGovernance,
-            fortEuropeanOption, fortLever, fortVaultForStaking 
+            eth, usdt, dcu, 
+            hedgeGovernance,
+            hedgeOptions, hedgeFutures, hedgeVaultForStaking 
         } = await deploy();
 
         const ERC20 = await ethers.getContractFactory('ERC20_LIB');
         
-        await fortGovernance.setGovernance('0x688f016CeDD62AD1d8dFA4aBcf3762ab29294489', 1);
+        await hedgeGovernance.setGovernance('0x688f016CeDD62AD1d8dFA4aBcf3762ab29294489', 1);
         // 1. 设置挖矿通道参数
-        // @FLY @依维柯大金杯～ 第一期 4000万fort
+        // @FLY @依维柯大金杯～ 第一期 4000万dcu
         // 锁仓1个月（或者2周）：nest 150万 nhbtc 50w  cofi 50w pusd 50w  peth 50w  for 50w   3000w用于nest 1年期锁仓
         // 1.锁仓时间 1个月  和  1年
         // 分配上次已经提供了
@@ -64,14 +64,14 @@ describe('FortEuropeanOption', function() {
             36000000,
         ];
 
-        // await fortVaultForStaking.batchSetPoolWeight(xtokens, cycles, weights);
+        // await hedgeVaultForStaking.batchSetPoolWeight(xtokens, cycles, weights);
 
         // // 2. 设置挖矿启动参数
-        // await fortVaultForStaking.setConfig(toBigInt(1), 0, 1000);
+        // await hedgeVaultForStaking.setConfig(toBigInt(1), 0, 1000);
 
         let total = 0n;
         for (var i = 0; i < xtokens.length; ++i) {
-            let xi = await fortVaultForStaking.getChannelInfo(xtokens[i], cycles[i]);
+            let xi = await hedgeVaultForStaking.getChannelInfo(xtokens[i], cycles[i]);
             total += BigInt(xi.totalRewards);
         }
 
@@ -79,23 +79,23 @@ describe('FortEuropeanOption', function() {
 
         
 
-        // const FortVaultForStaking = await ethers.getContractFactory('FortVaultForStaking');
-        // const fvfs = await FortVaultForStaking.deploy();
+        // const HedgeVaultForStaking = await ethers.getContractFactory('HedgeVaultForStaking');
+        // const fvfs = await HedgeVaultForStaking.deploy();
         // console.log('fvfs:' + fvfs.address);
         // //const BoxV2 = await ethers.getContractFactory("BoxV2");
-        // //const upgraded = await upgrades.upgradeProxy(fortVaultForStaking.address, FortVaultForStaking);
+        // //const upgraded = await upgrades.upgradeProxy(hedgeVaultForStaking.address, HedgeVaultForStaking);
         // //console.log(upgraded);
 
-        // // await fortVaultForStaking.setConfig(1000000000000000000n, 9266520n, 9266600n);
-        // // await fortVaultForStaking.batchSetPoolWeight(
-        // //     [usdt.address, fort.address], 
+        // // await hedgeVaultForStaking.setConfig(1000000000000000000n, 9266520n, 9266600n);
+        // // await hedgeVaultForStaking.batchSetPoolWeight(
+        // //     [usdt.address, dcu.address], 
         // //     [100n, 1000n], 
         // //     [3, 7]
         // // );
 
         // //await usdt.transfer(owner.address, 10000000000n);
-        // await usdt.approve(fortVaultForStaking.address, 10000000000n);
-        // await fortVaultForStaking.stake(usdt.address, 100n, 700000000n);
+        // await usdt.approve(hedgeVaultForStaking.address, 10000000000n);
+        // await hedgeVaultForStaking.stake(usdt.address, 100n, 700000000n);
         
     });
 });

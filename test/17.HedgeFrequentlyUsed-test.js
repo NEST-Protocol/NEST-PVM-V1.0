@@ -9,7 +9,7 @@ describe('HedgeOptions', function() {
         const { 
             eth, usdt, hbtc, dcu, 
             hedgeOptions, hedgeFutures, nestPriceFacade, hedgeGovernance,
-            hedgeVaultForStaking
+            hedgeVaultForStaking, hedgeDAO
         } = await deploy();
 
         await dcu.setMinter(owner.address, 1);
@@ -35,8 +35,8 @@ describe('HedgeOptions', function() {
             return {
                 height: await ethers.provider.getBlockNumber(),
                 owner: await getAccountInfo(owner),
-                addr1: await getAccountInfo(addr1),
-                hedgeVaultForStaking: await getAccountInfo(hedgeVaultForStaking),
+                dcu: await getAccountInfo(dcu),
+                hedgeDAO: await getAccountInfo(hedgeDAO),
             };
         }
 
@@ -58,46 +58,19 @@ describe('HedgeOptions', function() {
             return price * 10 ** decimals;
         }
 
-        const StringHelper = await ethers.getContractFactory('StringHelper');
-        const sh = await StringHelper.deploy();
-
-        let TEST_PRIVATE = false;
-        if (TEST_PRIVATE) {
-            console.log('1. toUpper');
-            console.log(await sh.toUpper('ChenFei'));
-            console.log(await sh.toUpper('chenfei'));
-            console.log(await sh.toUpper('chenf'));
-            console.log(await sh.toUpper(''));
-            console.log(await sh.toUpper('abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'));
+        if (true) {
+            console.log('1. update');
+            await hedgeOptions.update(hedgeGovernance.address);
+            await hedgeOptions.update(hedgeGovernance.address);
+            await hedgeOptions.update(hedgeGovernance.address);
+            await hedgeOptions.update(hedgeGovernance.address);
+            await hedgeOptions.update(hedgeGovernance.address);
+            await hedgeOptions.update(hedgeGovernance.address);
         }
 
-        if (TEST_PRIVATE) {
-            console.log('1. toLower');
-            console.log(await sh.toLower('ChenFei'));
-            console.log(await sh.toLower('chenfei'));
-            console.log(await sh.toLower('chenf'));
-            console.log(await sh.toLower(''));
-            console.log(await sh.toLower('abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'));
-        }
-
-        if (TEST_PRIVATE) {
-            console.log('1. sprintf');
-            console.log('[%d=' + await sh.sprintf("%d", 123) + ']');
-            console.log('[%u=' + await sh.sprintf("%u", 123) + ']');
-            console.log('[%x=' + await sh.sprintf("%x", 123) + ']');
-            console.log('[%f=' + await sh.sprintf("%f", 123) + ']');
-            console.log('[%s=' + await sh.sprintf("%s", 123) + ']');
-            console.log('[%S=' + await sh.sprintf("%S", 123) + ']');
-            console.log('[%X=' + await sh.sprintf("%X", 123) + ']');
-
-            console.log();
-            console.log('[%d=' + await sh.sprintf("%d", 0) + ']');
-            console.log('[%u=' + await sh.sprintf("%u", 0) + ']');
-            console.log('[%x=' + await sh.sprintf("%x", 0) + ']');
-            console.log('[%f=' + await sh.sprintf("%f", 0) + ']');
-            console.log('[%s=' + await sh.sprintf("%s", 0) + ']');
-            console.log('[%S=' + await sh.sprintf("%S", 0) + ']');
-            console.log('[%X=' + await sh.sprintf("%X", 0) + ']');
+        if (true) {
+            console.log('2. setUsdtTokenAddress');
+            await hedgeOptions.setUsdtTokenAddress(hedgeGovernance.address);
         }
     });
 });

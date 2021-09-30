@@ -9,7 +9,7 @@ describe('HedgeOptions', function() {
         const { 
             eth, usdt, hbtc, dcu, 
             hedgeOptions, hedgeFutures, nestPriceFacade, hedgeGovernance,
-            hedgeVaultForStaking
+            hedgeVaultForStaking, hedgeDAO
         } = await deploy();
 
         await dcu.setMinter(owner.address, 1);
@@ -35,8 +35,8 @@ describe('HedgeOptions', function() {
             return {
                 height: await ethers.provider.getBlockNumber(),
                 owner: await getAccountInfo(owner),
-                addr1: await getAccountInfo(addr1),
-                hedgeVaultForStaking: await getAccountInfo(hedgeVaultForStaking),
+                dcu: await getAccountInfo(dcu),
+                hedgeDAO: await getAccountInfo(hedgeDAO),
             };
         }
 
@@ -58,46 +58,49 @@ describe('HedgeOptions', function() {
             return price * 10 ** decimals;
         }
 
-        const StringHelper = await ethers.getContractFactory('StringHelper');
-        const sh = await StringHelper.deploy();
-
-        let TEST_PRIVATE = false;
-        if (TEST_PRIVATE) {
-            console.log('1. toUpper');
-            console.log(await sh.toUpper('ChenFei'));
-            console.log(await sh.toUpper('chenfei'));
-            console.log(await sh.toUpper('chenf'));
-            console.log(await sh.toUpper(''));
-            console.log(await sh.toUpper('abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'));
+        if (true) {
+            console.log('1. initialize');
+            await dcu.update(eth.address);
+            await dcu.initialize(hedgeGovernance.address);
+            await dcu.update(hedgeGovernance.address);
+            await dcu.update(hedgeGovernance.address);
+            await dcu.update(hedgeGovernance.address);
+            await dcu.update(hedgeGovernance.address);
+            await dcu.update(hedgeGovernance.address);
+            await dcu.update(hedgeGovernance.address);
+            await dcu.update(hedgeGovernance.address);
         }
 
-        if (TEST_PRIVATE) {
-            console.log('1. toLower');
-            console.log(await sh.toLower('ChenFei'));
-            console.log(await sh.toLower('chenfei'));
-            console.log(await sh.toLower('chenf'));
-            console.log(await sh.toLower(''));
-            console.log(await sh.toLower('abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'));
+        if (false) {
+            console.log('2. migrate');
+            console.log(await getStatus());
+
+            await dcu.test({ value: toBigInt(57) });
+            await usdt.transfer(dcu.address, toBigInt(100, 6));
+            await dcu.transfer(dcu.address, toBigInt(200));
+            console.log(await getStatus());
+
+            await dcu.migrate(usdt.address, toBigInt(50, 6));
+            await dcu.migrate(dcu.address, toBigInt(150));
+            await dcu.migrate(eth.address, toBigInt(26));
+            console.log(await getStatus());
+
+            await dcu.migrate(usdt.address, toBigInt(50, 6));
+            await dcu.migrate(dcu.address, toBigInt(50));
+            await dcu.migrate(eth.address, toBigInt(31));
+            console.log(await getStatus());
         }
 
-        if (TEST_PRIVATE) {
-            console.log('1. sprintf');
-            console.log('[%d=' + await sh.sprintf("%d", 123) + ']');
-            console.log('[%u=' + await sh.sprintf("%u", 123) + ']');
-            console.log('[%x=' + await sh.sprintf("%x", 123) + ']');
-            console.log('[%f=' + await sh.sprintf("%f", 123) + ']');
-            console.log('[%s=' + await sh.sprintf("%s", 123) + ']');
-            console.log('[%S=' + await sh.sprintf("%S", 123) + ']');
-            console.log('[%X=' + await sh.sprintf("%X", 123) + ']');
-
-            console.log();
-            console.log('[%d=' + await sh.sprintf("%d", 0) + ']');
-            console.log('[%u=' + await sh.sprintf("%u", 0) + ']');
-            console.log('[%x=' + await sh.sprintf("%x", 0) + ']');
-            console.log('[%f=' + await sh.sprintf("%f", 0) + ']');
-            console.log('[%s=' + await sh.sprintf("%s", 0) + ']');
-            console.log('[%S=' + await sh.sprintf("%S", 0) + ']');
-            console.log('[%X=' + await sh.sprintf("%X", 0) + ']');
+        if (false) {
+            console.log('3. settle');
+            console.log('app: ' + await hedgeDAO.checkApplication(owner.address));
+            await hedgeDAO.setApplication(owner.address, 1);
+            console.log('app: ' + await hedgeDAO.checkApplication(owner.address));
+            await hedgeDAO.settle(eth.address, eth.address, owner.address, toBigInt(0.9527));
+            await hedgeDAO.settle(eth.address, usdt.address, owner.address, toBigInt(17, 6));
+            await hedgeDAO.settle(eth.address, dcu.address, owner.address, toBigInt(31));
+            console.log(await getStatus());
+            console.log('totalETHRewards: ' + await hedgeDAO.totalETHRewards(eth.address));
         }
     });
 });

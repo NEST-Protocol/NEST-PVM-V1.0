@@ -2,52 +2,51 @@ const { expect } = require('chai');
 const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt } = require('./utils.js');
 
-describe('FortEuropeanOption', function() {
+describe('HedgeOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
-        const { eth, usdt, fort, fortEuropeanOption, fortLever, nestPriceFacade } = await deploy();
+        const { eth, usdt, dcu, hedgeOptions, hedgeFutures, nestPriceFacade } = await deploy();
 
-        await fort.setMinter(owner.address, 1);
-        await fort.mint(owner.address, '10000000000000000000000000');
+        await dcu.setMinter(owner.address, 1);
+        await dcu.mint(owner.address, '10000000000000000000000000');
         
-        console.log('owner: ' + toDecimal(await fort.balanceOf(owner.address) )+ 'fort');
+        console.log('owner: ' + toDecimal(await dcu.balanceOf(owner.address) )+ 'dcu');
         console.log('owner: ' + owner.address);
 
         const BLOCK = 100000;
-        await fortEuropeanOption.open(eth.address, '2450000000', true, BLOCK, toBigInt(1000), {
+        await hedgeOptions.open(eth.address, '2450000000', true, BLOCK, toBigInt(1000), {
             value: toBigInt(0.01)
         });
         console.log('block: ' + await ethers.provider.getBlockNumber()); 
-        //const FortOptionToken = await ethers.getContractFactory('FortOptionToken');
-        const bot = await fortEuropeanOption.getOptionInfo(eth.address, '2450000000', true, BLOCK);
+        const bot = await hedgeOptions.getOptionInfo(eth.address, '2450000000', true, BLOCK);
         console.log('bot: ' + bot.index);
-        console.log('owner: ' + toDecimal(await fort.balanceOf(owner.address)) + 'fort');
-        console.log('owner: ' + toDecimal(await fortEuropeanOption.balanceOf(bot.index, owner.address)) + 'bot');
+        console.log('owner: ' + toDecimal(await dcu.balanceOf(owner.address)) + 'dcu');
+        console.log('owner: ' + toDecimal(await hedgeOptions.balanceOf(bot.index, owner.address)) + 'bot');
 
-        await fortEuropeanOption.open(eth.address, '2750000000', false, BLOCK, toBigInt(1000), {
+        await hedgeOptions.open(eth.address, '2750000000', false, BLOCK, toBigInt(1000), {
             value: toBigInt(0.01)
         });
-        const bot2 = await fortEuropeanOption.getOptionInfo(eth.address, '2750000000', false, BLOCK);
+        const bot2 = await hedgeOptions.getOptionInfo(eth.address, '2750000000', false, BLOCK);
         console.log('bot2: ' + bot2.index);
-        console.log('owner: ' + toDecimal(await fort.balanceOf(owner.address)) + 'fort');
-        console.log('owner: ' + toDecimal(await fortEuropeanOption.balanceOf(bot2.index, owner.address)) + '[bot2]');
+        console.log('owner: ' + toDecimal(await dcu.balanceOf(owner.address)) + 'dcu');
+        console.log('owner: ' + toDecimal(await hedgeOptions.balanceOf(bot2.index, owner.address)) + '[bot2]');
 
         // for(var i = 0; i < 100; ++i) {
         //     //await ethers.provider.sendTransaction({ from: owner.address, to: owner.address, value: 0});
-        //     await fort.transfer(owner.address, 0);
+        //     await dcu.transfer(owner.address, 0);
         // }
-        await fortEuropeanOption.exercise(bot.index, await fortEuropeanOption.balanceOf(bot.index, owner.address), {
+        await hedgeOptions.exercise(bot.index, await hedgeOptions.balanceOf(bot.index, owner.address), {
             value: toBigInt(0.01)
         });
 
-        console.log('owner: ' + toDecimal(await fort.balanceOf(owner.address)) + 'fort');
-        console.log('owner: ' + toDecimal(await fortEuropeanOption.balanceOf(bot.index, owner.address)) + 'bot');
+        console.log('owner: ' + toDecimal(await dcu.balanceOf(owner.address)) + 'dcu');
+        console.log('owner: ' + toDecimal(await hedgeOptions.balanceOf(bot.index, owner.address)) + 'bot');
 
         console.log('------------------------------');
 
-        //await fortLever.create(eth.address, 2, true);
-        await fortLever.buy(eth.address, 2, true, toBigInt(100), {
+        //await hedgeFutures.create(eth.address, 2, true);
+        await hedgeFutures.buy(eth.address, 2, true, toBigInt(100), {
             value: toBigInt(0.01)
         });
 
@@ -63,24 +62,23 @@ describe('FortEuropeanOption', function() {
             return Math.floor(usdtAmount * 10 ** decimals / tokenAmount);
         };
 
-        //const FortLeverToken = await ethers.getContractFactory('FortLeverToken');
-        const lot = await fortLever.getLeverInfo(eth.address, 2, true);
+        const lot = await hedgeFutures.getLeverInfo(eth.address, 2, true);
 
-        console.log('owner: ' + toDecimal(await fort.balanceOf(owner.address)) + 'fort');
+        console.log('owner: ' + toDecimal(await dcu.balanceOf(owner.address)) + 'dcu');
         let oraclePrice = await queryPrice(eth.address);
-        console.log('owner: ' + toDecimal(await fortLever.balanceOf(lot.index, oraclePrice, owner.address)) + 'lot');
+        console.log('owner: ' + toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + 'lot');
 
         for(var i = 0; i < 100; ++i) {
             //await ethers.provider.sendTransaction({ from: owner.address, to: owner.address, value: 0});
-            await fort.transfer(owner.address, 0);
+            await dcu.transfer(owner.address, 0);
         }
-        await fortLever.sell(lot.index, toBigInt(1), {
+        await hedgeFutures.sell(lot.index, toBigInt(1), {
             value: toBigInt(0.01)
         });
-        console.log('owner: ' + toDecimal(await fort.balanceOf(owner.address)) + 'fort');
-        console.log('owner: ' + toDecimal(await fortLever.balanceOf(lot.index, oraclePrice, owner.address)) + 'lot');
+        console.log('owner: ' + toDecimal(await dcu.balanceOf(owner.address)) + 'dcu');
+        console.log('owner: ' + toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + 'lot');
 
-        // await fortEuropeanOption.open(usdt.address, '2450000000', true, 500, toBigInt(1), {
+        // await hedgeOptions.open(usdt.address, '2450000000', true, 500, toBigInt(1), {
         //     value: toBigInt(0.01)
         // });
 
