@@ -66,37 +66,37 @@ describe('HedgeOptions', function() {
         let futures = [1, 2, 5];
         let oriens = [true, false];
         if (true) {
-            console.log('2. getLeverCount');
-            let tokenCount = await hedgeFutures.getLeverCount();
+            console.log('2. getFutureCount');
+            let tokenCount = await hedgeFutures.getFutureCount();
             console.log('tokenCount=' + tokenCount);
             let l = await hedgeFutures.list(0, tokenCount, 0);
             for (var i = 0; i < l.length; ++i) {
                 // let addr = l[i];
-                // let ti = await fot.getLeverInfo();
+                // let ti = await fot.getFutureInfo();
                 // console.log({
                 //     name: await fot.name(),
                 //     tokenAddress: ti.tokenAddress.toString(),
                 //     price: ti.price.toString(),
                 //     blockNumber: ti.blockNumber.toString()
                 // })
-                let li = l[i];
+                let fi = l[i];
                 console.log({
-                    index: li.index.toString(),
-                    tokenAddress: li.tokenAddress,
-                    lever: li.lever.toString(),
-                    orientation: li.orientation
+                    index: fi.index.toString(),
+                    tokenAddress: fi.tokenAddress,
+                    lever: fi.lever.toString(),
+                    orientation: fi.orientation
                 });
             }
 
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
-                        let li = await hedgeFutures.getLeverInfo(addrs[addr], futures[lever], oriens[orien]);
+                        let fi = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
                         console.log({
-                            index: li.index.toString(),
-                            tokenAddress: li.tokenAddress,
-                            lever: li.lever.toString(),
-                            orientation: li.orientation
+                            index: fi.index.toString(),
+                            tokenAddress: fi.tokenAddress,
+                            lever: fi.lever.toString(),
+                            orientation: fi.orientation
                         });
                     }
                 }
@@ -107,16 +107,16 @@ describe('HedgeOptions', function() {
             console.log('3. create');
             let receipt = await hedgeFutures.create(hbtc.address, 3, false);
             await showReceipt(receipt);
-            let tokenCount = await hedgeFutures.getLeverCount();
+            let tokenCount = await hedgeFutures.getFutureCount();
             console.log('tokenCount=' + tokenCount);
             let l = await hedgeFutures.list(0, tokenCount, 0);
             for (var i = 0; i < l.length; ++i) {
-                let li = l[i];
+                let fi = l[i];
                 console.log({
-                    index: li.index.toString(),
-                    tokenAddress: li.tokenAddress,
-                    lever: li.lever.toString(),
-                    orientation: li.orientation
+                    index: fi.index.toString(),
+                    tokenAddress: fi.tokenAddress,
+                    lever: fi.lever.toString(),
+                    orientation: fi.orientation
                 });
             }
         }
@@ -138,7 +138,7 @@ describe('HedgeOptions', function() {
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
-                        let lot = await hedgeFutures.getLeverInfo(addrs[addr], futures[lever], oriens[orien]);
+                        let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
                         let receipt = await hedgeFutures.buyDirect(lot.index, toBigInt(100), {
                             value: addrs[addr] == eth.address ? toBigInt(0.01) : toBigInt(0.02)
                         });
@@ -159,7 +159,7 @@ describe('HedgeOptions', function() {
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
-                        let lot = await hedgeFutures.getLeverInfo(addrs[addr], futures[lever], oriens[orien]);
+                        let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
                         let oraclePrice = queryPrice(addrs[addr]);
                         console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
@@ -179,7 +179,7 @@ describe('HedgeOptions', function() {
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
-                        let lot = await hedgeFutures.getLeverInfo(addrs[addr], futures[lever], oriens[orien]);
+                        let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
                         let oraclePrice = queryPrice(addrs[addr]);
                         console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
@@ -203,7 +203,7 @@ describe('HedgeOptions', function() {
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
-                        let lot = await hedgeFutures.getLeverInfo(addrs[addr], futures[lever], oriens[orien]);
+                        let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
 
                         await hedgeFutures.settle(lot.index, [owner.address], { value: toBigInt(0.02) });
@@ -229,7 +229,7 @@ describe('HedgeOptions', function() {
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
-                        let lot = await hedgeFutures.getLeverInfo(addrs[addr], futures[lever], oriens[orien]);
+                        let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
                         // await lot.update(owner.address, { value: toBigInt(0.02) });
                         let oraclePrice = queryPrice(addrs[addr]);
                         console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
@@ -266,7 +266,7 @@ describe('HedgeOptions', function() {
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
-                        let lot = await hedgeFutures.getLeverInfo(addrs[addr], futures[lever], oriens[orien]);
+                        let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
                         let before = await dcu.balanceOf(owner.address); 
                         console.log(toDecimal(await dcu.balanceOf(owner.address)) + 'dcu');
                         // await hedgeFutures.updateLeverInfo([lotAddress], owner.address, {
@@ -295,7 +295,7 @@ describe('HedgeOptions', function() {
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
-                        let lot = await hedgeFutures.getLeverInfo(addrs[addr], futures[lever], oriens[orien]);
+                        let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
                         let oraclePrice = queryPrice(addrs[addr]);
                         console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');

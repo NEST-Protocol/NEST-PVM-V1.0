@@ -34,14 +34,14 @@ describe('HedgeOptions', function() {
 
         const leverTest = async function(tokenAddress, lever, orientation, amount, fee) {
             await hedgeFutures.buy(tokenAddress, lever, orientation, amount, { value: fee });
-            let lot = await hedgeFutures.getLeverInfo(tokenAddress, lever, orientation);
+            let lot = await hedgeFutures.getFutureInfo(tokenAddress, lever, orientation);
             let oraclePrice = await queryPrice(tokenAddress);
             console.log('owner: ' + toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '(lot)');
         } 
 
         const show = async function(tokenAddress, lever, orientation, amount, fee) {
             //await hedgeFutures.buy(tokenAddress, lever, orientation, amount, { value: fee });
-            let lot = await hedgeFutures.getLeverInfo(tokenAddress, lever, orientation);
+            let lot = await hedgeFutures.getFutureInfo(tokenAddress, lever, orientation);
             //await lot.update(owner.address, { value: fee });
             let oraclePrice = await queryPrice(tokenAddress);
             console.log('owner: ' + toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '(lot)');

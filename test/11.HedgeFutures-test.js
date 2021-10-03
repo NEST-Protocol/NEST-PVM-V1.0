@@ -65,31 +65,31 @@ describe('HedgeOptions', function() {
         let futures = [1, 2, 5];
         let oriens = [true, false];
         if (true) {
-            console.log('2. getLeverCount');
-            let tokenCount = await hedgeFutures.getLeverCount();
+            console.log('2. getFutureCount');
+            let tokenCount = await hedgeFutures.getFutureCount();
             console.log('tokenCount=' + tokenCount);
             let l = await hedgeFutures.list(0, tokenCount, 0);
             for (var i = 0; i < l.length; ++i) {
                 //let addr = l[i];
-                //let ti = await fot.getLeverInfo();
-                let li = l[i];
+                //let ti = await fot.getFutureInfo();
+                let fi = l[i];
                 console.log({
                     //name: await fot.name(),
-                    // tokenAddress: li.tokenAddress.toString(),
-                    // price: li.price.toString(),
-                    // blockNumber: li.blockNumber.toString()
+                    // tokenAddress: fi.tokenAddress.toString(),
+                    // price: fi.price.toString(),
+                    // blockNumber: fi.blockNumber.toString()
 
-                    index: li.index.toString(),
-                    tokenAddress: li.tokenAddress.toString(),
-                    lever: li.lever.toString(),
-                    orientation: li.orientation.toString()
+                    index: fi.index.toString(),
+                    tokenAddress: fi.tokenAddress.toString(),
+                    lever: fi.lever.toString(),
+                    orientation: fi.orientation.toString()
                 })
             }
 
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
-                        let lot = await hedgeFutures.getLeverInfo(addrs[addr], futures[lever], oriens[orien]);
+                        let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
                         console.log(await lot.index);
                     }
                 }
@@ -100,12 +100,12 @@ describe('HedgeOptions', function() {
             console.log('3. create');
             let receipt = await hedgeFutures.create(hbtc.address, 3, false);
             await showReceipt(receipt);
-            let tokenCount = await hedgeFutures.getLeverCount();
+            let tokenCount = await hedgeFutures.getFutureCount();
             console.log('tokenCount=' + tokenCount);
             let l = await hedgeFutures.list(0, tokenCount, 0);
             for (var i = 0; i < l.length; ++i) {
                 // let addr = l[i];
-                // let ti = await fot.getLeverInfo();
+                // let ti = await fot.getFutureInfo();
                 // console.log({
                 //     name: await fot.name(),
                 //     tokenAddress: ti.tokenAddress.toString(),
@@ -113,12 +113,12 @@ describe('HedgeOptions', function() {
                 //     blockNumber: ti.blockNumber.toString()
                 // })
 
-                let li = l[i];
+                let fi = l[i];
                 console.log({
-                    index: li.index.toString(),
-                    tokenAddress: li.tokenAddress.toString(),
-                    lever: li.lever.toString(),
-                    orientation: li.orientation.toString()
+                    index: fi.index.toString(),
+                    tokenAddress: fi.tokenAddress.toString(),
+                    lever: fi.lever.toString(),
+                    orientation: fi.orientation.toString()
                 })
             }
         }
@@ -165,7 +165,7 @@ describe('HedgeOptions', function() {
                             value: addrs[addr] == eth.address ? toBigInt(0.01) : toBigInt(0.02)
                         });
                         await showReceipt(receipt);
-                        let lot = await hedgeFutures.getLeverInfo(addrs[addr], futures[lever], oriens[orien]);
+                        let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
 
                         let oraclePrice = await queryPrice(addrs[addr], oriens[orien]);
                         console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
@@ -182,7 +182,7 @@ describe('HedgeOptions', function() {
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
-                        let lot = await hedgeFutures.getLeverInfo(addrs[addr], futures[lever], oriens[orien]);
+                        let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
 
                         let oraclePrice = await queryPrice(addrs[addr], oriens[orien]);
@@ -208,7 +208,7 @@ describe('HedgeOptions', function() {
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
-                        let lot = await hedgeFutures.getLeverInfo(addrs[addr], futures[lever], oriens[orien]);
+                        let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
                         let oraclePrice = await queryPrice(addrs[addr], oriens[orien]);
                         console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
@@ -232,7 +232,7 @@ describe('HedgeOptions', function() {
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
-                        let lot = await hedgeFutures.getLeverInfo(addrs[addr], futures[lever], oriens[orien]);
+                        let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
                         let oraclePrice = await queryPrice(addrs[addr], oriens[orien]);
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
 
@@ -258,7 +258,7 @@ describe('HedgeOptions', function() {
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
-                        let lot = await hedgeFutures.getLeverInfo(addrs[addr], futures[lever], oriens[orien]);
+                        let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
                         let oraclePrice = await queryPrice(addrs[addr], oriens[orien]);
                         console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
@@ -285,7 +285,7 @@ describe('HedgeOptions', function() {
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
-                        let lot = await hedgeFutures.getLeverInfo(addrs[addr], futures[lever], oriens[orien]);
+                        let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
                         let oraclePrice = await queryPrice(addrs[addr], oriens[orien]);
                         console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');

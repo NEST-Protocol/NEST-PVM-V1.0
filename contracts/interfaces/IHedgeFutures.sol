@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.6;
 
-/// @dev 定义杠杆币交易接口
+/// @dev 定义永续合约交易接口
 interface IHedgeFutures {
     
     struct FutureView {
@@ -18,11 +18,11 @@ interface IHedgeFutures {
         uint baseBlock;
     }
 
-    /// @dev 新杠杆币事件
-    /// @param tokenAddress 杠杆币的标的地产代币地址，0表示eth
+    /// @dev 新永续合约事件
+    /// @param tokenAddress 永续合约的标的地产代币地址，0表示eth
     /// @param lever 杠杆倍数
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
-    /// @param index 杠杆币编号
+    /// @param index 永续合约编号
     event New(
         address tokenAddress, 
         uint lever,
@@ -30,8 +30,8 @@ interface IHedgeFutures {
         uint index
     );
 
-    /// @dev 买入杠杆币事件
-    /// @param index 杠杆币编号
+    /// @dev 买入永续合约事件
+    /// @param index 永续合约编号
     /// @param dcuAmount 支付的dcu数量
     event Buy(
         uint index,
@@ -39,8 +39,8 @@ interface IHedgeFutures {
         address owner
     );
 
-    /// @dev 卖出杠杆币事件
-    /// @param index 杠杆币编号
+    /// @dev 卖出永续合约事件
+    /// @param index 永续合约编号
     /// @param amount 卖出数量
     /// @param owner 所有者
     /// @param value 获得的dcu数量
@@ -52,7 +52,7 @@ interface IHedgeFutures {
     );
 
     /// @dev 清算事件
-    /// @param index 杠杆币编号
+    /// @param index 永续合约编号
     /// @param addr 清算目标账号数组
     /// @param sender 清算发起账号
     /// @param reward 清算获得的dcu数量
@@ -82,15 +82,15 @@ interface IHedgeFutures {
         address owner
     ) external view returns (FutureView[] memory futureArray);
 
-    /// @dev 列出历史杠杆币地址
+    /// @dev 列出历史永续合约地址
     /// @param offset Skip previous (offset) records
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
     /// @return futureArray List of price sheets
     function list(uint offset, uint count, uint order) external view returns (FutureView[] memory futureArray);
 
-    /// @dev 创建杠杆币
-    /// @param tokenAddress 杠杆币的标的地产代币地址，0表示eth
+    /// @dev 创建永续合约
+    /// @param tokenAddress 永续合约的标的地产代币地址，0表示eth
     /// @param lever 杠杆倍数
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     function create(
@@ -99,23 +99,23 @@ interface IHedgeFutures {
         bool orientation
     ) external;
 
-    /// @dev 获取已经开通的杠杆币数量
-    /// @return 已经开通的杠杆币数量
-    function getLeverCount() external view returns (uint);
+    /// @dev 获取已经开通的永续合约数量
+    /// @return 已经开通的永续合约数量
+    function getFutureCount() external view returns (uint);
 
-    /// @dev 获取杠杆币信息
-    /// @param tokenAddress 杠杆币的标的地产代币地址，0表示eth
+    /// @dev 获取永续合约信息
+    /// @param tokenAddress 永续合约的标的地产代币地址，0表示eth
     /// @param lever 杠杆倍数
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
-    /// @return 杠杆币地址
-    function getLeverInfo(
+    /// @return 永续合约地址
+    function getFutureInfo(
         address tokenAddress, 
         uint lever,
         bool orientation
     ) external view returns (FutureView memory);
 
-    /// @dev 买入杠杆币
-    /// @param tokenAddress 杠杆币的标的地产代币地址，0表示eth
+    /// @dev 买入永续合约
+    /// @param tokenAddress 永续合约的标的地产代币地址，0表示eth
     /// @param lever 杠杆倍数
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     /// @param dcuAmount 支付的dcu数量
@@ -126,16 +126,16 @@ interface IHedgeFutures {
         uint dcuAmount
     ) external payable;
 
-    /// @dev 买入杠杆币
-    /// @param index 杠杆币编号
+    /// @dev 买入永续合约
+    /// @param index 永续合约编号
     /// @param dcuAmount 支付的dcu数量
     function buyDirect(
         uint index,
         uint dcuAmount
     ) external payable;
 
-    /// @dev 卖出杠杆币
-    /// @param index 杠杆币编号
+    /// @dev 卖出永续合约
+    /// @param index 永续合约编号
     /// @param amount 卖出数量
     function sell(
         uint index,
@@ -143,7 +143,7 @@ interface IHedgeFutures {
     ) external payable;
 
     /// @dev 清算
-    /// @param index 杠杆币编号
+    /// @param index 永续合约编号
     /// @param addresses 清算目标账号数组
     function settle(
         uint index,

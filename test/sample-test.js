@@ -62,7 +62,7 @@ describe('HedgeOptions', function() {
             return Math.floor(usdtAmount * 10 ** decimals / tokenAmount);
         };
 
-        const lot = await hedgeFutures.getLeverInfo(eth.address, 2, true);
+        const lot = await hedgeFutures.getFutureInfo(eth.address, 2, true);
 
         console.log('owner: ' + toDecimal(await dcu.balanceOf(owner.address)) + 'dcu');
         let oraclePrice = await queryPrice(eth.address);

@@ -1,14 +1,14 @@
 # IHedgeOptions
 
 ## 1. Interface Description
-    定义杠杆币交易接口
+    定义永续合约交易接口
 
 ## 2. Method Description
 
-### 2.1. 列出历史杠杆币地址
+### 2.1. 列出历史永续合约地址
 
 ```javascript
-    /// @dev 列出历史杠杆币地址
+    /// @dev 列出历史永续合约地址
     /// @param offset Skip previous (offset) records
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
@@ -16,11 +16,11 @@
     function list(uint offset, uint count, uint order) external view returns (FutureView[] memory futureArray);
 ```
 
-### 2.2. 创建杠杆币
+### 2.2. 创建永续合约
 
 ```javascript
-    /// @dev 创建杠杆币
-    /// @param tokenAddress 杠杆币的标的地产代币地址，0表示eth
+    /// @dev 创建永续合约
+    /// @param tokenAddress 永续合约的标的地产代币地址，0表示eth
     /// @param lever 杠杆倍数
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     function create(
@@ -31,26 +31,26 @@
 ```
 Note: This method will triggers the New event, See also 3.1.
 
-### 2.3. 获取杠杆币信息
+### 2.3. 获取永续合约信息
 
 ```javascript
-    /// @dev 获取杠杆币信息
-    /// @param tokenAddress 杠杆币的标的地产代币地址，0表示eth
+    /// @dev 获取永续合约信息
+    /// @param tokenAddress 永续合约的标的地产代币地址，0表示eth
     /// @param lever 杠杆倍数
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
-    /// @return 杠杆币地址
-    function getLeverInfo(
+    /// @return 永续合约地址
+    function getFutureInfo(
         address tokenAddress, 
         uint lever,
         bool orientation
     ) external view returns (FutureView memory);
 ```
 
-### 2.4. 买入杠杆币
+### 2.4. 买入永续合约
 
 ```javascript
-    /// @dev 买入杠杆币
-    /// @param tokenAddress 杠杆币的标的地产代币地址，0表示eth
+    /// @dev 买入永续合约
+    /// @param tokenAddress 永续合约的标的地产代币地址，0表示eth
     /// @param lever 杠杆倍数
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     /// @param dcuAmount 支付的dcu数量
@@ -63,11 +63,11 @@ Note: This method will triggers the New event, See also 3.1.
 ```
 Note: This method will triggers the Buy event, See also 3.2.
 
-### 2.5. 买入杠杆币
+### 2.5. 买入永续合约
 
 ```javascript
-    /// @dev 买入杠杆币
-    /// @param index 杠杆币编号
+    /// @dev 买入永续合约
+    /// @param index 永续合约编号
     /// @param dcuAmount 支付的dcu数量
     function buyDirect(
         uint index,
@@ -75,11 +75,11 @@ Note: This method will triggers the Buy event, See also 3.2.
     ) external payable;
 ```
 
-### 2.6. 卖出杠杆币
+### 2.6. 卖出永续合约
 
 ```javascript
-    /// @dev 卖出杠杆币
-    /// @param index 杠杆币编号
+    /// @dev 卖出永续合约
+    /// @param index 永续合约编号
     /// @param amount 卖出数量
     function sell(
         uint index,
@@ -92,7 +92,7 @@ Note: This method will triggers the Sell event, See also 3.3.
 
 ```javascript
     /// @dev 清算
-    /// @param index 杠杆币编号
+    /// @param index 永续合约编号
     /// @param addresses 清算目标账号数组
     function settle(
         uint index,
@@ -128,24 +128,24 @@ Note: This method may triggers the Settle event, See also 3.4.
     ) external view returns (FutureView[] memory futureArray);
 ```
 
-### 2.10. 获取已经开通的杠杆币数量
+### 2.10. 获取已经开通的永续合约数量
 
 ```javascript
-    /// @dev 获取已经开通的杠杆币数量
-    /// @return 已经开通的杠杆币数量
-    function getLeverCount() external view returns (uint);
+    /// @dev 获取已经开通的永续合约数量
+    /// @return 已经开通的永续合约数量
+    function getFutureCount() external view returns (uint);
 ```
 
 ## 3. Event Description
 
-### 3.1. 新杠杆币事件
+### 3.1. 新永续合约事件
 
 ```javascript
-    /// @dev 新杠杆币事件
-    /// @param tokenAddress 杠杆币的标的地产代币地址，0表示eth
+    /// @dev 新永续合约事件
+    /// @param tokenAddress 永续合约的标的地产代币地址，0表示eth
     /// @param lever 杠杆倍数
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
-    /// @param index 杠杆币编号
+    /// @param index 永续合约编号
     event New(
         address tokenAddress, 
         uint lever,
@@ -154,11 +154,11 @@ Note: This method may triggers the Settle event, See also 3.4.
     );
 ```
 
-### 3.2. 买入杠杆币事件
+### 3.2. 买入永续合约事件
 
 ```javascript
-    /// @dev 买入杠杆币事件
-    /// @param index 杠杆币编号
+    /// @dev 买入永续合约事件
+    /// @param index 永续合约编号
     /// @param dcuAmount 支付的dcu数量
     event Buy(
         uint index,
@@ -167,11 +167,11 @@ Note: This method may triggers the Settle event, See also 3.4.
     );
 ```
 
-### 3.3. 卖出杠杆币事件
+### 3.3. 卖出永续合约事件
 
 ```javascript
-    /// @dev 卖出杠杆币事件
-    /// @param index 杠杆币编号
+    /// @dev 卖出永续合约事件
+    /// @param index 永续合约编号
     /// @param amount 卖出数量
     /// @param owner 所有者
     /// @param value 获得的dcu数量
@@ -187,7 +187,7 @@ Note: This method may triggers the Settle event, See also 3.4.
 
 ```javascript
     /// @dev 清算事件
-    /// @param index 杠杆币编号
+    /// @param index 永续合约编号
     /// @param addr 清算目标账号数组
     /// @param sender 清算发起账号
     /// @param reward 清算获得的dcu数量
