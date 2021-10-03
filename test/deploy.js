@@ -15,6 +15,8 @@ describe('HedgeOptions', function() {
         const ERC20 = await ethers.getContractFactory('ERC20_LIB');
         
         await hedgeGovernance.setGovernance('0x688f016CeDD62AD1d8dFA4aBcf3762ab29294489', 1);
+
+        return;
         // 1. 设置挖矿通道参数
         // @FLY @依维柯大金杯～ 第一期 4000万dcu
         // 锁仓1个月（或者2周）：nest 150万 nhbtc 50w  cofi 50w pusd 50w  peth 50w  for 50w   3000w用于nest 1年期锁仓

@@ -27,6 +27,9 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         mapping(address=>uint) balances;
     }
 
+    // 区块时间
+    uint constant BLOCK_TIME = 14 * 48;
+
     // 64位二进制精度的1
     int128 constant ONE = 0x10000000000000000;
 
@@ -268,7 +271,7 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
 
         // 3. 计算权利金（需要的dcu数量）
         // 按照平均每14秒出一个块计算
-        uint T = (exerciseBlock - block.number) * 14;
+        uint T = (exerciseBlock - block.number) * BLOCK_TIME;
         uint v;
         if (orientation) {
             v = _calcVc(config, oraclePrice, T, strikePrice);
