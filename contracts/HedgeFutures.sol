@@ -43,7 +43,7 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
     uint constant MIU = 467938556917;
     
     // 最小余额数量，余额小于此值会被清算
-    uint constant MIN_VALUE = 5 ether;
+    uint constant MIN_VALUE = 10 ether;
 
     // 买入永续合约和其他交易之间最小的间隔区块数
     uint constant MIN_PERIOD = 100;
