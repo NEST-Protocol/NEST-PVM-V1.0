@@ -365,7 +365,7 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
         }
         
         // 更新接收账号信息
-        account.balance += _toUInt128(balance + dcuAmount);
+        account.balance = _toUInt128(balance + dcuAmount);
         account.basePrice = _encodeFloat(newPrice);
         account.baseBlock = uint32(block.number);
         
