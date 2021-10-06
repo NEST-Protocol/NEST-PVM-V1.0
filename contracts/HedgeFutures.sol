@@ -48,6 +48,7 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
     // 买入永续合约和其他交易之间最小的间隔区块数
     uint constant MIN_PERIOD = 100;
 
+    // TODO: 测试时，时间加速48倍
     // 区块时间
     uint constant BLOCK_TIME = 14 * 48;
 
@@ -462,6 +463,8 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
     /// @param bn The block number when (ETH, TOKEN) price takes into effective
     /// @return k The K value
     function _calcK(uint sigmaSQ, uint bn) private view returns (uint k) {
+        // TODO: 测试时用固定的波动率: 0.00021368
+        sigmaSQ = 45659142400;
         k = 0.002 ether + (_sqrt((block.number - bn) * BLOCK_TIME * sigmaSQ * 1 ether) >> 1);
     }
 

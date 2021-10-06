@@ -27,6 +27,7 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         mapping(address=>uint) balances;
     }
 
+    // TODO: 测试时，时间加速48倍
     // 区块时间
     uint constant BLOCK_TIME = 14 * 48;
 

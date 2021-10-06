@@ -14,7 +14,10 @@ describe('HedgeOptions', function() {
 
         const ERC20 = await ethers.getContractFactory('ERC20_LIB');
         
-        await hedgeGovernance.setGovernance('0x688f016CeDD62AD1d8dFA4aBcf3762ab29294489', 1);
+        const HedgeFutures = await ethers.getContractFactory('HedgeFutures');
+        const newHedgeFutures = await HedgeFutures.deploy();
+        console.log('newHedgeFutures: ' + newHedgeFutures.address);
+        //await hedgeGovernance.setGovernance('0x688f016CeDD62AD1d8dFA4aBcf3762ab29294489', 1);
 
         return;
         // 1. 设置挖矿通道参数
