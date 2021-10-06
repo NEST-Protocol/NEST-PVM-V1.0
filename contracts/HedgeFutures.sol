@@ -392,7 +392,7 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
         
         // 将token价格转化为以usdt为单位计算的价格
         oraclePrice = prices[1];
-        uint k = _calcRevisedK(triggeredSigmaSQ, prices[3], prices[2], oraclePrice, prices[0]);
+        uint k = calcRevisedK(triggeredSigmaSQ, prices[3], prices[2], oraclePrice, prices[0]);
 
         // 看涨的时候，初始价格乘以(1+k)，卖出价格除以(1+k)
         // 看跌的时候，初始价格除以(1+k)，卖出价格乘以(1+k)
@@ -410,7 +410,7 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
     /// @param bn0 Block number of the last price
     /// @param p Latest price (number of tokens equivalent to 1 ETH)
     /// @param bn The block number when (ETH, TOKEN) price takes into effective
-    function _calcRevisedK(uint sigmaSQ, uint p0, uint bn0, uint p, uint bn) private view returns (uint k) {
+    function calcRevisedK(uint sigmaSQ, uint p0, uint bn0, uint p, uint bn) public view override returns (uint k) {
         k = _calcK(_calcRevisedSigmaSQ(sigmaSQ, p0, bn0, p, bn), bn);
     }
 

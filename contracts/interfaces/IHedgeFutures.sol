@@ -129,24 +129,23 @@ interface IHedgeFutures {
     /// @dev 买入永续合约
     /// @param index 永续合约编号
     /// @param dcuAmount 支付的dcu数量
-    function buyDirect(
-        uint index,
-        uint dcuAmount
-    ) external payable;
+    function buyDirect(uint index, uint dcuAmount) external payable;
 
     /// @dev 卖出永续合约
     /// @param index 永续合约编号
     /// @param amount 卖出数量
-    function sell(
-        uint index,
-        uint amount
-    ) external payable;
+    function sell(uint index, uint amount) external payable;
 
     /// @dev 清算
     /// @param index 永续合约编号
     /// @param addresses 清算目标账号数组
-    function settle(
-        uint index,
-        address[] calldata addresses
-    ) external payable;
+    function settle(uint index, address[] calldata addresses) external payable;
+
+    /// @dev K value is calculated by revised volatility
+    /// @param sigmaSQ The square of the volatility (18 decimal places).
+    /// @param p0 Last price (number of tokens equivalent to 1 ETH)
+    /// @param bn0 Block number of the last price
+    /// @param p Latest price (number of tokens equivalent to 1 ETH)
+    /// @param bn The block number when (ETH, TOKEN) price takes into effective
+    function calcRevisedK(uint sigmaSQ, uint p0, uint bn0, uint p, uint bn) external view returns (uint k);
 }

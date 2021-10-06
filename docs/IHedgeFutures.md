@@ -136,6 +136,18 @@ Note: This method may triggers the Settle event, See also 3.4.
     function getFutureCount() external view returns (uint);
 ```
 
+### 2.11. K value is calculated by revised volatility
+
+```javascript
+    /// @dev K value is calculated by revised volatility
+    /// @param sigmaSQ The square of the volatility (18 decimal places).
+    /// @param p0 Last price (number of tokens equivalent to 1 ETH)
+    /// @param bn0 Block number of the last price
+    /// @param p Latest price (number of tokens equivalent to 1 ETH)
+    /// @param bn The block number when (ETH, TOKEN) price takes into effective
+    function calcRevisedK(uint sigmaSQ, uint p0, uint bn0, uint p, uint bn) external view returns (uint k);
+```
+
 ## 3. Event Description
 
 ### 3.1. 新永续合约事件
