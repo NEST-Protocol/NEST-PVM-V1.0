@@ -307,7 +307,9 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
                 );
 
                 // 杠杆倍数大于1，并且余额小于最小额度时，可以清算
-                if (balance < MIN_VALUE) {
+                // 改成当账户净值低于Max(保证金 * 2%*g, 10) 时，清算
+                uint minValue = uint(account.balance) * lever / 50;
+                if (balance < (minValue < MIN_VALUE ? MIN_VALUE : minValue)) {
                     
                     accounts[acc] = Account(uint128(0), uint64(0), uint32(0));
 

@@ -59,7 +59,7 @@ module.exports = {
     },
     hardhat: {
       gas: 6000000,
-      gasPrice: 0
+      gasPrice: 1e9
     }
   },
   mocha: {
