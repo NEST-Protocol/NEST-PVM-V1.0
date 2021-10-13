@@ -8,6 +8,7 @@ import "./libs/TransferHelper.sol";
 import "./libs/ABDKMath64x64.sol";
 
 import "./interfaces/IHedgeFutures.sol";
+import "./interfaces/INestPriceFacade.sol";
 
 import "./HedgeFrequentlyUsed.sol";
 import "./DCU.sol";

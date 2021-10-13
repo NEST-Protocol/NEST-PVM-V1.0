@@ -4,8 +4,6 @@ pragma solidity ^0.8.6;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import "./interfaces/INestPriceFacade.sol";
-
 import "./HedgeBase.sol";
 
 /// @dev DCU代币
@@ -29,6 +27,9 @@ contract DCU is HedgeBase, ERC20("Decentralized Currency Unit", "DCU") {
         _minters[account] = flag;
     }
 
+    /// @dev 检查挖矿权限
+    /// @param account 目标账号
+    /// @return flag 挖矿权限标记，只有1表示可以挖矿
     function checkMinter(address account) external view returns (uint) {
         return _minters[account];
     }

@@ -2,6 +2,19 @@
 
 ## Contract Addresses
 
+### 2021-10-13@mainnet
+| Name | Interfaces | rinkeby |
+| ---- | ---- | ---- |
+| nest | IERC20 | 0x04abEdA201850aC0124161F037Efd70c74ddC74C |
+| nhbtc | IERC20 | 0x1F832091fAf289Ed4f50FE7418cFbD2611225d46 |
+| cofi | IERC20 | 0x1a23a6BfBAdB59fa563008c0fB7cf96dfCF34Ea1 |
+| pusd | IERC20 | 0xCCEcC702Ec67309Bc3DDAF6a42E9e5a6b8Da58f0 |
+| fortube | IERC20 | 0x1FCdcE58959f536621d76f5b7FfB955baa5A672F |
+| dcu | IERC20 | 0xf56c6eCE0C0d6Fbb9A53282C0DF71dBFaFA933eF |
+| nestPriceFacade | INestPriceFacade, INestQuery | 0xB5D2890c061c321A5B6A4a4254bb1522425BAF0A |
+| hedgeGovernance | IHedgeGovernance | 0xfD6dF48df7E0989355B23f200d0D454b9101d17D |
+| hedgeVaultForStaking | IHedgeVaultForStaking | 0xE3940A3E94bca34B9175d156a5E9C5728dFE922F |
+
 ### 2021-10-04@rinkeby
 | Name | Interfaces | rinkeby |
 | ---- | ---- | ---- |

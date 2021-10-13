@@ -19,8 +19,9 @@ exports.deploy = async function() {
 
     console.log('** 开始部署合约 part1-mainnet@20211013.js **');
     
-    const dcu = await DCU.deploy();
-    //const dcu = await DCU.attach('0x0000000000000000000000000000000000000000');
+    // dcu: 0xf56c6eCE0C0d6Fbb9A53282C0DF71dBFaFA933eF
+    //const dcu = await DCU.deploy({ nonce: 0 });
+    const dcu = await DCU.attach('0xf56c6eCE0C0d6Fbb9A53282C0DF71dBFaFA933eF');
     console.log('dcu: ' + dcu.address);
 
     console.log('---------- OK ----------');
