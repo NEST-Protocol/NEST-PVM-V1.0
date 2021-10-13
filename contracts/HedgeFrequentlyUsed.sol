@@ -27,12 +27,6 @@ contract HedgeFrequentlyUsed is HedgeBase {
     uint constant USDT_BASE = 1000000;
 
     // Genesis block number of dcu
-    // DCU contract is created at block height TODO: 11040156. However, because the mining algorithm of Hedge v1.0
-    // is different from that at present, a new mining algorithm is adopted from Hedge v2.1. The new algorithm
-    // includes the attenuation logic according to the block. Therefore, it is necessary to trace the block
-    // where the dcu begins to decay. According to the circulation when Hedge v1.0 is online, the new mining
-    // algorithm is used to deduce and convert the dcu, and the new algorithm is used to mine the Hedge v2.1
-    // on-line flow, the actual block is TODO: 11040688
     uint constant DCU_GENESIS_BLOCK = 0;
 
     /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 

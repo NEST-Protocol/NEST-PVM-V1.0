@@ -5,7 +5,6 @@ pragma solidity ^0.8.6;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "./libs/TransferHelper.sol";
-import "./libs/StringHelper.sol";
 import "./libs/ABDKMath64x64.sol";
 
 import "./interfaces/IHedgeOptions.sol";
@@ -27,9 +26,8 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         mapping(address=>uint) balances;
     }
 
-    // TODO: 测试时，时间加速48倍
     // 区块时间
-    uint constant BLOCK_TIME = 14 * 48;
+    uint constant BLOCK_TIME = 14;
 
     // 64位二进制精度的1
     int128 constant ONE = 0x10000000000000000;
@@ -305,8 +303,7 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         bool orientation = option.orientation;
         uint exerciseBlock = uint(option.exerciseBlock);
 
-        // TODO: 测试期间不检查
-        //require(block.number >= endblock, "FEO:at maturity");
+        require(block.number >= exerciseBlock, "FEO:at maturity");
 
         // 2. 销毁期权代币
         option.balances[msg.sender] -= amount;
