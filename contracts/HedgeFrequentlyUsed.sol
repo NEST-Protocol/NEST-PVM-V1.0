@@ -17,6 +17,7 @@ contract HedgeFrequentlyUsed is HedgeBase {
     address DCU_TOKEN_ADDRESS;
 
     // Address of NestPriceFacade contract
+    //address constant NEST_PRICE_FACADE_ADDRESS = 0xB5D2890c061c321A5B6A4a4254bb1522425BAF0A;
     address NEST_PRICE_FACADE_ADDRESS;
     
     // USDT代币地址
@@ -26,9 +27,7 @@ contract HedgeFrequentlyUsed is HedgeBase {
     // USDT代币的基数
     uint constant USDT_BASE = 1000000;
 
-    // Genesis block number of dcu
-    uint constant DCU_GENESIS_BLOCK = 0;
-
+    // TODO:
     /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
     ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
     /// @param newGovernance IHedgeGovernance implementation contract address
