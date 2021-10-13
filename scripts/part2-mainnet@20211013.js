@@ -160,51 +160,54 @@ exports.deploy = async function() {
     // await hedgeFutures.create(eth.address, 4, false);
     // await hedgeFutures.create(eth.address, 5, false);
 
-    const ONE_MONTH = 200000;
-    const ONE_YEAR = ONE_MONTH * 12;
-    const TWO_YEAR = ONE_YEAR * 2;
+    // const ONE_MONTH = 200000;
+    // const ONE_YEAR = ONE_MONTH * 12;
+    // const TWO_YEAR = ONE_YEAR * 2;
 
-    let xtokens = [
-        nest.address,
-        nhbtc.address,
-        cofi.address,
-        pusd.address,
-        fortube.address,
-        nest.address
-    ];
+    // let xtokens = [
+    //     nest.address,
+    //     nhbtc.address,
+    //     cofi.address,
+    //     pusd.address,
+    //     fortube.address,
+    //     nest.address
+    // ];
 
-    let cycles = [
-        ONE_MONTH,
-        ONE_MONTH,
-        ONE_MONTH,
-        ONE_MONTH,
-        ONE_MONTH,
-        TWO_YEAR
-    ];
+    // let cycles = [
+    //     ONE_MONTH,
+    //     ONE_MONTH,
+    //     ONE_MONTH,
+    //     ONE_MONTH,
+    //     ONE_MONTH,
+    //     TWO_YEAR
+    // ];
 
-    let weights = [
-        2000000,
-        500000,
-        500000,
-        500000,
-        500000,
-        36000000,
-    ];
+    // let weights = [
+    //     2000000,
+    //     500000,
+    //     500000,
+    //     500000,
+    //     500000,
+    //     36000000,
+    // ];
     
-    // // 2. 设置挖矿启动参数
-    // // 取一个好数字，锁仓准备取为 13408888 ~ 13458888
-    // console.log('9.hedgeVaultForStaking.setConfig()');
-    // await hedgeVaultForStaking.setConfig(1000000000000000000n, 13408888, 13458888, { nonce: 14 });
+    // // // 2. 设置挖矿启动参数
+    // // // 取一个好数字，锁仓准备取为 13408888 ~ 13458888
+    // // console.log('9.hedgeVaultForStaking.setConfig()');
+    // // await hedgeVaultForStaking.setConfig(1000000000000000000n, 13408888, 13458888, { nonce: 14 });
 
-    console.log('10.hedgeVaultForStaking.batchSetPoolWeight()');
-    await hedgeVaultForStaking.batchSetPoolWeight(xtokens, cycles, weights);
+    // console.log('10.hedgeVaultForStaking.batchSetPoolWeight()');
+    // await hedgeVaultForStaking.batchSetPoolWeight(xtokens, cycles, weights);
 
     console.log('---------- OK ----------');
     
     const contracts = {
         eth: eth,
-        //usdt: usdt,
-        //hbtc: hbtc,
+        nest: nest,
+        nhbtc: nhbtc,
+        cofi: cofi,
+        pusd: pusd,
+        fortube: fortube,
 
         hedgeGovernance: hedgeGovernance,
         dcu: dcu,
