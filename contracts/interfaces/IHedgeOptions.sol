@@ -55,7 +55,14 @@ interface IHedgeOptions {
     /// @param owner 所有者
     /// @param gain 赢得的dcu数量
     event Exercise(uint index, uint amount, address owner, uint gain);
-
+    
+    /// @dev 卖出事件
+    /// @param index 期权编号
+    /// @param amount 卖出份数
+    /// @param owner 所有者
+    /// @param dcuAmount 得到的dcu数量
+    event Sell(uint index, uint amount, address owner, uint dcuAmount);
+    
     /// @dev 修改指定代币通道的配置
     /// @param tokenAddress 目标代币地址
     /// @param config 配置对象
@@ -143,4 +150,9 @@ interface IHedgeOptions {
     /// @param index 期权编号
     /// @param amount 结算的期权分数
     function exercise(uint index, uint amount) external payable;
+
+    /// @dev 卖出期权
+    /// @param index 期权编号
+    /// @param amount 卖出的期权分数
+    function sell(uint index, uint amount) external payable;
 }

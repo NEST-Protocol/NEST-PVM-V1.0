@@ -108,9 +108,19 @@ Note: This method will triggers the Exercise event, See also 3.3.
     ) external view returns (OptionView[] memory optionArray);
 ```
 
+### 2.8. 卖出期权
+
+```javascript
+    /// @dev 卖出期权
+    /// @param index 期权编号
+    /// @param amount 卖出的期权分数
+    function sell(uint index, uint amount) external payable;
+```
+
 ## 3. Event Description
 
 ### 3.1 新期权事件
+
 ```javascript
     /// @dev 新期权事件
     /// @param tokenAddress 目标代币地址，0表示eth
@@ -122,6 +132,7 @@ Note: This method will triggers the Exercise event, See also 3.3.
 ```
 
 ### 3.2 开仓事件
+
 ```javascript
     /// @dev 开仓事件
     /// @param index 期权编号
@@ -137,6 +148,7 @@ Note: This method will triggers the Exercise event, See also 3.3.
 ```
 
 ### 3.3 行权事件
+
 ```javascript
     /// @dev 行权事件
     /// @param index 期权编号
@@ -144,4 +156,15 @@ Note: This method will triggers the Exercise event, See also 3.3.
     /// @param owner 所有者
     /// @param gain 赢得的dcu数量
     event Exercise(uint index, uint amount, address owner, uint gain);
+```
+
+### 3.4 卖出事件
+
+```javascript
+    /// @dev 卖出事件
+    /// @param index 期权编号
+    /// @param amount 卖出份数
+    /// @param owner 所有者
+    /// @param dcuAmount 得到的dcu数量
+    event Sell(uint index, uint amount, address owner, uint dcuAmount);
 ```
