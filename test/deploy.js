@@ -14,6 +14,7 @@ describe('HedgeOptions', function() {
             cofi,
             pusd,
             fortube,
+            peth,
 
             hedgeGovernance,
             hedgeOptions, hedgeFutures, hedgeVaultForStaking,
@@ -32,7 +33,8 @@ describe('HedgeOptions', function() {
             cofi.address,
             pusd.address,
             fortube.address,
-            nest.address
+            nest.address,
+            peth.address
         ];
 
         let cycles = [
@@ -41,17 +43,10 @@ describe('HedgeOptions', function() {
             ONE_MONTH,
             ONE_MONTH,
             ONE_MONTH,
-            TWO_YEAR
+            TWO_YEAR,
+            ONE_MONTH
         ];
 
-        let weights = [
-            2000000,
-            500000,
-            500000,
-            500000,
-            500000,
-            36000000,
-        ];
         let total = 0n;
         for (var i = 0; i < xtokens.length; ++i) {
             let xi = await hedgeVaultForStaking.getChannelInfo(xtokens[i], cycles[i]);

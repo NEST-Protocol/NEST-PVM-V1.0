@@ -23,9 +23,11 @@ exports.deploy = async function() {
     // nhbtc    0x1F832091fAf289Ed4f50FE7418cFbD2611225d46  一月    500000
     // cofi     0x1a23a6BfBAdB59fa563008c0fB7cf96dfCF34Ea1  一月    500000
     // pusd     0xCCEcC702Ec67309Bc3DDAF6a42E9e5a6b8Da58f0  一月    500000
-    // fortube  0x1FCdcE58959f536621d76f5b7FfB955baa5A672F  一月    500000
+    // fortube  0x1FCdcE58959f536621d76f5b7FfB955baa5A672F  ----    0
     // nest     0x04abEdA201850aC0124161F037Efd70c74ddC74C  两年    36000000
-    // 2021-10-12 11:40
+    // peth     0x53f878Fb7Ec7B86e4F9a0CB1E9a6c89C0555FbbD  一月    500000
+    // 2021-10-14 12:02
+
 
     //     ** 开始部署合约 part2-mainnet@20211013.js **
     // nest: 0x04abEdA201850aC0124161F037Efd70c74ddC74C
@@ -57,6 +59,10 @@ exports.deploy = async function() {
     //const fortube = await TestERC20.deploy('FORTUBE', 'FORTUBE', 18);
     const fortube = await TestERC20.attach('0x1FCdcE58959f536621d76f5b7FfB955baa5A672F');
     console.log('fortube: ' + fortube.address);
+
+    //const peth = await TestERC20.deploy('PETH', 'PETH', 18);
+    const peth = await TestERC20.attach('0x53f878Fb7Ec7B86e4F9a0CB1E9a6c89C0555FbbD');
+    console.log('peth: ' + peth.address);
 
     // 1. 部署依赖合约
     // //const usdt = await TestERC20.deploy('USDT', 'USDT', 6);
@@ -161,34 +167,22 @@ exports.deploy = async function() {
     // await hedgeFutures.create(eth.address, 5, false);
 
     // const ONE_MONTH = 200000;
-    // const ONE_YEAR = ONE_MONTH * 12;
-    // const TWO_YEAR = ONE_YEAR * 2;
+    // // const ONE_YEAR = ONE_MONTH * 12;
+    // // const TWO_YEAR = ONE_YEAR * 2;
 
     // let xtokens = [
-    //     nest.address,
-    //     nhbtc.address,
-    //     cofi.address,
-    //     pusd.address,
     //     fortube.address,
-    //     nest.address
+    //     peth.address
     // ];
 
     // let cycles = [
     //     ONE_MONTH,
-    //     ONE_MONTH,
-    //     ONE_MONTH,
-    //     ONE_MONTH,
-    //     ONE_MONTH,
-    //     TWO_YEAR
+    //     ONE_MONTH
     // ];
 
     // let weights = [
-    //     2000000,
-    //     500000,
-    //     500000,
-    //     500000,
-    //     500000,
-    //     36000000,
+    //     0,
+    //     500000
     // ];
     
     // // // 2. 设置挖矿启动参数
@@ -196,8 +190,8 @@ exports.deploy = async function() {
     // // console.log('9.hedgeVaultForStaking.setConfig()');
     // // await hedgeVaultForStaking.setConfig(1000000000000000000n, 13408888, 13458888, { nonce: 14 });
 
-    // console.log('10.hedgeVaultForStaking.batchSetPoolWeight()');
-    // await hedgeVaultForStaking.batchSetPoolWeight(xtokens, cycles, weights);
+    //console.log('10.hedgeVaultForStaking.batchSetPoolWeight()');
+    //await hedgeVaultForStaking.batchSetPoolWeight(xtokens, cycles, weights);
 
     console.log('---------- OK ----------');
     
@@ -208,6 +202,7 @@ exports.deploy = async function() {
         cofi: cofi,
         pusd: pusd,
         fortube: fortube,
+        peth,
 
         hedgeGovernance: hedgeGovernance,
         dcu: dcu,
