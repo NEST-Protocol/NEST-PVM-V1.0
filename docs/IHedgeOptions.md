@@ -117,6 +117,25 @@ Note: This method will triggers the Exercise event, See also 3.3.
     function sell(uint index, uint amount) external payable;
 ```
 
+### 2.9. 计算期权价格
+
+```javascript
+    /// @dev 计算期权价格
+    /// @param tokenAddress 目标代币地址，0表示eth
+    /// @param oraclePrice 当前预言机价格价
+    /// @param strikePrice 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
+    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
+    /// @param exerciseBlock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
+    /// @return v 期权价格，需要除以18446744073709551616000000
+    function calcV(
+        address tokenAddress,
+        uint oraclePrice,
+        uint strikePrice,
+        bool orientation,
+        uint exerciseBlock
+    ) external view returns (uint v);
+```
+
 ## 3. Event Description
 
 ### 3.1 新期权事件

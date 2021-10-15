@@ -258,17 +258,23 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
 
         // 3. 计算权利金（需要的dcu数量）
         // 按照平均每14秒出一个块计算
-        uint T = (exerciseBlock - block.number) * BLOCK_TIME;
-        uint v;
+        uint v = calcV(
+            tokenAddress, 
+            oraclePrice,
+            strikePrice,
+            orientation,
+            exerciseBlock
+        );
+
         if (orientation) {
-            v = _calcVc(config, oraclePrice, T, strikePrice);
+            //v = _calcVc(config, oraclePrice, T, strikePrice);
             // Vc>=S0*1%; Vp>=K*1%
             // require(v * 100 >> 64 >= oraclePrice, "FEO:vc must greater than S0*1%");
             if (v * 100 >> 64 < oraclePrice) {
                 v = (oraclePrice << 64) / 100;
             }
         } else {
-            v = _calcVp(config, oraclePrice, T, strikePrice);
+            //v = _calcVp(config, oraclePrice, T, strikePrice);
             // Vc>=S0*1%; Vp>=K*1%
             // require(v * 100 >> 64 >= strikePrice, "FEO:vp must greater than K*1%");
             if (v * 100 >> 64 < strikePrice) {
@@ -353,7 +359,6 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         uint strikePrice = _decodeFloat(option.strikePrice);
         bool orientation = option.orientation;
         uint exerciseBlock = uint(option.exerciseBlock);
-        Config memory config = _configs[tokenAddress];
 
         // 2. 销毁期权代币
         option.balances[msg.sender] -= amount;
@@ -363,18 +368,52 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
 
         // 4. 分情况计算当前情况下的期权价格
         // 按照平均每14秒出一个块计算
-        uint T = (exerciseBlock - block.number) * BLOCK_TIME;
-        uint v = orientation 
-                    ? _calcVc(config, oraclePrice, T, strikePrice) 
-                    : _calcVp(config, oraclePrice, T, strikePrice);
-
-        uint dcuAmount = amount * v * SELL_RATE / (USDT_BASE * 10000 << 64);
+        uint dcuAmount = amount * calcV(
+            tokenAddress, 
+            oraclePrice,
+            strikePrice,
+            orientation,
+            exerciseBlock
+        ) * SELL_RATE / (USDT_BASE * 10000 << 64);
         if (dcuAmount > 0) {
             DCU(DCU_TOKEN_ADDRESS).mint(msg.sender, dcuAmount);
         }
 
         // 卖出事件
         emit Sell(index, amount, msg.sender, dcuAmount);
+    }
+
+    /// @dev 计算期权价格
+    /// @param tokenAddress 目标代币地址，0表示eth
+    /// @param oraclePrice 当前预言机价格价
+    /// @param strikePrice 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
+    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
+    /// @param exerciseBlock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
+    /// @return v 期权价格，需要除以18446744073709551616000000
+    function calcV(
+        address tokenAddress,
+        uint oraclePrice,
+        uint strikePrice,
+        bool orientation,
+        uint exerciseBlock
+    ) public view override returns (uint v) {
+
+        Config memory config = _configs[tokenAddress];
+        //uint minPeriod = uint(config.minPeriod);
+        //require(minPeriod > 0, "FEO:not allowed");
+        //require(exerciseBlock > block.number + minPeriod, "FEO:exerciseBlock to small");
+
+        // 1. 获取或创建期权代币
+
+        // 2. 调用预言机获取价格
+
+        // 3. 计算权利金（需要的dcu数量）
+        // 按照平均每14秒出一个块计算
+        uint T = (exerciseBlock - block.number) * BLOCK_TIME;
+        v = (orientation 
+            ? _calcVc(config, oraclePrice, T, strikePrice) 
+            : _calcVp(config, oraclePrice, T, strikePrice)
+        );
     }
 
     // 转化位OptionView
