@@ -39,6 +39,15 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
     // 期权卖出价值比例，万分制。9750
     uint constant SELL_RATE = 9750;
 
+    // σ-usdt	0.00021368		波动率，每个币种独立设置（年化120%）
+    uint constant SIGMA_SQ = 45659142400;
+
+    // μ-usdt	0.000000025367		漂移系数，每个币种独立设置（年化80%）
+    uint constant MIU = 467938556917;
+
+    // 期权行权最小间隔	6000	区块数	行权时间和当前时间最小间隔区块数，统一设置
+    uint constant MIN_PERIOD = 6000;
+
     // 期权代币映射
     mapping(uint=>uint) _optionMapping;
 
@@ -247,10 +256,9 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         uint dcuAmount
     ) public view override returns (uint amount) {
 
-        Config memory config = _configs[tokenAddress];
-        uint minPeriod = uint(config.minPeriod);
-        require(minPeriod > 0, "FEO:not allowed");
-        require(exerciseBlock > block.number + minPeriod, "FEO:exerciseBlock to small");
+        //Config memory config = _configs[tokenAddress];
+        //uint minPeriod = uint(config.minPeriod);
+        require(exerciseBlock > block.number + MIN_PERIOD, "FEO:exerciseBlock to small");
 
         // 1. 获取或创建期权代币
 
@@ -398,7 +406,9 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         uint exerciseBlock
     ) public view override returns (uint v) {
 
-        Config memory config = _configs[tokenAddress];
+        require(tokenAddress == address(0), "FEO:not allowed");
+
+        //Config memory config = _configs[tokenAddress];
         //uint minPeriod = uint(config.minPeriod);
         //require(minPeriod > 0, "FEO:not allowed");
         //require(exerciseBlock > block.number + minPeriod, "FEO:exerciseBlock to small");
@@ -411,8 +421,8 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         // 按照平均每14秒出一个块计算
         uint T = (exerciseBlock - block.number) * BLOCK_TIME;
         v = (orientation 
-            ? _calcVc(config, oraclePrice, T, strikePrice) 
-            : _calcVp(config, oraclePrice, T, strikePrice)
+            ? _calcVc(oraclePrice, T, strikePrice) 
+            : _calcVp(oraclePrice, T, strikePrice)
         );
     }
 
@@ -562,10 +572,10 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
     }
 
     // 计算看涨期权价格
-    function _calcVc(Config memory config, uint S0, uint T, uint K) private pure returns (uint vc) {
+    function _calcVc(uint S0, uint T, uint K) private pure returns (uint vc) {
 
-        int128 sigmaSQ_T = _d18TOb64(uint(config.sigmaSQ) * T);
-        int128 miu_T = _toInt128(uint(int(config.miu)) * T);
+        int128 sigmaSQ_T = _d18TOb64(SIGMA_SQ * T);
+        int128 miu_T = _toInt128(MIU * T);
         int128 sigma_t = ABDKMath64x64.sqrt(sigmaSQ_T);
         int128 D1 = _D1(S0, K, sigmaSQ_T, miu_T);
         int128 d = ABDKMath64x64.div(D1, sigma_t);
@@ -583,10 +593,10 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
     }
 
     // 计算看跌期权价格
-    function _calcVp(Config memory config, uint S0, uint T, uint K) private pure returns (uint vp) {
+    function _calcVp(uint S0, uint T, uint K) private pure returns (uint vp) {
 
-        int128 sigmaSQ_T = _d18TOb64(uint(config.sigmaSQ) * T);
-        int128 miu_T = _toInt128(uint(int(config.miu)) * T);
+        int128 sigmaSQ_T = _d18TOb64(SIGMA_SQ * T);
+        int128 miu_T = _toInt128(MIU * T);
         int128 sigma_t = ABDKMath64x64.sqrt(sigmaSQ_T);
         int128 D1 = _D1(S0, K, sigmaSQ_T, miu_T);
         int128 d = ABDKMath64x64.div(D1, sigma_t);
