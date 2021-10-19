@@ -143,10 +143,12 @@ exports.deploy = async function() {
     //     minPeriod: 6000 
     // });
 
-    console.log('9. dcu.setMinter(hedgeOptions.address, 1)');
-    await dcu.setMinter(hedgeOptions.address, 1);
-    console.log('10. dcu.setMinter(hedgeFutures.address, 1)');
-    await dcu.setMinter(hedgeFutures.address, 1);
+    // TODO: 2021-10-20 15:30执行
+    // console.log('9. dcu.setMinter(hedgeOptions.address, 1)');
+    // await dcu.setMinter(hedgeOptions.address, 1);
+    // console.log('10. dcu.setMinter(hedgeFutures.address, 1)');
+    // await dcu.setMinter(hedgeFutures.address, 1);
+
     // console.log('11. dcu.setMinter(hedgeVaultForStaking.address, 1)');
     // await dcu.setMinter(hedgeVaultForStaking.address, 1, { nonce: 13 });
 
