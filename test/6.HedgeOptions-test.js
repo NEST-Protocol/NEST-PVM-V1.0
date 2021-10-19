@@ -44,32 +44,32 @@ describe('HedgeOptions', function() {
                 minPeriod: c.minPeriod.toString()
             }
         }
-        
-        if (true) {
-            console.log('1. 读取配置');
-            console.log(await cfg(usdt.address));
-            console.log(await cfg(eth.address));
-            console.log(await cfg(hbtc.address));
-        }
 
-        if (true) {
-            console.log('2. 设置配置');
-            await hedgeOptions.setConfig(eth.address, {
-                sigmaSQ: '99999999',
-                miu: '88888',
-                minPeriod: '77777'
-            });
+        // if (true) {
+        //     console.log('1. 读取配置');
+        //     console.log(await cfg(usdt.address));
+        //     console.log(await cfg(eth.address));
+        //     console.log(await cfg(hbtc.address));
+        // }
 
-            await hedgeOptions.setConfig(hbtc.address, {
-                sigmaSQ: '333333',
-                miu: '22222',
-                minPeriod: '1111'
-            });
+        // if (true) {
+        //     console.log('2. 设置配置');
+        //     await hedgeOptions.setConfig(eth.address, {
+        //         sigmaSQ: '99999999',
+        //         miu: '88888',
+        //         minPeriod: '77777'
+        //     });
 
-            console.log(await cfg(usdt.address));
-            console.log(await cfg(eth.address));
-            console.log(await cfg(hbtc.address));
-        }
+        //     await hedgeOptions.setConfig(hbtc.address, {
+        //         sigmaSQ: '333333',
+        //         miu: '22222',
+        //         minPeriod: '1111'
+        //     });
+
+        //     console.log(await cfg(usdt.address));
+        //     console.log(await cfg(eth.address));
+        //     console.log(await cfg(hbtc.address));
+        // }
 
         if (true) {
             console.log('3. list1');

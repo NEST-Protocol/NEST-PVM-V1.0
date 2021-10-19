@@ -105,18 +105,20 @@ exports.deploy = async function() {
     console.log('7. hedgeVaultForStaking.update()');
     await hedgeVaultForStaking.update(hedgeGovernance.address);
 
-    console.log('8. hedgeOptions.setConfig()');
-    await hedgeOptions.setConfig(eth.address, { 
-        sigmaSQ: '45659142400', 
-        miu: '467938556917', 
-        minPeriod: 6000 
-    });
-    console.log('8.1. hedgeOptions.setConfig()');
-    await hedgeOptions.setConfig(hbtc.address, { 
-        sigmaSQ: '45659142400', 
-        miu: '467938556917', 
-        minPeriod: 6000 
-    });
+    // console.log('8. hedgeOptions.setConfig()');
+    // await hedgeOptions.setConfig(eth.address, { 
+    //     sigmaSQ: '45659142400', 
+    //     miu: '467938556917', 
+    //     minPeriod: 6000 
+    // });
+    // console.log('8.1. hedgeOptions.setConfig()');
+    // await hedgeOptions.setConfig(hbtc.address, { 
+    //     sigmaSQ: '45659142400', 
+    //     miu: '467938556917', 
+    //     minPeriod: 6000 
+    // });
+    await usdt.transfer(usdt.address, 0);
+    await usdt.transfer(usdt.address, 0);
 
     console.log('9. dcu.setMinter(hedgeOptions.address, 1)');
     await dcu.setMinter(hedgeOptions.address, 1);

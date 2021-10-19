@@ -22,7 +22,7 @@ describe('HedgeOptions', function() {
         } = await deploy();
 
         console.log('部署完成');
-
+        return;
         const ONE_MONTH = 200000;
         const ONE_YEAR = ONE_MONTH * 12;
         const TWO_YEAR = ONE_YEAR * 2;

@@ -45,7 +45,7 @@ describe('HedgeOptions', function() {
             }
         }
         
-        if (true) {
+        if (false) {
             console.log('1. 读取配置');
             console.log(await cfg(usdt.address));
             console.log(await cfg(eth.address));

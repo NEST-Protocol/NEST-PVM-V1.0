@@ -5,19 +5,19 @@ pragma solidity ^0.8.6;
 /// @dev 定义欧式期权接口
 interface IHedgeOptions {
     
-    // 代币通道配置结构体
-    struct Config {
-        // 波动率
-        uint96 sigmaSQ;
+    // // 代币通道配置结构体
+    // struct Config {
+    //     // 波动率
+    //     uint96 sigmaSQ;
 
-        // 64位二进制精度
-        // 0.3/365/86400 = 9.512937595129377E-09
-        // 175482725206
-        int128 miu;
+    //     // 64位二进制精度
+    //     // 0.3/365/86400 = 9.512937595129377E-09
+    //     // 175482725206
+    //     int128 miu;
 
-        // 期权行权时间和当前时间的最小间隔
-        uint32 minPeriod;
-    }
+    //     // 期权行权时间和当前时间的最小间隔
+    //     uint32 minPeriod;
+    // }
 
     /// @dev 期权信息
     struct OptionView {
@@ -63,15 +63,15 @@ interface IHedgeOptions {
     /// @param dcuAmount 得到的dcu数量
     event Sell(uint index, uint amount, address owner, uint dcuAmount);
     
-    /// @dev 修改指定代币通道的配置
-    /// @param tokenAddress 目标代币地址
-    /// @param config 配置对象
-    function setConfig(address tokenAddress, Config calldata config) external;
+    // /// @dev 修改指定代币通道的配置
+    // /// @param tokenAddress 目标代币地址
+    // /// @param config 配置对象
+    // function setConfig(address tokenAddress, Config calldata config) external;
 
-    /// @dev 获取指定代币通道的配置
-    /// @param tokenAddress 目标代币地址
-    /// @return 配置对象
-    function getConfig(address tokenAddress) external view returns (Config memory);
+    // /// @dev 获取指定代币通道的配置
+    // /// @param tokenAddress 目标代币地址
+    // /// @return 配置对象
+    // function getConfig(address tokenAddress) external view returns (Config memory);
     
     /// @dev 返回指定期权的余额
     /// @param index 目标期权索引号

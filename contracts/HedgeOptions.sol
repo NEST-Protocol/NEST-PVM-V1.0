@@ -51,8 +51,8 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
     // 期权代币映射
     mapping(uint=>uint) _optionMapping;
 
-    // 配置参数
-    mapping(address=>Config) _configs;
+    // // 配置参数
+    // mapping(address=>Config) _configs;
 
     // 缓存代币的基数值
     mapping(address=>uint) _bases;
@@ -70,19 +70,19 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         _options.push();
     }
 
-    /// @dev 修改指定代币通道的配置
-    /// @param tokenAddress 目标代币地址
-    /// @param config 配置对象
-    function setConfig(address tokenAddress, Config calldata config) external override {
-        _configs[tokenAddress] = config;
-    }
+    // /// @dev 修改指定代币通道的配置
+    // /// @param tokenAddress 目标代币地址
+    // /// @param config 配置对象
+    // function setConfig(address tokenAddress, Config calldata config) external override {
+    //     _configs[tokenAddress] = config;
+    // }
 
-    /// @dev 获取指定代币通道的配置
-    /// @param tokenAddress 目标代币地址
-    /// @return 配置对象
-    function getConfig(address tokenAddress) external view override returns (Config memory) {
-        return _configs[tokenAddress];
-    }
+    // /// @dev 获取指定代币通道的配置
+    // /// @param tokenAddress 目标代币地址
+    // /// @return 配置对象
+    // function getConfig(address tokenAddress) external view override returns (Config memory) {
+    //     return _configs[tokenAddress];
+    // }
 
     /// @dev 返回指定期权的余额
     /// @param index 目标期权索引号
