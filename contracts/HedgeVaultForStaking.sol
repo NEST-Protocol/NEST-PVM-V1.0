@@ -36,6 +36,8 @@ contract HedgeVaultForStaking is HedgeFrequentlyUsed, IHedgeVaultForStaking {
         uint160 balance;
         // Token dividend value mark of the unit that the account has received
         uint96 rewardCursor;
+        //? 已经领取的，手动设置
+        uint claimed;
     }
     
     /// @dev Stake channel information
@@ -50,12 +52,16 @@ contract HedgeVaultForStaking is HedgeFrequentlyUsed, IHedgeVaultForStaking {
         // Mining amount weight
         uint160 weight;
 
-        // The dividend mark that the settled company token can receive
-        uint96 rewardPerToken;
+        //? The dividend mark that the settled company token can receive
+        // 记录老的，用于标记，和用户的rewardCursor进行比较，相等的表示需要重置为0
+        uint96 rewardPerToken0;
 
         // Accounts
         // address=>balance
         mapping(address=>Account) accounts;
+
+        //? 新的单位token分红量
+        uint96 rewardPerToken;
     }
     
     uint constant UI128 = 0x100000000000000000000000000000000;
@@ -72,6 +78,11 @@ contract HedgeVaultForStaking is HedgeFrequentlyUsed, IHedgeVaultForStaking {
     
     /// @dev Create HedgeVaultForStaking
     constructor () {
+    }
+
+    //? 修改用户的已领取数量
+    function setClaimed(address xtoken, uint64 cycle, address target, uint claimed) external onlyGovernance {
+        _channels[_getKey(xtoken, cycle)].accounts[target].claimed = claimed;
     }
 
     /// @dev Modify configuration
@@ -170,7 +181,13 @@ contract HedgeVaultForStaking is HedgeFrequentlyUsed, IHedgeVaultForStaking {
             rewardPerToken += newReward * UI128 / totalStaked;
         }
         
-        return (rewardPerToken - _decodeFloat(account.rewardCursor)) * balance / UI128;
+        //? earned需要扣除已经领取的数量
+        uint e = (rewardPerToken - _decodeFloat(account.rewardCursor)) * balance / UI128;
+        uint claimed = account.claimed;
+        if (e > claimed) {
+            return e - claimed;
+        }
+        return 0;
     }
 
     /// @dev Stake xtoken to earn DCU
@@ -228,6 +245,16 @@ contract HedgeVaultForStaking is HedgeFrequentlyUsed, IHedgeVaultForStaking {
         channel.accounts[msg.sender] = _getReward(channel, msg.sender);
     }
 
+    //? 获取用户的领取标记
+    function getRewardCursor(Account memory account, StakeChannel storage channel) private view returns (uint) {
+        uint96 rewardCursor = account.rewardCursor;
+        uint96 rewardPerToken = channel.rewardPerToken0;
+        if (rewardCursor == rewardPerToken) {
+            return 0;
+        }
+        return _decodeFloat(rewardCursor);
+    }
+
     // Calculate reward, and settle the target account
     function _getReward(
         StakeChannel storage channel, 
@@ -240,15 +267,21 @@ contract HedgeVaultForStaking is HedgeFrequentlyUsed, IHedgeVaultForStaking {
         
         // Calculate reward for account
         uint balance = uint(account.balance);
-        uint reward = (rewardPerToken - _decodeFloat(account.rewardCursor)) * balance / UI128;
+        //? 使用新方法计算用户的标记
+        uint reward = (rewardPerToken - getRewardCursor(account, channel)) * balance / UI128;
         
         // Update sign of account
         account.rewardCursor = _encodeFloat(rewardPerToken);
         //channel.accounts[to] = account;
 
         // Transfer DCU to account
-        if (reward > 0) {
-            DCU(DCU_TOKEN_ADDRESS).mint(to, reward);
+        //? 扣除已经领取的部分
+        uint claimed = account.claimed;
+        if (reward > claimed) {
+            reward -= claimed;
+            if (reward > 0) {
+                DCU(DCU_TOKEN_ADDRESS).mint(to, reward);
+            }
         }
     }
 
