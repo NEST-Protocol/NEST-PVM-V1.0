@@ -18,7 +18,7 @@ describe('HedgeOptions', function() {
 
             hedgeGovernance,
             hedgeOptions, hedgeFutures, hedgeVaultForStaking,
-            nestPriceFacade
+            nestPriceFacade, hedgeDistributor
         } = await deploy();
 
         console.log('部署完成');
