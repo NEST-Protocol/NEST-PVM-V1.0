@@ -279,14 +279,14 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
             // Vc>=S0*1%; Vp>=K*1%
             // require(v * 100 >> 64 >= oraclePrice, "FEO:vc must greater than S0*1%");
             if (v * 100 >> 64 < oraclePrice) {
-                v = (oraclePrice << 64) / 100;
+                v = oraclePrice * 0x10000000000000000 / 100;
             }
         } else {
             //v = _calcVp(config, oraclePrice, T, strikePrice);
             // Vc>=S0*1%; Vp>=K*1%
             // require(v * 100 >> 64 >= strikePrice, "FEO:vp must greater than K*1%");
             if (v * 100 >> 64 < strikePrice) {
-                v = (strikePrice << 64) / 100;
+                v = strikePrice * 0x10000000000000000 / 100;
             }
         }
 
@@ -420,10 +420,9 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         // 3. 计算权利金（需要的dcu数量）
         // 按照平均每14秒出一个块计算
         uint T = (exerciseBlock - block.number) * BLOCK_TIME;
-        v = (orientation 
+        v = orientation 
             ? _calcVc(oraclePrice, T, strikePrice) 
-            : _calcVp(oraclePrice, T, strikePrice)
-        );
+            : _calcVp(oraclePrice, T, strikePrice);
     }
 
     // 转化位OptionView
@@ -613,11 +612,11 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
     // 计算公式种的d1，因为没有除以σ，所以命名为D1
     function _D1(uint S0, uint K, int128 sigmaSQ_T, int128 miu_T) private pure returns (int128) {
 
-        require(K < 0x1000000000000000000000000000000000000000000000000, "FEO:K can't ROL 64bits");
+        //require(K < 0x1000000000000000000000000000000000000000000000000, "FEO:K can't ROL 64bits");
         return
             ABDKMath64x64.sub(
                 ABDKMath64x64.add(
-                    ABDKMath64x64.ln(_toInt128((K << 64) / S0)),
+                    ABDKMath64x64.ln(_toInt128(K * 0x10000000000000000 / S0)),
                     sigmaSQ_T >> 1
                 ),
                 miu_T
