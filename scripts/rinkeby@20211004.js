@@ -181,6 +181,7 @@ exports.deploy = async function() {
         cofi: cofi,
         pusd: pusd,
         fortube: fortube,
+        peth: fortube,
 
         hedgeGovernance: hedgeGovernance,
         dcu: dcu,

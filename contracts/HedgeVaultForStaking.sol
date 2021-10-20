@@ -182,7 +182,7 @@ contract HedgeVaultForStaking is HedgeFrequentlyUsed, IHedgeVaultForStaking {
         }
         
         //? earned需要扣除已经领取的数量
-        uint e = (rewardPerToken - _decodeFloat(account.rewardCursor)) * balance / UI128;
+        uint e = (rewardPerToken - _getRewardCursor(account, channel)) * balance / UI128;
         uint claimed = account.claimed;
         if (e > claimed) {
             return e - claimed;
@@ -246,7 +246,7 @@ contract HedgeVaultForStaking is HedgeFrequentlyUsed, IHedgeVaultForStaking {
     }
 
     //? 获取用户的领取标记
-    function getRewardCursor(Account memory account, StakeChannel storage channel) private view returns (uint) {
+    function _getRewardCursor(Account memory account, StakeChannel storage channel) private view returns (uint) {
         uint96 rewardCursor = account.rewardCursor;
         uint96 rewardPerToken = channel.rewardPerToken0;
         if (rewardCursor == rewardPerToken) {
@@ -268,7 +268,7 @@ contract HedgeVaultForStaking is HedgeFrequentlyUsed, IHedgeVaultForStaking {
         // Calculate reward for account
         uint balance = uint(account.balance);
         //? 使用新方法计算用户的标记
-        uint reward = (rewardPerToken - getRewardCursor(account, channel)) * balance / UI128;
+        uint reward = (rewardPerToken - _getRewardCursor(account, channel)) * balance / UI128;
         
         // Update sign of account
         account.rewardCursor = _encodeFloat(rewardPerToken);
