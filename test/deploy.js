@@ -22,7 +22,7 @@ describe('HedgeOptions', function() {
         } = await deploy();
 
         console.log('部署完成');
-        return;
+
         const ONE_MONTH = 200000;
         const ONE_YEAR = ONE_MONTH * 12;
         const TWO_YEAR = ONE_YEAR * 2;
@@ -32,9 +32,8 @@ describe('HedgeOptions', function() {
             nhbtc.address,
             cofi.address,
             pusd.address,
-            fortube.address,
-            nest.address,
-            peth.address
+            peth.address,
+            nest.address
         ];
 
         let cycles = [
@@ -43,9 +42,50 @@ describe('HedgeOptions', function() {
             ONE_MONTH,
             ONE_MONTH,
             ONE_MONTH,
-            TWO_YEAR,
-            ONE_MONTH
+            TWO_YEAR
         ];
+
+        let weights = [
+            2000000,
+            500000,
+            500000,
+            500000,
+            500000,
+            36000000
+        ];
+
+        // // 2. 设置挖矿启动参数
+        // // 取一个好数字，锁仓准备取为 13408888 ~ 13458888
+        // console.log('9.hedgeVaultForStaking.setConfig()');
+        // await hedgeVaultForStaking.setConfig(100000000000000000n, 13408888, 13458888 - TWO_YEAR);
+        // console.log('10.hedgeVaultForStaking.batchSetPoolWeight()');
+        // await hedgeVaultForStaking.batchSetPoolWeight([nest.address], [TWO_YEAR], [36000000]);
+
+        // console.log('11.hedgeVaultForStaking.setConfig()');
+        // await hedgeVaultForStaking.setConfig(100000000000000000n, 13408888, 13458888 - ONE_MONTH);
+        // console.log('12.hedgeVaultForStaking.batchSetPoolWeight()');
+        // await hedgeVaultForStaking.batchSetPoolWeight([
+        //     nest.address,
+        //     nhbtc.address,
+        //     cofi.address,
+        //     pusd.address,
+        //     peth.address
+        // ], [
+        //     ONE_MONTH,
+        //     ONE_MONTH,
+        //     ONE_MONTH,
+        //     ONE_MONTH,
+        //     ONE_MONTH
+        // ], [
+        //     2000000,
+        //     500000,
+        //     500000,
+        //     500000,
+        //     500000
+        // ]);
+
+        // console.log('13.hedgeVaultForStaking.setConfig()');
+        // await hedgeVaultForStaking.setConfig(100000000000000000n, 13408888, 13458888);
 
         let total = 0n;
         for (var i = 0; i < xtokens.length; ++i) {
@@ -63,6 +103,8 @@ describe('HedgeOptions', function() {
         }
 
         console.log('total: ' + total);
+
+        return;
 
         let ba = await hedgeGovernance.getBuiltinAddress();
         console.log(ba);

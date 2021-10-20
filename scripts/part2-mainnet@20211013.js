@@ -39,6 +39,7 @@ exports.deploy = async function() {
     // nestPriceFacade: 0xB5D2890c061c321A5B6A4a4254bb1522425BAF0A
     // hedgeGovernance: 0xfD6dF48df7E0989355B23f200d0D454b9101d17D
     // hedgeVaultForStaking: 0xE3940A3E94bca34B9175d156a5E9C5728dFE922F
+    // proxyAdmin: 0x39016AeAe6F975796BFC007c7aA655fB691Fc6e8
 
     //const nest = await TestERC20.deploy('NEST', 'NEST', 18);
     const nest = await TestERC20.attach('0x04abEdA201850aC0124161F037Efd70c74ddC74C');
