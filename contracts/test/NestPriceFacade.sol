@@ -83,6 +83,29 @@ contract NestPriceFacade is INestPriceFacade {
         return latestPriceView(tokenAddress);
     }
 
+    /// @dev Get the latest trigger price
+    /// @param tokenAddress Destination token address
+    /// @param payback As the charging fee may change, it is suggested that the caller pay more fees, 
+    /// and the excess fees will be returned through this address
+    /// @return blockNumber The block number of price
+    /// @return price The token price. (1eth equivalent to (price) token)
+    function latestPrice(
+        address tokenAddress, 
+        address payback
+    ) external payable override returns (uint blockNumber, uint price) {
+
+        if (msg.value > 0.01 ether) {
+            payable(payback).transfer(msg.value - 0.01 ether);
+        } else {
+            require(msg.value == 0.01 ether, "NestPriceFacade:Error fee");
+        }
+
+        // if (block.number > 90) {
+        //     return (block.number - 1, 450000000);
+        // }
+        return latestPriceView(tokenAddress);
+    }
+
     /// @dev Get the full information of latest trigger price
     /// @param tokenAddress Destination token address
     /// @param payback As the charging fee may change, it is suggested that the caller pay more fees, 

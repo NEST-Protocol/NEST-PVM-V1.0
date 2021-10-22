@@ -37,7 +37,7 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
     uint constant V50000 = 0x0C3500000000000000000;
 
     // 期权卖出价值比例，万分制。9750
-    uint constant SELL_RATE = 9750;
+    uint constant SELL_RATE = 9500;
 
     // σ-usdt	0.00021368		波动率，每个币种独立设置（年化120%）
     uint constant SIGMA_SQ = 45659142400;
@@ -46,7 +46,7 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
     uint constant MIU = 467938556917;
 
     // 期权行权最小间隔	6000	区块数	行权时间和当前时间最小间隔区块数，统一设置
-    uint constant MIN_PERIOD = 6000;
+    uint constant MIN_PERIOD = 180000;
 
     // 期权代币映射
     mapping(uint=>uint) _optionMapping;
@@ -226,7 +226,7 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
             _optionMapping[key] = optionIndex;
 
             // 新期权
-            emit New(tokenAddress, strikePrice, orientation, exerciseBlock, optionIndex);
+            //emit New(tokenAddress, strikePrice, orientation, exerciseBlock, optionIndex);
         }
 
         // 4. 销毁权利金
@@ -556,13 +556,13 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         //uint fee = msg.value;
         if (tokenAddress != address(0)) {
             fee >>= 1;
-            (, tokenAmount) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).triggeredPrice {
+            (, tokenAmount) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).latestPrice {
                 value: fee
             } (tokenAddress, payback);
         }
 
         // 1.2. 获取usdt相对于eth的价格
-        (, uint usdtAmount) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).triggeredPrice {
+        (, uint usdtAmount) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).latestPrice {
             value: fee
         } (USDT_TOKEN_ADDRESS, payback);
 
