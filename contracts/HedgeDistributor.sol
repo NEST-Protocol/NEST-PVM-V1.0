@@ -35,12 +35,25 @@ contract HedgeDistributor is HedgeFrequentlyUsed, IHedgeDistributor {
         NEST_TOKEN_ADDRESS = nestTokenAddress;
     }
 
+    // 初始化方案一，转入资金并初始化
     /// @dev 存入nest和dcu
     /// @param nestAmount nest数量
     /// @param dcuAmount dcu数量
     function deposit(uint nestAmount, uint dcuAmount) external {
         TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), nestAmount);
         TransferHelper.safeTransferFrom( DCU_TOKEN_ADDRESS, msg.sender, address(this),  dcuAmount);
+        require(
+            IERC20(NEST_TOKEN_ADDRESS).balanceOf(address(this)) * 
+            IERC20(DCU_TOKEN_ADDRESS).balanceOf(address(this)) <= K,
+            "HD:too much"
+        );
+    }
+
+    // 初始化方案二，转入nest直接初始化
+    function init() external onlyGovernance {
+        TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), 30000000 ether);
+        DCU(DCU_TOKEN_ADDRESS).mint(msg.sender, 30000000 ether);
+        DCU(DCU_TOKEN_ADDRESS).mint(address(this), 30000000 ether);
         require(
             IERC20(NEST_TOKEN_ADDRESS).balanceOf(address(this)) * 
             IERC20(DCU_TOKEN_ADDRESS).balanceOf(address(this)) <= K,
