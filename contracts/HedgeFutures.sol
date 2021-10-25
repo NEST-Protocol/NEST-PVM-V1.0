@@ -39,7 +39,10 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
         mapping(address=>Account) accounts;
     }
 
-    // 漂移系数，64位二进制小数。年华80%
+    // σ-usdt	0.00021368		波动率，每个币种独立设置（年化120%）
+    uint constant SIGMA_SQ = 45659142400;
+
+    // μ-usdt	0.000000025367		漂移系数，每个币种独立设置（年化80%）
     uint constant MIU = 467938556917;
     
     // 最小余额数量，余额小于此值会被清算
@@ -413,49 +416,13 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
     /// @param p Latest price (number of tokens equivalent to 1 ETH)
     /// @param bn The block number when (ETH, TOKEN) price takes into effective
     function calcRevisedK(uint sigmaSQ, uint p0, uint bn0, uint p, uint bn) public view override returns (uint k) {
-        k = _calcK(_calcRevisedSigmaSQ(sigmaSQ, p0, bn0, p, bn), bn);
-    }
+        //k = _calcK(_calcRevisedSigmaSQ(sigmaSQ, p0, bn0, p, bn), bn);
 
-    // Calculate the corrected volatility
-    function _calcRevisedSigmaSQ(
-        uint sigmaSQ,
-        uint p0, 
-        uint bn0, 
-        uint p, 
-        uint bn
-    ) private pure returns (uint revisedSigmaSQ) {
-        // sq2 = sq1 * 0.9 + rq2 * dt * 0.1
-        // sq1 = (sq2 - rq2 * dt * 0.1) / 0.9
-        // 1. 
-        // rq2 <= 4 * dt * sq1
-        // sqt = sq2
-        // 2. rq2 > 4 * dt * sq1 && rq2 <= 9 * dt * sq1
-        // sqt = (sq1 + rq2 * dt) / 2
-        // 3. rq2 > 9 * dt * sq1
-        // sqt = sq1 * 0.2 + rq2 * dt * 0.8
-
-        uint rq2 = p * 1 ether / p0;
-        if (rq2 > 1 ether) {
-            rq2 -= 1 ether;
+        uint sigmaISQ = (p * p + p0 * p0 - (p * p0 << 1)) * 1 ether / p0 / p0 / (bn - bn0) / BLOCK_TIME;
+        if (sigmaISQ > SIGMA_SQ) {
+            k = _sqrt(0.002 ether * 0.002 ether * sigmaISQ / SIGMA_SQ) + _sqrt(1 ether * BLOCK_TIME * (block.number - bn) * sigmaISQ);
         } else {
-            rq2 = 1 ether - rq2;
-        }
-        rq2 = rq2 * rq2 / 1 ether;
-
-        uint dt = (bn - bn0) * BLOCK_TIME;
-        uint sq1 = 0;
-        uint rq2dt = rq2 / dt;
-        if (sigmaSQ * 10 > rq2dt) {
-            sq1 = (sigmaSQ * 10 - rq2dt) / 9;
-        }
-
-        uint dds = dt * dt * dt * sq1;
-        if (rq2 <= (dds << 2)) {
-            revisedSigmaSQ = sigmaSQ;
-        } else if (rq2 <= 9 * dds) {
-            revisedSigmaSQ = (sq1 + rq2dt) >> 1;
-        } else {
-            revisedSigmaSQ = (sq1 + (rq2dt << 2)) / 5;
+            k = 0.002 ether + _sqrt(1 ether * BLOCK_TIME * SIGMA_SQ * (block.number - bn));
         }
     }
 
