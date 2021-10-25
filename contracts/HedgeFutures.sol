@@ -412,9 +412,9 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
         uint sigmaISQ = (p * p + p0 * p0 - (p * p0 << 1)) * 1 ether / p0 / p0 / (bn - bn0) / BLOCK_TIME;
         if (sigmaISQ > SIGMA_SQ) {
             k = _sqrt(0.002 ether * 0.002 ether * sigmaISQ / SIGMA_SQ) + 
-                _sqrt(1 ether * BLOCK_TIME * (block.number + 13467776 - bn) * sigmaISQ);
+                _sqrt(1 ether * BLOCK_TIME * (block.number - bn) * sigmaISQ);
         } else {
-            k = 0.002 ether + _sqrt(1 ether * BLOCK_TIME * SIGMA_SQ * (block.number + 13467776 - bn));
+            k = 0.002 ether + _sqrt(1 ether * BLOCK_TIME * SIGMA_SQ * (block.number - bn));
         }
     }
 
