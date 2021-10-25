@@ -129,17 +129,17 @@ interface INestPriceFacade {
         address paybackAddress
     ) external payable returns (uint blockNumber, uint price);
 
-    // /// @dev Get the last (num) effective price
-    // /// @param tokenAddress Destination token address
-    // /// @param count The number of prices that want to return
-    // /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, 
-    // /// and the excess fees will be returned through this address
-    // /// @return An array which length is num * 2, each two element expresses one price like blockNumber｜price
-    // function lastPriceList(
-    //     address tokenAddress, 
-    //     uint count, 
-    //     address paybackAddress
-    // ) external payable returns (uint[] memory);
+    /// @dev Get the last (num) effective price
+    /// @param tokenAddress Destination token address
+    /// @param count The number of prices that want to return
+    /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, 
+    /// and the excess fees will be returned through this address
+    /// @return An array which length is num * 2, each two element expresses one price like blockNumber｜price
+    function lastPriceList(
+        address tokenAddress, 
+        uint count, 
+        address paybackAddress
+    ) external payable returns (uint[] memory);
 
     // /// @dev Returns the results of latestPrice() and triggeredPriceInfo()
     // /// @param tokenAddress Destination token address

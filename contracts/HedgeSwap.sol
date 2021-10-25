@@ -35,7 +35,7 @@ contract HedgeSwap is HedgeFrequentlyUsed, IHedgeSwap {
     //     NEST_TOKEN_ADDRESS = nestTokenAddress;
     // }
 
-    /// @dev 通过存入nest来初始化资金池，没存入x个nest，资金池增加x个dcu和x个nest，同时用户得到x个dcu
+    /// @dev 通过存入nest来初始化资金池，每存入x个nest，资金池增加x个dcu和x个nest，同时用户得到x个dcu
     /// @param amount 存入数量
     function deposit(uint amount) external override {
         TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), amount);

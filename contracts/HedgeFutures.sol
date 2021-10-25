@@ -385,19 +385,13 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
         require(tokenAddress == address(0), "HF:only support eth/usdt");
 
         // 获取usdt相对于eth的价格
-        (
-            uint[] memory prices,
-            ,//uint triggeredPriceBlockNumber,
-            ,//uint triggeredPriceValue,
-            ,//uint triggeredAvgPrice,
-            uint triggeredSigmaSQ
-        ) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).lastPriceListAndTriggeredPriceInfo {
+        uint[] memory prices = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).lastPriceList {
             value: msg.value
         } (USDT_TOKEN_ADDRESS, 2, payback);
         
         // 将token价格转化为以usdt为单位计算的价格
         oraclePrice = prices[1];
-        uint k = calcRevisedK(triggeredSigmaSQ, prices[3], prices[2], oraclePrice, prices[0]);
+        uint k = calcRevisedK(prices[3], prices[2], oraclePrice, prices[0]);
 
         // 看涨的时候，初始价格乘以(1+k)，卖出价格除以(1+k)
         // 看跌的时候，初始价格除以(1+k)，卖出价格乘以(1+k)
@@ -410,28 +404,18 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
     }
 
     /// @dev K value is calculated by revised volatility
-    /// @param sigmaSQ The square of the volatility (18 decimal places).
     /// @param p0 Last price (number of tokens equivalent to 1 ETH)
     /// @param bn0 Block number of the last price
     /// @param p Latest price (number of tokens equivalent to 1 ETH)
     /// @param bn The block number when (ETH, TOKEN) price takes into effective
-    function calcRevisedK(uint sigmaSQ, uint p0, uint bn0, uint p, uint bn) public view override returns (uint k) {
-        //k = _calcK(_calcRevisedSigmaSQ(sigmaSQ, p0, bn0, p, bn), bn);
-
+    function calcRevisedK(uint p0, uint bn0, uint p, uint bn) public view override returns (uint k) {
         uint sigmaISQ = (p * p + p0 * p0 - (p * p0 << 1)) * 1 ether / p0 / p0 / (bn - bn0) / BLOCK_TIME;
         if (sigmaISQ > SIGMA_SQ) {
-            k = _sqrt(0.002 ether * 0.002 ether * sigmaISQ / SIGMA_SQ) + _sqrt(1 ether * BLOCK_TIME * (block.number - bn) * sigmaISQ);
+            k = _sqrt(0.002 ether * 0.002 ether * sigmaISQ / SIGMA_SQ) + 
+                _sqrt(1 ether * BLOCK_TIME * (block.number + 13467776 - bn) * sigmaISQ);
         } else {
-            k = 0.002 ether + _sqrt(1 ether * BLOCK_TIME * SIGMA_SQ * (block.number - bn));
+            k = 0.002 ether + _sqrt(1 ether * BLOCK_TIME * SIGMA_SQ * (block.number + 13467776 - bn));
         }
-    }
-
-    /// @dev Calc K value
-    /// @param sigmaSQ The square of the volatility (18 decimal places).
-    /// @param bn The block number when (ETH, TOKEN) price takes into effective
-    /// @return k The K value
-    function _calcK(uint sigmaSQ, uint bn) private view returns (uint k) {
-        k = 0.002 ether + (_sqrt((block.number - bn) * BLOCK_TIME * sigmaSQ * 1 ether) >> 1);
     }
 
     function _sqrt(uint256 x) private pure returns (uint256) {
