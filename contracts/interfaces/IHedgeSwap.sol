@@ -3,8 +3,12 @@
 pragma solidity ^0.8.6;
 
 /// @dev DCU分发合约
-interface IHedgeDistributor {
+interface IHedgeSwap {
 
+    /// @dev 通过存入nest来初始化资金池，没存入x个nest，资金池增加x个dcu和x个nest，同时用户得到x个dcu
+    /// @param amount 存入数量
+    function deposit(uint amount) external;
+    
     /// @dev 使用确定数量的nest兑换dcu
     /// @param nestAmount nest数量
     /// @return dcuAmount 兑换到的dcu数量

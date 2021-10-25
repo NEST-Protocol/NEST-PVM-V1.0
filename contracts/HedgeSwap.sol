@@ -6,54 +6,42 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "./libs/TransferHelper.sol";
 
-import "./interfaces/IHedgeDistributor.sol";
+import "./interfaces/IHedgeSwap.sol";
 
 import "./HedgeFrequentlyUsed.sol";
 import "./DCU.sol";
 
 /// @dev DCU分发合约
-contract HedgeDistributor is HedgeFrequentlyUsed, IHedgeDistributor {
+contract HedgeSwap is HedgeFrequentlyUsed, IHedgeSwap {
 
     // TODO: 发布时修改为线上版本的CoFiXRouter地址
-    // address constant COFIX_ROUTER_ADDRESS = 0x57F0A4ef374B35eb32B61Dd8bc68C58e886CFC84;
-    address constant COFIX_ROUTER_ADDRESS = 0x9f7997EFb0aF6f5e370dea99b1941D73330825C9;
+    //address constant COFIX_ROUTER_ADDRESS = 0x57F0A4ef374B35eb32B61Dd8bc68C58e886CFC84;
+    //address constant COFIX_ROUTER_ADDRESS = 0x9f7997EFb0aF6f5e370dea99b1941D73330825C9;
 
     // TODO: 发布时修改为线上版本的NEST地址
-    // address constant NEST_TOKEN_ADDRESS = 0x04abEdA201850aC0124161F037Efd70c74ddC74C;
+    address constant NEST_TOKEN_ADDRESS = 0x04abEdA201850aC0124161F037Efd70c74ddC74C;
     //address constant NEST_TOKEN_ADDRESS = 0xE313F3f49B647fBEDDC5F2389Edb5c93CBf4EE25;
-    address NEST_TOKEN_ADDRESS;
+    //address NEST_TOKEN_ADDRESS;
 
     // TODO: 发布时改为 30000000 ether * 30000000 ether
-    //uint constant K = 30000000 ether * 30000000 ether;
-    uint constant K = 3000000 ether * 3000000 ether;
+    uint constant K = 30000000 ether * 30000000 ether;
+    //uint constant K = 3000000 ether * 3000000 ether;
 
     constructor() {
     }
 
-    // TODO: 删除此测试方法
-    function setNestTokenAddress(address nestTokenAddress) external {
-        NEST_TOKEN_ADDRESS = nestTokenAddress;
-    }
+    // // TODO: 删除此测试方法
+    // function setNestTokenAddress(address nestTokenAddress) external {
+    //     NEST_TOKEN_ADDRESS = nestTokenAddress;
+    // }
 
-    // 初始化方案一，转入资金并初始化
-    /// @dev 存入nest和dcu
-    /// @param nestAmount nest数量
-    /// @param dcuAmount dcu数量
-    function deposit(uint nestAmount, uint dcuAmount) external {
-        TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), nestAmount);
-        TransferHelper.safeTransferFrom( DCU_TOKEN_ADDRESS, msg.sender, address(this),  dcuAmount);
-        require(
-            IERC20(NEST_TOKEN_ADDRESS).balanceOf(address(this)) * 
-            IERC20(DCU_TOKEN_ADDRESS).balanceOf(address(this)) <= K,
-            "HD:too much"
-        );
-    }
+    /// @dev 通过存入nest来初始化资金池，没存入x个nest，资金池增加x个dcu和x个nest，同时用户得到x个dcu
+    /// @param amount 存入数量
+    function deposit(uint amount) external override {
+        TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), amount);
+        DCU(DCU_TOKEN_ADDRESS).mint(address(this), amount);
+        DCU(DCU_TOKEN_ADDRESS).mint(msg.sender, amount);
 
-    // 初始化方案二，转入nest直接初始化
-    function init() external onlyGovernance {
-        TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), 30000000 ether);
-        DCU(DCU_TOKEN_ADDRESS).mint(msg.sender, 30000000 ether);
-        DCU(DCU_TOKEN_ADDRESS).mint(address(this), 30000000 ether);
         require(
             IERC20(NEST_TOKEN_ADDRESS).balanceOf(address(this)) * 
             IERC20(DCU_TOKEN_ADDRESS).balanceOf(address(this)) <= K,
@@ -80,7 +68,8 @@ contract HedgeDistributor is HedgeFrequentlyUsed, IHedgeDistributor {
         uint amountOut, 
         uint mined
     ) {
-        require(msg.sender == COFIX_ROUTER_ADDRESS, "HD:only for router");
+        // K值是固定常量，伪造amountIn没有意义，可以不用检查
+        //require(msg.sender == COFIX_ROUTER_ADDRESS, "HD:only for router");
         if (msg.value > 0) {
             payable(payback).transfer(msg.value);
         }

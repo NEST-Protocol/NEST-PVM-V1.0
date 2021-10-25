@@ -16,7 +16,7 @@ exports.deploy = async function() {
     const HedgeOptions = await ethers.getContractFactory('HedgeOptions');
     const HedgeFutures = await ethers.getContractFactory('HedgeFutures');
     const HedgeVaultForStaking = await ethers.getContractFactory('HedgeVaultForStaking');
-    const HedgeDistributor = await ethers.getContractFactory('HedgeDistributor');
+    const HedgeSwap = await ethers.getContractFactory('HedgeSwap');
 
     console.log('** 开始部署合约 deploy.proxy.js **');
     
@@ -77,9 +77,9 @@ exports.deploy = async function() {
     //const hedgeVaultForStaking = await HedgeVaultForStaking.attach('0x0000000000000000000000000000000000000000');
     console.log('hedgeVaultForStaking: ' + hedgeVaultForStaking.address);
 
-    const hedgeDistributor = await upgrades.deployProxy(HedgeDistributor, [hedgeGovernance.address], { initializer: 'initialize' });
-    //const hedgeDistributor = await HedgeDistributor.attach('0x0000000000000000000000000000000000000000');
-    console.log('hedgeDistributor: ' + hedgeDistributor.address);
+    const hedgeSwap = await upgrades.deployProxy(HedgeSwap, [hedgeGovernance.address], { initializer: 'initialize' });
+    //const hedgeSwap = await HedgeSwap.attach('0x0000000000000000000000000000000000000000');
+    console.log('hedgeSwap: ' + hedgeSwap.address);
 
     // await hedgeGovernance.initialize('0x0000000000000000000000000000000000000000');
     console.log('1. dcu.initialize(hedgeGovernance.address)');
@@ -110,7 +110,7 @@ exports.deploy = async function() {
     console.log('7. hedgeVaultForStaking.update()');
     await hedgeVaultForStaking.update(hedgeGovernance.address);
     console.log('8. hedgeVaultForStaking.update()');
-    await hedgeDistributor.update(hedgeGovernance.address);
+    await hedgeSwap.update(hedgeGovernance.address);
 
     // console.log('8. hedgeOptions.setConfig()');
     // await hedgeOptions.setConfig(eth.address, { 
@@ -163,7 +163,7 @@ exports.deploy = async function() {
         hedgeFutures: hedgeFutures,
         hedgeVaultForStaking: hedgeVaultForStaking,
         nestPriceFacade: nestPriceFacade,
-        hedgeDistributor: hedgeDistributor
+        hedgeSwap: hedgeSwap
     };
 
     return contracts;

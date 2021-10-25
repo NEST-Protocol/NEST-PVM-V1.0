@@ -2,7 +2,10 @@
     "cSpell.words": [
         "abdk",
         "abdk math x",
+        "address",
         "cofi",
+        "cofix",
+        "cofix router address",
         "concat",
         "eth",
         "eth cofi",
@@ -11,6 +14,7 @@
         "keccak",
         "math",
         "mload",
+        "router",
         "spdx",
         "sprintf",
         "staking",
