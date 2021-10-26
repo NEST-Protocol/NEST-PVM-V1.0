@@ -6,7 +6,7 @@ describe('HedgeOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         const TestERC20 = await ethers.getContractFactory('TestERC20');
-        const HedgeSwap = await ethers.getContractFactory('HedgeSwap');
+        const HedgeFutures = await ethers.getContractFactory('HedgeFutures');
 
         const { 
             eth, usdt, dcu, 
@@ -22,8 +22,10 @@ describe('HedgeOptions', function() {
             nestPriceFacade, hedgeSwap
         } = await deploy();
 
-        const newHedgeSwap = await HedgeSwap.deploy();
-        console.log('newHedgeSwap: ' + newHedgeSwap.address);
+        // const newHedgeFutures = await HedgeFutures.deploy();
+        // console.log('newHedgeFutures: ' + newHedgeFutures.address);
+        // await dcu.setMinter(hedgeSwap.address, 1);
+        
         console.log('部署完成');
         return;
 
