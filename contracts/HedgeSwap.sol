@@ -56,13 +56,18 @@ contract HedgeSwap is HedgeFrequentlyUsed, IHedgeSwap {
         uint amountOut, 
         uint mined
     ) {
-        // K值是固定常量，伪造amountIn没有意义，可以不用检查
-        //require(msg.sender == COFIX_ROUTER_ADDRESS, "HD:only for router");
         if (msg.value > 0) {
             payable(payback).transfer(msg.value);
         }
-        
-        amountOut = _swap(src, dest, to);
+
+        // K值是固定常量，伪造amountIn没有意义
+        if (src == NEST_TOKEN_ADDRESS && dest == DCU_TOKEN_ADDRESS) {
+            amountOut = _swap(NEST_TOKEN_ADDRESS, DCU_TOKEN_ADDRESS, to);
+        } else if (src == DCU_TOKEN_ADDRESS && dest == NEST_TOKEN_ADDRESS) {
+            amountOut = _swap(DCU_TOKEN_ADDRESS, NEST_TOKEN_ADDRESS, to);
+        } else {
+            revert("HS:pair not allowed");
+        }
     }
 
     /// @dev 使用确定数量的nest兑换dcu
