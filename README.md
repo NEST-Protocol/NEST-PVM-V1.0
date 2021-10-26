@@ -17,6 +17,7 @@
 | hedgeVaultForStaking | IHedgeVaultForStaking | 0xE3940A3E94bca34B9175d156a5E9C5728dFE922F |
 | hedgeOptions | IHedgeOptions | 0x6C844d364c2836f2111891111F25C7a24da976A9 |
 | hedgeFutures | IHedgeFutures | 0x622f1CB39AdE2131061C68E61334D41321033ab4 |
+| hedgeSwap | IHedgeSwap | 0x6e7fd4BA02A5a7a75Ea3CcE37e221dC144D606Dd |
 
 ### 2021-10-04@rinkeby
 | Name | Interfaces | rinkeby |
