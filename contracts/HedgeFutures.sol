@@ -409,7 +409,14 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
     /// @param p Latest price (number of tokens equivalent to 1 ETH)
     /// @param bn The block number when (ETH, TOKEN) price takes into effective
     function calcRevisedK(uint p0, uint bn0, uint p, uint bn) public view override returns (uint k) {
-        uint sigmaISQ = (p * p + p0 * p0 - (p * p0 << 1)) * 1 ether / p0 / p0 / (bn - bn0) / BLOCK_TIME;
+        uint sigmaISQ = p * 1 ether / p0;
+        if (sigmaISQ > 1 ether) {
+            sigmaISQ -= 1 ether;
+        } else {
+            sigmaISQ = 1 ether - sigmaISQ;
+        }
+        sigmaISQ = sigmaISQ * sigmaISQ / (bn - bn0) / BLOCK_TIME / 1 ether;
+
         if (sigmaISQ > SIGMA_SQ) {
             k = _sqrt(0.002 ether * 0.002 ether * sigmaISQ / SIGMA_SQ) + 
                 _sqrt(1 ether * BLOCK_TIME * (block.number - bn) * sigmaISQ);

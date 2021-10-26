@@ -66,6 +66,16 @@ describe('HedgeOptions', function() {
             return Math.floor(usdtAmount * 10 ** decimals / tokenAmount);
         };
 
+        let receipt = await hedgeFutures.buy(
+            eth.address,
+            5,
+            true,
+            toBigInt(1000),
+            { value: toBigInt(0.01) }
+        );
+
+        await showReceipt(receipt);
+
         let prices = [12321280, 2550.2700, 2550.2700, 0,
                 12321334, 2545.5700, 2550.0350, 0.0000000002246319879055468085,
                 12321372, 2542.6500, 2549.6658, 0.0000000003370674344270144469,
