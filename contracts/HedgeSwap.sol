@@ -33,7 +33,7 @@ contract HedgeSwap is HedgeFrequentlyUsed, IHedgeSwap {
         require(
             IERC20(NEST_TOKEN_ADDRESS).balanceOf(address(this)) * 
             IERC20(DCU_TOKEN_ADDRESS).balanceOf(address(this)) <= K,
-            "HD:too much"
+            "HS:too much"
         );
     }
 
