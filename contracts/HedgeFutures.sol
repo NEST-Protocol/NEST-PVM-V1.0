@@ -48,8 +48,8 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
     // 最小余额数量，余额小于此值会被清算
     uint constant MIN_VALUE = 10 ether;
 
-    // 买入永续合约和其他交易之间最小的间隔区块数
-    uint constant MIN_PERIOD = 100;
+    // // 买入永续合约和其他交易之间最小的间隔区块数
+    // uint constant MIN_PERIOD = 100;
 
     // 区块时间
     uint constant BLOCK_TIME = 14;
