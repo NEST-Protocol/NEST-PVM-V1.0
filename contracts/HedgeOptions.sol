@@ -224,9 +224,6 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
 
             // 将期权代币地址存入映射和数组，便于后面检索
             _optionMapping[key] = optionIndex;
-
-            // 新期权
-            //emit New(tokenAddress, strikePrice, orientation, exerciseBlock, optionIndex);
         }
 
         // 4. 销毁权利金
