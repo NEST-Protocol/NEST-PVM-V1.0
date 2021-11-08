@@ -255,7 +255,7 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
 
         //Config memory config = _configs[tokenAddress];
         //uint minPeriod = uint(config.minPeriod);
-        require(exerciseBlock > block.number + MIN_PERIOD, "FEO:exerciseBlock to small");
+        require(exerciseBlock > block.number + MIN_PERIOD, "FEO:exerciseBlock too small");
 
         // 1. 获取或创建期权代币
 
