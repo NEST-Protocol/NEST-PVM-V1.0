@@ -18,13 +18,14 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
 
     /// @dev 期权结构
     struct Option {
-        address tokenAddress;
+        uint32 owner;
+        uint128 balance;
         uint56 strikePrice;
         bool orientation;
         uint32 exerciseBlock;
         
         //uint totalSupply;
-        mapping(address=>uint) balances;
+        //mapping(address=>uint) balances;
     }
 
     // 区块时间
@@ -48,8 +49,8 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
     // 期权行权最小间隔	6000	区块数	行权时间和当前时间最小间隔区块数，统一设置
     uint constant MIN_PERIOD = 180000;
 
-    // 期权代币映射
-    mapping(uint=>uint) _optionMapping;
+    // // 期权代币映射
+    // mapping(uint=>uint) _optionMapping;
 
     // // 配置参数
     // mapping(address=>Config) _configs;
@@ -60,14 +61,61 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
     // 期权代币数组
     Option[] _options;
 
+    mapping(address=>uint) _accountMapping;
+
+    address[] _accounts;
+
     constructor() {
+    }
+
+    /// @dev Gets the address corresponding to the given index number
+    /// @param index The index number of the specified address
+    /// @return The address corresponding to the given index number
+    function _indexAddress(uint index) public view returns (address) {
+        return _accounts[index];
+    }
+
+    /// @dev Gets the index number of the specified address. If it does not exist, register
+    /// @param addr Destination address
+    /// @return The index number of the specified address
+    function _addressIndex(address addr) private returns (uint) {
+
+        uint index = _accountMapping[addr];
+        if (index == 0) {
+            // If it exceeds the maximum number that 32 bits can store, you can't continue to register a new account.
+            // If you need to support a new account, you need to update the contract
+            require((_accountMapping[addr] = index = _accounts.length) < 0x100000000, "HO:!accounts");
+            _accounts.push(addr);
+        }
+
+        return index;
+    }
+
+    /// @dev Gets the address corresponding to the given index number
+    /// @param index The index number of the specified address
+    /// @return The address corresponding to the given index number
+    function indexAddress(uint index) public view returns (address) {
+        return _accounts[index];
+    }
+
+    /// @dev Gets the registration index number of the specified address
+    /// @param addr Destination address
+    /// @return 0 means nonexistent, non-0 means index number
+    function getAccountIndex(address addr) public view returns (uint) {
+        return _accountMapping[addr];
+    }
+
+    /// @dev Get the length of registered account array
+    /// @return The length of registered account array
+    function getAccountCount() external view returns (uint) {
+        return _accounts.length;
     }
 
     /// @dev To support open-zeppelin/upgrades
     /// @param governance IHedgeGovernance implementation contract address
     function initialize(address governance) public override {
         super.initialize(governance);
-        _options.push();
+        _accounts.push();
     }
 
     // /// @dev 修改指定代币通道的配置
@@ -88,7 +136,12 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
     /// @param index 目标期权索引号
     /// @param addr 目标地址
     function balanceOf(uint index, address addr) external view override returns (uint) {
-        return _options[index].balances[addr];
+        //return _options[index].balances[addr];
+        Option memory option = _options[index];
+        if (uint(option.owner) == getAccountIndex(addr)) {
+            return uint(option.balance);
+        }
+        return 0;
     }
 
     /// @dev 查找目标账户的期权（倒序）
@@ -117,10 +170,11 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
             end = i - maxFindCount;
         }
         
+        uint ownerIndex = getAccountIndex(owner);
         // 循环查找，将符合条件的记录写入缓冲区
         for (uint index = 0; index < count && i > end;) {
             Option storage option = options[--i];
-            if (option.balances[owner] > 0) {
+            if (uint(option.owner) == ownerIndex) {
                 optionArray[index++] = _toOptionView(option, i, owner);
             }
         }
@@ -185,8 +239,8 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         bool orientation, 
         uint exerciseBlock
     ) external view override returns (OptionView memory) {        
-        uint index = _optionMapping[_getKey(tokenAddress, strikePrice, orientation, exerciseBlock)];
-        return _toOptionView(_options[index], index, msg.sender);
+        //uint index = _optionMapping[_getKey(tokenAddress, strikePrice, orientation, exerciseBlock)];
+        //return _toOptionView(_options[index], index, msg.sender);
     }
 
     /// @dev 开仓
@@ -210,30 +264,37 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         uint amount = estimate(tokenAddress, oraclePrice, strikePrice, orientation, exerciseBlock, dcuAmount);
 
         // 3. 获取或创建期权代币
-        uint key = _getKey(tokenAddress, strikePrice, orientation, exerciseBlock);
-        uint optionIndex = _optionMapping[key];
-        Option storage option = _options[optionIndex];
-        if (optionIndex == 0) {
+        //uint key = _getKey(tokenAddress, strikePrice, orientation, exerciseBlock);
+        //uint optionIndex = _optionMapping[key];
+        //Option storage option = _options[optionIndex];
+        // if (optionIndex == 0) {
             
-            optionIndex = _options.length;
-            option = _options.push();
-            option.tokenAddress = tokenAddress;
-            option.strikePrice = _encodeFloat(strikePrice);
-            option.orientation = orientation;
-            option.exerciseBlock = uint32(exerciseBlock);
+        //     optionIndex = _options.length;
+        //     option = _options.push();
+        //     option.tokenAddress = tokenAddress;
+        //     option.strikePrice = _encodeFloat(strikePrice);
+        //     option.orientation = orientation;
+        //     option.exerciseBlock = uint32(exerciseBlock);
 
-            // 将期权代币地址存入映射和数组，便于后面检索
-            _optionMapping[key] = optionIndex;
-        }
+        //     // 将期权代币地址存入映射和数组，便于后面检索
+        //     _optionMapping[key] = optionIndex;
+        // }
+        _options.push(Option(
+            uint32(_addressIndex(msg.sender)), //uint32 owner;
+            _toUInt128(amount), //uint128 balance;
+            _encodeFloat(strikePrice), //uint56 strikePrice;
+            orientation, //bool orientation;
+            uint32(exerciseBlock)//uint32 exerciseBlock;
+        ));
 
         // 4. 销毁权利金
         DCU(DCU_TOKEN_ADDRESS).burn(msg.sender, dcuAmount);
 
         // 5. 分发期权凭证
-        option.balances[msg.sender] += amount;
+        //option.balances[msg.sender] += amount;
         
         // 开仓事件
-        emit Open(optionIndex, dcuAmount, msg.sender, amount);
+        emit Open(_options.length - 1, dcuAmount, msg.sender, amount);
     }
 
     /// @dev 预估开仓可以买到的期权币数量
@@ -297,7 +358,7 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
 
         // 1. 获取期权信息
         Option storage option = _options[index];
-        address tokenAddress = option.tokenAddress;
+        address tokenAddress = address(0);// option.tokenAddress;
         uint strikePrice = _decodeFloat(option.strikePrice);
         bool orientation = option.orientation;
         uint exerciseBlock = uint(option.exerciseBlock);
@@ -305,7 +366,8 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         require(block.number >= exerciseBlock, "FEO:at maturity");
 
         // 2. 销毁期权代币
-        option.balances[msg.sender] -= amount;
+        //option.balances[msg.sender] -= amount;
+        option.balance = _toUInt128(uint(option.balance) - amount);
 
         // 3. 调用预言机获取价格，读取预言机在指定区块的价格
         // 3.1. 获取token相对于eth的价格
@@ -354,13 +416,14 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         // 注意，不是包含了不低于1%这个设定
         // 1. 获取期权信息
         Option storage option = _options[index];
-        address tokenAddress = option.tokenAddress;
+        address tokenAddress = address(0); //option.tokenAddress;
         uint strikePrice = _decodeFloat(option.strikePrice);
         bool orientation = option.orientation;
         uint exerciseBlock = uint(option.exerciseBlock);
 
         // 2. 销毁期权代币
-        option.balances[msg.sender] -= amount;
+        //option.balances[msg.sender] -= amount;
+        option.balance = _toUInt128(uint(option.balance) - amount);
 
         // 3. 调用预言机获取价格，读取预言机在指定区块的价格
         uint oraclePrice = _queryPrice(tokenAddress, msg.value, msg.sender);
@@ -424,11 +487,11 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
     ) private view returns (OptionView memory) {
         return OptionView(
             index,
-            option.tokenAddress,
+            address(0), //option.tokenAddress,
             _decodeFloat(option.strikePrice),
             option.orientation,
             uint(option.exerciseBlock),
-            option.balances[owner]
+            option.balance
         );
     }
 
@@ -476,6 +539,12 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
     function _toUInt(int128 v) private pure returns (uint) {
         require(v >= 0, "FEO:can't convert to uint");
         return uint(int(v));
+    }
+
+    // 将uint转化为uint128
+    function _toUInt128(uint v) private pure returns (uint128) {
+        require(v < 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF, "HO:can't convert to uint128");
+        return uint128(v);
     }
 
     // 通过查表的方法计算标准正态分布函数
