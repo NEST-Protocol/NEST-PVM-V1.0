@@ -19,5 +19,14 @@ contract HedgeFrequentlyUsed is HedgeBase {
     address constant USDT_TOKEN_ADDRESS = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
 
     // USDT代币的基数
-    uint constant USDT_BASE = 1000000;
+    uint constant USDT_BASE = 1 ether;
+
+    // ETH/USDT报价通道id
+    uint constant ETH_USDT_CHANNEL_ID = 0;
+
+    uint constant TRANSFER_RATE = 0;
+
+    function toETHPrice(uint rawPrice) internal pure returns (uint) {
+        return 2000 ether * 1 ether / rawPrice;
+    }
 }

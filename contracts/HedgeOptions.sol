@@ -8,7 +8,7 @@ import "./libs/TransferHelper.sol";
 import "./libs/ABDKMath64x64.sol";
 
 import "./interfaces/IHedgeOptions.sol";
-import "./interfaces/INestPriceFacade.sol";
+import "./interfaces/INestOpenPrice.sol";
 
 import "./HedgeFrequentlyUsed.sol";
 import "./DCU.sol";
@@ -311,20 +311,14 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         // 3.1. 获取token相对于eth的价格
         uint tokenAmount = 1 ether;
         uint fee = msg.value;
-        if (tokenAddress != address(0)) {
-            fee = msg.value >> 1;
-            (, tokenAmount) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).findPrice {
-                value: fee
-            } (tokenAddress, exerciseBlock, msg.sender);
-        }
 
         // 3.2. 获取usdt相对于eth的价格
-        (, uint usdtAmount) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).findPrice {
+        (, uint rawPrice) = INestOpenPrice(NEST_PRICE_FACADE_ADDRESS).findPrice {
             value: fee
-        } (USDT_TOKEN_ADDRESS, exerciseBlock, msg.sender);
+        } (ETH_USDT_CHANNEL_ID, exerciseBlock, msg.sender);
 
         // 将token价格转化为以usdt为单位计算的价格
-        uint oraclePrice = usdtAmount * _getBase(tokenAddress) / tokenAmount;
+        uint oraclePrice = toETHPrice(rawPrice);
         // 4. 分情况计算用户可以获得的dcu数量
         uint gain = 0;
         // 计算结算结果
@@ -550,21 +544,14 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
     function _queryPrice(address tokenAddress, uint fee, address payback) private returns (uint oraclePrice) {
         // 1.1. 获取token相对于eth的价格
         uint tokenAmount = 1 ether;
-        //uint fee = msg.value;
-        if (tokenAddress != address(0)) {
-            fee >>= 1;
-            (, tokenAmount) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).latestPrice {
-                value: fee
-            } (tokenAddress, payback);
-        }
 
         // 1.2. 获取usdt相对于eth的价格
-        (, uint usdtAmount) = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).latestPrice {
+        (, uint rawPrice) = INestOpenPrice(NEST_PRICE_FACADE_ADDRESS).latestPrice {
             value: fee
-        } (USDT_TOKEN_ADDRESS, payback);
+        } (ETH_USDT_CHANNEL_ID, payback);
 
         // 1.3. 将token价格转化为以usdt为单位计算的价格
-        oraclePrice = usdtAmount * _getBase(tokenAddress) / tokenAmount;
+        oraclePrice = toETHPrice(rawPrice);
     }
 
     // 计算看涨期权价格

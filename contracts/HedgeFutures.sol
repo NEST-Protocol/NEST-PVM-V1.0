@@ -8,7 +8,7 @@ import "./libs/TransferHelper.sol";
 import "./libs/ABDKMath64x64.sol";
 
 import "./interfaces/IHedgeFutures.sol";
-import "./interfaces/INestPriceFacade.sol";
+import "./interfaces/INestOpenPrice.sol";
 
 import "./HedgeFrequentlyUsed.sol";
 import "./DCU.sol";
@@ -385,10 +385,12 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
         require(tokenAddress == address(0), "HF:only support eth/usdt");
 
         // 获取usdt相对于eth的价格
-        uint[] memory prices = INestPriceFacade(NEST_PRICE_FACADE_ADDRESS).lastPriceList {
+        uint[] memory prices = INestOpenPrice(NEST_PRICE_FACADE_ADDRESS).lastPriceList {
             value: msg.value
-        } (USDT_TOKEN_ADDRESS, 2, payback);
-        
+        } (ETH_USDT_CHANNEL_ID, 2, payback);
+
+        prices[1] = toETHPrice(prices[1]);
+        prices[3] = toETHPrice(prices[3]);
         // 将token价格转化为以usdt为单位计算的价格
         oraclePrice = prices[1];
         uint k = calcRevisedK(prices[3], prices[2], oraclePrice, prices[0]);
@@ -415,13 +417,27 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
         } else {
             sigmaISQ = 1 ether - sigmaISQ;
         }
+
+        // James:
+        // fort算法 把前面一项改成 max ((p2-p1)/p1,0.002) 后面不变
+        // jackson:
+        // 好
+        // jackson:
+        // 要取绝对值吧
+        // James:
+        // 对的
+        if (sigmaISQ > 0.002 ether) {
+            k = sigmaISQ;
+        } else {
+            k = 0.002 ether;
+        }
+
         sigmaISQ = sigmaISQ * sigmaISQ / (bn - bn0) / BLOCK_TIME / 1 ether;
 
         if (sigmaISQ > SIGMA_SQ) {
-            k = _sqrt(0.002 ether * 0.002 ether * sigmaISQ / SIGMA_SQ) + 
-                _sqrt(1 ether * BLOCK_TIME * (block.number - bn) * sigmaISQ);
+            k += _sqrt(1 ether * BLOCK_TIME * (block.number - bn) * sigmaISQ);
         } else {
-            k = 0.002 ether + _sqrt(1 ether * BLOCK_TIME * SIGMA_SQ * (block.number - bn));
+            k += _sqrt(1 ether * BLOCK_TIME * SIGMA_SQ * (block.number - bn));
         }
     }
 
