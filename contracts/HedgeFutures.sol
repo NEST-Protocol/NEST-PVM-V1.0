@@ -389,8 +389,8 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
             value: msg.value
         } (ETH_USDT_CHANNEL_ID, 2, payback);
 
-        prices[1] = toETHPrice(prices[1]);
-        prices[3] = toETHPrice(prices[3]);
+        prices[1] = _toUSDTPrice(prices[1]);
+        prices[3] = _toUSDTPrice(prices[3]);
         // 将token价格转化为以usdt为单位计算的价格
         oraclePrice = prices[1];
         uint k = calcRevisedK(prices[3], prices[2], oraclePrice, prices[0]);

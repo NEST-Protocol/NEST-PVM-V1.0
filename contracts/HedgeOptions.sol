@@ -318,7 +318,7 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         } (ETH_USDT_CHANNEL_ID, exerciseBlock, msg.sender);
 
         // 将token价格转化为以usdt为单位计算的价格
-        uint oraclePrice = toETHPrice(rawPrice);
+        uint oraclePrice = _toUSDTPrice(rawPrice);
         // 4. 分情况计算用户可以获得的dcu数量
         uint gain = 0;
         // 计算结算结果
@@ -551,7 +551,7 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         } (ETH_USDT_CHANNEL_ID, payback);
 
         // 1.3. 将token价格转化为以usdt为单位计算的价格
-        oraclePrice = toETHPrice(rawPrice);
+        oraclePrice = _toUSDTPrice(rawPrice);
     }
 
     // 计算看涨期权价格

@@ -135,7 +135,6 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
         return (blockNumber, price, price * 9500 / 10000, 10853469234);
     }
 
-    
     /// @dev Returns lastPriceList and triggered price info
     /// @param tokenAddress Destination token address
     /// @param count The number of prices that want to return
@@ -233,7 +232,6 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
 
     ////////////////////////////////////////////////////////////////////////
 
-        
     /// @dev Get the latest trigger price
     /// @param channelId 报价通道编号
     /// @param payback 如果费用有多余的，则退回到此地址

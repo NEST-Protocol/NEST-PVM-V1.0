@@ -26,7 +26,7 @@ contract HedgeFrequentlyUsed is HedgeBase {
 
     uint constant TRANSFER_RATE = 0;
 
-    function toETHPrice(uint rawPrice) internal pure returns (uint) {
+    function _toUSDTPrice(uint rawPrice) internal pure returns (uint) {
         return 2000 ether * 1 ether / rawPrice;
     }
 }
