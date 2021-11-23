@@ -89,9 +89,9 @@ describe('HedgeOptions', function() {
                 value: toBigInt(0.01)
             });
 
-            await hedgeOptions.open(hbtc.address, 52450000000, false, 100000, toBigInt(100000), {
-                value: toBigInt(0.02)
-            });
+            // await hedgeOptions.open(hbtc.address, 52450000000, false, 100000, toBigInt(100000), {
+            //     value: toBigInt(0.02)
+            // });
             console.log('tokenCount=' + await hedgeOptions.getOptionCount());
             let options = await hedgeOptions.list(0, 5, 0);
             console.log(options);
@@ -99,14 +99,14 @@ describe('HedgeOptions', function() {
             options = await hedgeOptions.list(0, 5, 1);
             console.log(options);
 
-            let fot1 = await hedgeOptions.getOptionInfo(eth.address, 2450000000, true, 100000);
-            let fot2 = await hedgeOptions.getOptionInfo(hbtc.address, 52450000000, false, 100000);
+            //let fot1 = await hedgeOptions.getOptionInfo(eth.address, 2450000000, true, 100000);
+            //let fot2 = await hedgeOptions.getOptionInfo(hbtc.address, 52450000000, false, 100000);
 
-            console.log('fot1: ' + fot1.index);
-            console.log('fot2: ' + fot2.index);
+            //console.log('fot1: ' + fot1.index);
+            //console.log('fot2: ' + fot2.index);
 
-            console.log('fot1-name: ' + fot1);
-            console.log('fot2-name: ' + fot2);
+            //console.log('fot1-name: ' + fot1);
+            //console.log('fot2-name: ' + fot2);
         }
     });
 });

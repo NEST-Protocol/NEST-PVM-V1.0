@@ -25,18 +25,27 @@ contract HedgeFrequentlyUsed is HedgeBase {
     address USDT_TOKEN_ADDRESS;
 
     // USDT代币的基数
-    uint constant USDT_BASE = 1 ether;
+    uint constant USDT_BASE = 1000000;
 
     // ETH/USDT报价通道id
     uint constant ETH_USDT_CHANNEL_ID = 0;
 
     uint constant TRANSFER_RATE = 0;
 
+    // σ-usdt	0.00021368		波动率，每个币种独立设置（年化120%）
+    uint constant SIGMA_SQ = 45659142400;
+
+    // μ-usdt	0.000000025367		漂移系数，每个币种独立设置（年化80%）
+    uint constant MIU = 467938556917;
+    
+    // 区块时间
+    uint constant BLOCK_TIME = 3;
+
     function _toUSDTPrice(uint rawPrice) internal pure returns (uint) {
         return 2000 ether * 1 ether / rawPrice;
     }
 
-    // TODO:
+    // TODO: 删除
     /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
     ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
     /// @param newGovernance IHedgeGovernance implementation contract address

@@ -53,7 +53,7 @@ exports.deploy = async function() {
     //const dcu = await DCU.attach('0x0000000000000000000000000000000000000000');
     console.log('dcu: ' + dcu.address);
 
-    const nestPriceFacade = await NestPriceFacade.deploy();
+    const nestPriceFacade = await NestPriceFacade.deploy(usdt.address);
     //const nestPriceFacade = await NestPriceFacade.attach('0x0000000000000000000000000000000000000000');
     console.log('nestPriceFacade: ' + nestPriceFacade.address);
 
@@ -124,8 +124,6 @@ exports.deploy = async function() {
     //     miu: '467938556917', 
     //     minPeriod: 6000 
     // });
-    await usdt.transfer(usdt.address, 0);
-    await usdt.transfer(usdt.address, 0);
 
     console.log('9. dcu.setMinter(hedgeOptions.address, 1)');
     await dcu.setMinter(hedgeOptions.address, 1);
@@ -134,6 +132,8 @@ exports.deploy = async function() {
     console.log('11. dcu.setMinter(hedgeVaultForStaking.address, 1)');
     await dcu.setMinter(hedgeVaultForStaking.address, 1);
 
+    //await usdt.transfer(usdt.address, 0);
+    //await usdt.transfer(usdt.address, 0);
     await hedgeOptions.setUsdtTokenAddress(usdt.address);
     await hedgeFutures.setUsdtTokenAddress(usdt.address);
 
@@ -163,7 +163,9 @@ exports.deploy = async function() {
         hedgeFutures: hedgeFutures,
         hedgeVaultForStaking: hedgeVaultForStaking,
         nestPriceFacade: nestPriceFacade,
-        hedgeSwap: hedgeSwap
+        hedgeSwap: hedgeSwap,
+
+        BLOCK_TIME: 3
     };
 
     return contracts;

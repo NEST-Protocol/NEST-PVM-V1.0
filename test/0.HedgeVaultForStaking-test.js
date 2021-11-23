@@ -9,7 +9,7 @@ describe('HedgeOptions', function() {
         const { 
             eth, usdt, hbtc, dcu, 
             hedgeOptions, hedgeFutures, nestPriceFacade, hedgeGovernance,
-            hedgeVaultForStaking
+            hedgeVaultForStaking, BLOCK_TIME
         } = await deploy();
 
         await dcu.setMinter(owner.address, 1);

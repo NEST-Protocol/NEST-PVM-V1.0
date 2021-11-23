@@ -15,8 +15,16 @@ import "./DCU.sol";
 contract HedgeSwap is HedgeFrequentlyUsed, IHedgeSwap {
 
     // NEST代币地址
-    address constant NEST_TOKEN_ADDRESS = 0x04abEdA201850aC0124161F037Efd70c74ddC74C;
+    // TODO: 改为常量地址
+    //address constant NEST_TOKEN_ADDRESS = 0x04abEdA201850aC0124161F037Efd70c74ddC74C;
+    address NEST_TOKEN_ADDRESS;
 
+    // TODO: 删除
+    function setNestTokenAddress(address nestTokenAddress) external {
+        NEST_TOKEN_ADDRESS = nestTokenAddress;
+    }
+
+    // TODO: 改为15000000 * 15000000
     // K值，初始化存入3000万nest，同时增发3000万dcu到资金池
     uint constant K = 30000000 ether * 30000000 ether;
 

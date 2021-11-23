@@ -6,7 +6,7 @@ describe('HedgeOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
-        const { eth, usdt, hbtc, dcu, hedgeOptions, hedgeFutures, nestPriceFacade } = await deploy();
+        const { eth, usdt, hbtc, dcu, hedgeOptions, hedgeFutures, nestPriceFacade, BLOCK_TIME } = await deploy();
         const TestERC20 = await ethers.getContractFactory('TestERC20');
         await dcu.setMinter(owner.address, 1);
         await dcu.mint(owner.address, '10000000000000000000000000');
@@ -83,19 +83,19 @@ describe('HedgeOptions', function() {
             let bn2 = parseFloat(l2.baseBlock);
             let nbn = parseFloat(await ethers.provider.getBlockNumber());
             // let oraclePrice = await queryPrice(eth.address);
-            // console.log('balance1: ' + toDecimal(await hedgeFutures.balanceOf(l1.index, parseInt(oraclePrice / Math.exp(MIU * (nbn - bn1) * 14)), owner.address)));
-            // console.log('balance2: ' + toDecimal(await hedgeFutures.balanceOf(l2.index, parseInt(oraclePrice / Math.exp(MIU * (nbn - bn2) * 14)), owner.address)));
+            // console.log('balance1: ' + toDecimal(await hedgeFutures.balanceOf(l1.index, parseInt(oraclePrice / Math.exp(MIU * (nbn - bn1) * BLOCK_TIME)), owner.address)));
+            // console.log('balance2: ' + toDecimal(await hedgeFutures.balanceOf(l2.index, parseInt(oraclePrice / Math.exp(MIU * (nbn - bn2) * BLOCK_TIME)), owner.address)));
 
             let balance1 = async function() {
                 let nbn = parseFloat(await ethers.provider.getBlockNumber());
                 let oraclePrice = await queryPrice(eth.address);
-                return toDecimal(await hedgeFutures.balanceOf(l1.index, parseInt(oraclePrice / Math.exp(MIU * (nbn - bn1) * 14)), owner.address));
+                return toDecimal(await hedgeFutures.balanceOf(l1.index, parseInt(oraclePrice / Math.exp(MIU * (nbn - bn1) * BLOCK_TIME)), owner.address));
             };
             
             let balance2 = async function() {
                 let nbn = parseFloat(await ethers.provider.getBlockNumber());
                 let oraclePrice = await queryPrice(eth.address);
-                return toDecimal(await hedgeFutures.balanceOf(l2.index, parseInt(oraclePrice / Math.exp(MIU * (nbn - bn2) * 14)), owner.address));
+                return toDecimal(await hedgeFutures.balanceOf(l2.index, parseInt(oraclePrice / Math.exp(MIU * (nbn - bn2) * BLOCK_TIME)), owner.address));
             };
             console.log('balance1: ' + await balance1());            
             console.log('balance2: ' + await balance2());
@@ -125,7 +125,7 @@ describe('HedgeOptions', function() {
                         console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
                         let bn = parseFloat(lot.baseBlock);
                         let nbn = parseFloat(await ethers.provider.getBlockNumber());
-                        let x = 100 * (1 + futures[lever] * (3000 / Math.exp(MIU * (nbn - bn) * 14) - 3510) / 3510 * (oriens[orien] ? 1 : -1));
+                        let x = 100 * (1 + futures[lever] * (3000 / Math.exp(MIU * (nbn - bn) * BLOCK_TIME) - 3510) / 3510 * (oriens[orien] ? 1 : -1));
                         let b = parseFloat(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)));
 
                         console.log({

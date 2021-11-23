@@ -52,7 +52,7 @@ describe('HedgeOptions', function() {
             return price * 10 ** decimals;
         }
 
-        if (true) {
+        if (false) {
             console.log("1. open"); 
             for (var i = 0; i < 10; ++i)
             {

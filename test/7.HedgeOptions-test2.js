@@ -6,7 +6,7 @@ describe('HedgeOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
-        const { eth, usdt, hbtc, dcu, hedgeOptions, hedgeFutures, nestPriceFacade } = await deploy();
+        const { eth, usdt, hbtc, dcu, hedgeOptions, hedgeFutures, nestPriceFacade, BLOCK_TIME } = await deploy();
         const sigma = 0.00021368;
         const miu = 0.000000025367;
 
@@ -120,6 +120,8 @@ describe('HedgeOptions', function() {
         }
 
         let oraclePrice = 3510000000;
+        let j = 0;
+
         if (true) {
             console.log('5. 看涨期权买入算法');
             const BLOCK = 2000000;
@@ -129,11 +131,15 @@ describe('HedgeOptions', function() {
                 await hedgeOptions.open(eth.address, i, true, BLOCK, toBigInt(1000), {
                     value: toBigInt(0.01)
                 });
-                let fot = await hedgeOptions.getOptionInfo(eth.address, i, true, BLOCK);
+                //let fot = await hedgeOptions.getOptionInfo(eth.address, i, true, BLOCK);
+                let fot =  { index: j++ };
                 console.log('fot: ' + toDecimal(await hedgeOptions.balanceOf(fot.index, owner.address)));
-                let vc = Vc(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
+                let vc = Vc(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * BLOCK_TIME);
                 let cal = 1000 * 1000000 / vc;
-                console.log('cal: ' + cal);
+                console.log({
+                    cal: cal.toString(),
+                    bal: toDecimal(await hedgeOptions.balanceOf(fot.index, owner.address))
+                });
 
                 expect(Math.abs(parseFloat(toDecimal(await hedgeOptions.balanceOf(fot.index, owner.address))) - cal)).to.lt(0.0001);
                 
@@ -168,9 +174,10 @@ describe('HedgeOptions', function() {
                 await hedgeOptions.open(eth.address, i, false, BLOCK, toBigInt(1000), {
                     value: toBigInt(0.01)
                 });
-                let fot = await hedgeOptions.getOptionInfo(eth.address, i, false, BLOCK);
+                // let fot = await hedgeOptions.getOptionInfo(eth.address, i, false, BLOCK);
+                let fot = { index: j++ };
                 console.log('fot: ' + toDecimal(await hedgeOptions.balanceOf(fot.index, owner.address)));
-                let vp = Vp(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
+                let vp = Vp(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * BLOCK_TIME);
                 let put = 1000 * 1000000 / vp;
                 console.log('put: ' + put);
 
@@ -208,9 +215,10 @@ describe('HedgeOptions', function() {
                 await hedgeOptions.open(eth.address, i, true, BLOCK, toBigInt(1000), {
                     value: toBigInt(0.01)
                 });
-                let fot = await hedgeOptions.getOptionInfo(eth.address, i, true, BLOCK);
+                // let fot = await hedgeOptions.getOptionInfo(eth.address, i, true, BLOCK);
+                let fot = { index: j++ };
                 console.log('fot: ' + toDecimal(await hedgeOptions.balanceOf(fot.index, owner.address)));
-                let vc = Vc(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
+                let vc = Vc(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * BLOCK_TIME);
                 let cal = 1000 * 1000000 / vc;
                 console.log('cal: ' + cal);
 
@@ -247,9 +255,10 @@ describe('HedgeOptions', function() {
                 await hedgeOptions.open(eth.address, i, false, BLOCK, toBigInt(1000), {
                     value: toBigInt(0.01)
                 });
-                let fot = await hedgeOptions.getOptionInfo(eth.address, i, false, BLOCK);
+                // let fot = await hedgeOptions.getOptionInfo(eth.address, i, false, BLOCK);
+                let fot = { index: j++ };
                 console.log('fot: ' + toDecimal(await hedgeOptions.balanceOf(fot.index, owner.address)));
-                let vp = Vp(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
+                let vp = Vp(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * BLOCK_TIME);
                 let put = 1000 * 1000000 / vp;
                 console.log('put: ' + put);
 
@@ -277,7 +286,7 @@ describe('HedgeOptions', function() {
         }
 
         oraclePrice = 46081081081;
-        if (true) {
+        if (false) {
             console.log('9. 看涨期权买入算法HBTC');
             const BLOCK = 2000000;
             for (var i = 40000000000 / 3; i < 40000000000 * 2; ) {
@@ -286,9 +295,10 @@ describe('HedgeOptions', function() {
                 await hedgeOptions.open(hbtc.address, i, true, BLOCK, toBigInt(100000), {
                     value: toBigInt(0.02)
                 });
-                let fot = await hedgeOptions.getOptionInfo(hbtc.address, i, true, BLOCK);
+                // let fot = await hedgeOptions.getOptionInfo(hbtc.address, i, true, BLOCK);
+                let fot = { index: j++ };
                 console.log('fot: ' + toDecimal(await hedgeOptions.balanceOf(fot.index, owner.address)));
-                let vc = Vc(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
+                let vc = Vc(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * BLOCK_TIME);
                 let cal = 100000 * 1000000 / vc;
                 console.log('cal: ' + cal);
 
@@ -315,7 +325,7 @@ describe('HedgeOptions', function() {
             }
         }
 
-        if (true) {
+        if (false) {
             console.log();
             console.log('10. 看跌期权买入算法HBTC');
             const BLOCK = 2000000;
@@ -325,9 +335,10 @@ describe('HedgeOptions', function() {
                 await hedgeOptions.open(hbtc.address, i, false, BLOCK, toBigInt(100000), {
                     value: toBigInt(0.02)
                 });
-                let fot = await hedgeOptions.getOptionInfo(hbtc.address, i, false, BLOCK);
+                // let fot = await hedgeOptions.getOptionInfo(hbtc.address, i, false, BLOCK);
+                let fot = { index: j++ };
                 console.log('fot: ' + toDecimal(await hedgeOptions.balanceOf(fot.index, owner.address)));
-                let vp = Vp(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
+                let vp = Vp(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * BLOCK_TIME);
                 let put = 100000 * 1000000 / vp;
                 console.log('put: ' + put);
 
@@ -356,7 +367,7 @@ describe('HedgeOptions', function() {
 
         await nestPriceFacade.setPrice(usdt.address, '3510000000', 1);
         oraclePrice = 47432432432;
-        if (true) {
+        if (false) {
             console.log('11. 看涨期权买入算法HBTC');
             const BLOCK = 2000000;
             for (var i = 40000000000 / 3; i < 40000000000 * 2; ) {
@@ -365,9 +376,10 @@ describe('HedgeOptions', function() {
                 await hedgeOptions.open(hbtc.address, i, true, BLOCK, toBigInt(100000), {
                     value: toBigInt(0.02)
                 });
-                let fot = await hedgeOptions.getOptionInfo(hbtc.address, i, true, BLOCK);
+                // let fot = await hedgeOptions.getOptionInfo(hbtc.address, i, true, BLOCK);
+                let fot = { index: j++ };
                 console.log('fot: ' + toDecimal(await hedgeOptions.balanceOf(fot.index, owner.address)));
-                let vc = Vc(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
+                let vc = Vc(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * BLOCK_TIME);
                 let cal = 100000 * 1000000 / vc;
                 console.log('cal: ' + cal);
 
@@ -394,7 +406,7 @@ describe('HedgeOptions', function() {
             }
         }
 
-        if (true) {
+        if (false) {
             console.log();
             console.log('12. 看跌期权买入算法HBTC');
             const BLOCK = 2000000;
@@ -404,9 +416,10 @@ describe('HedgeOptions', function() {
                 await hedgeOptions.open(hbtc.address, i, false, BLOCK, toBigInt(100000), {
                     value: toBigInt(0.02)
                 });
-                let fot = await hedgeOptions.getOptionInfo(hbtc.address, i, false, BLOCK);
+                // let fot = await hedgeOptions.getOptionInfo(hbtc.address, i, false, BLOCK);
+                let fot = { index: j++ };
                 console.log('fot: ' + toDecimal(await hedgeOptions.balanceOf(fot.index, owner.address)));
-                let vp = Vp(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
+                let vp = Vp(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * BLOCK_TIME);
                 let put = 100000 * 1000000 / vp;
                 console.log('put: ' + put);
 
@@ -435,7 +448,7 @@ describe('HedgeOptions', function() {
 
         await nestPriceFacade.setPrice(hbtc.address, '73000000000000000', 1);
         oraclePrice = 48082191780;
-        if (true) {
+        if (false) {
             console.log('13. 看涨期权买入算法HBTC');
             const BLOCK = 2000000;
             for (var i = 40000000000 / 3; i < 40000000000 * 2; ) {
@@ -444,9 +457,10 @@ describe('HedgeOptions', function() {
                 await hedgeOptions.open(hbtc.address, i, true, BLOCK, toBigInt(100000), {
                     value: toBigInt(0.02)
                 });
-                let fot = await hedgeOptions.getOptionInfo(hbtc.address, i, true, BLOCK);
+                // let fot = await hedgeOptions.getOptionInfo(hbtc.address, i, true, BLOCK);
+                let fot = { index: j++ };
                 console.log('fot: ' + toDecimal(await hedgeOptions.balanceOf(fot.index, owner.address)));
-                let vc = Vc(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
+                let vc = Vc(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * BLOCK_TIME);
                 let cal = 100000 * 1000000 / vc;
                 console.log('cal: ' + cal);
 
@@ -473,7 +487,7 @@ describe('HedgeOptions', function() {
             }
         }
 
-        if (true) {
+        if (false) {
             console.log();
             console.log('14. 看跌期权买入算法HBTC');
             const BLOCK = 2000000;
@@ -483,9 +497,10 @@ describe('HedgeOptions', function() {
                 await hedgeOptions.open(hbtc.address, i, false, BLOCK, toBigInt(100000), {
                     value: toBigInt(0.02)
                 });
-                let fot = await hedgeOptions.getOptionInfo(hbtc.address, i, false, BLOCK);
+                //let fot = await hedgeOptions.getOptionInfo(hbtc.address, i, false, BLOCK);
+                let fot = { index: j++ };
                 console.log('fot: ' + toDecimal(await hedgeOptions.balanceOf(fot.index, owner.address)));
-                let vp = Vp(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * 14);
+                let vp = Vp(oraclePrice, i, sigma, miu, (BLOCK - await ethers.provider.getBlockNumber()) * BLOCK_TIME);
                 let put = 100000 * 1000000 / vp;
                 console.log('put: ' + put);
 

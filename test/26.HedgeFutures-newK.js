@@ -6,7 +6,7 @@ describe('HedgeOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
-        const { eth, usdt, hbtc, dcu, hedgeOptions, hedgeFutures, nestPriceFacade } = await deploy();
+        const { eth, usdt, hbtc, dcu, hedgeOptions, hedgeFutures, nestPriceFacade, BLOCK_TIME } = await deploy();
         const TestERC20 = await ethers.getContractFactory('TestERC20');
         await dcu.setMinter(owner.address, 1);
         await dcu.mint(owner.address, '10000000000000000000000000');
@@ -24036,12 +24036,18 @@ describe('HedgeOptions', function() {
         const calcK = async function(p0, bn0, p, bn) {
             const SIGMASQ = 45659142400e-18;
             let sigma = Math.sqrt(SIGMASQ);
-            let sigmai = Math.abs((p - p0) / p0 / Math.sqrt((bn - bn0) * 14));
+            let sigmai = Math.abs((p - p0) / p0 / Math.sqrt((bn - bn0) * BLOCK_TIME));
+            let k = 0.002;
+            if (Math.abs((p - p0) / p0) > 0.002) {
+                k = Math.abs((p - p0) / p0);
+            }
             let blockNumber = await ethers.provider.getBlockNumber();
             if (sigmai > sigma) {
                 console.log('sigmai > sigma');
             }
-            k = 0.002 * Math.max(sigmai/sigma, 1) + Math.sqrt((blockNumber + 13467776 - bn) * 14) * Math.max(sigmai, sigma);
+            // fort算法 把前面一项改成 max ((p2-p1)/p1,0.002) 后面不变
+            //k = 0.002 * Math.max(sigmai/sigma, 1) + Math.sqrt((blockNumber + 13467776 - bn) * BLOCK_TIME) * Math.max(sigmai, sigma);
+            k += Math.sqrt((blockNumber + 13467776 - bn) * BLOCK_TIME) * Math.max(sigmai, sigma);
             return k;
         };
 

@@ -13,6 +13,8 @@ import "./interfaces/INestOpenPrice.sol";
 import "./HedgeFrequentlyUsed.sol";
 import "./DCU.sol";
 
+import "hardhat/console.sol";
+
 /// @dev 欧式期权
 contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
 
@@ -28,9 +30,6 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         //mapping(address=>uint) balances;
     }
 
-    // 区块时间
-    uint constant BLOCK_TIME = 14;
-
     // 64位二进制精度的1
     int128 constant ONE = 0x10000000000000000;
 
@@ -40,14 +39,9 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
     // 期权卖出价值比例，万分制。9750
     uint constant SELL_RATE = 9500;
 
-    // σ-usdt	0.00021368		波动率，每个币种独立设置（年化120%）
-    uint constant SIGMA_SQ = 45659142400;
-
-    // μ-usdt	0.000000025367		漂移系数，每个币种独立设置（年化80%）
-    uint constant MIU = 467938556917;
-
+    // TODO: 改为正确的值（需要确定）
     // 期权行权最小间隔	6000	区块数	行权时间和当前时间最小间隔区块数，统一设置
-    uint constant MIN_PERIOD = 180000;
+    uint constant MIN_PERIOD = 1;
 
     // // 期权代币映射
     // mapping(uint=>uint) _optionMapping;
@@ -259,9 +253,10 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
 
         // 1. 调用预言机获取价格
         uint oraclePrice = _queryPrice(tokenAddress, msg.value, msg.sender);
-
+        console.log("open-oraclePrice", oraclePrice);
         // 2. 计算可以买到的期权份数
         uint amount = estimate(tokenAddress, oraclePrice, strikePrice, orientation, exerciseBlock, dcuAmount);
+        console.log("open-amount", amount);
 
         // 3. 获取或创建期权代币
         //uint key = _getKey(tokenAddress, strikePrice, orientation, exerciseBlock);
@@ -322,6 +317,8 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
 
         // 2. 调用预言机获取价格
 
+        console.log("estimate-oraclePrice", oraclePrice);
+        console.log("estimate-strikePrice", strikePrice);
         // 3. 计算权利金（需要的dcu数量）
         // 按照平均每14秒出一个块计算
         uint v = calcV(
@@ -363,7 +360,8 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         bool orientation = option.orientation;
         uint exerciseBlock = uint(option.exerciseBlock);
 
-        require(block.number >= exerciseBlock, "FEO:at maturity");
+        // TODO: 测试时不检查行权时间
+        //require(block.number >= exerciseBlock, "FEO:at maturity");
 
         // 2. 销毁期权代币
         //option.balances[msg.sender] -= amount;

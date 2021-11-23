@@ -158,7 +158,7 @@ exports.deploy = async function() {
     // await hedgeFutures.create(eth.address, 4, false);
     // await hedgeFutures.create(eth.address, 5, false);
 
-    // // TODO: 2021-10-20 15:30执行
+    // 2021-10-20 15:30执行
     // console.log('9. dcu.setMinter(hedgeOptions.address, 1)');
     // await dcu.setMinter(hedgeOptions.address, 1);
     // console.log('10. dcu.setMinter(hedgeFutures.address, 1)');

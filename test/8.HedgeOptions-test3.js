@@ -6,7 +6,7 @@ describe('HedgeOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
-        const { eth, usdt, hbtc, dcu, hedgeOptions, hedgeFutures, nestPriceFacade } = await deploy();
+        const { eth, usdt, hbtc, dcu, hedgeOptions, hedgeFutures, nestPriceFacade, BLOCK_TIME } = await deploy();
 
         await dcu.setMinter(owner.address, 1);
         await dcu.mint(owner.address, '10000000000000000000000000');
@@ -280,11 +280,11 @@ describe('HedgeOptions', function() {
             };
 
             let MIU = 0.3 / 86400 / 365;
-            await test(0.00001, MIU, 2450000000, 14 * 10000, 2450000000);
+            await test(0.00001, MIU, 2450000000, BLOCK_TIME * 10000, 2450000000);
             for (var sigma = 0.00005; sigma < 0.1; sigma = sigma * 3.1) {
                 for (var miu = MIU / 10; miu < MIU * 20; miu *= 7.1) {
                     for (var S0 = 10000000; S0 < 1e10; S0 *= 137) {
-                        for (var T = 1000 * 14; T < 100000000 * 14; T *= 61) {
+                        for (var T = 1000 * BLOCK_TIME; T < 100000000 * BLOCK_TIME; T *= 61) {
                             for (var b = 0.7; b < 1.5; b *= 1.9) {
                                 await test(sigma, miu, S0, T, Math.floor(S0 * b));
                             }
@@ -317,11 +317,11 @@ describe('HedgeOptions', function() {
             };
 
             let MIU = 0.3 / 86400 / 365;
-            await test(0.00001, MIU, 2450000000, 14 * 10000, 2450000000);
+            await test(0.00001, MIU, 2450000000, BLOCK_TIME * 10000, 2450000000);
             for (var sigma = 0.00005; sigma < 0.1; sigma = sigma * 3.1) {
                 for (var miu = MIU / 10; miu < MIU * 20; miu *= 7.1) {
                     for (var S0 = 10000000; S0 < 1e10; S0 *= 137) {
-                        for (var T = 1000 * 14; T < 100000000 * 14; T *= 61) {
+                        for (var T = 1000 * BLOCK_TIME; T < 100000000 * BLOCK_TIME; T *= 61) {
                             for (var b = 0.7; b < 1.5; b *= 1.9) {
                                 await test(sigma, miu, S0, T, Math.floor(S0 * b));
                             }

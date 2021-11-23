@@ -16,6 +16,10 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
 
     mapping(address=>Price) _prices;
 
+    constructor(address defaultAddress) {
+        DEFAULT_ADDRESS = defaultAddress;
+    }
+
     function setPrice(address token, uint price, uint dbn) external {
         _prices[token] = Price(price, dbn);
     }
@@ -279,10 +283,15 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
         // if (height > 90) {
         //     return (height - 1, 2450000000);
         // }
-        return latestPriceView(DEFAULT_ADDRESS);
+        (blockNumber, price) = latestPriceView(DEFAULT_ADDRESS);
+        price = _toETHPrice(price);
     }
 
-    address constant DEFAULT_ADDRESS = address(0);
+    address DEFAULT_ADDRESS;
+
+    function _toETHPrice(uint price) private pure returns (uint) {
+        return 2000 ether * 1 ether / price;
+    }
 
     /// @dev Get the latest effective price
     /// @param channelId 报价通道编号
@@ -299,7 +308,8 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
         // if (block.number > 90) {
         //     return (block.number - 1, 450000000);
         // }
-        return latestPriceView(DEFAULT_ADDRESS);
+        (blockNumber, price) = latestPriceView(DEFAULT_ADDRESS);
+        price = _toETHPrice(price);
     }
 
     /// @dev Get the last (num) effective price
@@ -321,6 +331,9 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
             ,//uint triggeredAvgPrice,
             //uint triggeredSigmaSQ
         ) = lastPriceListAndTriggeredPriceInfoView(DEFAULT_ADDRESS, count);
+
+        prices[1] = _toETHPrice(prices[1]);
+        prices[3] = _toETHPrice(prices[3]);
 
         return prices;
     }

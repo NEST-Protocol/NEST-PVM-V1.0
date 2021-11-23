@@ -39,20 +39,11 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
         mapping(address=>Account) accounts;
     }
 
-    // σ-usdt	0.00021368		波动率，每个币种独立设置（年化120%）
-    uint constant SIGMA_SQ = 45659142400;
-
-    // μ-usdt	0.000000025367		漂移系数，每个币种独立设置（年化80%）
-    uint constant MIU = 467938556917;
-    
     // 最小余额数量，余额小于此值会被清算
     uint constant MIN_VALUE = 10 ether;
 
     // // 买入永续合约和其他交易之间最小的间隔区块数
     // uint constant MIN_PERIOD = 100;
-
-    // 区块时间
-    uint constant BLOCK_TIME = 14;
 
     // 永续合约映射
     mapping(uint=>uint) _futureMapping;
@@ -395,6 +386,9 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
         oraclePrice = prices[1];
         uint k = calcRevisedK(prices[3], prices[2], oraclePrice, prices[0]);
 
+        // TODO: 还原K值
+        k = 0;
+
         // 看涨的时候，初始价格乘以(1+k)，卖出价格除以(1+k)
         // 看跌的时候，初始价格除以(1+k)，卖出价格乘以(1+k)
         // 合并的时候，s0用记录的价格，s1用k修正的
@@ -434,10 +428,11 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
 
         sigmaISQ = sigmaISQ * sigmaISQ / (bn - bn0) / BLOCK_TIME / 1 ether;
 
+        // TODO: 删除13467776
         if (sigmaISQ > SIGMA_SQ) {
-            k += _sqrt(1 ether * BLOCK_TIME * (block.number - bn) * sigmaISQ);
+            k += _sqrt(1 ether * BLOCK_TIME * (block.number + 13467776 - bn) * sigmaISQ);
         } else {
-            k += _sqrt(1 ether * BLOCK_TIME * SIGMA_SQ * (block.number - bn));
+            k += _sqrt(1 ether * BLOCK_TIME * SIGMA_SQ * (block.number + 13467776 - bn));
         }
     }
 
