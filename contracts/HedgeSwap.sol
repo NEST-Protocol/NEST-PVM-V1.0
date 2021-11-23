@@ -48,7 +48,6 @@ contract HedgeSwap is HedgeFrequentlyUsed, IHedgeSwap {
     /// @dev Swap token
     /// @param src Src token address
     /// @param dest Dest token address
-    /// @param amountIn The exact amount of Token a trader want to swap into pool
     /// @param to The target address receiving the ETH
     /// @param payback As the charging fee may change, it is suggested that the caller pay more fees, 
     /// and the excess fees will be returned through this address
@@ -57,7 +56,7 @@ contract HedgeSwap is HedgeFrequentlyUsed, IHedgeSwap {
     function swap(
         address src, 
         address dest, 
-        uint amountIn, 
+        uint /*amountIn*/, 
         address to, 
         address payback
     ) external payable returns (
@@ -76,6 +75,8 @@ contract HedgeSwap is HedgeFrequentlyUsed, IHedgeSwap {
         } else {
             revert("HS:pair not allowed");
         }
+
+        mined = 0;
     }
 
     /// @dev 使用确定数量的nest兑换dcu

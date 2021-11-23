@@ -13,8 +13,6 @@ import "./interfaces/INestOpenPrice.sol";
 import "./HedgeFrequentlyUsed.sol";
 import "./DCU.sol";
 
-import "hardhat/console.sol";
-
 /// @dev 欧式期权
 contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
 
@@ -60,49 +58,6 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
     address[] _accounts;
 
     constructor() {
-    }
-
-    /// @dev Gets the address corresponding to the given index number
-    /// @param index The index number of the specified address
-    /// @return The address corresponding to the given index number
-    function _indexAddress(uint index) public view returns (address) {
-        return _accounts[index];
-    }
-
-    /// @dev Gets the index number of the specified address. If it does not exist, register
-    /// @param addr Destination address
-    /// @return The index number of the specified address
-    function _addressIndex(address addr) private returns (uint) {
-
-        uint index = _accountMapping[addr];
-        if (index == 0) {
-            // If it exceeds the maximum number that 32 bits can store, you can't continue to register a new account.
-            // If you need to support a new account, you need to update the contract
-            require((_accountMapping[addr] = index = _accounts.length) < 0x100000000, "HO:!accounts");
-            _accounts.push(addr);
-        }
-
-        return index;
-    }
-
-    /// @dev Gets the address corresponding to the given index number
-    /// @param index The index number of the specified address
-    /// @return The address corresponding to the given index number
-    function indexAddress(uint index) public view returns (address) {
-        return _accounts[index];
-    }
-
-    /// @dev Gets the registration index number of the specified address
-    /// @param addr Destination address
-    /// @return 0 means nonexistent, non-0 means index number
-    function getAccountIndex(address addr) public view returns (uint) {
-        return _accountMapping[addr];
-    }
-
-    /// @dev Get the length of registered account array
-    /// @return The length of registered account array
-    function getAccountCount() external view returns (uint) {
-        return _accounts.length;
     }
 
     /// @dev To support open-zeppelin/upgrades
@@ -169,7 +124,7 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         for (uint index = 0; index < count && i > end;) {
             Option storage option = options[--i];
             if (uint(option.owner) == ownerIndex) {
-                optionArray[index++] = _toOptionView(option, i, owner);
+                optionArray[index++] = _toOptionView(option, i);
             }
         }
     }
@@ -198,7 +153,7 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
             uint end = index > count ? index - count : 0;
             while (index > end) {
                 Option storage option = options[--index];
-                optionArray[i++] = _toOptionView(option, index, msg.sender);
+                optionArray[i++] = _toOptionView(option, index);
             }
         } 
         // 正序
@@ -209,7 +164,7 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
                 end = length;
             }
             while (index < end) {
-                optionArray[i++] = _toOptionView(options[index], index, msg.sender);
+                optionArray[i++] = _toOptionView(options[index], index);
                 ++index;
             }
         }
@@ -219,22 +174,6 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
     /// @return 已经开通的欧式期权代币数量
     function getOptionCount() external view override returns (uint) {
         return _options.length;
-    }
-
-    /// @dev 获取期权信息
-    /// @param tokenAddress 目标代币地址，0表示eth
-    /// @param strikePrice 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
-    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
-    /// @param exerciseBlock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
-    /// @return 期权信息
-    function getOptionInfo(
-        address tokenAddress, 
-        uint strikePrice, 
-        bool orientation, 
-        uint exerciseBlock
-    ) external view override returns (OptionView memory) {        
-        //uint index = _optionMapping[_getKey(tokenAddress, strikePrice, orientation, exerciseBlock)];
-        //return _toOptionView(_options[index], index, msg.sender);
     }
 
     /// @dev 开仓
@@ -253,10 +192,9 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
 
         // 1. 调用预言机获取价格
         uint oraclePrice = _queryPrice(tokenAddress, msg.value, msg.sender);
-        console.log("open-oraclePrice", oraclePrice);
+
         // 2. 计算可以买到的期权份数
         uint amount = estimate(tokenAddress, oraclePrice, strikePrice, orientation, exerciseBlock, dcuAmount);
-        console.log("open-amount", amount);
 
         // 3. 获取或创建期权代币
         //uint key = _getKey(tokenAddress, strikePrice, orientation, exerciseBlock);
@@ -317,8 +255,6 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
 
         // 2. 调用预言机获取价格
 
-        console.log("estimate-oraclePrice", oraclePrice);
-        console.log("estimate-strikePrice", strikePrice);
         // 3. 计算权利金（需要的dcu数量）
         // 按照平均每14秒出一个块计算
         uint v = calcV(
@@ -355,7 +291,7 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
 
         // 1. 获取期权信息
         Option storage option = _options[index];
-        address tokenAddress = address(0);// option.tokenAddress;
+        //address tokenAddress = address(0);// option.tokenAddress;
         uint strikePrice = _decodeFloat(option.strikePrice);
         bool orientation = option.orientation;
         uint exerciseBlock = uint(option.exerciseBlock);
@@ -369,7 +305,7 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
 
         // 3. 调用预言机获取价格，读取预言机在指定区块的价格
         // 3.1. 获取token相对于eth的价格
-        uint tokenAmount = 1 ether;
+        //uint tokenAmount = 1 ether;
         uint fee = msg.value;
 
         // 3.2. 获取usdt相对于eth的价格
@@ -477,11 +413,30 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
             : _calcVp(oraclePrice, T, strikePrice);
     }
 
+    /// @dev Gets the address corresponding to the given index number
+    /// @param index The index number of the specified address
+    /// @return The address corresponding to the given index number
+    function indexAddress(uint index) public view returns (address) {
+        return _accounts[index];
+    }
+
+    /// @dev Gets the registration index number of the specified address
+    /// @param addr Destination address
+    /// @return 0 means nonexistent, non-0 means index number
+    function getAccountIndex(address addr) public view returns (uint) {
+        return _accountMapping[addr];
+    }
+
+    /// @dev Get the length of registered account array
+    /// @return The length of registered account array
+    function getAccountCount() external view returns (uint) {
+        return _accounts.length;
+    }
+
     // 转化位OptionView
     function _toOptionView(
         Option storage option, 
-        uint index, 
-        address owner
+        uint index
     ) private view returns (OptionView memory) {
         return OptionView(
             index,
@@ -609,8 +564,9 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
 
     // 查询token价格
     function _queryPrice(address tokenAddress, uint fee, address payback) private returns (uint oraclePrice) {
+        require(tokenAddress == address(0), "HO:not allowed!");
         // 1.1. 获取token相对于eth的价格
-        uint tokenAmount = 1 ether;
+        //uint tokenAmount = 1 ether;
 
         // 1.2. 获取usdt相对于eth的价格
         (, uint rawPrice) = INestOpenPrice(NEST_PRICE_FACADE_ADDRESS).latestPrice {
@@ -692,5 +648,21 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
     /// @return decode format
     function _decodeFloat(uint56 floatValue) private pure returns (uint) {
         return (uint(floatValue) >> 6) << ((uint(floatValue) & 0x3F) << 2);
+    }
+    
+    /// @dev Gets the index number of the specified address. If it does not exist, register
+    /// @param addr Destination address
+    /// @return The index number of the specified address
+    function _addressIndex(address addr) private returns (uint) {
+
+        uint index = _accountMapping[addr];
+        if (index == 0) {
+            // If it exceeds the maximum number that 32 bits can store, you can't continue to register a new account.
+            // If you need to support a new account, you need to update the contract
+            require((_accountMapping[addr] = index = _accounts.length) < 0x100000000, "HO:!accounts");
+            _accounts.push(addr);
+        }
+
+        return index;
     }
 }

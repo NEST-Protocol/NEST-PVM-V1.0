@@ -24,24 +24,7 @@
     function getOptionCount() external view returns (uint);
 ```
 
-### 2.3. 获取期权信息
-
-```javascript
-    /// @dev 获取期权信息
-    /// @param tokenAddress 目标代币地址，0表示eth
-    /// @param strikePrice 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
-    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
-    /// @param exerciseBlock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
-    /// @return 期权信息
-    function getOptionInfo(
-        address tokenAddress, 
-        uint strikePrice, 
-        bool orientation, 
-        uint exerciseBlock
-    ) external view returns (OptionView memory);
-```
-
-### 2.4. 开仓
+### 2.3. 开仓
 
 ```javascript
     /// @dev 开仓
@@ -60,7 +43,7 @@
 ```
 Note: This method may triggers the New event and Open event, See also 3.1 and 3.2.
 
-### 2.5. 行权
+### 2.4. 行权
 
 ```javascript
     /// @dev 行权
@@ -70,7 +53,7 @@ Note: This method may triggers the New event and Open event, See also 3.1 and 3.
 ```
 Note: This method will triggers the Exercise event, See also 3.3.
 
-### 2.6. 预估开仓可以买到的期权币数量
+### 2.5. 预估开仓可以买到的期权币数量
 
 ```javascript
     /// @dev 预估开仓可以买到的期权币数量
@@ -91,7 +74,7 @@ Note: This method will triggers the Exercise event, See also 3.3.
     ) external view returns (uint amount);
 ```
 
-### 2.7. 查找目标账户的期权（倒序）
+### 2.6. 查找目标账户的期权（倒序）
 
 ```javascript
     /// @dev 查找目标账户的期权（倒序）
@@ -108,7 +91,7 @@ Note: This method will triggers the Exercise event, See also 3.3.
     ) external view returns (OptionView[] memory optionArray);
 ```
 
-### 2.8. 卖出期权
+### 2.7. 卖出期权
 
 ```javascript
     /// @dev 卖出期权
@@ -117,7 +100,7 @@ Note: This method will triggers the Exercise event, See also 3.3.
     function sell(uint index, uint amount) external payable;
 ```
 
-### 2.9. 计算期权价格
+### 2.8. 计算期权价格
 
 ```javascript
     /// @dev 计算期权价格

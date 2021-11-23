@@ -101,19 +101,19 @@ interface IHedgeOptions {
     /// @dev 获取已经开通的欧式期权代币数量
     /// @return 已经开通的欧式期权代币数量
     function getOptionCount() external view returns (uint);
-
-    /// @dev 获取期权信息
-    /// @param tokenAddress 目标代币地址，0表示eth
-    /// @param strikePrice 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
-    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
-    /// @param exerciseBlock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
-    /// @return 期权信息
-    function getOptionInfo(
-        address tokenAddress, 
-        uint strikePrice, 
-        bool orientation, 
-        uint exerciseBlock
-    ) external view returns (OptionView memory);
+    
+    // /// @dev 获取期权信息
+    // /// @param tokenAddress 目标代币地址，0表示eth
+    // /// @param strikePrice 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
+    // /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
+    // /// @param exerciseBlock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
+    // /// @return 期权信息
+    // function getOptionInfo(
+    //     address tokenAddress, 
+    //     uint strikePrice, 
+    //     bool orientation, 
+    //     uint exerciseBlock
+    // ) external view returns (OptionView memory);
 
     /// @dev 预估开仓可以买到的期权币数量
     /// @param tokenAddress 目标代币地址，0表示eth

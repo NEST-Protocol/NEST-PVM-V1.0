@@ -59,6 +59,7 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
             require(msg.value == 0.01 ether, "NestPriceFacade:Error fee");
         }
 
+        require(height > 0);
         // if (height > 90) {
         //     return (height - 1, 2450000000);
         // }
@@ -274,6 +275,9 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
         uint height, 
         address payback
     ) external payable override returns (uint blockNumber, uint price) {
+        require(channelId >= 0);
+        require(height >= 0);
+
         if (msg.value > 0.005 ether) {
             payable(payback).transfer(msg.value - 0.005 ether);
         } else {
@@ -299,6 +303,8 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
     function latestPrice(uint channelId, address payback) external payable override returns (uint blockNumber, uint price) {
+        require(channelId >= 0);
+
         if (msg.value > 0.005 ether) {
             payable(payback).transfer(msg.value - 0.005 ether);
         } else {
@@ -318,6 +324,8 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
     /// @param payback 如果费用有多余的，则退回到此地址
     /// @return An array which length is num * 2, each two element expresses one price like blockNumber｜price
     function lastPriceList(uint channelId, uint count, address payback) external payable override returns (uint[] memory) {
+        require(channelId >= 0);
+
         if (msg.value > 0.005 ether) {
             payable(payback).transfer(msg.value - 0.005 ether);
         } else {
