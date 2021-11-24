@@ -39,7 +39,7 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
 
     // TODO: 改为正确的值（需要确定）
     // 期权行权最小间隔	6000	区块数	行权时间和当前时间最小间隔区块数，统一设置
-    uint constant MIN_PERIOD = 1;
+    uint constant MIN_PERIOD = 10;
 
     // // 期权代币映射
     // mapping(uint=>uint) _optionMapping;

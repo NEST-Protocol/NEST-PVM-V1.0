@@ -34,7 +34,7 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
 
         Price memory p = _prices[tokenAddress];
         if (p.price == 0) {
-            p = Price(2700 * 1000000, 1);
+            p = Price(2700 * 1 ether, 1);
         }
 
         return (block.number - p.dbn, p.price);
@@ -388,6 +388,28 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
         uint triggeredAvgPrice,
         uint triggeredSigmaSQ
     ) {
+        require(channelId >= 0);
 
+        if (msg.value > 0.005 ether) {
+            payable(payback).transfer(msg.value - 0.005 ether);
+        } else {
+            require(msg.value == 0.005 ether, "CoFiXController: Error fee");
+        }
+
+        (uint bn, uint price) = latestPriceView(DEFAULT_ADDRESS);
+        prices = new uint[](count <<= 1);
+        for (uint i = 0; i < count;) {
+            prices[i] = bn - i;
+            //prices[i + 1] = price + i * 1.79e6;
+            prices[i + 1] = price + i * 1.789e6;
+            i += 2; 
+        }
+        uint avgPrice = price * 9500 / 10000;
+        for (uint i = 1; i < prices.length; i += 2) {
+            prices[i] = _toETHPrice(prices[i]);
+        }
+        avgPrice = _toETHPrice(avgPrice);
+
+        return (prices, bn, price, avgPrice, 10853469234);
     }
 }

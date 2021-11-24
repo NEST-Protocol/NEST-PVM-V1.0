@@ -9,13 +9,13 @@ describe('HedgeOptions', function() {
         const { 
             eth, usdt, hbtc, dcu, 
             hedgeOptions, hedgeFutures, nestPriceFacade, hedgeGovernance,
-            hedgeVaultForStaking
+            hedgeVaultForStaking, USDT_DECIMALS
         } = await deploy();
 
         await dcu.setMinter(owner.address, 1);
         await dcu.mint(owner.address, '10000000000000000000000000');
         
-        console.log('owner: ' + toDecimal(await dcu.balanceOf(owner.address) )+ 'dcu');
+        console.log('owner: ' + toDecimal(await dcu.balanceOf(owner.address))+ 'dcu');
         console.log('owner: ' + owner.address);
 
         const NestPriceFacade = await ethers.getContractFactory('NestPriceFacade');
@@ -27,7 +27,7 @@ describe('HedgeOptions', function() {
             account = account.address;
             return {
                 eth: toDecimal(acc.ethBalance ? await acc.ethBalance() : await ethers.provider.getBalance(account)),
-                usdt: toDecimal(await usdt.balanceOf(account), 6),
+                usdt: toDecimal(await usdt.balanceOf(account), USDT_DECIMALS),
                 dcu: toDecimal(await dcu.balanceOf(account), 18),
             };
         }

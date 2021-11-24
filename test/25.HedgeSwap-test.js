@@ -39,7 +39,7 @@ describe('HedgeSwap', function() {
         //await dcu.approve(hedgeSwap.address, toBigInt(300000000));
         if (true) {
             console.log('1. deposit');
-            await hedgeSwap.deposit(toBigInt(29999999));
+            await hedgeSwap.deposit(toBigInt(14999999));
             await hedgeSwap.deposit(toBigInt(1));
             console.log(await getStatus());
         }

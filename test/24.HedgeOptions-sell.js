@@ -21,12 +21,13 @@ describe('HedgeOptions', function() {
         await hedgeOptions.open(eth.address, '2450000000', true, BLOCK, toBigInt(1000), {
             value: toBigInt(0.01)
         });
-        let fot = await hedgeOptions.getOptionInfo(
-            eth.address,
-            '2450000000',
-            true,
-            BLOCK
-        );
+        // let fot = await hedgeOptions.getOptionInfo(
+        //     eth.address,
+        //     '2450000000',
+        //     true,
+        //     BLOCK
+        // );
+        let fot = { index: 0 };
 
         console.log('owner: ' + toDecimal(await dcu.balanceOf(owner.address)) + 'dcu');
         console.log('owner: ' + toDecimal(await hedgeOptions.balanceOf(fot.index, owner.address)) + '(fot)');

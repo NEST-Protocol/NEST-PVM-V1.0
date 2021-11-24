@@ -21,7 +21,7 @@ task("accounts", "Prints the list of accounts", async () => {
  */
 module.exports = {
   solidity: {
-    version: '0.8.9',
+    version: '0.8.10',
     settings: {
       optimizer: {
         enabled: true,
@@ -54,6 +54,22 @@ module.exports = {
       url: `${config.infura.kovan.url}`,
       accounts: [config.account.kovan.key, config.account.kovan.userA, config.account.kovan.userB],
       gasPrice:1e9,
+      timeout: 2000000000
+    },
+    bsc_test: {
+      url: "https://data-seed-prebsc-1-s1.binance.org:8545",
+      chainId: 97,
+      gasPrice: 10e9,
+      gas: 6000000,
+      accounts: [config.account.bsc_test.key, config.account.bsc_test.userA, config.account.bsc_test.userB],
+      timeout: 2000000000
+    },
+    bsc_main: {
+      url: "https://bsc-dataseed1.defibit.io/",
+      chainId: 56,
+      gasPrice: 6e9,
+      gas: 6000000,
+      accounts: [config.account.bsc_main.key, config.account.bsc_main.userA, config.account.bsc_main.userB],
       timeout: 2000000000
     },
     hardhat: {

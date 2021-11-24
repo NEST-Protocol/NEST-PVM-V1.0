@@ -26,7 +26,7 @@ contract HedgeSwap is HedgeFrequentlyUsed, IHedgeSwap {
 
     // TODO: 改为15000000 * 15000000
     // K值，初始化存入3000万nest，同时增发3000万dcu到资金池
-    uint constant K = 30000000 ether * 30000000 ether;
+    uint constant K = 15000000 ether * 15000000 ether;
 
     constructor() {
     }

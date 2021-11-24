@@ -18,43 +18,36 @@ exports.deploy = async function() {
     const HedgeVaultForStaking = await ethers.getContractFactory('HedgeVaultForStaking');
     const HedgeSwap = await ethers.getContractFactory('HedgeSwap');
 
-    console.log('** 开始部署合约 deploy.proxy.js **');
+    console.log('** 开始部署合约 bsc_test@20211123.js **');
     
-    // const nest = await TestERC20.deploy('NEST', 'NEST', 18);
-    // //const nest = await TestERC20.attach('0x0000000000000000000000000000000000000000');
-    // console.log('nest: ' + nest.address);
+    // nest: 0x821edD79cc386E56FeC9DA5793b87a3A52373cdE
+    // pusd: 0x3DA5c9aafc6e6D6839E62e2fB65825869019F291
+    // peth: 0xc39dC1385a44fBB895991580EA55FC10e7451cB3
+    // nestGovernance: 0x5691dc0770D55B9469a3242DA282754687687935
+    // nestLedger: 0x78D5E2fC85969e51580fd2C0Fd6D056a444167cE
+    // nestOpenMining: 0xF2f9E62f52389EF223f5Fa8b9926e95386935277
 
-    // const nhbtc = await TestERC20.deploy('NHBTC', 'NEST', 18);
-    // //const nhbtc = await TestERC20.attach('0x0000000000000000000000000000000000000000');
-    // console.log('nhbtc: ' + nhbtc.address);
-
-    // const cofi = await TestERC20.deploy('COFI', 'COFI', 18);
-    // //const cofi = await TestERC20.attach('0x0000000000000000000000000000000000000000');
-    // console.log('cofi: ' + cofi.address);
-
-    // const pusd = await TestERC20.deploy('PUSD', 'PUSD', 18);
-    // //const pusd = await TestERC20.attach('0x0000000000000000000000000000000000000000');
-    // console.log('pusd: ' + pusd.address);
-
-    // const fortube = await TestERC20.deploy('FORTUBE', 'FORTUBE', 18);
-    // //const fortube = await TestERC20.attach('0x0000000000000000000000000000000000000000');
-    // console.log('fortube: ' + fortube.address);
+    //     ** 开始部署合约 bsc_test@20211123.js **
+    // usdt: 0xDd4A68D8236247BDC159F7C5fF92717AA634cBCc
+    // dcu: 0x5Df87aE415206707fd52aDa20a5Eac2Ec70e8dbb
+    // nestPriceFacade: 0xF2f9E62f52389EF223f5Fa8b9926e95386935277
+    // hedgeGovernance: 0x38831FF0d6133D2d45C2eb876602C0249BA601eE
+    // hedgeDAO: 0x81c952c4EEE91DF16A7908E1869a31E438FbCE44
+    // hedgeOptions: 0x19465d54ba7c492174127244cc26dE49F0cC1F1f
+    // hedgeFutures: 0xFD42E41B96BC69e8B0763B2Ed75CD50347b9778D
+    // hedgeSwap: 0xD83C860d3A27cC5EddaB68EaBFCF9cc8ad38F15D
 
     // 1. 部署依赖合约
-    const usdt = await TestERC20.deploy('USDT', 'USDT', 6);
+    const usdt = await TestERC20.deploy('USDT', 'USDT', 18);
     //const usdt = await TestERC20.attach('0x0000000000000000000000000000000000000000');
     console.log('usdt: ' + usdt.address);
-
-    const hbtc = await TestERC20.deploy('HBTC', 'HBTC', 18);
-    //const hbtc = await TestERC20.attach('0x0000000000000000000000000000000000000000');
-    console.log('hbtc: ' + hbtc.address);
 
     const dcu = await DCU.deploy();
     //const dcu = await DCU.attach('0x0000000000000000000000000000000000000000');
     console.log('dcu: ' + dcu.address);
 
-    const nestPriceFacade = await NestPriceFacade.deploy(usdt.address);
-    //const nestPriceFacade = await NestPriceFacade.attach('0x0000000000000000000000000000000000000000');
+    //const nestPriceFacade = await NestPriceFacade.deploy(usdt.address);
+    const nestPriceFacade = await NestPriceFacade.attach('0xF2f9E62f52389EF223f5Fa8b9926e95386935277');
     console.log('nestPriceFacade: ' + nestPriceFacade.address);
 
     const hedgeGovernance = await upgrades.deployProxy(HedgeGovernance, ['0x0000000000000000000000000000000000000000'], { initializer: 'initialize' });
@@ -73,9 +66,9 @@ exports.deploy = async function() {
     //const hedgeFutures = await HedgeFutures.attach('0x0000000000000000000000000000000000000000');
     console.log('hedgeFutures: ' + hedgeFutures.address);
 
-    const hedgeVaultForStaking = await upgrades.deployProxy(HedgeVaultForStaking, [hedgeGovernance.address], { initializer: 'initialize' });
-    //const hedgeVaultForStaking = await HedgeVaultForStaking.attach('0x0000000000000000000000000000000000000000');
-    console.log('hedgeVaultForStaking: ' + hedgeVaultForStaking.address);
+    // const hedgeVaultForStaking = await upgrades.deployProxy(HedgeVaultForStaking, [hedgeGovernance.address], { initializer: 'initialize' });
+    // //const hedgeVaultForStaking = await HedgeVaultForStaking.attach('0x0000000000000000000000000000000000000000');
+    // console.log('hedgeVaultForStaking: ' + hedgeVaultForStaking.address);
 
     const hedgeSwap = await upgrades.deployProxy(HedgeSwap, [hedgeGovernance.address], { initializer: 'initialize' });
     //const hedgeSwap = await HedgeSwap.attach('0x0000000000000000000000000000000000000000');
@@ -95,7 +88,7 @@ exports.deploy = async function() {
         hedgeDAO.address,
         hedgeOptions.address,
         hedgeFutures.address,
-        hedgeVaultForStaking.address,
+        '0x0000000000000000000000000000000000000000', //hedgeVaultForStaking.address,
         nestPriceFacade.address
     );
 
@@ -107,8 +100,8 @@ exports.deploy = async function() {
     await hedgeOptions.update(hedgeGovernance.address);
     console.log('6. hedgeFutures.update()');
     await hedgeFutures.update(hedgeGovernance.address);
-    console.log('7. hedgeVaultForStaking.update()');
-    await hedgeVaultForStaking.update(hedgeGovernance.address);
+    // console.log('7. hedgeVaultForStaking.update()');
+    // await hedgeVaultForStaking.update(hedgeGovernance.address);
     console.log('8. hedgeVaultForStaking.update()');
     await hedgeSwap.update(hedgeGovernance.address);
 
@@ -129,8 +122,8 @@ exports.deploy = async function() {
     await dcu.setMinter(hedgeOptions.address, 1);
     console.log('10. dcu.setMinter(hedgeFutures.address, 1)');
     await dcu.setMinter(hedgeFutures.address, 1);
-    console.log('11. dcu.setMinter(hedgeVaultForStaking.address, 1)');
-    await dcu.setMinter(hedgeVaultForStaking.address, 1);
+    console.log('11. dcu.setMinter(hedgeSwap.address, 1)');
+    await dcu.setMinter(hedgeSwap.address, 1);
 
     //await usdt.transfer(usdt.address, 0);
     //await usdt.transfer(usdt.address, 0);
@@ -154,19 +147,18 @@ exports.deploy = async function() {
     const contracts = {
         eth: eth,
         usdt: usdt,
-        hbtc: hbtc,
+        //hbtc: hbtc,
 
         hedgeGovernance: hedgeGovernance,
         dcu: dcu,
         hedgeDAO: hedgeDAO,
         hedgeOptions: hedgeOptions,
         hedgeFutures: hedgeFutures,
-        hedgeVaultForStaking: hedgeVaultForStaking,
+        //hedgeVaultForStaking: hedgeVaultForStaking,
         nestPriceFacade: nestPriceFacade,
         hedgeSwap: hedgeSwap,
 
-        BLOCK_TIME: 3,
-        USDT_DECIMALS: 18
+        BLOCK_TIME: 3
     };
 
     return contracts;

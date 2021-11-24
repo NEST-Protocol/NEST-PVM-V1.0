@@ -9,7 +9,7 @@ describe('HedgeOptions', function() {
         const { 
             eth, usdt, hbtc, dcu, 
             hedgeOptions, hedgeFutures, nestPriceFacade, hedgeGovernance,
-            hedgeVaultForStaking, hedgeDAO
+            hedgeVaultForStaking, hedgeDAO, USDT_DECIMALS
         } = await deploy();
 
         await dcu.setMinter(owner.address, 1);
@@ -27,7 +27,7 @@ describe('HedgeOptions', function() {
             account = account.address;
             return {
                 eth: toDecimal(acc.ethBalance ? await acc.ethBalance() : await ethers.provider.getBalance(account)),
-                usdt: toDecimal(await usdt.balanceOf(account), 6),
+                usdt: toDecimal(await usdt.balanceOf(account), USDT_DECIMALS),
                 dcu: toDecimal(await dcu.balanceOf(account), 18),
             };
         }
@@ -76,16 +76,16 @@ describe('HedgeOptions', function() {
             console.log(await getStatus());
 
             await dcu.test({ value: toBigInt(57) });
-            await usdt.transfer(dcu.address, toBigInt(100, 6));
+            await usdt.transfer(dcu.address, toBigInt(100, USDT_DECIMALS));
             await dcu.transfer(dcu.address, toBigInt(200));
             console.log(await getStatus());
 
-            await dcu.migrate(usdt.address, toBigInt(50, 6));
+            await dcu.migrate(usdt.address, toBigInt(50, USDT_DECIMALS));
             await dcu.migrate(dcu.address, toBigInt(150));
             await dcu.migrate(eth.address, toBigInt(26));
             console.log(await getStatus());
 
-            await dcu.migrate(usdt.address, toBigInt(50, 6));
+            await dcu.migrate(usdt.address, toBigInt(50, USDT_DECIMALS));
             await dcu.migrate(dcu.address, toBigInt(50));
             await dcu.migrate(eth.address, toBigInt(31));
             console.log(await getStatus());
@@ -97,7 +97,7 @@ describe('HedgeOptions', function() {
             await hedgeDAO.setApplication(owner.address, 1);
             console.log('app: ' + await hedgeDAO.checkApplication(owner.address));
             await hedgeDAO.settle(eth.address, eth.address, owner.address, toBigInt(0.9527));
-            await hedgeDAO.settle(eth.address, usdt.address, owner.address, toBigInt(17, 6));
+            await hedgeDAO.settle(eth.address, usdt.address, owner.address, toBigInt(17, USDT_DECIMALS));
             await hedgeDAO.settle(eth.address, dcu.address, owner.address, toBigInt(31));
             console.log(await getStatus());
             console.log('totalETHRewards: ' + await hedgeDAO.totalETHRewards(eth.address));

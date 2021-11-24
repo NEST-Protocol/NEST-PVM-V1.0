@@ -6,7 +6,7 @@ describe('HedgeOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
-        const { eth, usdt, hbtc, dcu, hedgeOptions, hedgeFutures, nestPriceFacade, BLOCK_TIME } = await deploy();
+        const { eth, usdt, hbtc, dcu, hedgeOptions, hedgeFutures, nestPriceFacade, BLOCK_TIME, USDT_DECIMALS } = await deploy();
         const TestERC20 = await ethers.getContractFactory('TestERC20');
         await dcu.setMinter(owner.address, 1);
         await dcu.mint(owner.address, '10000000000000000000000000');
@@ -22,7 +22,7 @@ describe('HedgeOptions', function() {
             account = account.address;
             return {
                 eth: toDecimal(acc.ethBalance ? await acc.ethBalance() : await ethers.provider.getBalance(account)),
-                usdt: toDecimal(await usdt.balanceOf(account), 6),
+                usdt: toDecimal(await usdt.balanceOf(account), USDT_DECIMALS),
                 dcu: toDecimal(await dcu.balanceOf(account), 18),
             };
         }
@@ -75,7 +75,7 @@ describe('HedgeOptions', function() {
         );
 
         await showReceipt(receipt);
-
+        return;
         let prices = [12321280, 2550.2700, 2550.2700, 0,
                 12321334, 2545.5700, 2550.0350, 0.0000000002246319879055468085,
                 12321372, 2542.6500, 2549.6658, 0.0000000003370674344270144469,

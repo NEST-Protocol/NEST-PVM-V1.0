@@ -11,14 +11,12 @@ describe('HedgeOptions', function() {
         const { 
             eth, usdt, dcu, 
             nest,
-            nhbtc,
             cofi,
             pusd,
-            fortube,
             peth,
 
             hedgeGovernance,
-            hedgeOptions, hedgeFutures, hedgeVaultForStaking,
+            hedgeOptions, hedgeFutures,
             nestPriceFacade, hedgeSwap
         } = await deploy();
 
