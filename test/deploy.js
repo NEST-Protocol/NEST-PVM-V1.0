@@ -20,11 +20,16 @@ describe('HedgeOptions', function() {
             nestPriceFacade, hedgeSwap
         } = await deploy();
 
-        // const newHedgeFutures = await HedgeFutures.deploy();
-        // console.log('newHedgeFutures: ' + newHedgeFutures.address);
-        // await dcu.setMinter(hedgeSwap.address, 1);
-        
-        console.log('部署完成');
+        console.log('ok');
+        return;
+
+        //await nest.approve(hedgeSwap.address, toBigInt(100000000));
+        //await hedgeSwap.setNestTokenAddress(nest.address);
+        //await hedgeSwap.deposit(1);
+
+        //await usdt.approve('0x4A448cBb12e449D7031f36C8122eCE6dDdf9cc84', toBigInt(10000000));
+        await usdt.transfer(owner.address, toBigInt(10000000));
+        console.log(await usdt.balanceOf(owner.address) + 'usdt');
         return;
 
         const ONE_MONTH = 200000;

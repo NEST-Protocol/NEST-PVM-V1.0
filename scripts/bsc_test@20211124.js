@@ -38,6 +38,9 @@ exports.deploy = async function() {
     // hedgeSwap: 0xD83C860d3A27cC5EddaB68EaBFCF9cc8ad38F15D
 
     // 1. 部署依赖合约
+    const nest = await TestERC20.attach('0x821edD79cc386E56FeC9DA5793b87a3A52373cdE');
+    console.log('nest: ' + nest.address);
+
     //const usdt = await TestERC20.deploy('USDT', 'USDT', 18);
     const usdt = await TestERC20.attach('0xDd4A68D8236247BDC159F7C5fF92717AA634cBCc');
     console.log('usdt: ' + usdt.address);
@@ -147,7 +150,7 @@ exports.deploy = async function() {
     const contracts = {
         eth: eth,
         usdt: usdt,
-        //hbtc: hbtc,
+        nest: nest,
 
         hedgeGovernance: hedgeGovernance,
         dcu: dcu,

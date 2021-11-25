@@ -64,7 +64,8 @@ contract HedgeSwap is HedgeFrequentlyUsed, IHedgeSwap {
         uint mined
     ) {
         if (msg.value > 0) {
-            payable(payback).transfer(msg.value);
+            // payable(payback).transfer(msg.value);
+            TransferHelper.safeTransferETH(payback, msg.value);
         }
 
         // K值是固定常量，伪造amountIn没有意义
