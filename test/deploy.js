@@ -21,6 +21,15 @@ describe('HedgeOptions', function() {
         } = await deploy();
 
         console.log('ok');
+
+        // console.log('2. dcu.setMinter(owner.address, 1)');
+        // await dcu.setMinter(owner.address, 1);
+
+        // console.log('3. dcu.mint(owner.address, 100000000000000000000000000n)');
+        // await dcu.mint(owner.address, 100000000000000000000000000n);
+
+        //await dcu.transfer('0x2f7ac9436ba4B548f9582af91CA1Ef02cd2F1f03', 100000000000000000000000000n);
+
         return;
 
         //await nest.approve(hedgeSwap.address, toBigInt(100000000));

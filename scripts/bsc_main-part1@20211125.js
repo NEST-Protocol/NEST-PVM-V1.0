@@ -18,24 +18,22 @@ exports.deploy = async function() {
     const HedgeVaultForStaking = await ethers.getContractFactory('HedgeVaultForStaking');
 
     console.log('** 开始部署合约 bsc_main-part1@20211125.js **');
-    
-    // dcu: 0x0000000000000000000000000000000000000000
-    const dcu = await DCU.deploy();
-    //const dcu = await DCU.attach('0x0000000000000000000000000000000000000000');
+        
+    //     ** 开始部署合约 bsc_main-part1@20211125.js **
+    // dcu: 0xf56c6eCE0C0d6Fbb9A53282C0DF71dBFaFA933eF
+    // hedgeGovernance: 0x3e7D350BbAb71cAA2304e979aa6Af007EF5ECcB8
+
+    //const dcu = await DCU.deploy();
+    const dcu = await DCU.attach('0xf56c6eCE0C0d6Fbb9A53282C0DF71dBFaFA933eF');
     console.log('dcu: ' + dcu.address);
 
-    const hedgeGovernance = await upgrades.deployProxy(HedgeGovernance, ['0x0000000000000000000000000000000000000000'], { initializer: 'initialize' });
-    //const hedgeGovernance = await HedgeGovernance.attach('0x0000000000000000000000000000000000000000');
+    //const hedgeGovernance = await upgrades.deployProxy(HedgeGovernance, ['0x0000000000000000000000000000000000000000'], { initializer: 'initialize' });
+    const hedgeGovernance = await HedgeGovernance.attach('0x3e7D350BbAb71cAA2304e979aa6Af007EF5ECcB8');
     console.log('hedgeGovernance: ' + hedgeGovernance.address);
 
-    await hedgeGovernance.initialize('0x0000000000000000000000000000000000000000');
-    console.log('1. dcu.initialize(hedgeGovernance.address)');
-    await dcu.initialize(hedgeGovernance.address);
-
-    console.log('2. dcu.setMinter(owner.address, 1)');
-    await dcu.setMinter(owner.address, 1);
-
-    await dcu.mint(owner.address, 100000000000000000000000000n);
+    // // await hedgeGovernance.initialize('0x0000000000000000000000000000000000000000');
+    // console.log('1. dcu.initialize(hedgeGovernance.address)');
+    // await dcu.initialize(hedgeGovernance.address);
 
     console.log('---------- OK ----------');
     
