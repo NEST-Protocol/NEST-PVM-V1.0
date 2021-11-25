@@ -31,8 +31,6 @@ contract HedgeFrequentlyUsed is HedgeBase {
     // ETH/USDT报价通道id
     uint constant ETH_USDT_CHANNEL_ID = 0;
 
-    uint constant TRANSFER_RATE = 0;
-
     // σ-usdt	0.00021368		波动率，每个币种独立设置（年化120%）
     uint constant SIGMA_SQ = 45659142400;
 

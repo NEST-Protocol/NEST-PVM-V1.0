@@ -387,7 +387,7 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
         uint k = calcRevisedK(prices[3], prices[2], oraclePrice, prices[0]);
 
         // TODO: 还原K值
-        k = 0;
+        //k = 0;
 
         // 看涨的时候，初始价格乘以(1+k)，卖出价格除以(1+k)
         // 看跌的时候，初始价格除以(1+k)，卖出价格乘以(1+k)
@@ -428,11 +428,10 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
 
         sigmaISQ = sigmaISQ * sigmaISQ / (bn - bn0) / BLOCK_TIME / 1 ether;
 
-        // TODO: 删除13467776
         if (sigmaISQ > SIGMA_SQ) {
-            k += _sqrt(1 ether * BLOCK_TIME * (block.number + 13467776 - bn) * sigmaISQ);
+            k += _sqrt(1 ether * BLOCK_TIME * (block.number - bn) * sigmaISQ);
         } else {
-            k += _sqrt(1 ether * BLOCK_TIME * SIGMA_SQ * (block.number + 13467776 - bn));
+            k += _sqrt(1 ether * BLOCK_TIME * SIGMA_SQ * (block.number - bn));
         }
     }
 
