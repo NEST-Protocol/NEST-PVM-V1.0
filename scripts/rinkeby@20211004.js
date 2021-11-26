@@ -46,6 +46,7 @@ exports.deploy = async function() {
     // hedgeFutures: 0x3Db207CadA55e556ab7A8534A7a6aD9EFfc27B01
     // hedgeVaultForStaking: 0x5cA5E616310c0Cca41B7E4329021C17a5a79a0F1
     // hedgeSwap: 0x0A94eB67c4bfA14094D6aAF0D1fEc8AfD0E7A25b
+    // proxyAdmin: 0xf870dE82463896d2BC7b369eAEfFcCED03139968
 
     const nest = await TestERC20.attach('0xE313F3f49B647fBEDDC5F2389Edb5c93CBf4EE25'); //.deploy('NEST', 'NEST', 18);
     console.log('nest: ' + nest.address);

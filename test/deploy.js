@@ -6,7 +6,8 @@ describe('HedgeOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         const TestERC20 = await ethers.getContractFactory('TestERC20');
-        const HedgeFutures = await ethers.getContractFactory('HedgeFutures');
+        const HedgeSwap = await ethers.getContractFactory('HedgeSwap');
+        const HedgeSwapWithdraw = await ethers.getContractFactory('HedgeSwapWithdraw');
 
         const { 
             eth, usdt, dcu, 
@@ -22,14 +23,24 @@ describe('HedgeOptions', function() {
 
         console.log('ok');
 
-        // console.log('2. dcu.setMinter(owner.address, 1)');
-        // await dcu.setMinter(owner.address, 1);
+        // let nestBalance = await nest.balanceOf(hedgeSwap.address);
+        // let  dcuBalance = await  dcu.balanceOf(hedgeSwap.address);
+        // console.log(await nestBalance + 'nest');
+        // console.log(await  dcuBalance + 'dcu');
 
-        // console.log('3. dcu.mint(owner.address, 100000000000000000000000000n)');
-        // await dcu.mint(owner.address, 100000000000000000000000000n);
+        // console.log({
+        //     k: (BigInt(nestBalance) * BigInt(dcuBalance)),
+        //     K: 30000000n * 30000000n * 1000000000000000000n * 1000000000000000000n,
+        //     d: 30000000n * 30000000n * 1000000000000000000n * 1000000000000000000n - BigInt(nestBalance) * BigInt(dcuBalance)
+        // });
 
-        //await dcu.transfer('0x2f7ac9436ba4B548f9582af91CA1Ef02cd2F1f03', 100000000000000000000000000n);
+        const hedgeSwapWithdraw = await HedgeSwapWithdraw.deploy();
+        console.log('hedgeSwapWithdraw: ' + hedgeSwapWithdraw.address);
+        
+        const newHedgeSwap = await HedgeSwap.deploy();
+        console.log('newHedgeSwap: ' + await newHedgeSwap.address);
 
+        
         return;
 
         //await nest.approve(hedgeSwap.address, toBigInt(100000000));

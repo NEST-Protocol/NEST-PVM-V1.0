@@ -37,9 +37,20 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
     // 期权卖出价值比例，万分制。9750
     uint constant SELL_RATE = 9500;
 
-    // TODO: 改为正确的值（需要确定）
     // 期权行权最小间隔	6000	区块数	行权时间和当前时间最小间隔区块数，统一设置
-    uint constant MIN_PERIOD = 10;
+    uint constant MIN_PERIOD = 840000;
+
+    // ETH/USDT报价通道id
+    uint constant ETH_USDT_CHANNEL_ID = 0;
+
+    // σ-usdt	0.00021368		波动率，每个币种独立设置（年化120%）
+    uint constant SIGMA_SQ = 45659142400;
+
+    // μ-usdt	0.000000025367		漂移系数，每个币种独立设置（年化80%）
+    uint constant MIU = 467938556917;
+    
+    // 区块时间
+    uint constant BLOCK_TIME = 3;
 
     // // 期权代币映射
     // mapping(uint=>uint) _optionMapping;
@@ -296,8 +307,7 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         bool orientation = option.orientation;
         uint exerciseBlock = uint(option.exerciseBlock);
 
-        // TODO: 测试时不检查行权时间
-        //require(block.number >= exerciseBlock, "FEO:at maturity");
+        require(block.number >= exerciseBlock, "FEO:at maturity");
 
         // 2. 销毁期权代币
         //option.balances[msg.sender] -= amount;
@@ -309,7 +319,7 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         uint fee = msg.value;
 
         // 3.2. 获取usdt相对于eth的价格
-        (, uint rawPrice) = INestOpenPrice(NEST_PRICE_FACADE_ADDRESS).findPrice {
+        (, uint rawPrice) = INestOpenPrice(NEST_OPEN_PRICE).findPrice {
             value: fee
         } (ETH_USDT_CHANNEL_ID, exerciseBlock, msg.sender);
 
@@ -569,7 +579,7 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         //uint tokenAmount = 1 ether;
 
         // 1.2. 获取usdt相对于eth的价格
-        (, uint rawPrice) = INestOpenPrice(NEST_PRICE_FACADE_ADDRESS).latestPrice {
+        (, uint rawPrice) = INestOpenPrice(NEST_OPEN_PRICE).latestPrice {
             value: fee
         } (ETH_USDT_CHANNEL_ID, payback);
 
@@ -664,5 +674,10 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         }
 
         return index;
+    }
+
+    // 转为USDT价格
+    function _toUSDTPrice(uint rawPrice) internal pure returns (uint) {
+        return 2000 ether * 1 ether / rawPrice;
     }
 }

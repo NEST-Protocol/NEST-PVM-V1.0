@@ -15,33 +15,12 @@ import "./DCU.sol";
 contract HedgeSwap is HedgeFrequentlyUsed, IHedgeSwap {
 
     // NEST代币地址
-    // TODO: 改为常量地址
-    //address constant NEST_TOKEN_ADDRESS = 0x04abEdA201850aC0124161F037Efd70c74ddC74C;
-    address NEST_TOKEN_ADDRESS;
-
-    // TODO: 删除
-    function setNestTokenAddress(address nestTokenAddress) external {
-        NEST_TOKEN_ADDRESS = nestTokenAddress;
-    }
+    address constant NEST_TOKEN_ADDRESS = 0x98f8669F6481EbB341B522fCD3663f79A3d1A6A7;
 
     // K值，初始化存入1500万nest，同时增发1500万dcu到资金池
     uint constant K = 15000000 ether * 15000000 ether;
 
     constructor() {
-    }
-
-    /// @dev 通过存入nest来初始化资金池，每存入x个nest，资金池增加x个dcu和x个nest，同时用户得到x个dcu
-    /// @param amount 存入数量
-    function deposit(uint amount) external override {
-        TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), amount);
-        DCU(DCU_TOKEN_ADDRESS).mint(address(this), amount);
-        DCU(DCU_TOKEN_ADDRESS).mint(msg.sender, amount);
-
-        require(
-            IERC20(NEST_TOKEN_ADDRESS).balanceOf(address(this)) * 
-            IERC20(DCU_TOKEN_ADDRESS).balanceOf(address(this)) <= K,
-            "HS:too much"
-        );
     }
 
     /// @dev Swap token

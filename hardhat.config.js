@@ -47,7 +47,7 @@ module.exports = {
       url: `${config.infura.rinkeby.url}`,
       accounts: [config.account.rinkeby.key, config.account.rinkeby.userA, config.account.rinkeby.userB],
       gas: 6e6,
-      initialBaseFeePerGas: 1e9,
+      gasPrice: 1e9,
       timeout: 2000000000
     },
     kovan: {

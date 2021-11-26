@@ -45,6 +45,18 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
     // // 买入永续合约和其他交易之间最小的间隔区块数
     // uint constant MIN_PERIOD = 100;
 
+    // ETH/USDT报价通道id
+    uint constant ETH_USDT_CHANNEL_ID = 0;
+
+    // σ-usdt	0.00021368		波动率，每个币种独立设置（年化120%）
+    uint constant SIGMA_SQ = 45659142400;
+
+    // μ-usdt	0.000000025367		漂移系数，每个币种独立设置（年化80%）
+    uint constant MIU = 467938556917;
+    
+    // 区块时间
+    uint constant BLOCK_TIME = 3;
+
     // 永续合约映射
     mapping(uint=>uint) _futureMapping;
 
@@ -376,7 +388,7 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
         require(tokenAddress == address(0), "HF:only support eth/usdt");
 
         // 获取usdt相对于eth的价格
-        uint[] memory prices = INestOpenPrice(NEST_PRICE_FACADE_ADDRESS).lastPriceList {
+        uint[] memory prices = INestOpenPrice(NEST_OPEN_PRICE).lastPriceList {
             value: msg.value
         } (ETH_USDT_CHANNEL_ID, 2, payback);
 
@@ -385,9 +397,6 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
         // 将token价格转化为以usdt为单位计算的价格
         oraclePrice = prices[1];
         uint k = calcRevisedK(prices[3], prices[2], oraclePrice, prices[0]);
-
-        // TODO: 还原K值
-        //k = 0;
 
         // 看涨的时候，初始价格乘以(1+k)，卖出价格除以(1+k)
         // 看跌的时候，初始价格除以(1+k)，卖出价格乘以(1+k)
@@ -552,5 +561,10 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
             _decodeFloat(account.basePrice),
             uint(account.baseBlock)
         );
+    }
+
+    // 转为USDT价格
+    function _toUSDTPrice(uint rawPrice) internal pure returns (uint) {
+        return 2000 ether * 1 ether / rawPrice;
     }
 }
