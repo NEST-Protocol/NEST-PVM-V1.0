@@ -6,12 +6,9 @@ describe('HedgeOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         const TestERC20 = await ethers.getContractFactory('TestERC20');
-        const HedgeSwap = await ethers.getContractFactory('HedgeSwap');
-        const HedgeSwapWithdraw = await ethers.getContractFactory('HedgeSwapWithdraw');
 
         const { 
             eth, usdt, dcu, 
-            nest,
             cofi,
             pusd,
             peth,
@@ -22,25 +19,20 @@ describe('HedgeOptions', function() {
         } = await deploy();
 
         console.log('ok');
+        const nest = await TestERC20.attach('0x98f8669F6481EbB341B522fCD3663f79A3d1A6A7');
 
-        // let nestBalance = await nest.balanceOf(hedgeSwap.address);
-        // let  dcuBalance = await  dcu.balanceOf(hedgeSwap.address);
-        // console.log(await nestBalance + 'nest');
-        // console.log(await  dcuBalance + 'dcu');
+        let nestBalance = await nest.balanceOf(owner.address);
+        let  dcuBalance = await  dcu.balanceOf(owner.address);
+        console.log(nestBalance + 'nest');
+        console.log( dcuBalance + 'dcu');
 
-        // console.log({
-        //     k: (BigInt(nestBalance) * BigInt(dcuBalance)),
-        //     K: 30000000n * 30000000n * 1000000000000000000n * 1000000000000000000n,
-        //     d: 30000000n * 30000000n * 1000000000000000000n * 1000000000000000000n - BigInt(nestBalance) * BigInt(dcuBalance)
-        // });
+        //await nest.transfer(hedgeSwap.address, nestBalance);
+        //await  dcu.transfer(hedgeSwap.address,  dcuBalance);
 
-        const hedgeSwapWithdraw = await HedgeSwapWithdraw.deploy();
-        console.log('hedgeSwapWithdraw: ' + hedgeSwapWithdraw.address);
-        
-        const newHedgeSwap = await HedgeSwap.deploy();
-        console.log('newHedgeSwap: ' + await newHedgeSwap.address);
-
-        
+        nestBalance = await nest.balanceOf(owner.address);
+         dcuBalance = await  dcu.balanceOf(owner.address);
+        console.log(nestBalance + 'nest');
+        console.log( dcuBalance + 'dcu');
         return;
 
         //await nest.approve(hedgeSwap.address, toBigInt(100000000));
