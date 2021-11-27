@@ -6,11 +6,11 @@
 | Name | Interfaces | bsc_main |
 | ---- | ---- | ---- |
 | dcu | IERC20 | 0xf56c6eCE0C0d6Fbb9A53282C0DF71dBFaFA933eF |
-| hedgeGovernance | IERC20 | 0x3e7D350BbAb71cAA2304e979aa6Af007EF5ECcB8 |
-| nestPriceFacade | IERC20 | 0x09CE0e021195BA2c1CDE62A8B187abf810951540 |
-| hedgeOptions | IERC20 | 0x284935F8C571d054Df98eDA8503ea13cde5fd8Cc |
-| hedgeFutures | IERC20 | 0x8c5052f7747D8Ebc2F069286416b6aE8Ad3Cc149 |
-| hedgeSwap | IERC20 | 0x2Cd1Bf9345E969b5DFc6D88000475aD6d487363A |
+| hedgeGovernance | IHedgeGovernance | 0x3e7D350BbAb71cAA2304e979aa6Af007EF5ECcB8 |
+| nestOpenPrice | INestOpenPrice | 0x09CE0e021195BA2c1CDE62A8B187abf810951540 |
+| hedgeOptions | IHedgeOptions | 0x284935F8C571d054Df98eDA8503ea13cde5fd8Cc |
+| hedgeFutures | IHedgeFutures | 0x8c5052f7747D8Ebc2F069286416b6aE8Ad3Cc149 |
+| hedgeSwap | IHedgeSwap | 0x2Cd1Bf9345E969b5DFc6D88000475aD6d487363A |
 
 ### 2021-10-20@mainnet
 | Name | Interfaces | mainnet |
