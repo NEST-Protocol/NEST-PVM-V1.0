@@ -12,7 +12,7 @@ contract HedgeFrequentlyUsed is HedgeBase {
     // Address of DCU contract
     address constant DCU_TOKEN_ADDRESS = 0xf56c6eCE0C0d6Fbb9A53282C0DF71dBFaFA933eF;
 
-    // Address of NestPriceFacade contract
+    // Address of NestOpenPrice contract
     address constant NEST_OPEN_PRICE = 0x09CE0e021195BA2c1CDE62A8B187abf810951540;
     
     // USDT代币的基数
