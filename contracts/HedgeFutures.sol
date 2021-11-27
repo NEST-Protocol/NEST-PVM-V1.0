@@ -60,9 +60,6 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
     // 永续合约映射
     mapping(uint=>uint) _futureMapping;
 
-    // 缓存代币的基数值
-    mapping(address=>uint) _bases;
-
     // 永续合约数组
     FutureInfo[] _futures;
 

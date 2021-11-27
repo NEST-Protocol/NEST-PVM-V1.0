@@ -23,9 +23,6 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         uint56 strikePrice;
         bool orientation;
         uint32 exerciseBlock;
-        
-        //uint totalSupply;
-        //mapping(address=>uint) balances;
     }
 
     // 64位二进制精度的1
@@ -51,15 +48,6 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
     
     // 区块时间
     uint constant BLOCK_TIME = 3;
-
-    // // 期权代币映射
-    // mapping(uint=>uint) _optionMapping;
-
-    // // 配置参数
-    // mapping(address=>Config) _configs;
-
-    // 缓存代币的基数值
-    mapping(address=>uint) _bases;
 
     // 期权代币数组
     Option[] _options;
@@ -471,19 +459,6 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
                 | (uint(_encodeFloat(strikePrice)) << 40) 
                 | (exerciseBlock << 8)
                 | (orientation ? 1 : 0);
-    }
-
-    // 获取代币的基数值
-    function _getBase(address tokenAddress) private returns (uint base) {
-        if (tokenAddress == address(0)) {
-            base = 1 ether;
-        } else {
-            base = _bases[tokenAddress];
-            if (base == 0) {
-                base = 10 ** ERC20(tokenAddress).decimals();
-                _bases[tokenAddress] = base;
-            }
-        }
     }
 
     // 将18位十进制定点数转化为64位二级制定点数
