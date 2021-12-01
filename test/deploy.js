@@ -5,7 +5,7 @@ const { toBigInt, toDecimal, showReceipt, snd, tableSnd, d1, Vc, Vp } = require(
 describe('HedgeOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
-        const TestERC20 = await ethers.getContractFactory('TestERC20');
+        const HedgeFutures = await ethers.getContractFactory('HedgeFutures');
 
         const { 
             eth, usdt, dcu, 
@@ -19,20 +19,10 @@ describe('HedgeOptions', function() {
         } = await deploy();
 
         console.log('ok');
-        const nest = await TestERC20.attach('0x98f8669F6481EbB341B522fCD3663f79A3d1A6A7');
+        
+        const newHedgeFutures = await HedgeFutures.deploy();
+        console.log('newHedgeFutures: ' + newHedgeFutures.address);
 
-        let nestBalance = await nest.balanceOf(owner.address);
-        let  dcuBalance = await  dcu.balanceOf(owner.address);
-        console.log(nestBalance + 'nest');
-        console.log( dcuBalance + 'dcu');
-
-        //await nest.transfer(hedgeSwap.address, nestBalance);
-        //await  dcu.transfer(hedgeSwap.address,  dcuBalance);
-
-        nestBalance = await nest.balanceOf(owner.address);
-         dcuBalance = await  dcu.balanceOf(owner.address);
-        console.log(nestBalance + 'nest');
-        console.log( dcuBalance + 'dcu');
         return;
 
         //await nest.approve(hedgeSwap.address, toBigInt(100000000));
