@@ -147,4 +147,9 @@ interface IHedgeFutures {
     /// @param p Latest price (number of tokens equivalent to 1 ETH)
     /// @param bn The block number when (ETH, TOKEN) price takes into effective
     function calcRevisedK(uint p0, uint bn0, uint p, uint bn) external view returns (uint k);
+
+    /// @dev Calculate the impact cost
+    /// @param vol Trade amount in dcu
+    /// @return Impact cost
+    function impactCost(uint vol) external pure returns (uint);
 }
