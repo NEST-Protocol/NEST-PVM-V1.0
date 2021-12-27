@@ -79,8 +79,8 @@ exports.deploy = async function() {
     await dcu.setMinter(hedgeFutures.address, 1);
     await dcu.setMinter(hedgeVaultForStaking.address, 1);
 
-    await hedgeOptions.setUsdtTokenAddress(usdt.address);
-    await hedgeFutures.setUsdtTokenAddress(usdt.address);
+    //await hedgeOptions.setUsdtTokenAddress(usdt.address);
+    //await hedgeFutures.setUsdtTokenAddress(usdt.address);
 
     console.log('---------- OK ----------');
 

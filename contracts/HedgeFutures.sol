@@ -52,7 +52,11 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
     uint constant SIGMA_SQ = 45659142400;
 
     // μ-usdt	0.000000025367		漂移系数，每个币种独立设置（年化80%）
-    uint constant MIU = 467938556917;
+    //uint constant MIU = 467938556917;
+    // 看涨漂移系数
+    uint constant MIU_LONG = 467938556917;
+    // 看跌漂移系数
+    uint constant MIU_SHORT= 467938556917;
     
     // 区块时间
     uint constant BLOCK_TIME = 3;
@@ -365,7 +369,7 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
         uint newPrice = oraclePrice;
         if (uint(account.baseBlock) > 0) {
             newPrice = (balance + dcuAmount) * oraclePrice * basePrice / (
-                basePrice * dcuAmount + (oraclePrice * balance << 64) / _expMiuT(uint(account.baseBlock))
+                basePrice * dcuAmount + (oraclePrice * balance << 64) / _expMiuT(orientation, uint(account.baseBlock))
             );
         }
         
@@ -410,6 +414,9 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
     /// @return Impact cost
     function impactCost(uint vol) public pure override returns (uint) {
         //impactCost = vol / 10000 / 1000;
+        
+        // TODO: 测试时禁用冲击成本逻辑
+        return 0;
         return vol / 10000000;
     }
 
@@ -447,6 +454,9 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
         } else {
             k += _sqrt(1 ether * BLOCK_TIME * SIGMA_SQ * (block.number - bn));
         }
+
+        // TODO: 测试时K值设置为0，K值算法单独测试
+        k = 0;
     }
 
     function _sqrt(uint256 x) private pure returns (uint256) {
@@ -530,13 +540,13 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
             uint right;
             // 看涨
             if (ORIENTATION) {
-                left = balance + (balance * oraclePrice * LEVER << 64) / basePrice / _expMiuT(baseBlock);
+                left = balance + (balance * oraclePrice * LEVER << 64) / basePrice / _expMiuT(ORIENTATION, baseBlock);
                 right = balance * LEVER;
             } 
             // 看跌
             else {
                 left = balance * (1 + LEVER);
-                right = (balance * oraclePrice * LEVER << 64) / basePrice / _expMiuT(baseBlock);
+                right = (balance * oraclePrice * LEVER << 64) / basePrice / _expMiuT(ORIENTATION, baseBlock);
             }
 
             if (left > right) {
@@ -550,8 +560,10 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
     }
 
     // 计算 e^μT
-    function _expMiuT(uint baseBlock) private view returns (uint) {
-        return _toUInt(ABDKMath64x64.exp(_toInt128(MIU * (block.number - baseBlock) * BLOCK_TIME)));
+    function _expMiuT(bool orientation, uint baseBlock) private view returns (uint) {
+        return _toUInt(ABDKMath64x64.exp(
+            _toInt128((orientation ? MIU_LONG : MIU_SHORT) * (block.number - baseBlock) * BLOCK_TIME)
+        ));
     }
 
     // 转换永续合约信息

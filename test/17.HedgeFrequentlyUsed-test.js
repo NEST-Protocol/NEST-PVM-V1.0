@@ -70,7 +70,7 @@ describe('HedgeOptions', function() {
 
         if (true) {
             console.log('2. setUsdtTokenAddress');
-            await hedgeOptions.setUsdtTokenAddress(hedgeGovernance.address);
+            //await hedgeOptions.setUsdtTokenAddress(hedgeGovernance.address);
         }
     });
 });

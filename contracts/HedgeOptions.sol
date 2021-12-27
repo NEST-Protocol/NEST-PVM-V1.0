@@ -35,7 +35,9 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
     uint constant SELL_RATE = 9500;
 
     // 期权行权最小间隔	6000	区块数	行权时间和当前时间最小间隔区块数，统一设置
-    uint constant MIN_PERIOD = 840000;
+    //uint constant MIN_PERIOD = 840000;
+    // TODO: 测试时降低最小行权间隔区块数
+    uint constant MIN_PERIOD = 10;
 
     // ETH/USDT报价通道id
     uint constant ETH_USDT_CHANNEL_ID = 0;
@@ -295,7 +297,8 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         bool orientation = option.orientation;
         uint exerciseBlock = uint(option.exerciseBlock);
 
-        require(block.number >= exerciseBlock, "FEO:at maturity");
+        // TODO: 测试时不限制行权时间
+        //require(block.number >= exerciseBlock, "FEO:at maturity");
 
         // 2. 销毁期权代币
         //option.balances[msg.sender] -= amount;

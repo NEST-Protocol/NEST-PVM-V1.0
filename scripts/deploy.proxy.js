@@ -134,8 +134,8 @@ exports.deploy = async function() {
 
     //await usdt.transfer(usdt.address, 0);
     //await usdt.transfer(usdt.address, 0);
-    await hedgeOptions.setUsdtTokenAddress(usdt.address);
-    await hedgeFutures.setUsdtTokenAddress(usdt.address);
+    //await hedgeOptions.setUsdtTokenAddress(usdt.address);
+    //await hedgeFutures.setUsdtTokenAddress(usdt.address);
 
     console.log('8.2 create lever');
     await hedgeFutures.create(eth.address, 1, true);
