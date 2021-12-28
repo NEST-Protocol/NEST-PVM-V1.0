@@ -45,8 +45,11 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
     // σ-usdt	0.00021368		波动率，每个币种独立设置（年化120%）
     uint constant SIGMA_SQ = 45659142400;
 
-    // μ-usdt	0.000000025367		漂移系数，每个币种独立设置（年化80%）
-    uint constant MIU = 467938556917;
+    // μ-usdt-long 看涨漂移系数，每天0.03%
+    uint constant MIU_LONG = 64051194700;
+
+    // μ-usdt-short 看跌漂移系数，0
+    uint constant MIU_SHORT= 0;
     
     // 区块时间
     uint constant BLOCK_TIME = 3;
@@ -569,13 +572,16 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
     function _calcVc(uint S0, uint T, uint K) private pure returns (uint vc) {
 
         int128 sigmaSQ_T = _d18TOb64(SIGMA_SQ * T);
-        int128 miu_T = _toInt128(MIU * T);
+        int128 miu_T = _toInt128(MIU_LONG * T);
         int128 sigma_t = ABDKMath64x64.sqrt(sigmaSQ_T);
         int128 D1 = _D1(S0, K, sigmaSQ_T, miu_T);
         int128 d = ABDKMath64x64.div(D1, sigma_t);
 
         uint left = _toUInt(ABDKMath64x64.mul(
-            ABDKMath64x64.exp(miu_T), 
+            //ABDKMath64x64.exp(miu_T), 
+            // 改为单利近似计算: x*(1+rt)
+            // by chenf 2021-12-28 15:27
+            miu_T + ONE,
             ABDKMath64x64.sub(
                 ONE,
                 _snd(ABDKMath64x64.sub(d, sigma_t))
@@ -590,14 +596,17 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
     function _calcVp(uint S0, uint T, uint K) private pure returns (uint vp) {
 
         int128 sigmaSQ_T = _d18TOb64(SIGMA_SQ * T);
-        int128 miu_T = _toInt128(MIU * T);
+        int128 miu_T = _toInt128(MIU_SHORT * T);
         int128 sigma_t = ABDKMath64x64.sqrt(sigmaSQ_T);
         int128 D1 = _D1(S0, K, sigmaSQ_T, miu_T);
         int128 d = ABDKMath64x64.div(D1, sigma_t);
 
         uint left = _toUInt(_snd(d)) * K;
         uint right = _toUInt(ABDKMath64x64.mul(
-            ABDKMath64x64.exp(miu_T), 
+            //ABDKMath64x64.exp(miu_T), 
+            // 改为单利近似计算: x*(1+rt)
+            // by chenf 2021-12-28 15:27
+            miu_T + ONE,
             _snd(ABDKMath64x64.sub(d, sigma_t))
         )) * S0;
 

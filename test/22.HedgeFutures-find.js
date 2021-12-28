@@ -6,7 +6,8 @@ describe('HedgeOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
-        const { eth, usdt, hbtc, dcu, hedgeOptions, hedgeFutures, nestPriceFacade, BLOCK_TIME, USDT_DECIMALS } = await deploy();
+        const { eth, usdt, hbtc, dcu, hedgeOptions, hedgeFutures, nestPriceFacade, 
+            BLOCK_TIME, USDT_DECIMALS, miuT } = await deploy();
         const TestERC20 = await ethers.getContractFactory('TestERC20');
         await dcu.setMinter(owner.address, 1);
         await dcu.mint(owner.address, '10000000000000000000000000');
@@ -153,7 +154,7 @@ describe('HedgeOptions', function() {
             }
         }
 
-        const MIU = 0.000000025367;
+        //const MIU = 0.000000025367;
 
         if (true) {
             console.log('5. 将eth价格改为3000usdt');
@@ -168,7 +169,7 @@ describe('HedgeOptions', function() {
                         console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
                         let bn = parseFloat(lot.baseBlock);
                         let nbn = parseFloat(await ethers.provider.getBlockNumber());
-                        let x = 100 * (1 + futures[lever] * (3000 / Math.exp(MIU * (nbn - bn) * BLOCK_TIME) - 3510) / 3510 * (oriens[orien] ? 1 : -1));
+                        let x = 100 * (1 + futures[lever] * (3000 / miuT((oriens[orien]), (nbn - bn)) - 3510) / 3510 * (oriens[orien] ? 1 : -1));
                         let b = parseFloat(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)));
 
                         console.log({
@@ -194,7 +195,7 @@ describe('HedgeOptions', function() {
 
                         let bn = parseFloat(lot.baseBlock);
                         let nbn = parseFloat(await ethers.provider.getBlockNumber());
-                        let x = 100 * (1 + futures[lever] * (2000 / Math.exp(MIU * (nbn - bn) * BLOCK_TIME) - 3510) / 3510 * (oriens[orien] ? 1 : -1));
+                        let x = 100 * (1 + futures[lever] * (2000 / miuT((oriens[orien]), (nbn - bn)) - 3510) / 3510 * (oriens[orien] ? 1 : -1));
                         let b = parseFloat(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)));
                         if (x < 0) {
                             x = 0;
@@ -220,7 +221,7 @@ describe('HedgeOptions', function() {
                         
                         let bn = parseFloat(lot.baseBlock);
                         let nbn = parseFloat(await ethers.provider.getBlockNumber());
-                        let x = 100 * (1 + futures[lever] * (2000 / Math.exp(MIU * (nbn - bn) * BLOCK_TIME) - 3510) / 3510 * (oriens[orien] ? 1 : -1));
+                        let x = 100 * (1 + futures[lever] * (2000 / miuT((oriens[orien]), (nbn - bn)) - 3510) / 3510 * (oriens[orien] ? 1 : -1));
                         let b = parseFloat(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)));
                         if (x < 0) {
                             x = 0;
@@ -244,7 +245,7 @@ describe('HedgeOptions', function() {
 
                         let bn = parseFloat(lot.baseBlock);
                         let nbn = parseFloat(await ethers.provider.getBlockNumber());
-                        let x = 100 * (1 + futures[lever] * (3510 / Math.exp(MIU * (nbn - bn) * BLOCK_TIME) - 3510) / 3510 * (oriens[orien] ? 1 : -1));
+                        let x = 100 * (1 + futures[lever] * (3510 / miuT((oriens[orien]), (nbn - bn)) - 3510) / 3510 * (oriens[orien] ? 1 : -1));
                         let b = parseFloat(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)));
                         if (x < 0) {
                             x = 0;

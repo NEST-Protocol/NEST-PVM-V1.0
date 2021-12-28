@@ -51,12 +51,11 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
     // σ-usdt	0.00021368		波动率，每个币种独立设置（年化120%）
     uint constant SIGMA_SQ = 45659142400;
 
-    // μ-usdt	0.000000025367		漂移系数，每个币种独立设置（年化80%）
-    //uint constant MIU = 467938556917;
-    // 看涨漂移系数
-    uint constant MIU_LONG = 467938556917;
-    // 看跌漂移系数
-    uint constant MIU_SHORT= 467938556917;
+    // μ-usdt-long 看涨漂移系数，每天0.03%
+    uint constant MIU_LONG = 64051194700;
+
+    // μ-usdt-short 看跌漂移系数，0
+    uint constant MIU_SHORT= 0;
     
     // 区块时间
     uint constant BLOCK_TIME = 3;
@@ -561,9 +560,13 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
 
     // 计算 e^μT
     function _expMiuT(bool orientation, uint baseBlock) private view returns (uint) {
-        return _toUInt(ABDKMath64x64.exp(
-            _toInt128((orientation ? MIU_LONG : MIU_SHORT) * (block.number - baseBlock) * BLOCK_TIME)
-        ));
+        // return _toUInt(ABDKMath64x64.exp(
+        //     _toInt128((orientation ? MIU_LONG : MIU_SHORT) * (block.number - baseBlock) * BLOCK_TIME)
+        // ));
+
+        // 改为单利近似计算: x*(1+rt)
+        // by chenf 2021-12-28 15:27
+        return (orientation ? MIU_LONG : MIU_SHORT) * (block.number - baseBlock) * BLOCK_TIME + (1 << 64);
     }
 
     // 转换永续合约信息

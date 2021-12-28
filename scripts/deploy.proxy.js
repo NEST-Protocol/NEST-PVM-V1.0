@@ -151,6 +151,10 @@ exports.deploy = async function() {
 
     console.log('---------- OK ----------');
     
+    const BLOCK_TIME = 3;
+    const MIU_LONG = 3 / 10000 / 86400;
+    const MIU_SHORT = 0;
+
     const contracts = {
         eth: eth,
         usdt: usdt,
@@ -165,8 +169,14 @@ exports.deploy = async function() {
         nestPriceFacade: nestPriceFacade,
         hedgeSwap: hedgeSwap,
 
-        BLOCK_TIME: 3,
-        USDT_DECIMALS: 18
+        BLOCK_TIME: BLOCK_TIME,
+        USDT_DECIMALS: 18,
+
+        MIU_LONG: MIU_LONG,
+        MIU_SHORT: MIU_SHORT,
+        miuT: function(orientation, blocks) {
+            return Math.exp((orientation ? MIU_LONG : MIU_SHORT) * blocks * BLOCK_TIME);
+        }
     };
 
     return contracts;
