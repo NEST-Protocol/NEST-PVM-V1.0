@@ -318,8 +318,6 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
                     
                     accounts[acc] = Account(uint128(0), uint64(0), uint32(0));
 
-                    //emit Transfer(acc, address(0), balance);
-
                     reward += balance;
 
                     emit Settle(index, acc, msg.sender, balance);
@@ -368,7 +366,7 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
         uint newPrice = oraclePrice;
         if (uint(account.baseBlock) > 0) {
             newPrice = (balance + dcuAmount) * oraclePrice * basePrice / (
-                basePrice * dcuAmount + (oraclePrice * balance << 64) / _expMiuT(orientation, uint(account.baseBlock))
+                basePrice * dcuAmount + (balance << 64) * oraclePrice / _expMiuT(orientation, uint(account.baseBlock))
             );
         }
         
@@ -539,13 +537,13 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
             uint right;
             // 看涨
             if (ORIENTATION) {
-                left = balance + (balance * oraclePrice * LEVER << 64) / basePrice / _expMiuT(ORIENTATION, baseBlock);
+                left = balance + (LEVER << 64) * balance * oraclePrice / basePrice / _expMiuT(ORIENTATION, baseBlock);
                 right = balance * LEVER;
             } 
             // 看跌
             else {
                 left = balance * (1 + LEVER);
-                right = (balance * oraclePrice * LEVER << 64) / basePrice / _expMiuT(ORIENTATION, baseBlock);
+                right = (LEVER << 64) * balance * oraclePrice / basePrice / _expMiuT(ORIENTATION, baseBlock);
             }
 
             if (left > right) {
@@ -566,7 +564,10 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
 
         // 改为单利近似计算: x*(1+rt)
         // by chenf 2021-12-28 15:27
-        return (orientation ? MIU_LONG : MIU_SHORT) * (block.number - baseBlock) * BLOCK_TIME + (1 << 64);
+
+        // 64位二进制精度的1
+        //int128 constant ONE = 0x10000000000000000;
+        return (orientation ? MIU_LONG : MIU_SHORT) * (block.number - baseBlock) * BLOCK_TIME + 0x10000000000000000;
     }
 
     // 转换永续合约信息

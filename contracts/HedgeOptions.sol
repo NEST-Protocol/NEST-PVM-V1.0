@@ -200,22 +200,10 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         // 2. 计算可以买到的期权份数
         uint amount = estimate(tokenAddress, oraclePrice, strikePrice, orientation, exerciseBlock, dcuAmount);
 
-        // 3. 获取或创建期权代币
-        //uint key = _getKey(tokenAddress, strikePrice, orientation, exerciseBlock);
-        //uint optionIndex = _optionMapping[key];
-        //Option storage option = _options[optionIndex];
-        // if (optionIndex == 0) {
-            
-        //     optionIndex = _options.length;
-        //     option = _options.push();
-        //     option.tokenAddress = tokenAddress;
-        //     option.strikePrice = _encodeFloat(strikePrice);
-        //     option.orientation = orientation;
-        //     option.exerciseBlock = uint32(exerciseBlock);
-
-        //     // 将期权代币地址存入映射和数组，便于后面检索
-        //     _optionMapping[key] = optionIndex;
-        // }
+        // 3. 开仓
+        // 开仓事件
+        emit Open(_options.length, dcuAmount, msg.sender, amount);
+        // 添加期权账本
         _options.push(Option(
             uint32(_addressIndex(msg.sender)), //uint32 owner;
             _toUInt128(amount), //uint128 balance;
@@ -226,12 +214,6 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
 
         // 4. 销毁权利金
         DCU(DCU_TOKEN_ADDRESS).burn(msg.sender, dcuAmount);
-
-        // 5. 分发期权凭证
-        //option.balances[msg.sender] += amount;
-        
-        // 开仓事件
-        emit Open(_options.length - 1, dcuAmount, msg.sender, amount);
     }
 
     /// @dev 预估开仓可以买到的期权币数量
@@ -251,15 +233,9 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         uint dcuAmount
     ) public view override returns (uint amount) {
 
-        //Config memory config = _configs[tokenAddress];
-        //uint minPeriod = uint(config.minPeriod);
         require(exerciseBlock > block.number + MIN_PERIOD, "FEO:exerciseBlock too small");
 
-        // 1. 获取或创建期权代币
-
-        // 2. 调用预言机获取价格
-
-        // 3. 计算权利金（需要的dcu数量）
+        // 1. 计算期权价格
         // 按照平均每14秒出一个块计算
         uint v = calcV(
             tokenAddress, 
@@ -269,6 +245,7 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
             exerciseBlock
         );
 
+        // 2. 对期权价格进行修正
         if (orientation) {
             //v = _calcVc(config, oraclePrice, T, strikePrice);
             // Vc>=S0*1%; Vp>=K*1%
@@ -285,6 +262,7 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
             }
         }
 
+        // 3. 计算可以买到的期权份数
         amount = (USDT_BASE << 64) * dcuAmount / v;
     }
     
@@ -374,7 +352,7 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
             strikePrice,
             orientation,
             exerciseBlock
-        ) * SELL_RATE / (USDT_BASE * 10000 << 64);
+        ) * SELL_RATE / (USDT_BASE * 0x27100000000000000000); //(USDT_BASE * 10000 << 64);
         if (dcuAmount > 0) {
             DCU(DCU_TOKEN_ADDRESS).mint(msg.sender, dcuAmount);
         }
@@ -400,16 +378,6 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
 
         require(tokenAddress == address(0), "FEO:not allowed");
 
-        //Config memory config = _configs[tokenAddress];
-        //uint minPeriod = uint(config.minPeriod);
-        //require(minPeriod > 0, "FEO:not allowed");
-        //require(exerciseBlock > block.number + minPeriod, "FEO:exerciseBlock to small");
-
-        // 1. 获取或创建期权代币
-
-        // 2. 调用预言机获取价格
-
-        // 3. 计算权利金（需要的dcu数量）
         // 按照平均每14秒出一个块计算
         uint T = (exerciseBlock - block.number) * BLOCK_TIME;
         v = orientation 
@@ -450,21 +418,6 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
             uint(option.exerciseBlock),
             option.balance
         );
-    }
-
-    // 根据期权信息获取索引key
-    function _getKey(
-        address tokenAddress, 
-        uint strikePrice, 
-        bool orientation, 
-        uint exerciseBlock
-    ) private pure returns (uint) {
-        //return keccak256(abi.encodePacked(tokenAddress, strikePrice, orientation, exerciseBlock));
-        require(exerciseBlock < 0x100000000, "FEO:exerciseBlock to large");
-        return (uint(uint160(tokenAddress)) << 96) 
-                | (uint(_encodeFloat(strikePrice)) << 40) 
-                | (exerciseBlock << 8)
-                | (orientation ? 1 : 0);
     }
 
     // 将18位十进制定点数转化为64位二级制定点数
