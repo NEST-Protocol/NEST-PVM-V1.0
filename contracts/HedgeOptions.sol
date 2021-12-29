@@ -71,20 +71,6 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         _accounts.push();
     }
 
-    // /// @dev 修改指定代币通道的配置
-    // /// @param tokenAddress 目标代币地址
-    // /// @param config 配置对象
-    // function setConfig(address tokenAddress, Config calldata config) external override {
-    //     _configs[tokenAddress] = config;
-    // }
-
-    // /// @dev 获取指定代币通道的配置
-    // /// @param tokenAddress 目标代币地址
-    // /// @return 配置对象
-    // function getConfig(address tokenAddress) external view override returns (Config memory) {
-    //     return _configs[tokenAddress];
-    // }
-
     /// @dev 返回指定期权的余额
     /// @param index 目标期权索引号
     /// @param addr 目标地址
