@@ -31,6 +31,10 @@ contract HedgeFrequentlyUsed is HedgeBase {
     //address constant NEST_OPEN_PRICE = 0xB5D2890c061c321A5B6A4a4254bb1522425BAF0A;
     address NEST_OPEN_PRICE;
 
+    // USDT代币地址（占位符，无用）
+    //address constant USDT_TOKEN_ADDRESS = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+    address USDT_TOKEN_ADDRESS;
+
     // USDT代币的基数
     uint constant USDT_BASE = 1 ether;
 
