@@ -5,6 +5,7 @@ const { toBigInt, toDecimal, showReceipt, snd, tableSnd, d1, Vc, Vp } = require(
 describe('HedgeOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
+        const HedgeOptions = await ethers.getContractFactory('HedgeOptions');
         const HedgeFutures = await ethers.getContractFactory('HedgeFutures');
 
         const { 
@@ -19,6 +20,9 @@ describe('HedgeOptions', function() {
         } = await deploy();
 
         console.log('ok');
+
+        const newHedgeOptions = await HedgeOptions.deploy();
+        console.log('newHedgeOptions: ' + newHedgeOptions.address);
         
         const newHedgeFutures = await HedgeFutures.deploy();
         console.log('newHedgeFutures: ' + newHedgeFutures.address);
