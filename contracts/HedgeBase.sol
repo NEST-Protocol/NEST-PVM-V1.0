@@ -32,28 +32,10 @@ contract HedgeBase {
         _governance = newGovernance;
     }
 
-    /// @dev Migrate funds from current contract to HedgeDAO
-    /// @param tokenAddress Destination token address.(0 means eth)
-    /// @param value Migrate amount
-    function migrate(address tokenAddress, uint value) external onlyGovernance {
-
-        address to = IHedgeGovernance(_governance).getHedgeDAOAddress();
-        if (tokenAddress == address(0)) {
-            IHedgeDAO(to).addETHReward { value: value } (address(0));
-        } else {
-            TransferHelper.safeTransfer(tokenAddress, to, value);
-        }
-    }
-
     //---------modifier------------
 
     modifier onlyGovernance() {
         require(IHedgeGovernance(_governance).checkGovernance(msg.sender, 0), "Hedge:!gov");
-        _;
-    }
-
-    modifier noContract() {
-        require(msg.sender == tx.origin, "Hedge:!contract");
         _;
     }
 }
