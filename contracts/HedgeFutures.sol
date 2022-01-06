@@ -312,11 +312,8 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
                 // 改成当账户净值低于Max(保证金 * 2%*g, 10) 时，清算
                 uint minValue = uint(account.balance) * lever / 50;
                 if (balance < (minValue < MIN_VALUE ? MIN_VALUE : minValue)) {
-                    
                     accounts[acc] = Account(uint128(0), uint64(0), uint32(0));
-
                     reward += balance;
-
                     emit Settle(index, acc, msg.sender, balance);
                 }
             }
@@ -346,7 +343,7 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
     // 买入永续合约
     function _buy(FutureInfo storage fi, uint index, uint dcuAmount, address tokenAddress, bool orientation) private {
 
-        require(dcuAmount >= 100 ether, "HF:at least 100 dcu");
+        require(dcuAmount >= 50 ether, "HF:at least 50 dcu");
 
         // 1. 销毁用户的dcu
         DCU(DCU_TOKEN_ADDRESS).burn(msg.sender, dcuAmount);
