@@ -8,7 +8,8 @@ import "./libs/TransferHelper.sol";
 
 import "./interfaces/IHedgeVaultForStaking.sol";
 
-import "./HedgeFrequentlyUsed.sol";
+import "./custom/HedgeFrequentlyUsed.sol";
+
 import "./DCU.sol";
 
 /// @dev Stake xtoken, earn dcu
