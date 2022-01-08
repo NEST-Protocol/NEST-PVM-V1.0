@@ -8,13 +8,16 @@ import "./libs/TransferHelper.sol";
 import "./libs/ABDKMath64x64.sol";
 
 import "./interfaces/IHedgeFutures.sol";
-import "./interfaces/INestOpenPrice.sol";
 
-import "./HedgeFrequentlyUsed.sol";
+import "./custom/ChainParameter.sol";
+import "./custom/CommonParameter.sol";
+import "./custom/HedgeFrequentlyUsed.sol";
+import "./custom/NestPriceAdapter.sol";
+
 import "./DCU.sol";
 
 /// @dev 永续合约交易
-contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
+contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, NestPriceAdapter, IHedgeFutures {
 
     /// @dev 用户账本
     struct Account {
@@ -41,21 +44,6 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
 
     // 最小余额数量，余额小于此值会被清算
     uint constant MIN_VALUE = 10 ether;
-
-    // ETH/USDT报价通道id
-    uint constant ETH_USDT_CHANNEL_ID = 0;
-
-    // σ-usdt	0.00021368		波动率，每个币种独立设置（年化120%）
-    uint constant SIGMA_SQ = 45659142400;
-
-    // μ-usdt-long 看涨漂移系数，每天0.03%
-    uint constant MIU_LONG = 64051194700;
-
-    // μ-usdt-short 看跌漂移系数，0
-    uint constant MIU_SHORT= 0;
-    
-    // 区块时间
-    uint constant BLOCK_TIME = 3;
 
     // 永续合约映射
     mapping(uint=>uint) _futureMapping;
@@ -377,15 +365,11 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
 
     // 查询预言机价格
     function _queryPrice(uint dcuAmount, address tokenAddress, bool enlarge, address payback) private returns (uint oraclePrice) {
-        require(tokenAddress == address(0), "HF:only support eth/usdt");
+        //require(tokenAddress== address(0), "HF:only support eth/usdt");
 
         // 获取usdt相对于eth的价格
-        uint[] memory prices = INestOpenPrice(NEST_OPEN_PRICE).lastPriceList {
-            value: msg.value
-        } (ETH_USDT_CHANNEL_ID, 2, payback);
-
-        prices[1] = _toUSDTPrice(prices[1]);
-        prices[3] = _toUSDTPrice(prices[3]);
+        uint[] memory prices = _lastPriceList(tokenAddress, msg.value, payback);
+        
         // 将token价格转化为以usdt为单位计算的价格
         oraclePrice = prices[1];
         uint k = calcRevisedK(prices[3], prices[2], oraclePrice, prices[0]);
@@ -570,10 +554,5 @@ contract HedgeFutures is HedgeFrequentlyUsed, IHedgeFutures {
             _decodeFloat(account.basePrice),
             uint(account.baseBlock)
         );
-    }
-
-    // 转为USDT价格
-    function _toUSDTPrice(uint rawPrice) internal pure returns (uint) {
-        return 2000 ether * 1 ether / rawPrice;
     }
 }

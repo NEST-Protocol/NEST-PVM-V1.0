@@ -8,13 +8,16 @@ import "./libs/TransferHelper.sol";
 import "./libs/ABDKMath64x64.sol";
 
 import "./interfaces/IHedgeOptions.sol";
-import "./interfaces/INestOpenPrice.sol";
 
-import "./HedgeFrequentlyUsed.sol";
+import "./custom/ChainParameter.sol";
+import "./custom/CommonParameter.sol";
+import "./custom/HedgeFrequentlyUsed.sol";
+import "./custom/NestPriceAdapter.sol";
+
 import "./DCU.sol";
 
 /// @dev 欧式期权
-contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
+contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, NestPriceAdapter, IHedgeOptions {
 
     /// @dev 期权结构
     struct Option {
@@ -36,21 +39,6 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
 
     // 期权行权最小间隔	840000	区块数	行权时间和当前时间最小间隔区块数，统一设置
     uint constant MIN_PERIOD = 840000;
-
-    // ETH/USDT报价通道id
-    uint constant ETH_USDT_CHANNEL_ID = 0;
-
-    // σ-usdt	0.00021368		波动率，每个币种独立设置（年化120%）
-    uint constant SIGMA_SQ = 45659142400;
-
-    // μ-usdt-long 看涨漂移系数，每天0.03%
-    uint constant MIU_LONG = 64051194700;
-
-    // μ-usdt-short 看跌漂移系数，0
-    uint constant MIU_SHORT= 0;
-    
-    // 区块时间
-    uint constant BLOCK_TIME = 3;
 
     // 期权代币数组
     Option[] _options;
@@ -179,7 +167,7 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
     ) external payable override {
 
         // 1. 调用预言机获取价格
-        uint oraclePrice = _queryPrice(tokenAddress, msg.value, msg.sender);
+        uint oraclePrice = _latestPrice(tokenAddress, msg.value, msg.sender);
 
         // 2. 计算可以买到的期权份数
         uint amount = estimate(tokenAddress, oraclePrice, strikePrice, orientation, exerciseBlock, dcuAmount);
@@ -270,16 +258,8 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
 
         // 3. 调用预言机获取价格，读取预言机在指定区块的价格
         // 3.1. 获取token相对于eth的价格
-        //uint tokenAmount = 1 ether;
-        uint fee = msg.value;
+        uint oraclePrice = _findPrice(address(0), exerciseBlock, msg.value, msg.sender);
 
-        // 3.2. 获取usdt相对于eth的价格
-        (, uint rawPrice) = INestOpenPrice(NEST_OPEN_PRICE).findPrice {
-            value: fee
-        } (ETH_USDT_CHANNEL_ID, exerciseBlock, msg.sender);
-
-        // 将token价格转化为以usdt为单位计算的价格
-        uint oraclePrice = _toUSDTPrice(rawPrice);
         // 4. 分情况计算用户可以获得的dcu数量
         uint gain = 0;
         // 计算结算结果
@@ -325,7 +305,7 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         option.balance = _toUInt128(uint(option.balance) - amount);
 
         // 3. 调用预言机获取价格，读取预言机在指定区块的价格
-        uint oraclePrice = _queryPrice(tokenAddress, msg.value, msg.sender);
+        uint oraclePrice = _latestPrice(tokenAddress, msg.value, msg.sender);
 
         // 4. 分情况计算当前情况下的期权价格
         // 按照平均每14秒出一个块计算
@@ -345,21 +325,20 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
     }
 
     /// @dev 计算期权价格
-    /// @param tokenAddress 目标代币地址，0表示eth
     /// @param oraclePrice 当前预言机价格价
     /// @param strikePrice 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
     /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
     /// @param exerciseBlock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
     /// @return v 期权价格，需要除以(USDT_BASE << 64)
     function calcV(
-        address tokenAddress,
+        address,
         uint oraclePrice,
         uint strikePrice,
         bool orientation,
         uint exerciseBlock
     ) public view override returns (uint v) {
 
-        require(tokenAddress == address(0), "FEO:not allowed");
+        //require(tokenAddress== address(0), "FEO:not allowed");
 
         // 按照平均每14秒出一个块计算
         uint T = (exerciseBlock - block.number) * BLOCK_TIME;
@@ -489,20 +468,20 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         return int128(int(v / 100000));
     }
 
-    // 查询token价格
-    function _queryPrice(address tokenAddress, uint fee, address payback) private returns (uint oraclePrice) {
-        require(tokenAddress == address(0), "HO:not allowed!");
-        // 1.1. 获取token相对于eth的价格
-        //uint tokenAmount = 1 ether;
+    // // 查询token价格
+    // function _queryPrice(address tokenAddress, uint fee, address payback) private returns (uint oraclePrice) {
+    //     require(tokenAddress == address(0), "HO:not allowed!");
+    //     // 1.1. 获取token相对于eth的价格
+    //     //uint tokenAmount = 1 ether;
 
-        // 1.2. 获取usdt相对于eth的价格
-        (, uint rawPrice) = INestOpenPrice(NEST_OPEN_PRICE).latestPrice {
-            value: fee
-        } (ETH_USDT_CHANNEL_ID, payback);
+    //     // 1.2. 获取usdt相对于eth的价格
+    //     (, uint rawPrice) = INestOpenPrice(NEST_OPEN_PRICE).latestPrice {
+    //         value: fee
+    //     } (ETH_USDT_CHANNEL_ID, payback);
 
-        // 1.3. 将token价格转化为以usdt为单位计算的价格
-        oraclePrice = _toUSDTPrice(rawPrice);
-    }
+    //     // 1.3. 将token价格转化为以usdt为单位计算的价格
+    //     oraclePrice = _toUSDTPrice(rawPrice);
+    // }
 
     // 计算看涨期权价格
     function _calcVc(uint S0, uint T, uint K) private pure returns (uint vc) {
@@ -597,10 +576,5 @@ contract HedgeOptions is HedgeFrequentlyUsed, IHedgeOptions {
         }
 
         return index;
-    }
-
-    // 转为USDT价格
-    function _toUSDTPrice(uint rawPrice) internal pure returns (uint) {
-        return 2000 ether * 1 ether / rawPrice;
     }
 }
