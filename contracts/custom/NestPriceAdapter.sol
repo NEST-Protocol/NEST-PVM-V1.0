@@ -12,6 +12,9 @@ contract NestPriceAdapter is HedgeFrequentlyUsed {
     // ETH/USDT报价通道id
     uint constant ETH_USDT_CHANNEL_ID = 0;
 
+    // 报价币计价单位：2000usd
+    uint constant POST_UNIT = 2000 * USDT_BASE;
+
     // 查询最新的两个价格
     function _lastPriceList(address tokenAddress, uint fee, address payback) internal returns (uint[] memory prices) {
         require(tokenAddress == address(0), "HO:not allowed!");
@@ -53,6 +56,6 @@ contract NestPriceAdapter is HedgeFrequentlyUsed {
 
     // 转为USDT价格
     function _toUSDTPrice(uint rawPrice) internal pure returns (uint) {
-        return 2000 ether * 1 ether / rawPrice;
+        return POST_UNIT * 1 ether / rawPrice;
     }
 }

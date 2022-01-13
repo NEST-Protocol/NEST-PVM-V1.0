@@ -37,14 +37,13 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
     // 期权卖出价值比例，万分制。9750
     uint constant SELL_RATE = 9500;
 
-    // 期权行权最小间隔	840000	区块数	行权时间和当前时间最小间隔区块数，统一设置
-    uint constant MIN_PERIOD = 840000;
-
     // 期权代币数组
     Option[] _options;
 
+    // 注册账户地址映射
     mapping(address=>uint) _accountMapping;
 
+    // 注册账户地址
     address[] _accounts;
 
     constructor() {
