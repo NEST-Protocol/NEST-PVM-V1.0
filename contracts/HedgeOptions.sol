@@ -303,7 +303,7 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         //option.balances[msg.sender] -= amount;
         option.balance = _toUInt128(uint(option.balance) - amount);
 
-        // 3. 调用预言机获取价格，读取预言机在指定区块的价格
+        // 3. 调用预言机获取价格，读取预言机最新价格
         uint oraclePrice = _latestPrice(tokenAddress, msg.value, msg.sender);
 
         // 4. 分情况计算当前情况下的期权价格
