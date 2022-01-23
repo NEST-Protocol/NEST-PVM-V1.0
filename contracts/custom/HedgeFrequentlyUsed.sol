@@ -2,8 +2,6 @@
 
 pragma solidity ^0.8.6;
 
-import "../interfaces/IHedgeGovernance.sol";
-
 import "../HedgeBase.sol";
 
 /// @dev Base contract of Hedge
@@ -22,6 +20,7 @@ contract HedgeFrequentlyUsed is HedgeBase {
     uint constant USDT_BASE = 1 ether;
 }
 
+// import "../interfaces/IHedgeGovernance.sol";
 // // TODO: 主网部署时，需要使用上面的常量版本
 // /// @dev Base contract of Hedge
 // contract HedgeFrequentlyUsed is HedgeBase {

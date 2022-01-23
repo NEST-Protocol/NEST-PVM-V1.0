@@ -7,6 +7,12 @@ import "./IHedgeMapping.sol";
 /// @dev This interface defines the governance methods
 interface IHedgeGovernance is IHedgeMapping {
 
+    /// @dev 权限标记更新事件
+    /// @param addr 目标地址
+    /// @param oldFlag 旧权限标志
+    /// @param newFlag 新权限标志
+    event FlagChanged(address addr, uint oldFlag, uint newFlag);
+
     /// @dev Set governance authority
     /// @param addr Destination address
     /// @param flag Weight. 0 means to delete the governance permission of the target address. Weight is not 

@@ -2,15 +2,15 @@
 
 pragma solidity ^0.8.6;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-import "./libs/TransferHelper.sol";
-
-import "./interfaces/IHedgeDAO.sol";
 import "./interfaces/IHedgeGovernance.sol";
 
 /// @dev Base contract of Hedge
 contract HedgeBase {
+
+    /// @dev 治理权限变更事件
+    /// @param oldGovernance 旧治理地址
+    /// @param newGovernance 新治理地址
+    event GovernanceChanged(address oldGovernance, address newGovernance);
 
     /// @dev IHedgeGovernance implementation contract address
     address public _governance;
@@ -19,6 +19,9 @@ contract HedgeBase {
     /// @param governance IHedgeGovernance implementation contract address
     function initialize(address governance) public virtual {
         require(_governance == address(0), "Hedge:!initialize");
+        
+        emit GovernanceChanged(_governance, governance);
+
         _governance = governance;
     }
 
@@ -29,6 +32,9 @@ contract HedgeBase {
 
         address governance = _governance;
         require(governance == msg.sender || IHedgeGovernance(governance).checkGovernance(msg.sender, 0), "Hedge:!gov");
+        
+        emit GovernanceChanged(_governance, newGovernance);
+
         _governance = newGovernance;
     }
 

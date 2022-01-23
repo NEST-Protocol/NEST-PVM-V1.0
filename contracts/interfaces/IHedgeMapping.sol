@@ -5,6 +5,12 @@ pragma solidity ^0.8.6;
 /// @dev The interface defines methods for Hedge builtin contract address mapping
 interface IHedgeMapping {
 
+    /// @dev 地址更新事件
+    /// @param name 地址名称
+    /// @param oldAddress 旧地址
+    /// @param newAddress 新地址
+    event AddressUpdated(string name, address oldAddress, address newAddress);
+
     /// @dev Set the built-in contract address of the system
     /// @param dcuToken Address of dcu token contract
     /// @param hedgeDAO IHedgeDAO implementation contract address

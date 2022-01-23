@@ -9,6 +9,12 @@ import "./HedgeBase.sol";
 /// @dev DCU代币
 contract DCU is HedgeBase, ERC20("Decentralized Currency Unit", "DCU") {
 
+    /// @dev 挖矿权限变更事件
+    /// @param account 目标地址
+    /// @param oldFlag 旧标记
+    /// @param newFlag 新标记
+    event MinterChanged(address account, uint oldFlag, uint newFlag);
+
     // 保存挖矿权限地址
     mapping(address=>uint) _minters;
 
@@ -24,6 +30,8 @@ contract DCU is HedgeBase, ERC20("Decentralized Currency Unit", "DCU") {
     /// @param account 目标账号
     /// @param flag 挖矿权限标记，只有1表示可以挖矿
     function setMinter(address account, uint flag) external onlyGovernance {
+
+        emit MinterChanged(account, _minters[account], flag);
         _minters[account] = flag;
     }
 
@@ -44,7 +52,7 @@ contract DCU is HedgeBase, ERC20("Decentralized Currency Unit", "DCU") {
     /// @dev 销毁
     /// @param from 目标地址
     /// @param value 销毁数量
-    function burn(address from, uint value) external onlyMinter {
+    function burnFrom(address from, uint value) external onlyMinter {
         _burn(from, value);
     }
 }

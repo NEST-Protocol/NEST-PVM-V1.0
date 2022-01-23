@@ -47,21 +47,27 @@ abstract contract HedgeMapping is HedgeBase, IHedgeMapping {
     ) external override onlyGovernance {
 
         if (dcuToken != address(0)) {
+            emit AddressUpdated("dcuToken", _dcuToken, dcuToken);
             _dcuToken = dcuToken;
         }
         if (hedgeDAO != address(0)) {
+            emit AddressUpdated("hedgeDAO", _hedgeDAO, hedgeDAO);
             _hedgeDAO = hedgeDAO;
         }
         if (hedgeOptions != address(0)) {
+            emit AddressUpdated("hedgeOptions", _hedgeOptions, hedgeOptions);
             _hedgeOptions = hedgeOptions;
         }
         if (hedgeFutures != address(0)) {
+            emit AddressUpdated("hedgeFutures", _hedgeFutures, hedgeFutures);
             _hedgeFutures = hedgeFutures;
         }
         if (hedgeVaultForStaking != address(0)) {
+            emit AddressUpdated("hedgeVaultForStaking", _hedgeVaultForStaking, hedgeVaultForStaking);
             _hedgeVaultForStaking = hedgeVaultForStaking;
         }
         if (nestPriceFacade != address(0)) {
+            emit AddressUpdated("nestPriceFacade", _nestPriceFacade, nestPriceFacade);
             _nestPriceFacade = nestPriceFacade;
         }
     }
@@ -119,6 +125,7 @@ abstract contract HedgeMapping is HedgeBase, IHedgeMapping {
     /// @param key The key
     /// @param addr Destination address. 0 means to delete the registration information
     function registerAddress(string calldata key, address addr) external override onlyGovernance {
+        emit AddressUpdated(key, _registeredAddress[key], addr);
         _registeredAddress[key] = addr;
     }
 

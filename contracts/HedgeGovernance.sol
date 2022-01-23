@@ -40,6 +40,8 @@ contract HedgeGovernance is HedgeMapping, IHedgeGovernance {
     ///        Here, a uint96 is used to represent the weight, which is only reserved for expansion
     function setGovernance(address addr, uint flag) external override onlyGovernance {
         
+        emit FlagChanged(addr, _governanceMapping[addr].flag, flag);
+
         if (flag > 0) {
             _governanceMapping[addr] = GovernanceInfo(addr, uint96(flag));
         } else {

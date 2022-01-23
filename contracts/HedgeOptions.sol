@@ -2,9 +2,6 @@
 
 pragma solidity ^0.8.6;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-import "./libs/TransferHelper.sol";
 import "./libs/ABDKMath64x64.sol";
 
 import "./interfaces/IHedgeOptions.sol";
@@ -184,7 +181,7 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         ));
 
         // 4. 销毁权利金
-        DCU(DCU_TOKEN_ADDRESS).burn(msg.sender, dcuAmount);
+        DCU(DCU_TOKEN_ADDRESS).burnFrom(msg.sender, dcuAmount);
     }
 
     /// @dev 预估开仓可以买到的期权币数量

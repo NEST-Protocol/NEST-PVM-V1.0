@@ -2,11 +2,6 @@
 
 pragma solidity ^0.8.6;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-import "./libs/TransferHelper.sol";
-import "./libs/ABDKMath64x64.sol";
-
 import "./interfaces/IHedgeFutures.sol";
 
 import "./custom/ChainParameter.sol";
@@ -334,7 +329,7 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         require(dcuAmount >= 50 ether, "HF:at least 50 dcu");
 
         // 1. 销毁用户的dcu
-        DCU(DCU_TOKEN_ADDRESS).burn(msg.sender, dcuAmount);
+        DCU(DCU_TOKEN_ADDRESS).burnFrom(msg.sender, dcuAmount);
 
         // 2. 给用户分发永续合约
         // 看涨的时候，初始价格乘以(1+k)，卖出价格除以(1+k)
@@ -476,7 +471,7 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
 
     // 将uint转化为uint128，有截断检查
     function _toUInt128(uint value) private pure returns (uint128) {
-        require(value < 0x100000000000000000000000000000000);
+        require(value < 0x100000000000000000000000000000000, "FEO:can't convert to uint128");
         return uint128(value);
     }
 
