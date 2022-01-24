@@ -204,7 +204,6 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         require(exerciseBlock > block.number + MIN_PERIOD, "FEO:exerciseBlock too small");
 
         // 1. 计算期权价格
-        // 按照平均每14秒出一个块计算
         uint v = calcV(
             tokenAddress, 
             oraclePrice,
@@ -304,7 +303,6 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         uint oraclePrice = _latestPrice(tokenAddress, msg.value, msg.sender);
 
         // 4. 分情况计算当前情况下的期权价格
-        // 按照平均每14秒出一个块计算
         uint dcuAmount = amount * calcV(
             tokenAddress, 
             oraclePrice,
