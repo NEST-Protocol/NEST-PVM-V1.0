@@ -336,7 +336,7 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
 
         //require(tokenAddress== address(0), "FEO:not allowed");
 
-        // 按照平均每14秒出一个块计算
+        // 按照对应链上的出块时间折算
         uint T = (exerciseBlock - block.number) * BLOCK_TIME;
         v = orientation 
             ? _calcVc(oraclePrice, T, strikePrice) 

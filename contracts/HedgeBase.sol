@@ -20,7 +20,7 @@ contract HedgeBase {
     function initialize(address governance) public virtual {
         require(_governance == address(0), "Hedge:!initialize");
         
-        emit GovernanceChanged(_governance, governance);
+        emit GovernanceChanged(address(0), governance);
 
         _governance = governance;
     }

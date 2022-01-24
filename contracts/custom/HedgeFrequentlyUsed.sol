@@ -21,7 +21,7 @@ contract HedgeFrequentlyUsed is HedgeBase {
 }
 
 // import "../interfaces/IHedgeGovernance.sol";
-// // TODO: 主网部署时，需要使用上面的常量版本
+// // 主网部署时，需要使用上面的常量版本
 // /// @dev Base contract of Hedge
 // contract HedgeFrequentlyUsed is HedgeBase {
 

@@ -9,6 +9,15 @@ import "./HedgeMapping.sol";
 /// @dev Hedge governance contract
 contract HedgeGovernance is HedgeMapping, IHedgeGovernance {
 
+    /// @dev Structure of governance address information
+    struct GovernanceInfo {
+        address addr;
+        uint96 flag;
+    }
+
+    /// @dev Governance address information
+    mapping(address=>GovernanceInfo) _governanceMapping;
+
     /// @dev To support open-zeppelin/upgrades
     /// @param governance IHedgeGovernance implementation contract address
     function initialize(address governance) public override {
@@ -23,15 +32,6 @@ contract HedgeGovernance is HedgeMapping, IHedgeGovernance {
         // Add msg.sender to governance
         _governanceMapping[msg.sender] = GovernanceInfo(msg.sender, uint96(0xFFFFFFFFFFFFFFFFFFFFFFFF));
     }
-
-    /// @dev Structure of governance address information
-    struct GovernanceInfo {
-        address addr;
-        uint96 flag;
-    }
-
-    /// @dev Governance address information
-    mapping(address=>GovernanceInfo) _governanceMapping;
 
     /// @dev Set governance authority
     /// @param addr Destination address
