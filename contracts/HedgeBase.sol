@@ -19,9 +19,7 @@ contract HedgeBase {
     /// @param governance IHedgeGovernance implementation contract address
     function initialize(address governance) public virtual {
         require(_governance == address(0), "Hedge:!initialize");
-        
         emit GovernanceChanged(address(0), governance);
-
         _governance = governance;
     }
 
@@ -32,9 +30,7 @@ contract HedgeBase {
 
         address governance = _governance;
         require(governance == msg.sender || IHedgeGovernance(governance).checkGovernance(msg.sender, 0), "Hedge:!gov");
-        
-        emit GovernanceChanged(_governance, newGovernance);
-
+        emit GovernanceChanged(governance, newGovernance);
         _governance = newGovernance;
     }
 
