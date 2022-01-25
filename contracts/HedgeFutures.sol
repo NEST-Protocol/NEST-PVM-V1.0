@@ -208,7 +208,6 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         uint dcuAmount
     ) external payable override {
         uint index = _futureMapping[_getKey(tokenAddress, lever, orientation)];
-        require(index != 0, "HF:not exist");
         _buy(_futures[index], index, dcuAmount, tokenAddress, orientation);
     }
 
@@ -216,7 +215,6 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
     /// @param index 永续合约编号
     /// @param dcuAmount 支付的dcu数量
     function buyDirect(uint index, uint dcuAmount) public payable override {
-        require(index != 0, "HF:not exist");
         FutureInfo storage fi = _futures[index];
         _buy(fi, index, dcuAmount, fi.tokenAddress, fi.orientation);
     }
@@ -326,6 +324,7 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
     // 买入永续合约
     function _buy(FutureInfo storage fi, uint index, uint dcuAmount, address tokenAddress, bool orientation) private {
 
+        require(index != 0, "HF:not exist");
         require(dcuAmount >= 50 ether, "HF:at least 50 dcu");
 
         // 1. 销毁用户的dcu
