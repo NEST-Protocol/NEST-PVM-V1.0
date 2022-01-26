@@ -317,7 +317,7 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         bool orientation
     ) private pure returns (uint) {
         //return keccak256(abi.encodePacked(tokenAddress, lever, orientation));
-        require(lever < 0x100000000, "HF:lever to large");
+        require(lever < 0x100000000, "HF:lever too large");
         return (uint(uint160(tokenAddress)) << 96) | (lever << 8) | (orientation ? 1 : 0);
     }
 
