@@ -62,7 +62,7 @@ exports.deploy = async function() {
     console.log('hedgeSwap: ' + hedgeSwap.address);
 
     const fortSwap = await upgrades.deployProxy(FortSwap, [hedgeGovernance.address], { initializer: 'initialize' });
-    //const hedgeSwap = await HedgeSwap.attach('0x0000000000000000000000000000000000000000');
+    //const fortSwap = await FortSwap.attach('0x0000000000000000000000000000000000000000');
     console.log('fortSwap: ' + fortSwap.address);
 
     // console.log('2. hedgeGovernance.setBuiltinAddress()');
