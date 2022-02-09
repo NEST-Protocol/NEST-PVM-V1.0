@@ -6,20 +6,21 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "./libs/TransferHelper.sol";
 
-import "./interfaces/IHedgeSwap.sol";
+import "./interfaces/IFortSwap.sol";
 
 import "./custom/HedgeFrequentlyUsed.sol";
 
 import "./DCU.sol";
 
-/// @dev DCU分发合约
-contract HedgeSwap is HedgeFrequentlyUsed, IHedgeSwap {
+/// @dev dcu兑换合约
+contract FortSwap is HedgeFrequentlyUsed, IFortSwap {
 
-    // NEST代币地址
-    address constant NEST_TOKEN_ADDRESS = 0x98f8669F6481EbB341B522fCD3663f79A3d1A6A7;
+    // 目标代币地址
+    address constant TOKEN_ADDRESS = 0x4826533B4897376654Bb4d4AD88B7faFD0C98528;
 
-    // K值，初始化存入1500万nest，同时增发1500万dcu到资金池
-    uint constant K = 15000000 ether * 15000000 ether;
+    // TODO: 确定初始存入的DCU和USDT数量
+    // K值，初始化存入1500万token，同时增发1500万dcu到资金池
+    uint constant K = 800000 ether * 2600000 ether;
 
     constructor() {
     }
@@ -48,10 +49,10 @@ contract HedgeSwap is HedgeFrequentlyUsed, IHedgeSwap {
         }
 
         // K值是固定常量，伪造amountIn没有意义
-        if (src == NEST_TOKEN_ADDRESS && dest == DCU_TOKEN_ADDRESS) {
-            amountOut = _swap(NEST_TOKEN_ADDRESS, DCU_TOKEN_ADDRESS, to);
-        } else if (src == DCU_TOKEN_ADDRESS && dest == NEST_TOKEN_ADDRESS) {
-            amountOut = _swap(DCU_TOKEN_ADDRESS, NEST_TOKEN_ADDRESS, to);
+        if (src == TOKEN_ADDRESS && dest == DCU_TOKEN_ADDRESS) {
+            amountOut = _swap(TOKEN_ADDRESS, DCU_TOKEN_ADDRESS, to);
+        } else if (src == DCU_TOKEN_ADDRESS && dest == TOKEN_ADDRESS) {
+            amountOut = _swap(DCU_TOKEN_ADDRESS, TOKEN_ADDRESS, to);
         } else {
             revert("HS:pair not allowed");
         }
@@ -59,34 +60,34 @@ contract HedgeSwap is HedgeFrequentlyUsed, IHedgeSwap {
         mined = 0;
     }
 
-    /// @dev 使用确定数量的nest兑换dcu
-    /// @param nestAmount nest数量
+    /// @dev 使用确定数量的token兑换dcu
+    /// @param tokenAmount token数量
     /// @return dcuAmount 兑换到的dcu数量
-    function swapForDCU(uint nestAmount) external override returns (uint dcuAmount) {
-        TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), nestAmount);
-        dcuAmount = _swap(NEST_TOKEN_ADDRESS, DCU_TOKEN_ADDRESS, msg.sender);
+    function swapForDCU(uint tokenAmount) external override returns (uint dcuAmount) {
+        TransferHelper.safeTransferFrom(TOKEN_ADDRESS, msg.sender, address(this), tokenAmount);
+        dcuAmount = _swap(TOKEN_ADDRESS, DCU_TOKEN_ADDRESS, msg.sender);
     }
 
-    /// @dev 使用确定数量的dcu兑换nest
+    /// @dev 使用确定数量的dcu兑换token
     /// @param dcuAmount dcu数量
-    /// @return nestAmount 兑换到的nest数量
-    function swapForNEST(uint dcuAmount) external override returns (uint nestAmount) {
+    /// @return tokenAmount 兑换到的token数量
+    function swapForToken(uint dcuAmount) external override returns (uint tokenAmount) {
         TransferHelper.safeTransferFrom(DCU_TOKEN_ADDRESS, msg.sender, address(this), dcuAmount);
-        nestAmount = _swap(DCU_TOKEN_ADDRESS, NEST_TOKEN_ADDRESS, msg.sender);
+        tokenAmount = _swap(DCU_TOKEN_ADDRESS, TOKEN_ADDRESS, msg.sender);
     }
 
-    /// @dev 使用nest兑换确定数量的dcu
+    /// @dev 使用token兑换确定数量的dcu
     /// @param dcuAmount 预期得到的dcu数量
-    /// @return nestAmount 支付的nest数量
-    function swapExactDCU(uint dcuAmount) external override returns (uint nestAmount) {
-        nestAmount = _swapExact(NEST_TOKEN_ADDRESS, DCU_TOKEN_ADDRESS, dcuAmount, msg.sender);
+    /// @return tokenAmount 支付的token数量
+    function swapExactDCU(uint dcuAmount) external override returns (uint tokenAmount) {
+        tokenAmount = _swapExact(TOKEN_ADDRESS, DCU_TOKEN_ADDRESS, dcuAmount, msg.sender);
     }
 
-    /// @dev 使用dcu兑换确定数量的nest
-    /// @param nestAmount 预期得到的nest数量
+    /// @dev 使用dcu兑换确定数量的token
+    /// @param tokenAmount 预期得到的token数量
     /// @return dcuAmount 支付的dcu数量
-    function swapExactNEST(uint nestAmount) external override returns (uint dcuAmount) {
-       dcuAmount = _swapExact(DCU_TOKEN_ADDRESS, NEST_TOKEN_ADDRESS, nestAmount, msg.sender);
+    function swapExactToken(uint tokenAmount) external override returns (uint dcuAmount) {
+       dcuAmount = _swapExact(DCU_TOKEN_ADDRESS, TOKEN_ADDRESS, tokenAmount, msg.sender);
     }
 
     // 使用确定数量的token兑换目标token
