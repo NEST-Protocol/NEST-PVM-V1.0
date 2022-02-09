@@ -10,13 +10,11 @@ import "./interfaces/IFortSwap.sol";
 
 import "./custom/HedgeFrequentlyUsed.sol";
 
-import "./DCU.sol";
-
 /// @dev dcu兑换合约
 contract FortSwap is HedgeFrequentlyUsed, IFortSwap {
 
     // 目标代币地址
-    address constant TOKEN_ADDRESS = 0x4826533B4897376654Bb4d4AD88B7faFD0C98528;
+    address constant TOKEN_ADDRESS = 0x55d398326f99059fF775485246999027B3197955;
 
     // TODO: 确定初始存入的DCU和USDT数量
     // K值，初始化存入1500万token，同时增发1500万dcu到资金池
