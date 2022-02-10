@@ -16,15 +16,13 @@ contract FortSwap is HedgeFrequentlyUsed, IFortSwap {
     // 目标代币地址
     address constant TOKEN_ADDRESS = 0x55d398326f99059fF775485246999027B3197955;
 
-    // TODO: 确定初始存入的DCU和USDT数量
     // K值，按照计划，根据以太坊上的swap资金池内的nest按照市价卖出，换得的usdt跨链到bsc，
     // 除去兑换和跨链的消耗，共得到952297.70usdt到bsc上，地址0x2bE88070a330Ef106E0ef77A45bd1F583BFcCf4E
-    // 
     // 77027.78usdt作为项目支出转到0xc5229c9e1cbe1888B23015D283413a9C5e353aC7
-    // 100000.00usdt转到DAO账号，作为项目经费
-    // 剩余775269.92usdt进入新的usdt/dcu兑换资金池，根据nest/dcu资金池停掉时的价格
-    // 计算出dcu的数量为 XXX
-    uint constant K = 775269925761307568974296 * 2600000 ether;
+    // 100000.00usdt转到DAO账号0x9221295CE0E0D2E505CbeA635fa6730961FB5dFa，作为项目经费
+    // 剩余775269.92usdt进入新的usdt/dcu兑换资金池，根据nest/dcu资金池停掉时的价格1dcu = 0.3289221986usdt
+    // 计算出dcu的数量为2357000.92
+    uint constant K = 775269925761307568974296 * 2357000923200406848351572;
 
     constructor() {
     }

@@ -31,6 +31,7 @@ exports.deploy = async function() {
     // hedgeOptions: 0x284935F8C571d054Df98eDA8503ea13cde5fd8Cc
     // hedgeFutures: 0x8c5052f7747D8Ebc2F069286416b6aE8Ad3Cc149
     // hedgeSwap: 0x2Cd1Bf9345E969b5DFc6D88000475aD6d487363A
+    // fortSwap: 0x9484f12044b9d5707AfeaC5BD02b5E0214381801
     // proxyAdmin: 0xB16260599777EFFB17fd2a8fD30c449e5b71C088
 
     //const dcu = await DCU.deploy();
@@ -61,8 +62,8 @@ exports.deploy = async function() {
     const hedgeSwap = await HedgeSwap.attach('0x2Cd1Bf9345E969b5DFc6D88000475aD6d487363A');
     console.log('hedgeSwap: ' + hedgeSwap.address);
 
-    const fortSwap = await upgrades.deployProxy(FortSwap, [hedgeGovernance.address], { initializer: 'initialize' });
-    //const fortSwap = await FortSwap.attach('0x0000000000000000000000000000000000000000');
+    //const fortSwap = await upgrades.deployProxy(FortSwap, [hedgeGovernance.address], { initializer: 'initialize' });
+    const fortSwap = await FortSwap.attach('0x9484f12044b9d5707AfeaC5BD02b5E0214381801');
     console.log('fortSwap: ' + fortSwap.address);
 
     // console.log('2. hedgeGovernance.setBuiltinAddress()');
