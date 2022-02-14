@@ -18,13 +18,13 @@ exports.deploy = async function() {
     const HedgeSwap = await ethers.getContractFactory('HedgeSwap');
     const FortSwap = await ethers.getContractFactory('FortSwap');
 
-    console.log('** 开始部署合约 bsc_main-part3@20220209.js **');
+    console.log('** Deploy: bsc_main-part3@20220209.js **');
         
     // dcu: 0xf56c6eCE0C0d6Fbb9A53282C0DF71dBFaFA933eF
     // hedgeGovernance: 0x3e7D350BbAb71cAA2304e979aa6Af007EF5ECcB8
     // nestOpenMining: 0x09CE0e021195BA2c1CDE62A8B187abf810951540
 
-    //     ** 开始部署合约 bsc_main-part2@20211127.js **
+    //     ** Deploy: bsc_main-part2@20211127.js **
     // dcu: 0xf56c6eCE0C0d6Fbb9A53282C0DF71dBFaFA933eF
     // hedgeGovernance: 0x3e7D350BbAb71cAA2304e979aa6Af007EF5ECcB8
     // nestPriceFacade: 0x09CE0e021195BA2c1CDE62A8B187abf810951540
@@ -124,7 +124,6 @@ exports.deploy = async function() {
     //await hedgeFutures.create(eth.address, 4, false);
     //await hedgeFutures.create(eth.address, 5, false);
 
-    // 2021-11-27 15:30执行
     //console.log('9. dcu.setMinter(hedgeOptions.address, 1)');
     //await dcu.setMinter(hedgeOptions.address, 1);
 

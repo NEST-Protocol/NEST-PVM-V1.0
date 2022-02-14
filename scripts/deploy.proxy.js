@@ -18,7 +18,7 @@ exports.deploy = async function() {
     const HedgeVaultForStaking = await ethers.getContractFactory('HedgeVaultForStaking');
     const HedgeSwap = await ethers.getContractFactory('HedgeSwap');
 
-    console.log('** 开始部署合约 deploy.proxy.js **');
+    console.log('** Deploy: deploy.proxy.js **');
     
     // const nest = await TestERC20.deploy('NEST', 'NEST', 18);
     // //const nest = await TestERC20.attach('0x0000000000000000000000000000000000000000');
@@ -40,7 +40,6 @@ exports.deploy = async function() {
     // //const fortube = await TestERC20.attach('0x0000000000000000000000000000000000000000');
     // console.log('fortube: ' + fortube.address);
 
-    // 1. 部署依赖合约
     const usdt = await TestERC20.deploy('USDT', 'USDT', 6);
     //const usdt = await TestERC20.attach('0x0000000000000000000000000000000000000000');
     console.log('usdt: ' + usdt.address);

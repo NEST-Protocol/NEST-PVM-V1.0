@@ -178,7 +178,7 @@ describe('HedgeOptions', function() {
         //const MIU = 0.000000025367;
 
         if (true) {
-            console.log('5. 将eth价格改为3000usdt');
+            console.log('5. Set eth price to 3000usdt');
             await nestPriceFacade.setPrice(usdt.address, '3000000000', 1);
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
@@ -204,7 +204,7 @@ describe('HedgeOptions', function() {
             }
         }
         if (true) {
-            console.log('6. 将eth价格改为2000usdt');
+            console.log('6. Set eth price to 2000usdt');
             await nestPriceFacade.setPrice(usdt.address, '2000000000', 1);
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
@@ -228,7 +228,7 @@ describe('HedgeOptions', function() {
         }
 
         if (true) {
-            console.log('7. 清算0账户');
+            console.log('7. Settle');
             //await nestPriceFacade.setPrice(usdt.address, '2000000000', 1);
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
@@ -254,7 +254,7 @@ describe('HedgeOptions', function() {
         }
 
         if (true) {
-            console.log('8. 将eth价格回复到3510usdt');
+            console.log('8. Set eth price to 3510usdt');
             await nestPriceFacade.setPrice(usdt.address, '3510000000', 1);
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {

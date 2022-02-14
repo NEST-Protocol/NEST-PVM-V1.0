@@ -17,13 +17,13 @@ exports.deploy = async function() {
     const HedgeFutures = await ethers.getContractFactory('HedgeFutures');
     const HedgeSwap = await ethers.getContractFactory('HedgeSwap');
 
-    console.log('** 开始部署合约 bsc_main-part2@20211127.js **');
+    console.log('** Deploy: bsc_main-part2@20211127.js **');
         
     // dcu: 0xf56c6eCE0C0d6Fbb9A53282C0DF71dBFaFA933eF
     // hedgeGovernance: 0x3e7D350BbAb71cAA2304e979aa6Af007EF5ECcB8
     // nestOpenMining: 0x09CE0e021195BA2c1CDE62A8B187abf810951540
 
-    //     ** 开始部署合约 bsc_main-part2@20211127.js **
+    //     ** Deploy: bsc_main-part2@20211127.js **
     // dcu: 0xf56c6eCE0C0d6Fbb9A53282C0DF71dBFaFA933eF
     // hedgeGovernance: 0x3e7D350BbAb71cAA2304e979aa6Af007EF5ECcB8
     // nestPriceFacade: 0x09CE0e021195BA2c1CDE62A8B187abf810951540

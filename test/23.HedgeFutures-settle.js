@@ -67,7 +67,7 @@ describe('HedgeOptions', function() {
         };
 
         if (true) {
-            console.log('1. 买入看涨合约');
+            console.log('1. Buy long future');
             //await nestPriceFacade.setPrice(usdt.address, '3000000000', 1);
             await hedgeFutures.buy(eth.address, 5, true, toBigInt(10000), {
                 value: toBigInt(0.01)

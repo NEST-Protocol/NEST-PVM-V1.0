@@ -7,9 +7,9 @@ import "./interfaces/IHedgeGovernance.sol";
 /// @dev Base contract of Hedge
 contract HedgeBase {
 
-    /// @dev 治理权限变更事件
-    /// @param oldGovernance 旧治理地址
-    /// @param newGovernance 新治理地址
+    /// @dev Governance address changed event
+    /// @param oldGovernance Old governance address
+    /// @param newGovernance New governance address
     event GovernanceChanged(address oldGovernance, address newGovernance);
 
     /// @dev IHedgeGovernance implementation contract address

@@ -17,7 +17,7 @@ exports.deploy = async function() {
     const HedgeFutures = await ethers.getContractFactory('HedgeFutures');
     const HedgeVaultForStaking = await ethers.getContractFactory('HedgeVaultForStaking');
 
-    console.log('** 开始部署合约 rinkeby@20210928.js **');
+    console.log('** Deploy: rinkeby@20210928.js **');
     
     // usdt: 0x2d750210c0b5343a0b79beff8F054C9add7d2411
     // hbtc: 0xaE73d363Cb4aC97734E07e48B01D0a1FF5D1190B
@@ -34,7 +34,6 @@ exports.deploy = async function() {
     // hedgeFutures: 0x269382F35b76C6d7C30980A9E835D7e6831e0D84
     // hedgeVaultForStaking: 0x8A68626A4c37481b4941f9a4137C94FDa41e9D91
 
-    // 1. 部署依赖合约
     //const usdt = await TestERC20.deploy('USDT', 'USDT', 6);
     const usdt = await TestERC20.attach('0x2d750210c0b5343a0b79beff8F054C9add7d2411');
     console.log('usdt: ' + usdt.address);

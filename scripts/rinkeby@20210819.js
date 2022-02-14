@@ -16,7 +16,7 @@ exports.deploy = async function() {
     const HedgeFutures = await ethers.getContractFactory('HedgeFutures');
     const HedgeVaultForStaking = await ethers.getContractFactory('HedgeVaultForStaking');
 
-    console.log('** 开始部署合约 rinkeby@20210819.js **');
+    console.log('** Deploy: rinkeby@20210819.js **');
     
     // usdt: 0x2d750210c0b5343a0b79beff8F054C9add7d2411
     // hbtc: 0xaE73d363Cb4aC97734E07e48B01D0a1FF5D1190B
@@ -30,7 +30,7 @@ exports.deploy = async function() {
     // hedgeGovernance: 0xE1328C673620433e0c1847e5BfB698DbCED9688b
     // dcu: 0x6747972f3Fc6f4A4fC9c8a1fF4C2899dc83c4DF7
 
-    //     ** 开始部署合约 rinkeby@20210819.js **
+    //     ** Deploy: rinkeby@20210819.js **
     // usdt: 0x2d750210c0b5343a0b79beff8F054C9add7d2411
     // nestPriceFacade: 0x40C3EB032f27fDa7AdcF1B753c75B84e27f26838
     // hedgeGovernance: 0xE1328C673620433e0c1847e5BfB698DbCED9688b
@@ -39,7 +39,7 @@ exports.deploy = async function() {
     // hedgeOptions: 0x66bD0139b6216B740820a54a71a2CDFf2070e76B
     // hedgeFutures: 0xc5086B5a9AC3A4036416690E382AbD7808DC307c
 
-    //     ** 开始部署合约 rinkeby@20210819.js **
+    //     ** Deploy: rinkeby@20210819.js **
     // usdt: 0x2d750210c0b5343a0b79beff8F054C9add7d2411
     // nestPriceFacade: 0x40C3EB032f27fDa7AdcF1B753c75B84e27f26838
     // hedgeGovernance: 0xE1328C673620433e0c1847e5BfB698DbCED9688b
@@ -49,7 +49,6 @@ exports.deploy = async function() {
     // hedgeFutures: 0xc5086B5a9AC3A4036416690E382AbD7808DC307c
     // hedgeVaultForStaking: 0x4A0C01665c10a7635fB33BCC45198dfC2f31db0C
 
-    // 1. 部署依赖合约
     //const usdt = await TestERC20.deploy('USDT', 'USDT', 6);
     const usdt = await TestERC20.attach('0x2d750210c0b5343a0b79beff8F054C9add7d2411');
     console.log('usdt: ' + usdt.address);

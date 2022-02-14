@@ -16,7 +16,7 @@ exports.deploy = async function() {
     const HedgeFutures = await ethers.getContractFactory('HedgeFutures');
     const HedgeVaultForStaking = await ethers.getContractFactory('HedgeVaultForStaking');
 
-    console.log('** 开始部署合约 deploy.normal.js **');
+    console.log('** Deploy: deploy.normal.js **');
     
     // 1. 部署依赖合约
     const usdt = await TestERC20.deploy('USDT', 'USDT', 6);

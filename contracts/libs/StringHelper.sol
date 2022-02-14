@@ -5,9 +5,9 @@ pragma solidity ^0.8.6;
 /// @dev 字符串工具
 library StringHelper {
 
-    /// @dev 将字符串转为大写形式
-    /// @param str 目标字符串
-    /// @return 目标字符串的大写
+    /// @dev Convert to upper case
+    /// @param str Target string
+    /// @return Upper case result
     function toUpper(string memory str) internal pure returns (string memory) 
     {
         bytes memory bs = bytes(str);
@@ -20,9 +20,9 @@ library StringHelper {
         return str;
     }
 
-    /// @dev 将字符串转为小写形式
-    /// @param str 目标字符串
-    /// @return 目标字符串的小写
+    /// @dev Convert to lower case
+    /// @param str Target string
+    /// @return Lower case result
     function toLower(string memory str) internal pure returns (string memory) 
     {
         bytes memory bs = bytes(str);
@@ -35,11 +35,11 @@ library StringHelper {
         return str;
     }
 
-    /// @dev 截取字符串
-    /// @param str 目标字符串
-    /// @param start 截取开始索引
-    /// @param count 截取长度（如果长度不够，则取剩余长度）
-    /// @return 截取结果
+    /// @dev Get substring
+    /// @param str Target string
+    /// @param start Start index in target string
+    /// @param count Count of result. if length not enough, returns remain.
+    /// @return Substring result
     function substring(string memory str, uint start, uint count) internal pure returns (string memory) 
     {
         bytes memory bs = bytes(str);
@@ -57,10 +57,10 @@ library StringHelper {
         return string(buffer);
     }
 
-    /// @dev 截取字符串
-    /// @param str 目标字符串
-    /// @param start 截取开始索引
-    /// @return 截取结果
+    /// @dev Get substring
+    /// @param str Target string
+    /// @param start Start index in target string
+    /// @return Substring result
     function substring(string memory str, uint start) internal pure returns (string memory) 
     {
         bytes memory bs = bytes(str);
@@ -77,12 +77,12 @@ library StringHelper {
         return string(buffer);
     }
 
-    /// @dev 将整形转化为十进制字符串并写入内存数组，如果长度小于指定长度，则在前面补0
-    /// @param buffer 目标内存数组
-    /// @param index 目标内存数组起始位置
-    /// @param iv 要转化的整形值
-    /// @param minLength 最小长度
-    /// @return 写入后的新的内存数组偏移位置
+    /// @dev Write a uint in decimal. If length less than minLength, fill with 0 front.
+    /// @param buffer Target buffer
+    /// @param index Start index in buffer
+    /// @param iv Target uint value
+    /// @param minLength Minimal length
+    /// @return New offset in target buffer
     function writeUIntDec(bytes memory buffer, uint index, uint iv, uint minLength) internal pure returns (uint) 
     {
         uint i = index;
@@ -101,12 +101,12 @@ library StringHelper {
         return index;
     }
 
-    /// @dev 将整形转化为十进制字符串并写入内存数组，如果长度小于指定长度，则在前面补0
-    /// @param buffer 目标内存数组
-    /// @param index 目标内存数组起始位置
-    /// @param fv 要转化的浮点值
-    /// @param decimals 小数位数
-    /// @return 写入后的新的内存数组偏移位置
+    /// @dev Write a float in decimal. If length less than minLength, fill with 0 front.
+    /// @param buffer Target buffer
+    /// @param index Start index in buffer
+    /// @param fv Target float value
+    /// @param decimals Decimal places
+    /// @return New offset in target buffer
     function writeFloat(bytes memory buffer, uint index, uint fv, uint decimals) internal pure returns (uint) 
     {
         uint base = 10 ** decimals;
@@ -117,13 +117,13 @@ library StringHelper {
         return index;
     }
     
-    /// @dev 将整形转化为十六进制字符串并写入内存数组，如果长度小于指定长度，则在前面补0
-    /// @param buffer 目标内存数组
-    /// @param index 目标内存数组起始位置
-    /// @param iv 要转化的整形值
-    /// @param minLength 最小长度
-    /// @param upper 是否大写
-    /// @return 写入后的新的内存数组偏移位置
+    /// @dev Write a uint in hexadecimal. If length less than minLength, fill with 0 front.
+    /// @param buffer Target buffer
+    /// @param index Start index in buffer
+    /// @param iv Target uint value
+    /// @param minLength Minimal length
+    /// @param upper If upper case
+    /// @return New offset in target buffer
     function writeUIntHex(
         bytes memory buffer, 
         uint index, 
@@ -154,13 +154,13 @@ library StringHelper {
         return index;
     }
 
-    /// @dev 截取字符串并写入内存数组
-    /// @param buffer 目标内存数组
-    /// @param index 目标内存数组起始位置
-    /// @param str 目标字符串
-    /// @param start 截取开始索引
-    /// @param count 截取长度（如果长度不够，则取剩余长度）
-    /// @return 写入后的新的内存数组偏移位置
+    /// @dev Write a part of string to buffer
+    /// @param buffer Target buffer
+    /// @param index Start index in buffer
+    /// @param str Target string
+    /// @param start Start index in target string
+    /// @param count Count of string. if length not enough, use remain.
+    /// @return New offset in target buffer
     function writeString(
         bytes memory buffer, 
         uint index, 
@@ -178,11 +178,11 @@ library StringHelper {
         return index + i;
     }
 
-    /// @dev 从内存数组中截取一段
-    /// @param buffer 目标内存数组
-    /// @param start 截取开始索引
-    /// @param count 截取长度（如果长度不够，则取剩余长度）
-    /// @return 截取结果
+    /// @dev Get segment from buffer
+    /// @param buffer Target buffer
+    /// @param start Start index in buffer
+    /// @param count Count of string. if length not enough, returns remain.
+    /// @return Segment from buffer
     function segment(bytes memory buffer, uint start, uint count) internal pure returns (bytes memory) 
     {
         uint length = buffer.length;
@@ -199,72 +199,72 @@ library StringHelper {
         return re;
     }
 
-    /// @dev 将参数按照格式化字符串指定的内容解析并输出
-    /// @param format 格式化描述字符串
-    /// @param arg0 参数0（字符串需要使用StringHelper.enc进行编码，并且长度不能超过31）
-    /// @return 格式化结果
+    /// @dev Format to memory buffer
+    /// @param format Format string
+    /// @param arg0 Argument 0. (string is need to encode with StringHelper.enc, and length can not great than 31)
+    /// @return Format result
     function sprintf(string memory format, uint arg0) internal pure returns (string memory) {
         return sprintf(format, [arg0, 0, 0, 0, 0]);
     }
 
-    /// @dev 将参数按照格式化字符串指定的内容解析并输出
-    /// @param format 格式化描述字符串
-    /// @param arg0 参数0（字符串需要使用StringHelper.enc进行编码，并且长度不能超过31）
-    /// @param arg1 参数1（字符串需要使用StringHelper.enc进行编码，并且长度不能超过31）
-    /// @return 格式化结果
+    /// @dev Format to memory buffer
+    /// @param format Format string
+    /// @param arg0 Argument 0. (string is need to encode with StringHelper.enc, and length can not great than 31)
+    /// @param arg1 Argument 1. (string is need to encode with StringHelper.enc, and length can not great than 31)
+    /// @return Format result
     function sprintf(string memory format, uint arg0, uint arg1) internal pure returns (string memory) {
         return sprintf(format, [arg0, arg1, 0, 0, 0]);
     }
 
-    /// @dev 将参数按照格式化字符串指定的内容解析并输出
-    /// @param format 格式化描述字符串
-    /// @param arg0 参数0（字符串需要使用StringHelper.enc进行编码，并且长度不能超过31）
-    /// @param arg1 参数1（字符串需要使用StringHelper.enc进行编码，并且长度不能超过31）
-    /// @param arg2 参数2（字符串需要使用StringHelper.enc进行编码，并且长度不能超过31）
-    /// @return 格式化结果
+    /// @dev Format to memory buffer
+    /// @param format Format string
+    /// @param arg0 Argument 0. (string is need to encode with StringHelper.enc, and length can not great than 31)
+    /// @param arg1 Argument 1. (string is need to encode with StringHelper.enc, and length can not great than 31)
+    /// @param arg2 Argument 2. (string is need to encode with StringHelper.enc, and length can not great than 31)
+    /// @return Format result
     function sprintf(string memory format, uint arg0, uint arg1, uint arg2) internal pure returns (string memory) {
         return sprintf(format, [arg0, arg1, arg2, 0, 0]);
     }
     
-    /// @dev 将参数按照格式化字符串指定的内容解析并输出
-    /// @param format 格式化描述字符串
-    /// @param arg0 参数0（字符串需要使用StringHelper.enc进行编码，并且长度不能超过31）
-    /// @param arg1 参数1（字符串需要使用StringHelper.enc进行编码，并且长度不能超过31）
-    /// @param arg2 参数2（字符串需要使用StringHelper.enc进行编码，并且长度不能超过31）
-    /// @param arg3 参数3（字符串需要使用StringHelper.enc进行编码，并且长度不能超过31）
-    /// @return 格式化结果
+    /// @dev Format to memory buffer
+    /// @param format Format string
+    /// @param arg0 Argument 0. (string is need to encode with StringHelper.enc, and length can not great than 31)
+    /// @param arg1 Argument 1. (string is need to encode with StringHelper.enc, and length can not great than 31)
+    /// @param arg2 Argument 2. (string is need to encode with StringHelper.enc, and length can not great than 31)
+    /// @param arg3 Argument 3. (string is need to encode with StringHelper.enc, and length can not great than 31)
+    /// @return Format result
     function sprintf(string memory format, uint arg0, uint arg1, uint arg2, uint arg3) internal pure returns (string memory) {
         return sprintf(format, [arg0, arg1, arg2, arg3, 0]);
     }
 
-    /// @dev 将参数按照格式化字符串指定的内容解析并输出
-    /// @param format 格式化描述字符串
-    /// @param arg0 参数0（字符串需要使用StringHelper.enc进行编码，并且长度不能超过31）
-    /// @param arg1 参数1（字符串需要使用StringHelper.enc进行编码，并且长度不能超过31）
-    /// @param arg2 参数2（字符串需要使用StringHelper.enc进行编码，并且长度不能超过31）
-    /// @param arg3 参数3（字符串需要使用StringHelper.enc进行编码，并且长度不能超过31）
-    /// @param arg4 参数4（字符串需要使用StringHelper.enc进行编码，并且长度不能超过31）
-    /// @return 格式化结果
+    /// @dev Format to memory buffer
+    /// @param format Format string
+    /// @param arg0 Argument 0. (string is need to encode with StringHelper.enc, and length can not great than 31)
+    /// @param arg1 Argument 1. (string is need to encode with StringHelper.enc, and length can not great than 31)
+    /// @param arg2 Argument 2. (string is need to encode with StringHelper.enc, and length can not great than 31)
+    /// @param arg3 Argument 3. (string is need to encode with StringHelper.enc, and length can not great than 31)
+    /// @param arg4 Argument 4. (string is need to encode with StringHelper.enc, and length can not great than 31)
+    /// @return Format result
     function sprintf(string memory format, uint arg0, uint arg1, uint arg2, uint arg3, uint arg4) internal pure returns (string memory) {
         return sprintf(format, [arg0, arg1, arg2, arg3, arg4]);
     }
     
-    /// @dev 将参数按照格式化字符串指定的内容解析并输出
-    /// @param format 格式化描述字符串
-    /// @param args 参数表（字符串需要使用StringHelper.enc进行编码，并且长度不能超过31）
-    /// @return 格式化结果
+    /// @dev Format to memory buffer
+    /// @param format Format string
+    /// @param args Argument array. (string is need to encode with StringHelper.enc, and length can not great than 31)
+    /// @return Format result
     function sprintf(string memory format, uint[5] memory args) internal pure returns (string memory) {
         bytes memory buffer = new bytes(127);
         uint index = sprintf(buffer, 0, bytes(format), args);
         return string(segment(buffer, 0, index));
     }
 
-    /// @dev 将参数按照格式化字符串指定的内容解析并输出到内存数组的指定位置
-    /// @param buffer 目标内存数组
-    /// @param index 目标内存数组起始位置
-    /// @param format 格式化描述字符串
-    /// @param args 参数表（字符串需要使用StringHelper.enc进行编码，并且长度不能超过31）
-    /// @return 写入后的新的内存数组偏移位置
+    /// @dev Format to memory buffer
+    /// @param buffer Target buffer
+    /// @param index Start index in buffer
+    /// @param format Format string
+    /// @param args Argument array. (string is need to encode with StringHelper.enc, and length can not great than 31)
+    /// @return New index in buffer
     function sprintf(
         bytes memory buffer, 
         uint index, 
@@ -280,7 +280,7 @@ library StringHelper {
 
         while (i < format.length) {
             uint c = uint(uint8(format[i]));
-			// 0. 正常                                             
+			// 0. Normal                                             
             if (state == 0) {
                 // %
                 if (c == 37) {
@@ -291,7 +291,7 @@ library StringHelper {
                 }
                 ++i;
             }
-			// 1. 确认是否有 -
+			// 1. Check if there is -
             else if (state == 1) {
                 // %
                 if (c == 37) {
@@ -302,7 +302,7 @@ library StringHelper {
                     state = 3;
                 }
             }
-			// 3. 找数据宽度
+			// 3. Find with
             else if (state == 3) {
                 while (c >= 48 && c <= 57) {
                     w = w * 10 + c - 48;
@@ -310,7 +310,7 @@ library StringHelper {
                 }
                 state = 4;
             }
-            // 4. 找格式类型   
+            // 4. Find format descriptor   
 			else if (state == 4) {
                 uint arg = args[ai++];
                 // d
@@ -356,9 +356,9 @@ library StringHelper {
         return index;
     }
 
-    /// @dev 将字符串编码成uint（字符串长度不能超过31）
-    /// @param str 目标字符串
-    /// @return 编码结果
+    /// @dev Encode string to uint. (The length can not great than 31)
+    /// @param str Target string
+    /// @return Encoded result
     function enc(string memory str) public pure returns (uint) {
 
         uint i = bytes(str).length;
@@ -371,9 +371,9 @@ library StringHelper {
         return (v << 8) | bytes(str).length;
     }
 
-    /// @dev 将使用enc编码的uint解码成字符串
-    /// @param v 使用enc编码过的字符串
-    /// @return 解码结果
+    /// @dev Decode the value that encoded with enc
+    /// @param v The value that encoded with enc
+    /// @return Decoded value
     function dec(uint v) public pure returns (string memory) {
         uint length = v & 0xFF;
         v >>= 8;
@@ -385,14 +385,14 @@ library StringHelper {
         return string(buffer);
     }
 
-    /// @dev 将使用enc编码的uint解码成字符串
-    /// @param buffer 目标内存数组
-    /// @param index 目标内存数组起始位置
-    /// @param v 使用enc编码过的字符串
-    /// @param start 截取开始索引
-    /// @param count 截取长度（如果长度不够，则取剩余长度）
-    /// @param charCase 字符的大小写，0不改变，1大小，2小写
-    /// @return 写入后的新的内存数组偏移位置
+    /// @dev Decode the value that encoded with enc and write to buffer
+    /// @param buffer Target memory buffer
+    /// @param index Start index in buffer
+    /// @param v The value that encoded with enc
+    /// @param start Start index in target string
+    /// @param count Count of string. if length not enough, use remain.
+    /// @param charCase 0: original case, 1: upper case, 2: lower case
+    /// @return New index in buffer
     function writeEncString(
         bytes memory buffer, 
         uint index, 
@@ -422,24 +422,24 @@ library StringHelper {
         return index;
     }
 
-    // ******** 使用abi编码解决动态参数问题 ******** //
+    // ******** Use abi encode to implement variable arguments ******** //
 
-    /// @dev 将参数按照格式化字符串指定的内容解析并输出
-    /// @param format 格式化描述字符串
-    /// @param abiArgs 使用abi.encode()编码的参数数组
-    /// @return 格式化结果
+    /// @dev Format to memory buffer
+    /// @param format Format string
+    /// @param abiArgs byte array of arguments encoded by abi.encode()
+    /// @return Format result
     function sprintf(string memory format, bytes memory abiArgs) internal pure returns (string memory) {
         bytes memory buffer = new bytes(127);
         uint index = sprintf(buffer, 0, bytes(format), abiArgs);
         return string(segment(buffer, 0, index));
     }
 
-    /// @dev 将参数按照格式化字符串指定的内容解析并输出到内存数组的指定位置
-    /// @param buffer 目标内存数组
-    /// @param index 目标内存数组起始位置
-    /// @param format 格式化描述字符串
-    /// @param abiArgs 使用abi.encode()编码的参数数组
-    /// @return 写入后的新的内存数组偏移位置
+    /// @dev Format to memory buffer
+    /// @param buffer Target buffer
+    /// @param index Start index in buffer
+    /// @param format Format string
+    /// @param abiArgs byte array of arguments encoded by abi.encode()
+    /// @return New index in buffer
     function sprintf(
         bytes memory buffer, 
         uint index, 
@@ -455,7 +455,7 @@ library StringHelper {
 
         while (i < format.length) {
             uint c = uint(uint8(format[i]));
-			// 0. 正常                                             
+			// 0. Normal                                             
             if (state == 0) {
                 // %
                 if (c == 37) {
@@ -466,7 +466,7 @@ library StringHelper {
                 }
                 ++i;
             }
-			// 1. 确认是否有 -
+			// 1. Check if there is -
             else if (state == 1) {
                 // %
                 if (c == 37) {
@@ -477,7 +477,7 @@ library StringHelper {
                     state = 3;
                 }
             }
-			// 3. 找数据宽度
+			// 3. Find width
             else if (state == 3) {
                 while (c >= 48 && c <= 57) {
                     w = w * 10 + c - 48;
@@ -485,7 +485,7 @@ library StringHelper {
                 }
                 state = 4;
             }
-            // 4. 找格式类型   
+            // 4. Find format descriptor   
 			else if (state == 4) {
                 uint arg = readAbiUInt(abiArgs, ai);
                 // d
@@ -532,10 +532,10 @@ library StringHelper {
         return index;
     }
 
-    /// @dev 从abi编码的数据中的指定位置解码uint
-    /// @param data abi编码的数据
-    /// @param index 目标字符串在abi编码中的起始位置
-    /// @return v 解码结果
+    /// @dev Read uint from abi encoded data
+    /// @param data abi encoded data
+    /// @param index start index in data
+    /// @return v Decoded result
     function readAbiUInt(bytes memory data, uint index) internal pure returns (uint v) {
         // uint v = 0;
         // for (uint i = 0; i < 32; ++i) {
@@ -547,22 +547,22 @@ library StringHelper {
         }
     }
 
-    /// @dev 从abi编码的数据中的指定位置解码字符串
-    /// @param data abi编码的数据
-    /// @param index 目标字符串在abi编码中的起始位置
-    /// @return 解码结果
+    /// @dev Read string from abi encoded data
+    /// @param data abi encoded data
+    /// @param index start index in data
+    /// @return Decoded result
     function readAbiString(bytes memory data, uint index) internal pure returns (string memory) {
         return string(segment(data, index + 32, readAbiUInt(data, index)));
     }
 
-    /// @dev 从abi编码的数据中的指定位置解码字符串并写入内存数组
-    /// @param buffer 目标内存数组
-    /// @param index 目标内存数组起始位置
-    /// @param data 目标字符串
-    /// @param start 字符串数据在data中的开始位置
-    /// @param count 截取长度（如果长度不够，则取剩余长度）
-    /// @param charCase 字符的大小写，0不改变，1大小，2小写
-    /// @return 写入后的新的内存数组偏移位置
+    /// @dev Read string from abi encoded data and write to buffer
+    /// @param buffer Target buffer
+    /// @param index Start index in buffer
+    /// @param data Target abi encoded data
+    /// @param start Index of string in abi data
+    /// @param count Count of string. if length not enough, use remain.
+    /// @param charCase 0: original case, 1: upper case, 2: lower case
+    /// @return New index in buffer
     function writeAbiString(
         bytes memory buffer, 
         uint index, 

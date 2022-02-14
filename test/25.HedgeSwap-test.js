@@ -45,7 +45,7 @@
 //         }
 
 //         if (true) {
-//             console.log('2. 用400万dcu兑换nest');
+//             console.log('2. Swap 4000000 dcu for nest');
 //             await dcu.transfer(hedgeSwap.address, toBigInt(1000000));
 //             console.log(await getStatus());
 //             let receipt = await hedgeSwap.swapForDCU(toBigInt(10));

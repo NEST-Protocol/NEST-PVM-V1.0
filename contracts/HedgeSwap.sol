@@ -12,13 +12,13 @@ import "./custom/HedgeFrequentlyUsed.sol";
 
 import "./DCU.sol";
 
-/// @dev DCU分发合约
+/// @dev Swap DCU with NEST
 contract HedgeSwap is HedgeFrequentlyUsed, IHedgeSwap {
 
-    // NEST代币地址
+    // NEST token address
     address constant NEST_TOKEN_ADDRESS = 0x98f8669F6481EbB341B522fCD3663f79A3d1A6A7;
 
-    // K值，初始化存入1500万nest，同时增发1500万dcu到资金池
+    // K value, 15000000 nest and 15000000 dcu
     uint constant K = 15000000 ether * 15000000 ether;
 
     constructor() {
@@ -47,7 +47,7 @@ contract HedgeSwap is HedgeFrequentlyUsed, IHedgeSwap {
             TransferHelper.safeTransferETH(payback, msg.value);
         }
 
-        // K值是固定常量，伪造amountIn没有意义
+        // The value of K is a fixed constant. Forging amountIn is useless.
         if (src == NEST_TOKEN_ADDRESS && dest == DCU_TOKEN_ADDRESS) {
             amountOut = _swap(NEST_TOKEN_ADDRESS, DCU_TOKEN_ADDRESS, to);
         } else if (src == DCU_TOKEN_ADDRESS && dest == NEST_TOKEN_ADDRESS) {
@@ -59,37 +59,37 @@ contract HedgeSwap is HedgeFrequentlyUsed, IHedgeSwap {
         mined = 0;
     }
 
-    /// @dev 使用确定数量的nest兑换dcu
-    /// @param nestAmount nest数量
-    /// @return dcuAmount 兑换到的dcu数量
+    /// @dev Swap for dcu with exact nest amount
+    /// @param nestAmount Amount of nest
+    /// @return dcuAmount Amount of dcu acquired
     function swapForDCU(uint nestAmount) external override returns (uint dcuAmount) {
         TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), nestAmount);
         dcuAmount = _swap(NEST_TOKEN_ADDRESS, DCU_TOKEN_ADDRESS, msg.sender);
     }
 
-    /// @dev 使用确定数量的dcu兑换nest
-    /// @param dcuAmount dcu数量
-    /// @return nestAmount 兑换到的nest数量
+    /// @dev Swap for token with exact dcu amount
+    /// @param dcuAmount Amount of dcu
+    /// @return nestAmount Amount of token acquired
     function swapForNEST(uint dcuAmount) external override returns (uint nestAmount) {
         TransferHelper.safeTransferFrom(DCU_TOKEN_ADDRESS, msg.sender, address(this), dcuAmount);
         nestAmount = _swap(DCU_TOKEN_ADDRESS, NEST_TOKEN_ADDRESS, msg.sender);
     }
 
-    /// @dev 使用nest兑换确定数量的dcu
-    /// @param dcuAmount 预期得到的dcu数量
-    /// @return nestAmount 支付的nest数量
+    /// @dev Swap for exact amount of dcu
+    /// @param dcuAmount amount of dcu expected
+    /// @return nestAmount Amount of token paid
     function swapExactDCU(uint dcuAmount) external override returns (uint nestAmount) {
         nestAmount = _swapExact(NEST_TOKEN_ADDRESS, DCU_TOKEN_ADDRESS, dcuAmount, msg.sender);
     }
 
-    /// @dev 使用dcu兑换确定数量的nest
-    /// @param nestAmount 预期得到的nest数量
-    /// @return dcuAmount 支付的dcu数量
+    /// @dev Swap for exact amount of token
+    /// @param nestAmount Amount of token expected
+    /// @return dcuAmount Amount of dcu paid
     function swapExactNEST(uint nestAmount) external override returns (uint dcuAmount) {
        dcuAmount = _swapExact(DCU_TOKEN_ADDRESS, NEST_TOKEN_ADDRESS, nestAmount, msg.sender);
     }
 
-    // 使用确定数量的token兑换目标token
+    // Swap exact amount of token for other
     function _swap(address src, address dest, address to) private returns (uint amountOut) {
         uint balance0 = IERC20(src).balanceOf(address(this));
         uint balance1 = IERC20(dest).balanceOf(address(this));
@@ -98,7 +98,7 @@ contract HedgeSwap is HedgeFrequentlyUsed, IHedgeSwap {
         TransferHelper.safeTransfer(dest, to, amountOut);
     }
 
-    // 使用token兑换预期数量的token
+    // Swap for exact amount of token by other
     function _swapExact(address src, address dest, uint amountOut, address to) private returns (uint amountIn) {
         uint balance0 = IERC20(src).balanceOf(address(this));
         uint balance1 = IERC20(dest).balanceOf(address(this));

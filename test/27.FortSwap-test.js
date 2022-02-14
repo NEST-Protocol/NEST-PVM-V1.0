@@ -63,7 +63,7 @@ describe('HedgeOptions', function() {
         }
 
         if (true) {
-            console.log('1. 存入资产');
+            console.log('1. Depose dcu and busd');
 
             await dcu.mint(fortSwap.address, toBigInt(2600000));
             await busd.transfer(fortSwap.address, toBigInt(800000));
@@ -74,28 +74,28 @@ describe('HedgeOptions', function() {
         await dcu.approve(fortSwap.address, toBigInt(1000000000));
         await busd.approve(fortSwap.address, toBigInt(1000000000));
         if (true) {
-            console.log('2. 兑换1');
+            console.log('2. Swap 1');
             let receipt = await fortSwap.swapForToken(toBigInt(1));
             await showReceipt(receipt);
             console.log(await getStatus());
         }
 
         if (true) {
-            console.log('3. 兑换2');
+            console.log('3. Swap 2');
             let receipt = await fortSwap.swapForDCU(307692189349157943n);
             await showReceipt(receipt);
             console.log(await getStatus());
         }
 
         if (true) {
-            console.log('4. 兑换3');
+            console.log('4. Swap 3');
             let receipt = await fortSwap.swapExactToken(toBigInt(1));
             await showReceipt(receipt);
             console.log(await getStatus());
         }
 
         if (true) {
-            console.log('5. 兑换4');
+            console.log('5. Swap 4');
             let receipt = await fortSwap.swapExactDCU(3250004062429070000n);
             await showReceipt(receipt);
             console.log(await getStatus());

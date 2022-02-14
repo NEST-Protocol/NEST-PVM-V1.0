@@ -13,12 +13,11 @@ contract HedgeFrequentlyUsed is HedgeBase {
     // Address of NestOpenPrice contract
     address constant NEST_OPEN_PRICE = 0x09CE0e021195BA2c1CDE62A8B187abf810951540;
     
-    // USDT代币的基数
+    // USDT base
     uint constant USDT_BASE = 1 ether;
 }
 
 // import "../interfaces/IHedgeGovernance.sol";
-// // 主网部署时，需要使用上面的常量版本
 // /// @dev Base contract of Hedge
 // contract HedgeFrequentlyUsed is HedgeBase {
 
@@ -30,11 +29,11 @@ contract HedgeFrequentlyUsed is HedgeBase {
 //     //address constant NEST_OPEN_PRICE = 0xB5D2890c061c321A5B6A4a4254bb1522425BAF0A;
 //     address NEST_OPEN_PRICE;
 
-//     // USDT代币地址（占位符，无用）
+//     // USDT token address(Place holder)
 //     //address constant USDT_TOKEN_ADDRESS = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
 //     //address USDT_TOKEN_ADDRESS;
 
-//     // USDT代币的基数
+//     // USDT base
 //     uint constant USDT_BASE = 1 ether;
 
 //     /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 

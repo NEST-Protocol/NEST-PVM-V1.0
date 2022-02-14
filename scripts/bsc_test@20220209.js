@@ -19,7 +19,7 @@ exports.deploy = async function() {
     const HedgeSwap = await ethers.getContractFactory('HedgeSwap');
     const FortSwap = await ethers.getContractFactory('FortSwap');
 
-    console.log('** 开始部署合约 bsc_test@20220209.js **');
+    console.log('** Deploy: bsc_test@20220209.js **');
     
     // nest: 0x821edD79cc386E56FeC9DA5793b87a3A52373cdE
     // pusd: 0x3DA5c9aafc6e6D6839E62e2fB65825869019F291
@@ -28,7 +28,7 @@ exports.deploy = async function() {
     // nestLedger: 0x78D5E2fC85969e51580fd2C0Fd6D056a444167cE
     // nestOpenMining: 0xF2f9E62f52389EF223f5Fa8b9926e95386935277
 
-    //     ** 开始部署合约 bsc_test@20211123.js **
+    //     ** Deploy: bsc_test@20211123.js **
     // usdt: 0xDd4A68D8236247BDC159F7C5fF92717AA634cBCc
     // dcu: 0x5Df87aE415206707fd52aDa20a5Eac2Ec70e8dbb
     // nestPriceFacade: 0xF2f9E62f52389EF223f5Fa8b9926e95386935277
@@ -40,7 +40,6 @@ exports.deploy = async function() {
     // fortSwap: 0xc61409835E6A23e31f2fb06F76ae13A1b4c5fD26
     // proxyAdmin: 0xB5604C3C3AE902513731037B9c7368842582642e
 
-    // 1. 部署依赖合约
     const nest = await TestERC20.attach('0x821edD79cc386E56FeC9DA5793b87a3A52373cdE');
     console.log('nest: ' + nest.address);
 

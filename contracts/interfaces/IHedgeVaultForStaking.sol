@@ -19,8 +19,8 @@ interface IHedgeVaultForStaking {
     /// @param xtoken xtoken address
     /// @param cycle cycle
     /// @return totalStaked Total lock volume of target xtoken
-    /// @return totalRewards 通道总出矿量
-    /// @return unlockBlock 解锁区块号
+    /// @return totalRewards Total rewards for channel
+    /// @return unlockBlock Unlock block number
     function getChannelInfo(
         address xtoken, 
         uint64 cycle

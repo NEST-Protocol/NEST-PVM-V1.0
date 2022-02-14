@@ -7,10 +7,10 @@ import "./IHedgeMapping.sol";
 /// @dev This interface defines the governance methods
 interface IHedgeGovernance is IHedgeMapping {
 
-    /// @dev 权限标记更新事件
-    /// @param addr 目标地址
-    /// @param oldFlag 旧权限标志
-    /// @param newFlag 新权限标志
+    /// @dev Governance flag changed event
+    /// @param addr Target address
+    /// @param oldFlag Old governance flag
+    /// @param newFlag New governance flag
     event FlagChanged(address addr, uint oldFlag, uint newFlag);
 
     /// @dev Set governance authority

@@ -1,14 +1,14 @@
 # IHedgeOptions
 
 ## 1. Interface Description
-    定义永续合约交易接口
+    Defines methods for Futures
 
 ## 2. Method Description
 
-### 2.1. 列出历史永续合约地址
+### 2.1. List futures
 
 ```javascript
-    /// @dev 列出历史永续合约地址
+    /// @dev List futures
     /// @param offset Skip previous (offset) records
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
@@ -16,13 +16,13 @@
     function list(uint offset, uint count, uint order) external view returns (FutureView[] memory futureArray);
 ```
 
-### 2.2. 创建永续合约
+### 2.2. Create future
 
 ```javascript
-    /// @dev 创建永续合约
-    /// @param tokenAddress 永续合约的标的地产代币地址，0表示eth
-    /// @param lever 杠杆倍数
-    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
+    /// @dev Create future
+    /// @param tokenAddress Target token address, 0 means eth
+    /// @param lever Lever of future
+    /// @param orientation true: call, false: put
     function create(
         address tokenAddress, 
         uint lever,
@@ -31,14 +31,14 @@
 ```
 Note: This method will triggers the New event, See also 3.1.
 
-### 2.3. 获取永续合约信息
+### 2.3. Get information of future
 
 ```javascript
-    /// @dev 获取永续合约信息
-    /// @param tokenAddress 永续合约的标的地产代币地址，0表示eth
-    /// @param lever 杠杆倍数
-    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
-    /// @return 永续合约地址
+    /// @dev Get information of future
+    /// @param tokenAddress Target token address, 0 means eth
+    /// @param lever Lever of future
+    /// @param orientation true: call, false: put
+    /// @return Information of future
     function getFutureInfo(
         address tokenAddress, 
         uint lever,
@@ -46,14 +46,14 @@ Note: This method will triggers the New event, See also 3.1.
     ) external view returns (FutureView memory);
 ```
 
-### 2.4. 买入永续合约
+### 2.4. Buy future
 
 ```javascript
-    /// @dev 买入永续合约
-    /// @param tokenAddress 永续合约的标的地产代币地址，0表示eth
-    /// @param lever 杠杆倍数
-    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
-    /// @param dcuAmount 支付的dcu数量
+    /// @dev Buy future
+    /// @param tokenAddress Target token address, 0 means eth
+    /// @param lever Lever of future
+    /// @param orientation true: call, false: put
+    /// @param dcuAmount Amount of paid DCU
     function buy(
         address tokenAddress,
         uint lever,
@@ -63,24 +63,24 @@ Note: This method will triggers the New event, See also 3.1.
 ```
 Note: This method will triggers the Buy event, See also 3.2.
 
-### 2.5. 买入永续合约
+### 2.5. Buy future direct
 
 ```javascript
-    /// @dev 买入永续合约
-    /// @param index 永续合约编号
-    /// @param dcuAmount 支付的dcu数量
+    /// @dev Buy future direct
+    /// @param index Index of future
+    /// @param dcuAmount Amount of paid DCU
     function buyDirect(
         uint index,
         uint dcuAmount
     ) external payable;
 ```
 
-### 2.6. 卖出永续合约
+### 2.6. Sell future
 
 ```javascript
-    /// @dev 卖出永续合约
-    /// @param index 永续合约编号
-    /// @param amount 卖出数量
+    /// @dev Sell future
+    /// @param index Index of future
+    /// @param amount Amount to sell
     function sell(
         uint index,
         uint amount
@@ -88,12 +88,12 @@ Note: This method will triggers the Buy event, See also 3.2.
 ```
 Note: This method will triggers the Sell event, See also 3.3.
 
-### 2.7. 清算
+### 2.7. Settle future
 
 ```javascript
-    /// @dev 清算
-    /// @param index 永续合约编号
-    /// @param addresses 清算目标账号数组
+    /// @dev Settle future
+    /// @param index Index of future
+    /// @param addresses Target addresses
     function settle(
         uint index,
         address[] calldata addresses
@@ -101,25 +101,26 @@ Note: This method will triggers the Sell event, See also 3.3.
 ```
 Note: This method may triggers the Settle event, See also 3.4.
 
-### 2.8. 返回指定期权当前的价值
+### 2.8. Returns the current value of the specified future
 
 ```javascript
-    /// @dev 返回指定期权当前的价值
-    /// @param index 目标期权索引号
-    /// @param oraclePrice 预言机价格
-    /// @param addr 目标地址
+    /// @dev Returns the current value of the specified future
+    /// @param index Index of future
+    /// @param oraclePrice Current price from oracle
+    /// @param addr Target address
     function balanceOf(uint index, uint oraclePrice, address addr) external view returns (uint);
 ```
 
-### 2.9. 查找目标账户的合约
+### 2.9. Find the futures of the target address (in reverse order)
 
 ```javascript
-    /// @dev 查找目标账户的合约
-    /// @param start 从给定的合约地址对应的索引向前查询（不包含start对应的记录）
-    /// @param count 最多返回的记录条数
-    /// @param maxFindCount 最多查找maxFindCount记录
-    /// @param owner 目标账户地址
-    /// @return futureArray 合约信息列表
+    /// @dev Find the futures of the target address (in reverse order)
+    /// @param start Find forward from the index corresponding to the given contract address 
+    /// (excluding the record corresponding to start)
+    /// @param count Maximum number of records returned
+    /// @param maxFindCount Find records at most
+    /// @param owner Target address
+    /// @return futureArray Matched future array
     function find(
         uint start, 
         uint count, 
@@ -128,11 +129,11 @@ Note: This method may triggers the Settle event, See also 3.4.
     ) external view returns (FutureView[] memory futureArray);
 ```
 
-### 2.10. 获取已经开通的永续合约数量
+### 2.10. Obtain the number of futures that have been opened
 
 ```javascript
-    /// @dev 获取已经开通的永续合约数量
-    /// @return 已经开通的永续合约数量
+    /// @dev Obtain the number of futures that have been opened
+    /// @return Number of futures opened
     function getFutureCount() external view returns (uint);
 ```
 
@@ -149,14 +150,14 @@ Note: This method may triggers the Settle event, See also 3.4.
 
 ## 3. Event Description
 
-### 3.1. 新永续合约事件
+### 3.1. New future event
 
 ```javascript
-    /// @dev 新永续合约事件
-    /// @param tokenAddress 永续合约的标的地产代币地址，0表示eth
-    /// @param lever 杠杆倍数
-    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
-    /// @param index 永续合约编号
+    /// @dev New future event
+    /// @param tokenAddress Target token address, 0 means eth
+    /// @param lever Lever of future
+    /// @param orientation true: call, false: put
+    /// @param index Index of the future
     event New(
         address tokenAddress, 
         uint lever,
@@ -165,12 +166,12 @@ Note: This method may triggers the Settle event, See also 3.4.
     );
 ```
 
-### 3.2. 买入永续合约事件
+### 3.2. Buy future event
 
 ```javascript
-    /// @dev 买入永续合约事件
-    /// @param index 永续合约编号
-    /// @param dcuAmount 支付的dcu数量
+    /// @dev Buy future event
+    /// @param index Index of future
+    /// @param dcuAmount Amount of paid DCU
     event Buy(
         uint index,
         uint dcuAmount,
@@ -178,14 +179,14 @@ Note: This method may triggers the Settle event, See also 3.4.
     );
 ```
 
-### 3.3. 卖出永续合约事件
+### 3.3. Sell future event
 
 ```javascript
-    /// @dev 卖出永续合约事件
-    /// @param index 永续合约编号
-    /// @param amount 卖出数量
-    /// @param owner 所有者
-    /// @param value 获得的dcu数量
+    /// @dev Sell future event
+    /// @param index Index of future
+    /// @param amount Amount to sell
+    /// @param owner The owner of future
+    /// @param value Amount of dcu obtained
     event Sell(
         uint index,
         uint amount,
@@ -194,14 +195,14 @@ Note: This method may triggers the Settle event, See also 3.4.
     );
 ```
 
-### 3.4. 清算事件
+### 3.4. Settle future event
 
 ```javascript
-    /// @dev 清算事件
-    /// @param index 永续合约编号
-    /// @param addr 清算目标账号数组
-    /// @param sender 清算发起账号
-    /// @param reward 清算获得的dcu数量
+    /// @dev Settle future event
+    /// @param index Index of future
+    /// @param addr Target address
+    /// @param sender Address of settler
+    /// @param reward Liquidation reward
     event Settle(
         uint index,
         address addr,

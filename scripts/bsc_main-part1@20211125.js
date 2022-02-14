@@ -17,9 +17,9 @@ exports.deploy = async function() {
     const HedgeFutures = await ethers.getContractFactory('HedgeFutures');
     const HedgeVaultForStaking = await ethers.getContractFactory('HedgeVaultForStaking');
 
-    console.log('** 开始部署合约 bsc_main-part1@20211125.js **');
+    console.log('** Deploy: bsc_main-part1@20211125.js **');
         
-    //     ** 开始部署合约 bsc_main-part1@20211125.js **
+    //     ** Deploy: bsc_main-part1@20211125.js **
     // dcu: 0xf56c6eCE0C0d6Fbb9A53282C0DF71dBFaFA933eF
     // hedgeGovernance: 0x3e7D350BbAb71cAA2304e979aa6Af007EF5ECcB8
     // proxyAdmin: 0xB16260599777EFFB17fd2a8fD30c449e5b71C088

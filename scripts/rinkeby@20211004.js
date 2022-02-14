@@ -18,9 +18,9 @@ exports.deploy = async function() {
     const HedgeVaultForStaking = await ethers.getContractFactory('HedgeVaultForStaking');
     const HedgeSwap = await ethers.getContractFactory('HedgeSwap');
 
-    console.log('** 开始部署合约 rinkeby@20211004.js **');
+    console.log('** Deploy: rinkeby@20211004.js **');
         
-    //     ** 开始部署合约 rinkeby@20211004.js **
+    //     ** Deploy: rinkeby@20211004.js **
     // usdt: 0x2d750210c0b5343a0b79beff8F054C9add7d2411
     // hbtc: 0xaE73d363Cb4aC97734E07e48B01D0a1FF5D1190B
     // dcu: 0xc408edF487e98bB932eD4A8983038FF19352eDbd
@@ -63,7 +63,6 @@ exports.deploy = async function() {
     const fortube = await TestERC20.attach('0x37591670bCc04af593287fbc16C58F12f0B57881');
     console.log('fortube: ' + fortube.address);
 
-    // 1. 部署依赖合约
     //const usdt = await TestERC20.deploy('USDT', 'USDT', 6);
     const usdt = await TestERC20.attach('0x2d750210c0b5343a0b79beff8F054C9add7d2411');
     console.log('usdt: ' + usdt.address);

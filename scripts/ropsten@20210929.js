@@ -17,7 +17,7 @@ exports.deploy = async function() {
     const HedgeFutures = await ethers.getContractFactory('HedgeFutures');
     const HedgeVaultForStaking = await ethers.getContractFactory('HedgeVaultForStaking');
 
-    console.log('** 开始部署合约 ropsten@20210929.js **');
+    console.log('** Deploy: ropsten@20210929.js **');
     // usdt: 0xc6611844fD9FAE67ABFAdB5a67E33A4fbbB00893
     // dcu: 0xFe864063e10e5f7D99803765f28d2676A582A816
     // nestPriceFacade: 0x85723E83A7E7d88b0F3Ceb4C5bE7C853e3Ed8a82
@@ -27,7 +27,6 @@ exports.deploy = async function() {
     // hedgeFutures: 0x48437856C4f6C3F60eA014110066BB440A4530D7
     // hedgeVaultForStakinggggg: 0x176D7C08e5BC8f7334a1b1A5DC2C3516F80e1195
 
-    // 1. 部署依赖合约
     //const usdt = await TestERC20.deploy('USDT', 'USDT', 6);
     const usdt = await TestERC20.attach('0xc6611844fD9FAE67ABFAdB5a67E33A4fbbB00893');
     console.log('usdt: ' + usdt.address);

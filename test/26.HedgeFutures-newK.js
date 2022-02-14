@@ -24045,7 +24045,7 @@ describe('HedgeOptions', function() {
             if (sigmai > sigma) {
                 console.log('sigmai > sigma');
             }
-            // fort算法 把前面一项改成 max ((p2-p1)/p1,0.002) 后面不变
+            // max ((p2-p1)/p1,0.002)
             //k = 0.002 * Math.max(sigmai/sigma, 1) + Math.sqrt((blockNumber + 13467776 - bn) * BLOCK_TIME) * Math.max(sigmai, sigma);
             k += Math.sqrt((blockNumber + 13467776 - bn) * BLOCK_TIME) * Math.max(sigmai, sigma);
             return k;

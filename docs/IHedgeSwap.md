@@ -1,42 +1,42 @@
 # IHedgeSwap
 
 ## 1. Interface Description
-    定义dcu和nest兑换的接口
+    Defines methods for HedgeSwap
 
 ## 2. Method Description
 
-### 2.1. 使用确定数量的nest兑换dcu
+### 2.1. Swap for dcu with exact nest amount
 
 ```javascript
-    /// @dev 使用确定数量的nest兑换dcu
-    /// @param nestAmount nest数量
-    /// @return dcuAmount 兑换到的dcu数量
+    /// @dev Swap for dcu with exact nest amount
+    /// @param nestAmount Amount of nest
+    /// @return dcuAmount Amount of dcu acquired
     function swapForDCU(uint nestAmount) external returns (uint dcuAmount);
 ```
 
-### 2.2. 使用确定数量的dcu兑换nest
+### 2.2. Swap for token with exact dcu amount
 
 ```javascript
-    /// @dev 使用确定数量的dcu兑换nest
-    /// @param dcuAmount dcu数量
-    /// @return nestAmount 兑换到的nest数量
+    /// @dev Swap for token with exact dcu amount
+    /// @param dcuAmount Amount of dcu
+    /// @return nestAmount Amount of token acquired
     function swapForNEST(uint dcuAmount) external returns (uint nestAmount);
 ```
 
-### 2.3. 使用nest兑换确定数量的dcu
+### 2.3. Swap for exact amount of dcu
 
 ```javascript
-    /// @dev 使用nest兑换确定数量的dcu
-    /// @param dcuAmount 预期得到的dcu数量
-    /// @return nestAmount 支付的nest数量
+    /// @dev Swap for exact amount of dcu
+    /// @param dcuAmount amount of dcu expected
+    /// @return nestAmount Amount of token paid
     function swapExactDCU(uint dcuAmount) external returns (uint nestAmount);
 ```
 
-### 2.4. 使用dcu兑换确定数量的nest
+### 2.4. Swap for exact amount of token
 
 ```javascript
-    /// @dev 使用dcu兑换确定数量的nest
-    /// @param nestAmount 预期得到的nest数量
-    /// @return dcuAmount 支付的dcu数量
+    /// @dev Swap for exact amount of token
+    /// @param nestAmount Amount of token expected
+    /// @return dcuAmount Amount of dcu paid
     function swapExactNEST(uint nestAmount) external returns (uint dcuAmount);
 ```

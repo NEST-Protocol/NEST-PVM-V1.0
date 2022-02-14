@@ -10,18 +10,20 @@ import "./interfaces/IFortSwap.sol";
 
 import "./custom/HedgeFrequentlyUsed.sol";
 
-/// @dev dcu兑换合约
+/// @dev Swap dcu with token
 contract FortSwap is HedgeFrequentlyUsed, IFortSwap {
 
-    // 目标代币地址
+    // Target token address
     address constant TOKEN_ADDRESS = 0x55d398326f99059fF775485246999027B3197955;
 
-    // K值，按照计划，根据以太坊上的swap资金池内的nest按照市价卖出，换得的usdt跨链到bsc，
-    // 除去兑换和跨链的消耗，共得到952297.70usdt到bsc上，地址0x2bE88070a330Ef106E0ef77A45bd1F583BFcCf4E
-    // 77027.78usdt作为项目支出转到0xc5229c9e1cbe1888B23015D283413a9C5e353aC7
-    // 100000.00usdt转到DAO账号0x9221295CE0E0D2E505CbeA635fa6730961FB5dFa，作为项目经费
-    // 剩余775269.92usdt进入新的usdt/dcu兑换资金池，根据nest/dcu资金池停掉时的价格1dcu = 0.3289221986usdt
-    // 计算出dcu的数量为2357000.92
+    // K value, according to schedule, sell out nest from HedgeSwap pool on ethereum mainnet,
+    // Exchange to usdt, and cross to BSC smart chain. Excluding exchange and cross chain consumption, 
+    // a total of 952297.70usdt was obtained, address: 0x2bE88070a330Ef106E0ef77A45bd1F583BFcCf4E.
+    // 77027.78usdt transferred to 0xc5229c9e1cbe1888b23015d283413a9c5e353ac7 as project expenditure.
+    // 100000.00usdt transferred to the DAO address 0x9221295CE0E0D2E505CbeA635fa6730961FB5dFa for project funds.
+    // The remaining 775269.92usdt transfer to the new usdt/dcu swap pool.
+    // According to the price when nest/dcu swap pool stops, 1dcu=0.3289221986usdt,
+    // The calculated number of dcu is 2357000.92.
     uint constant K = 775269925761307568974296 * 2357000923200406848351572;
 
     constructor() {
@@ -50,7 +52,7 @@ contract FortSwap is HedgeFrequentlyUsed, IFortSwap {
             TransferHelper.safeTransferETH(payback, msg.value);
         }
 
-        // K值是固定常量，伪造amountIn没有意义
+        // The value of K is a fixed constant. Forging amountIn is useless.
         if (src == TOKEN_ADDRESS && dest == DCU_TOKEN_ADDRESS) {
             amountOut = _swap(TOKEN_ADDRESS, DCU_TOKEN_ADDRESS, to);
         } else if (src == DCU_TOKEN_ADDRESS && dest == TOKEN_ADDRESS) {
@@ -62,37 +64,37 @@ contract FortSwap is HedgeFrequentlyUsed, IFortSwap {
         mined = 0;
     }
 
-    /// @dev 使用确定数量的token兑换dcu
-    /// @param tokenAmount token数量
-    /// @return dcuAmount 兑换到的dcu数量
+    /// @dev Swap for dcu with exact token amount
+    /// @param tokenAmount Amount of token
+    /// @return dcuAmount Amount of dcu acquired
     function swapForDCU(uint tokenAmount) external override returns (uint dcuAmount) {
         TransferHelper.safeTransferFrom(TOKEN_ADDRESS, msg.sender, address(this), tokenAmount);
         dcuAmount = _swap(TOKEN_ADDRESS, DCU_TOKEN_ADDRESS, msg.sender);
     }
 
-    /// @dev 使用确定数量的dcu兑换token
-    /// @param dcuAmount dcu数量
-    /// @return tokenAmount 兑换到的token数量
+    /// @dev Swap for token with exact dcu amount
+    /// @param dcuAmount Amount of dcu
+    /// @return tokenAmount Amount of token acquired
     function swapForToken(uint dcuAmount) external override returns (uint tokenAmount) {
         TransferHelper.safeTransferFrom(DCU_TOKEN_ADDRESS, msg.sender, address(this), dcuAmount);
         tokenAmount = _swap(DCU_TOKEN_ADDRESS, TOKEN_ADDRESS, msg.sender);
     }
 
-    /// @dev 使用token兑换确定数量的dcu
-    /// @param dcuAmount 预期得到的dcu数量
-    /// @return tokenAmount 支付的token数量
+    /// @dev Swap for exact amount of dcu
+    /// @param dcuAmount Amount of dcu expected
+    /// @return tokenAmount Amount of token paid
     function swapExactDCU(uint dcuAmount) external override returns (uint tokenAmount) {
         tokenAmount = _swapExact(TOKEN_ADDRESS, DCU_TOKEN_ADDRESS, dcuAmount, msg.sender);
     }
 
-    /// @dev 使用dcu兑换确定数量的token
-    /// @param tokenAmount 预期得到的token数量
-    /// @return dcuAmount 支付的dcu数量
+    /// @dev Swap for exact amount of token
+    /// @param tokenAmount Amount of token expected
+    /// @return dcuAmount Amount of dcu paid
     function swapExactToken(uint tokenAmount) external override returns (uint dcuAmount) {
        dcuAmount = _swapExact(DCU_TOKEN_ADDRESS, TOKEN_ADDRESS, tokenAmount, msg.sender);
     }
 
-    // 使用确定数量的token兑换目标token
+    // Swap exact amount of token for other
     function _swap(address src, address dest, address to) private returns (uint amountOut) {
         uint balance0 = IERC20(src).balanceOf(address(this));
         uint balance1 = IERC20(dest).balanceOf(address(this));
@@ -101,7 +103,7 @@ contract FortSwap is HedgeFrequentlyUsed, IFortSwap {
         TransferHelper.safeTransfer(dest, to, amountOut);
     }
 
-    // 使用token兑换预期数量的token
+    // Swap for exact amount of token by other
     function _swapExact(address src, address dest, uint amountOut, address to) private returns (uint amountIn) {
         uint balance0 = IERC20(src).balanceOf(address(this));
         uint balance1 = IERC20(dest).balanceOf(address(this));

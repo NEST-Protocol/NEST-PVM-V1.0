@@ -13,10 +13,10 @@ import "./custom/NestPriceAdapter.sol";
 
 import "./DCU.sol";
 
-/// @dev 欧式期权
+/// @dev European option
 contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, NestPriceAdapter, IHedgeOptions {
 
-    /// @dev 期权结构
+    /// @dev Option structure
     struct Option {
         uint32 owner;
         uint128 balance;
@@ -25,22 +25,22 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         uint32 exerciseBlock;
     }
 
-    // 64位二进制精度的1
+    // 64bits 1
     int128 constant ONE = 0x10000000000000000;
 
-    // 64位二进制精度的50000
+    // 64bits 50000
     uint constant V50000 = 0x0C3500000000000000000;
 
-    // 期权卖出价值比例，万分制。9750
+    // Proportion of option selling value, 10000 basis. 9750
     uint constant SELL_RATE = 9500;
 
-    // 期权代币数组
+    // Option array
     Option[] _options;
 
-    // 注册账户地址映射
+    // Registered account address mapping
     mapping(address=>uint) _accountMapping;
 
-    // 注册账户地址
+    // Registered accounts
     address[] _accounts;
 
     constructor() {
@@ -53,11 +53,10 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         _accounts.push();
     }
 
-    /// @dev 返回指定期权的余额
-    /// @param index 目标期权索引号
-    /// @param addr 目标地址
+    /// @dev Returns the share of the specified option for target address
+    /// @param index Index of the option
+    /// @param addr Target address
     function balanceOf(uint index, address addr) external view override returns (uint) {
-        //return _options[index].balances[addr];
         Option memory option = _options[index];
         if (uint(option.owner) == getAccountIndex(addr)) {
             return uint(option.balance);
@@ -65,12 +64,13 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         return 0;
     }
 
-    /// @dev 查找目标账户的期权（倒序）
-    /// @param start 从给定的合约地址对应的索引向前查询（不包含start对应的记录）
-    /// @param count 最多返回的记录条数
-    /// @param maxFindCount 最多查找maxFindCount记录
-    /// @param owner 目标账户地址
-    /// @return optionArray 期权信息列表
+    /// @dev Find the options of the target address (in reverse order)
+    /// @param start Find forward from the index corresponding to the given contract address 
+    /// (excluding the record corresponding to start)
+    /// @param count Maximum number of records returned
+    /// @param maxFindCount Find records at most
+    /// @param owner Target address
+    /// @return optionArray Matched option array
     function find(
         uint start, 
         uint count, 
@@ -80,7 +80,7 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         
         optionArray = new OptionView[](count);
         
-        // 计算查找区间i和end
+        // Calculate search region
         Option[] storage options = _options;
         uint i = options.length;
         uint end = 0;
@@ -92,7 +92,7 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         }
         
         uint ownerIndex = getAccountIndex(owner);
-        // 循环查找，将符合条件的记录写入缓冲区
+        // Loop lookup to write qualified records to the buffer
         for (uint index = 0; index < count && i > end;) {
             Option storage option = options[--i];
             if (uint(option.owner) == ownerIndex) {
@@ -101,25 +101,25 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         }
     }
 
-    /// @dev 列出历史期权信息
+    /// @dev List options
     /// @param offset Skip previous (offset) records
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
-    /// @return optionArray 期权信息列表
+    /// @return optionArray Matched option array
     function list(
         uint offset, 
         uint count, 
         uint order
     ) external view override returns (OptionView[] memory optionArray) {
 
-        // 加载代币数组
+        // Load options
         Option[] storage options = _options;
-        // 创建结果数组
+        // Create result array
         optionArray = new OptionView[](count);
         uint length = options.length;
         uint i = 0;
 
-        // 倒序
+        // Reverse order
         if (order == 0) {
             uint index = length - offset;
             uint end = index > count ? index - count : 0;
@@ -128,7 +128,7 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
                 optionArray[i++] = _toOptionView(option, index);
             }
         } 
-        // 正序
+        // Positive order
         else {
             uint index = offset;
             uint end = index + count;
@@ -142,18 +142,20 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         }
     }
 
-    /// @dev 获取已经开通的欧式期权代币数量
-    /// @return 已经开通的欧式期权代币数量
+    /// @dev Obtain the number of European options that have been opened
+    /// @return Number of European options opened
     function getOptionCount() external view override returns (uint) {
         return _options.length;
     }
 
-    /// @dev 开仓
-    /// @param tokenAddress 目标代币地址，0表示eth
-    /// @param strikePrice 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
-    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
-    /// @param exerciseBlock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
-    /// @param dcuAmount 支付的dcu数量
+    /// @dev Open option
+    /// @param tokenAddress Target token address, 0 means eth
+    /// @param strikePrice The exercise price set by the user. During settlement, the system will compare the 
+    /// current price of the subject matter with the exercise price to calculate the user's profit and loss
+    /// @param orientation true: call, false: put
+    /// @param exerciseBlock After reaching this block, the user will exercise manually, and the block will be
+    /// recorded in the system using the block number
+    /// @param dcuAmount Amount of paid DCU
     function open(
         address tokenAddress,
         uint strikePrice,
@@ -162,36 +164,43 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         uint dcuAmount
     ) external payable override {
 
-        // 1. 调用预言机获取价格
+        // 1. Query price from oracle
         uint oraclePrice = _latestPrice(tokenAddress, msg.value, msg.sender);
 
-        // 2. 计算可以买到的期权份数
+        // 2. Calculate the amount of option
         uint amount = estimate(tokenAddress, oraclePrice, strikePrice, orientation, exerciseBlock, dcuAmount);
 
-        // 3. 开仓
-        // 开仓事件
+        // 3. Open
+        // Emit open event
         emit Open(_options.length, dcuAmount, msg.sender, amount);
-        // 添加期权账本
+        // Add option to array
         _options.push(Option(
-            uint32(_addressIndex(msg.sender)), //uint32 owner;
-            _toUInt128(amount), //uint128 balance;
-            _encodeFloat(strikePrice), //uint56 strikePrice;
-            orientation, //bool orientation;
-            uint32(exerciseBlock)//uint32 exerciseBlock;
+            //uint32 owner;
+            uint32(_addressIndex(msg.sender)),
+            //uint128 balance;
+            _toUInt128(amount),
+            //uint56 strikePrice;
+            _encodeFloat(strikePrice),
+            //bool orientation;
+            orientation,
+            //uint32 exerciseBlock;
+            uint32(exerciseBlock)
         ));
 
-        // 4. 销毁权利金
+        // 4. Burn DCU
         DCU(DCU_TOKEN_ADDRESS).burnFrom(msg.sender, dcuAmount);
     }
 
-    /// @dev 预估开仓可以买到的期权币数量
-    /// @param tokenAddress 目标代币地址，0表示eth
-    /// @param oraclePrice 当前预言机价格价
-    /// @param strikePrice 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
-    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
-    /// @param exerciseBlock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
-    /// @param dcuAmount 支付的dcu数量
-    /// @return amount 预估可以获得的期权币数量
+    /// @dev Estimate the amount of option
+    /// @param tokenAddress Target token address, 0 means eth
+    /// @param oraclePrice Current price from oracle
+    /// @param strikePrice The exercise price set by the user. During settlement, the system will compare the 
+    /// current price of the subject matter with the exercise price to calculate the user's profit and loss
+    /// @param orientation true: call, false: put
+    /// @param exerciseBlock After reaching this block, the user will exercise manually, and the block will be
+    /// recorded in the system using the block number
+    /// @param dcuAmount Amount of paid DCU
+    /// @return amount Amount of option
     function estimate(
         address tokenAddress,
         uint oraclePrice,
@@ -203,7 +212,7 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
 
         require(exerciseBlock > block.number + MIN_PERIOD, "FEO:exerciseBlock too small");
 
-        // 1. 计算期权价格
+        // 1. Calculate option price
         uint v = calcV(
             tokenAddress, 
             oraclePrice,
@@ -212,7 +221,7 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
             exerciseBlock
         );
 
-        // 2. 对期权价格进行修正
+        // 2. Correct option price
         if (orientation) {
             //v = _calcVc(config, oraclePrice, T, strikePrice);
             // Vc>=S0*1%; Vp>=K*1%
@@ -229,101 +238,102 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
             }
         }
 
-        // 3. 计算可以买到的期权份数
+        // 3. Calculate the amount of option
         amount = (USDT_BASE << 64) * dcuAmount / v;
     }
     
-    /// @dev 行权
-    /// @param index 期权编号
-    /// @param amount 结算的期权分数
+    /// @dev Exercise option
+    /// @param index Index of option
+    /// @param amount Amount of option to exercise
     function exercise(uint index, uint amount) external payable override {
 
-        // 1. 获取期权信息
+        // 1. Load the option
         Option storage option = _options[index];
-        //address tokenAddress = address(0);// option.tokenAddress;
         uint strikePrice = _decodeFloat(option.strikePrice);
         bool orientation = option.orientation;
         uint exerciseBlock = uint(option.exerciseBlock);
 
         require(block.number >= exerciseBlock, "FEO:at maturity");
 
-        // 2. 销毁期权代币
-        //option.balances[msg.sender] -= amount;
+        // 2. Deduct the specified amount
         option.balance = _toUInt128(uint(option.balance) - amount);
 
-        // 3. 调用预言机获取价格，读取预言机在指定区块的价格
-        // 3.1. 获取token相对于eth的价格
+        // 3. Find the price by specified block from oracle
         uint oraclePrice = _findPrice(address(0), exerciseBlock, msg.value, msg.sender);
 
-        // 4. 分情况计算用户可以获得的dcu数量
+        // 4. Calculate the number of DCU that can be obtained
         uint gain = 0;
-        // 计算结算结果
-        // 看涨期权
+        // Call option
         if (orientation) {
-            // 赌赢了
+            // Win
             if (oraclePrice > strikePrice) {
                 gain = amount * (oraclePrice - strikePrice) / USDT_BASE;
             }
         } 
-        // 看跌期权
+        // Put option
         else {
-            // 赌赢了
+            // Win
             if (oraclePrice < strikePrice) {
                 gain = amount * (strikePrice - oraclePrice) / USDT_BASE;
             }
         }
 
-        // 5. 用户赌赢了，给其增发赢得的dcu
+        // 5. If win, mint DCU to user
         if (gain > 0) {
             DCU(DCU_TOKEN_ADDRESS).mint(msg.sender, gain);
         }
 
-        // 行权事件
+        // emit Exercise event
         emit Exercise(index, amount, msg.sender, gain);
     }
 
-    /// @dev 卖出期权
-    /// @param index 期权编号
-    /// @param amount 卖出的期权分数
+    /// @dev Sell option
+    /// @param index Index of option
+    /// @param amount Amount of option to sell
     function sell(uint index, uint amount) external payable override {
-        // 期权卖出公式：vt=Max（ct(T,K）*0.975，0）其中ct(K,T)是按照定价公式计算的期权成本，
-        // 注意，不是包含了不低于1%这个设定
-        // 1. 获取期权信息
+        // Sell formula：vt=Max(ct(T,K)*0.975，0). 
+        // ct(K,T) Is the price of option present
+        // Note: No less than 1% condition
+
+        // 1. Load the option
         Option storage option = _options[index];
-        address tokenAddress = address(0); //option.tokenAddress;
+        address tokenAddress = address(0);
         uint strikePrice = _decodeFloat(option.strikePrice);
         bool orientation = option.orientation;
         uint exerciseBlock = uint(option.exerciseBlock);
 
-        // 2. 销毁期权代币
-        //option.balances[msg.sender] -= amount;
+        // 2. Deduct the specified amount
         option.balance = _toUInt128(uint(option.balance) - amount);
 
-        // 3. 调用预言机获取价格，读取预言机最新价格
+        // 3. Query price from oracle
         uint oraclePrice = _latestPrice(tokenAddress, msg.value, msg.sender);
 
-        // 4. 分情况计算当前情况下的期权价格
+        // 4. Calculate option price
         uint dcuAmount = amount * calcV(
             tokenAddress, 
             oraclePrice,
             strikePrice,
             orientation,
             exerciseBlock
-        ) * SELL_RATE / (USDT_BASE * 0x27100000000000000000); //(USDT_BASE * 10000 << 64);
+        ) * SELL_RATE / (USDT_BASE * 0x27100000000000000000); 
+        //(USDT_BASE * 10000 << 64);
+
         if (dcuAmount > 0) {
             DCU(DCU_TOKEN_ADDRESS).mint(msg.sender, dcuAmount);
         }
 
-        // 卖出事件
+        // emit Sell event
         emit Sell(index, amount, msg.sender, dcuAmount);
     }
 
-    /// @dev 计算期权价格
-    /// @param oraclePrice 当前预言机价格价
-    /// @param strikePrice 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
-    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
-    /// @param exerciseBlock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
-    /// @return v 期权价格，需要除以(USDT_BASE << 64)
+    /// @dev Calculate option price
+    /// @param oraclePrice Current price from oracle
+    /// @param strikePrice The exercise price set by the user. During settlement, the system will compare the 
+    /// current price of the subject matter with the exercise price to calculate the user's profit and loss
+    /// @param orientation true: call, false: put
+    /// @param exerciseBlock After reaching this block, the user will exercise manually, and the block will be
+    /// recorded in the system using the block number
+    /// @return v Option price. Need to divide (USDT_BASE << 64)
     function calcV(
         address,
         uint oraclePrice,
@@ -332,9 +342,7 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         uint exerciseBlock
     ) public view override returns (uint v) {
 
-        //require(tokenAddress== address(0), "FEO:not allowed");
-
-        // 按照对应链上的出块时间折算
+        // Convert the total time according to the average block out time
         uint T = (exerciseBlock - block.number) * BLOCK_TIME;
         v = orientation 
             ? _calcVc(oraclePrice, T, strikePrice) 
@@ -376,31 +384,31 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         );
     }
 
-    // 将18位十进制定点数转化为64位二级制定点数
+    // Convert 18 decimal points to 64 binary points
     function _d18TOb64(uint v) private pure returns (int128) {
         require(v < 0x6F05B59D3B200000000000000000000, "FEO:can't convert to 64bits");
         return int128(int((v << 64) / 1 ether));
     }
 
-    // 将uint转化为int128
+    // Convert uint to int128
     function _toInt128(uint v) private pure returns (int128) {
         require(v < 0x80000000000000000000000000000000, "FEO:can't convert to int128");
         return int128(int(v));
     }
 
-    // 将int128转化为uint
+    // Convert int128 to uint
     function _toUInt(int128 v) private pure returns (uint) {
         require(v >= 0, "FEO:can't convert to uint");
         return uint(int(v));
     }
 
-    // 将uint转化为uint128
+    // Convert uint to uint128
     function _toUInt128(uint v) private pure returns (uint128) {
         require(v < 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF, "HO:can't convert to uint128");
         return uint128(v);
     }
 
-    // 通过查表的方法计算标准正态分布函数
+    // Calculate standard normal distribution by table
     function _snd(int128 x) private pure returns (int128) {
         uint[28] memory table = [
             /* */ ///////////////////// STANDARD NORMAL TABLE //////////////////////////
@@ -462,22 +470,7 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         return int128(int(v / 100000));
     }
 
-    // // 查询token价格
-    // function _queryPrice(address tokenAddress, uint fee, address payback) private returns (uint oraclePrice) {
-    //     require(tokenAddress == address(0), "HO:not allowed!");
-    //     // 1.1. 获取token相对于eth的价格
-    //     //uint tokenAmount = 1 ether;
-
-    //     // 1.2. 获取usdt相对于eth的价格
-    //     (, uint rawPrice) = INestOpenPrice(NEST_OPEN_PRICE).latestPrice {
-    //         value: fee
-    //     } (ETH_USDT_CHANNEL_ID, payback);
-
-    //     // 1.3. 将token价格转化为以usdt为单位计算的价格
-    //     oraclePrice = _toUSDTPrice(rawPrice);
-    // }
-
-    // 计算看涨期权价格
+    // Calculate option price for call
     function _calcVc(uint S0, uint T, uint K) private pure returns (uint vc) {
 
         int128 sigmaSQ_T = _d18TOb64(SIGMA_SQ * T);
@@ -488,7 +481,7 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
 
         uint left = _toUInt(ABDKMath64x64.mul(
             //ABDKMath64x64.exp(miu_T), 
-            // 改为单利近似计算: x*(1+rt)
+            // Use approximate calculation method: x*(1+rt)
             // by chenf 2021-12-28 15:27
             miu_T + ONE,
             ABDKMath64x64.sub(
@@ -501,7 +494,7 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         vc = left > right ? left - right : 0;
     }
 
-    // 计算看跌期权价格
+    // Calculate option price for put
     function _calcVp(uint S0, uint T, uint K) private pure returns (uint vp) {
 
         int128 sigmaSQ_T = _d18TOb64(SIGMA_SQ * T);
@@ -513,7 +506,7 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         uint left = _toUInt(_snd(d)) * K;
         uint right = _toUInt(ABDKMath64x64.mul(
             //ABDKMath64x64.exp(miu_T), 
-            // 改为单利近似计算: x*(1+rt)
+            // Use approximate calculation method: x*(1+rt)
             // by chenf 2021-12-28 15:27
             miu_T + ONE,
             _snd(ABDKMath64x64.sub(d, sigma_t))
@@ -522,7 +515,7 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         vp = left > right ? left - right : 0;
     }
 
-    // 计算公式中的d1，因为没有除以σ，所以命名为D1
+    // d1 in formula，Because didn't divide by σ, So it's named D1
     function _D1(uint S0, uint K, int128 sigmaSQ_T, int128 miu_T) private pure returns (int128) {
 
         //require(K < 0x1000000000000000000000000000000000000000000000000, "FEO:K can't ROL 64bits");

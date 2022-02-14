@@ -37,18 +37,18 @@ describe('HedgeOptions', function() {
         }
 
         if (true) {
-            console.log('1. 显示余额');
+            console.log('1. Show balances');
             console.log(await getStatus());
         }
 
         if (true) {
-            console.log('2. 转账20000dcu给addr1');
+            console.log('2. Transfer 20000dcu to addr1');
             await dcu.transfer(addr1.address, toBigInt(20000));
             console.log(await getStatus());
         }
 
         if (true) {
-            console.log('4. 移除owner的挖矿权限');
+            console.log('4. Remove owner from minters');
             console.log('checkMinter:' + await dcu.checkMinter(owner.address));
             await dcu.setMinter(owner.address, 0);
             console.log('checkMinter:' + await dcu.checkMinter(owner.address));
@@ -57,13 +57,13 @@ describe('HedgeOptions', function() {
         }
 
         if (true) {
-            console.log('3. owner挖矿300dcu')
+            console.log('3. Mint 300dcu to addr1')
             await dcu.mint(addr1.address, toBigInt(300));
             console.log(await getStatus());
         }
 
         if (true) {
-            console.log('5. owner销毁700dcu');
+            console.log('5. burn 700dcu');
             await dcu.burn(addr1.address, toBigInt(700));
             console.log(await getStatus());
         }

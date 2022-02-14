@@ -18,18 +18,18 @@ exports.deploy = async function() {
     const HedgeVaultForStaking = await ethers.getContractFactory('HedgeVaultForStaking');
     const HedgeSwap = await ethers.getContractFactory('HedgeSwap');
 
-    console.log('** 开始部署合约 part4-mainnet@20211026.js **');
+    console.log('** Deploy: part4-mainnet@20211026.js **');
     
-    // nest     0x04abEdA201850aC0124161F037Efd70c74ddC74C  一月    2000000
-    // nhbtc    0x1F832091fAf289Ed4f50FE7418cFbD2611225d46  一月    500000
-    // cofi     0x1a23a6BfBAdB59fa563008c0fB7cf96dfCF34Ea1  一月    500000
-    // pusd     0xCCEcC702Ec67309Bc3DDAF6a42E9e5a6b8Da58f0  一月    500000
+    // nest     0x04abEdA201850aC0124161F037Efd70c74ddC74C  One months    2000000
+    // nhbtc    0x1F832091fAf289Ed4f50FE7418cFbD2611225d46  One months    500000
+    // cofi     0x1a23a6BfBAdB59fa563008c0fB7cf96dfCF34Ea1  One months    500000
+    // pusd     0xCCEcC702Ec67309Bc3DDAF6a42E9e5a6b8Da58f0  One months    500000
     // fortube  0x1FCdcE58959f536621d76f5b7FfB955baa5A672F  ----    0
-    // nest     0x04abEdA201850aC0124161F037Efd70c74ddC74C  两年    36000000
-    // peth     0x53f878Fb7Ec7B86e4F9a0CB1E9a6c89C0555FbbD  一月    500000
+    // nest     0x04abEdA201850aC0124161F037Efd70c74ddC74C  Two years     36000000
+    // peth     0x53f878Fb7Ec7B86e4F9a0CB1E9a6c89C0555FbbD  One months    500000
     // 2021-10-14 12:02
 
-    // ** 开始部署合约 part3-mainnet@20211020.js **
+    // ** Deploy: part3-mainnet@20211020.js **
     // nest: 0x04abEdA201850aC0124161F037Efd70c74ddC74C
     // nhbtc: 0x1F832091fAf289Ed4f50FE7418cFbD2611225d46
     // cofi: 0x1a23a6BfBAdB59fa563008c0fB7cf96dfCF34Ea1

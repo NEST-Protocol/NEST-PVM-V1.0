@@ -1,38 +1,40 @@
 # IHedgeOptions
 
 ## 1. Interface Description
-    定义欧式期权接口
+    Define methods for european option
 
 ## 2. Method Description
 
-### 2.1. 列出历史期权信息
+### 2.1. List options
 
 ```javascript
-    /// @dev 列出历史期权信息
+    /// @dev List options
     /// @param offset Skip previous (offset) records
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
-    /// @return optionArray 期权信息列表
+    /// @return optionArray Matched option array
     function list(uint offset, uint count, uint order) external view returns (OptionView[] memory optionArray);
 ```
 
-### 2.2. 获取已经开通的欧式期权代币数量
+### 2.2. Obtain the number of European options that have been opened
 
 ```javascript
-    /// @dev 获取已经开通的欧式期权代币数量
-    /// @return 已经开通的欧式期权代币数量
+    /// @dev Obtain the number of European options that have been opened
+    /// @return Number of European options opened
     function getOptionCount() external view returns (uint);
 ```
 
-### 2.3. 开仓
+### 2.3. Open option
 
 ```javascript
-    /// @dev 开仓
-    /// @param tokenAddress 目标代币地址，0表示eth
-    /// @param strikePrice 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
-    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
-    /// @param exerciseBlock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
-    /// @param dcuAmount 支付的dcu数量
+    /// @dev Open option
+    /// @param tokenAddress Target token address, 0 means eth
+    /// @param strikePrice The exercise price set by the user. During settlement, the system will compare the 
+    /// current price of the subject matter with the exercise price to calculate the user's profit and loss
+    /// @param orientation true: call, false: put
+    /// @param exerciseBlock After reaching this block, the user will exercise manually, and the block will be
+    /// recorded in the system using the block number
+    /// @param dcuAmount Amount of paid DCU
     function open(
         address tokenAddress,
         uint strikePrice,
@@ -41,29 +43,31 @@
         uint dcuAmount
     ) external payable;
 ```
-Note: This method may triggers the New event and Open event, See also 3.1 and 3.2.
+Note: This method may triggers the Open event, See also 3.1.
 
-### 2.4. 行权
+### 2.4. Exercise option
 
 ```javascript
-    /// @dev 行权
-    /// @param index 期权编号
-    /// @param amount 结算的期权分数
+    /// @dev Exercise option
+    /// @param index Index of option
+    /// @param amount Amount of option to exercise
     function exercise(uint index, uint amount) external payable;
 ```
-Note: This method will triggers the Exercise event, See also 3.3.
+Note: This method will triggers the Exercise event, See also 3.2.
 
-### 2.5. 预估开仓可以买到的期权币数量
+### 2.5. Estimate the amount of option
 
 ```javascript
-    /// @dev 预估开仓可以买到的期权币数量
-    /// @param tokenAddress 目标代币地址，0表示eth
-    /// @param oraclePrice 当前预言机价格价
-    /// @param strikePrice 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
-    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
-    /// @param exerciseBlock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
-    /// @param dcuAmount 支付的dcu数量
-    /// @return amount 预估可以获得的期权币数量
+    /// @dev Estimate the amount of option
+    /// @param tokenAddress Target token address, 0 means eth
+    /// @param oraclePrice Current price from oracle
+    /// @param strikePrice The exercise price set by the user. During settlement, the system will compare the 
+    /// current price of the subject matter with the exercise price to calculate the user's profit and loss
+    /// @param orientation true: call, false: put
+    /// @param exerciseBlock After reaching this block, the user will exercise manually, and the block will be
+    /// recorded in the system using the block number
+    /// @param dcuAmount Amount of paid DCU
+    /// @return amount Amount of option
     function estimate(
         address tokenAddress,
         uint oraclePrice,
@@ -74,15 +78,16 @@ Note: This method will triggers the Exercise event, See also 3.3.
     ) external view returns (uint amount);
 ```
 
-### 2.6. 查找目标账户的期权（倒序）
+### 2.6. Find the options of the target address (in reverse order)
 
 ```javascript
-    /// @dev 查找目标账户的期权（倒序）
-    /// @param start 从给定的合约地址对应的索引向前查询（不包含start对应的记录）
-    /// @param count 最多返回的记录条数
-    /// @param maxFindCount 最多查找maxFindCount记录
-    /// @param owner 目标账户地址
-    /// @return optionArray 期权信息列表
+    /// @dev Find the options of the target address (in reverse order)
+    /// @param start Find forward from the index corresponding to the given contract address 
+    /// (excluding the record corresponding to start)
+    /// @param count Maximum number of records returned
+    /// @param maxFindCount Find records at most
+    /// @param owner Target address
+    /// @return optionArray Matched option array
     function find(
         uint start, 
         uint count, 
@@ -91,25 +96,27 @@ Note: This method will triggers the Exercise event, See also 3.3.
     ) external view returns (OptionView[] memory optionArray);
 ```
 
-### 2.7. 卖出期权
+### 2.7. Sell option
 
 ```javascript
-    /// @dev 卖出期权
-    /// @param index 期权编号
-    /// @param amount 卖出的期权分数
+    /// @dev Sell option
+    /// @param index Index of option
+    /// @param amount Amount of option to sell
     function sell(uint index, uint amount) external payable;
 ```
+Note: This method will triggers the Sell event, See also 3.3.
 
-### 2.8. 计算期权价格
+### 2.8. Calculate option price
 
 ```javascript
-    /// @dev 计算期权价格
-    /// @param tokenAddress 目标代币地址，0表示eth
-    /// @param oraclePrice 当前预言机价格价
-    /// @param strikePrice 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
-    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
-    /// @param exerciseBlock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
-    /// @return v 期权价格，需要除以(USDT_BASE << 64)
+    /// @dev Calculate option price
+    /// @param oraclePrice Current price from oracle
+    /// @param strikePrice The exercise price set by the user. During settlement, the system will compare the 
+    /// current price of the subject matter with the exercise price to calculate the user's profit and loss
+    /// @param orientation true: call, false: put
+    /// @param exerciseBlock After reaching this block, the user will exercise manually, and the block will be
+    /// recorded in the system using the block number
+    /// @return v Option price. Need to divide (USDT_BASE << 64)
     function calcV(
         address tokenAddress,
         uint oraclePrice,
@@ -121,26 +128,14 @@ Note: This method will triggers the Exercise event, See also 3.3.
 
 ## 3. Event Description
 
-### 3.1 新期权事件
+### 3.1 Option open event
 
 ```javascript
-    /// @dev 新期权事件
-    /// @param tokenAddress 目标代币地址，0表示eth
-    /// @param strikePrice 用户设置的行权价格，结算时系统会根据标的物当前价与行权价比较，计算用户盈亏
-    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
-    /// @param exerciseBlock 到达该日期后用户手动进行行权，日期在系统中使用区块号进行记录
-    /// @param index 期权编号
-    event New(address tokenAddress, uint strikePrice, bool orientation, uint exerciseBlock, uint index);
-```
-
-### 3.2 开仓事件
-
-```javascript
-    /// @dev 开仓事件
-    /// @param index 期权编号
-    /// @param dcuAmount 支付的dcu数量
-    /// @param owner 所有者
-    /// @param amount 买入份数
+    /// @dev Option open event
+    /// @param index Index of option
+    /// @param dcuAmount Amount of paid DCU
+    /// @param owner Owner of this option
+    /// @param amount Amount of option
     event Open(
         uint index,
         uint dcuAmount,
@@ -149,24 +144,24 @@ Note: This method will triggers the Exercise event, See also 3.3.
     );
 ```
 
-### 3.3 行权事件
+### 3.2 Option exercise event
 
 ```javascript
-    /// @dev 行权事件
-    /// @param index 期权编号
-    /// @param amount 结算的期权分数
-    /// @param owner 所有者
-    /// @param gain 赢得的dcu数量
+    /// @dev Option exercise event
+    /// @param index Index of option
+    /// @param amount Amount of option to exercise
+    /// @param owner Owner of this option
+    /// @param gain Amount of dcu gained
     event Exercise(uint index, uint amount, address owner, uint gain);
 ```
 
-### 3.4 卖出事件
+### 3.3 Option sell event
 
 ```javascript
-    /// @dev 卖出事件
-    /// @param index 期权编号
-    /// @param amount 卖出份数
-    /// @param owner 所有者
-    /// @param dcuAmount 得到的dcu数量
+    /// @dev Option sell event
+    /// @param index Index of option
+    /// @param amount Amount of option to sell
+    /// @param owner Owner of this option
+    /// @param dcuAmount Amount of dcu acquired
     event Sell(uint index, uint amount, address owner, uint dcuAmount);
 ```

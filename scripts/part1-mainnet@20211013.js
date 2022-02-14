@@ -17,7 +17,7 @@ exports.deploy = async function() {
     const HedgeFutures = await ethers.getContractFactory('HedgeFutures');
     const HedgeVaultForStaking = await ethers.getContractFactory('HedgeVaultForStaking');
 
-    console.log('** 开始部署合约 part1-mainnet@20211013.js **');
+    console.log('** Deploy: part1-mainnet@20211013.js **');
     
     // dcu: 0xf56c6eCE0C0d6Fbb9A53282C0DF71dBFaFA933eF
     //const dcu = await DCU.deploy({ nonce: 0 });

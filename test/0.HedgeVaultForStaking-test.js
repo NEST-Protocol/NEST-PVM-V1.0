@@ -197,7 +197,7 @@ describe('HedgeOptions', function() {
         }
 
         if (true) {
-            console.log('6. 第二轮');
+            console.log('6. Second');
             
             await hedgeVaultForStaking.setConfig(toBigInt(0.1), 70, 80);
             config = await hedgeVaultForStaking.getConfig();

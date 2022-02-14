@@ -2,26 +2,26 @@
 
 pragma solidity ^0.8.6;
 
-/// @dev 定义dcu兑换合约接口
+/// @dev Defines methods for FortSwap
 interface IFortSwap {
 
-    /// @dev 使用确定数量的token兑换dcu
-    /// @param tokenAmount token数量
-    /// @return dcuAmount 兑换到的dcu数量
+    /// @dev Swap for dcu with exact token amount
+    /// @param tokenAmount Amount of token
+    /// @return dcuAmount Amount of dcu acquired
     function swapForDCU(uint tokenAmount) external returns (uint dcuAmount);
 
-    /// @dev 使用确定数量的dcu兑换token
-    /// @param dcuAmount dcu数量
-    /// @return tokenAmount 兑换到的token数量
+    /// @dev Swap for token with exact dcu amount
+    /// @param dcuAmount Amount of dcu
+    /// @return tokenAmount Amount of token acquired
     function swapForToken(uint dcuAmount) external returns (uint tokenAmount);
 
-    /// @dev 使用token兑换确定数量的dcu
-    /// @param dcuAmount 预期得到的dcu数量
-    /// @return tokenAmount 支付的token数量
+    /// @dev Swap for exact amount of dcu
+    /// @param dcuAmount Amount of dcu expected
+    /// @return tokenAmount Amount of token paid
     function swapExactDCU(uint dcuAmount) external returns (uint tokenAmount);
 
-    /// @dev 使用dcu兑换确定数量的token
-    /// @param tokenAmount 预期得到的token数量
-    /// @return dcuAmount 支付的dcu数量
+    /// @dev Swap for exact amount of token
+    /// @param tokenAmount Amount of token expected
+    /// @return dcuAmount Amount of dcu paid
     function swapExactToken(uint tokenAmount) external returns (uint dcuAmount);
 }

@@ -6,15 +6,15 @@ pragma solidity ^0.8.6;
 interface INestOpenPrice {
     
     /// @dev Get the latest trigger price
-    /// @param channelId 报价通道编号
-    /// @param payback 如果费用有多余的，则退回到此地址
+    /// @param channelId Price channel id
+    /// @param payback Address to receive refund
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
     function triggeredPrice(uint channelId, address payback) external payable returns (uint blockNumber, uint price);
 
     /// @dev Get the full information of latest trigger price
-    /// @param channelId 报价通道编号
-    /// @param payback 如果费用有多余的，则退回到此地址
+    /// @param channelId Price channel id
+    /// @param payback Address to receive refund
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
     /// @return avgPrice Average price
@@ -29,9 +29,9 @@ interface INestOpenPrice {
     );
 
     /// @dev Find the price at block number
-    /// @param channelId 报价通道编号
+    /// @param channelId Price channel id
     /// @param height Destination block number
-    /// @param payback 如果费用有多余的，则退回到此地址
+    /// @param payback Address to receive refund
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
     function findPrice(
@@ -41,22 +41,22 @@ interface INestOpenPrice {
     ) external payable returns (uint blockNumber, uint price);
 
     /// @dev Get the latest effective price
-    /// @param channelId 报价通道编号
-    /// @param payback 如果费用有多余的，则退回到此地址
+    /// @param channelId Price channel id
+    /// @param payback Address to receive refund
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
     function latestPrice(uint channelId, address payback) external payable returns (uint blockNumber, uint price);
 
     /// @dev Get the last (num) effective price
-    /// @param channelId 报价通道编号
+    /// @param channelId Price channel id
     /// @param count The number of prices that want to return
-    /// @param payback 如果费用有多余的，则退回到此地址
+    /// @param payback Address to receive refund
     /// @return An array which length is num * 2, each two element expresses one price like blockNumber｜price
     function lastPriceList(uint channelId, uint count, address payback) external payable returns (uint[] memory);
 
     /// @dev Returns the results of latestPrice() and triggeredPriceInfo()
-    /// @param channelId 报价通道编号
-    /// @param payback 如果费用有多余的，则退回到此地址
+    /// @param channelId Price channel id
+    /// @param payback Address to receive refund
     /// @return latestPriceBlockNumber The block number of latest price
     /// @return latestPriceValue The token latest price. (1eth equivalent to (price) token)
     /// @return triggeredPriceBlockNumber The block number of triggered price
@@ -76,9 +76,9 @@ interface INestOpenPrice {
     );
 
     /// @dev Returns lastPriceList and triggered price info
-    /// @param channelId 报价通道编号
+    /// @param channelId Price channel id
     /// @param count The number of prices that want to return
-    /// @param payback 如果费用有多余的，则退回到此地址
+    /// @param payback Address to receive refund
     /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber｜price
     /// @return triggeredPriceBlockNumber The block number of triggered price
     /// @return triggeredPriceValue The token triggered price. (1eth equivalent to (price) token)

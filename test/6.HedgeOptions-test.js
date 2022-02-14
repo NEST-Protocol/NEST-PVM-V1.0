@@ -46,14 +46,14 @@ describe('HedgeOptions', function() {
         }
 
         // if (true) {
-        //     console.log('1. 读取配置');
+        //     console.log('1. Read config');
         //     console.log(await cfg(usdt.address));
         //     console.log(await cfg(eth.address));
         //     console.log(await cfg(hbtc.address));
         // }
 
         // if (true) {
-        //     console.log('2. 设置配置');
+        //     console.log('2. Read config');
         //     await hedgeOptions.setConfig(eth.address, {
         //         sigmaSQ: '99999999',
         //         miu: '88888',

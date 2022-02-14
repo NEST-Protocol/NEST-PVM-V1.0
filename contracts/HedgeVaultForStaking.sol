@@ -16,19 +16,19 @@ import "./DCU.sol";
 contract HedgeVaultForStaking is HedgeFrequentlyUsed, IHedgeVaultForStaking {
 
     /* *******************************************************************
-        定义三个操作：锁仓，领取dcu，取回
+        There are three options：Stake, Get Reward, Withdraw
 
         ----------------[1]-----[2]---------------[3]------------------->
 
-        a.  一共三个时间节点：1， 2， 3。
-            对于所有质押通道：1和2时间节点都是一样的，不同的质押通道3是不一样的。
-            质押周期表示2~3之间的时间
-            时间折算成区块估算
+        a.  3 time points：1, 2, 3.
+            For every stake channel, point 1 and 2 are the same, but point 3 
+            are not the same for each stake channel.
+            2 to 3 is stake period. Time converted into block by estimation
 
-        b. 1节点之前啥都不能操作
-        c. 1节点到2节点期间可以质押
-        d. 2节点以后可以执行领取操作
-        e. 3节点以后可以执行取回操作
+        b. Before point 1, you can't do noting.
+        c. Between point 1 and point2, you can Stake.
+        d. After point 2, you can Get Reward.
+        e. After point 3, you can Withdraw.
     ******************************************************************* */
 
     /// @dev Account information
@@ -37,7 +37,7 @@ contract HedgeVaultForStaking is HedgeFrequentlyUsed, IHedgeVaultForStaking {
         uint160 balance;
         // Token dividend value mark of the unit that the account has received
         uint96 rewardCursor;
-        //? 已经领取的，手动设置
+        //? Claimed reward, set manual
         uint claimed;
     }
     
@@ -47,49 +47,48 @@ contract HedgeVaultForStaking is HedgeFrequentlyUsed, IHedgeVaultForStaking {
         // Total staked amount
         uint192 totalStaked;
 
-        // 解锁区块号
+        // Unlock block number
         uint64 unlockBlock;
 
         // Mining amount weight
         uint160 weight;
 
         //? The dividend mark that the settled company token can receive
-        // 记录老的，用于标记，和用户的rewardCursor进行比较，相等的表示需要重置为0
         uint96 rewardPerToken0;
 
         // Accounts
         // address=>balance
         mapping(address=>Account) accounts;
 
-        //? 新的单位token分红量
+        //? New rewardPerToken
         uint96 rewardPerToken;
     }
     
     uint constant UI128 = 0x100000000000000000000000000000000;
 
-    // dcu出矿单位
+    // dcu reward unit
     uint128 _dcuUnit;
-    // staking开始区块号
+    // staking start block number
     uint64 _startBlock;
-    // staking截止区块号
+    // staking stop block number
     uint64 _stopBlock;
 
-    // staking通道信息xtoken=>StakeChannel
+    // Stake channels. xtoken=>StakeChannel
     mapping(uint=>StakeChannel) _channels;
     
     /// @dev Create HedgeVaultForStaking
     constructor () {
     }
 
-    //? 修改用户的已领取数量
+    //? Set claimed reward
     function setClaimed(address xtoken, uint64 cycle, address target, uint claimed) external onlyGovernance {
         _channels[_getKey(xtoken, cycle)].accounts[target].claimed = claimed;
     }
 
     /// @dev Modify configuration
-    /// @param dcuUnit dcu出矿单位
-    /// @param startBlock staking开始区块号
-    /// @param stopBlock staking截止区块号
+    /// @param dcuUnit dcu reward unit
+    /// @param startBlock staking start block number
+    /// @param stopBlock staking stop block number
     function setConfig(uint128 dcuUnit, uint64 startBlock, uint64 stopBlock) external onlyGovernance {
         _dcuUnit = dcuUnit;
         _startBlock = startBlock;
@@ -97,9 +96,9 @@ contract HedgeVaultForStaking is HedgeFrequentlyUsed, IHedgeVaultForStaking {
     }
 
     /// @dev Get configuration
-    /// @return dcuUnit dcu出矿单位
-    /// @return startBlock staking开始区块号
-    /// @return stopBlock staking截止区块号
+    /// @return dcuUnit dcu reward unit
+    /// @return startBlock staking start block number
+    /// @return stopBlock staking stop block number
     function getConfig() external view returns (uint dcuUnit, uint startBlock, uint stopBlock) {
         return (uint(_dcuUnit), uint(_startBlock), uint(_stopBlock));
     }
@@ -132,8 +131,8 @@ contract HedgeVaultForStaking is HedgeFrequentlyUsed, IHedgeVaultForStaking {
     /// @param xtoken xtoken address
     /// @param cycle cycle
     /// @return totalStaked Total lock volume of target xtoken
-    /// @return totalRewards 通道总出矿量
-    /// @return unlockBlock 解锁区块号
+    /// @return totalRewards Total rewards for channel
+    /// @return unlockBlock Unlock block number
     function getChannelInfo(
         address xtoken, 
         uint64 cycle
@@ -182,8 +181,9 @@ contract HedgeVaultForStaking is HedgeFrequentlyUsed, IHedgeVaultForStaking {
             rewardPerToken += newReward * UI128 / totalStaked;
         }
         
-        //? earned需要扣除已经领取的数量
+        //? earned
         uint e = (rewardPerToken - _getRewardCursor(account, channel)) * balance / UI128;
+        // Deduct claimed amount
         uint claimed = account.claimed;
         if (e > claimed) {
             return e - claimed;
@@ -246,7 +246,7 @@ contract HedgeVaultForStaking is HedgeFrequentlyUsed, IHedgeVaultForStaking {
         channel.accounts[msg.sender] = _getReward(channel, msg.sender);
     }
 
-    //? 获取用户的领取标记
+    //? Get reward cursor
     function _getRewardCursor(Account memory account, StakeChannel storage channel) private view returns (uint) {
         uint96 rewardCursor = account.rewardCursor;
         uint96 rewardPerToken = channel.rewardPerToken0;
@@ -268,7 +268,7 @@ contract HedgeVaultForStaking is HedgeFrequentlyUsed, IHedgeVaultForStaking {
         
         // Calculate reward for account
         uint balance = uint(account.balance);
-        //? 使用新方法计算用户的标记
+        //? new reward
         uint reward = (rewardPerToken - _getRewardCursor(account, channel)) * balance / UI128;
         
         // Update sign of account
@@ -276,7 +276,7 @@ contract HedgeVaultForStaking is HedgeFrequentlyUsed, IHedgeVaultForStaking {
         //channel.accounts[to] = account;
 
         // Transfer DCU to account
-        //? 扣除已经领取的部分
+        // Deduct claimed amount
         uint claimed = account.claimed;
         if (reward > claimed) {
             reward -= claimed;

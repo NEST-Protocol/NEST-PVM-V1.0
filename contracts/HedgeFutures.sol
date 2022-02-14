@@ -11,39 +11,39 @@ import "./custom/NestPriceAdapter.sol";
 
 import "./DCU.sol";
 
-/// @dev 永续合约交易
+/// @dev Futures
 contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, NestPriceAdapter, IHedgeFutures {
 
-    /// @dev 用户账本
+    /// @dev Account information
     struct Account {
-        // 账本-余额
+        // Amount of margin
         uint128 balance;
-        // 基准价格
+        // Base price
         uint64 basePrice;
-        // 基准区块号
+        // Base block
         uint32 baseBlock;
     }
 
-    /// @dev 永续合约信息
+    /// @dev Future information
     struct FutureInfo {
-        // 目标代币地址
+        // Target token address
         address tokenAddress; 
-        // 杠杆倍数
+        // Lever of future
         uint32 lever;
-        // 看涨:true | 看跌:false
+        // true: call, false: put
         bool orientation;
         
-        // 账号信息
+        // Account mapping
         mapping(address=>Account) accounts;
     }
 
-    // 最小余额数量，余额小于此值会被清算
+    // Minimum balance quantity. If the balance is less than this value, it will be liquidated
     uint constant MIN_VALUE = 10 ether;
 
-    // 永续合约映射
+    // Mapping from composite key to future index
     mapping(uint=>uint) _futureMapping;
 
-    // 永续合约数组
+    // Future array
     FutureInfo[] _futures;
 
     constructor() {
@@ -56,10 +56,10 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         _futures.push();
     }
 
-    /// @dev 返回指定期权当前的价值
-    /// @param index 目标期权索引号
-    /// @param oraclePrice 预言机价格
-    /// @param addr 目标地址
+    /// @dev Returns the current value of the specified future
+    /// @param index Index of future
+    /// @param oraclePrice Current price from oracle
+    /// @param addr Target address
     function balanceOf(uint index, uint oraclePrice, address addr) external view override returns (uint) {
         FutureInfo storage fi = _futures[index];
         Account memory account = fi.accounts[addr];
@@ -73,12 +73,13 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         );
     }
 
-    /// @dev 查找目标账户的合约
-    /// @param start 从给定的合约地址对应的索引向前查询（不包含start对应的记录）
-    /// @param count 最多返回的记录条数
-    /// @param maxFindCount 最多查找maxFindCount记录
-    /// @param owner 目标账户地址
-    /// @return futureArray 合约信息列表
+    /// @dev Find the futures of the target address (in reverse order)
+    /// @param start Find forward from the index corresponding to the given contract address 
+    /// (excluding the record corresponding to start)
+    /// @param count Maximum number of records returned
+    /// @param maxFindCount Find records at most
+    /// @param owner Target address
+    /// @return futureArray Matched future array
     function find(
         uint start, 
         uint count, 
@@ -88,7 +89,7 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         
         futureArray = new FutureView[](count);
         
-        // 计算查找区间i和end
+        // Calculate search region
         FutureInfo[] storage futures = _futures;
         uint i = futures.length;
         uint end = 0;
@@ -99,7 +100,7 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
             end = i - maxFindCount;
         }
         
-        // 循环查找，将符合条件的记录写入缓冲区
+        // Loop lookup to write qualified records to the buffer
         for (uint index = 0; index < count && i > end;) {
             FutureInfo storage fi = futures[--i];
             if (uint(fi.accounts[owner].balance) > 0) {
@@ -108,7 +109,7 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         }
     }
 
-    /// @dev 列出历史永续合约地址
+    /// @dev List futures
     /// @param offset Skip previous (offset) records
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
@@ -119,14 +120,14 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         uint order
     ) external view override returns (FutureView[] memory futureArray) {
 
-        // 加载代币数组
+        // Load futures
         FutureInfo[] storage futures = _futures;
-        // 创建结果数组
+        // Create result array
         futureArray = new FutureView[](count);
         uint length = futures.length;
         uint i = 0;
 
-        // 倒序
+        // Reverse order
         if (order == 0) {
             uint index = length - offset;
             uint end = index > count ? index - count : 0;
@@ -135,7 +136,7 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
                 futureArray[i++] = _toFutureView(fi, index, msg.sender);
             }
         } 
-        // 正序
+        // Positive order
         else {
             uint index = offset;
             uint end = index + count;
@@ -149,22 +150,22 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         }
     }
 
-    /// @dev 创建永续合约
-    /// @param tokenAddress 永续合约的标的地产代币地址，0表示eth
-    /// @param lever 杠杆倍数
-    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
+    /// @dev Create future
+    /// @param tokenAddress Target token address, 0 means eth
+    /// @param lever Lever of future
+    /// @param orientation true: call, false: put
     function create(
         address tokenAddress, 
         uint lever,
         bool orientation
     ) external override onlyGovernance {
 
-        // 检查永续合约是否已经存在
+        // Check if the future exists
         uint key = _getKey(tokenAddress, lever, orientation);
         uint index = _futureMapping[key];
         require(index == 0, "HF:exists");
 
-        // 创建永续合约
+        // Create future
         index = _futures.length;
         FutureInfo storage fi = _futures.push();
         fi.tokenAddress = tokenAddress;
@@ -172,21 +173,21 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         fi.orientation = orientation;
         _futureMapping[key] = index;
 
-        // 创建永续合约事件
+        // emit New event
         emit New(tokenAddress, lever, orientation, index);
     }
 
-    /// @dev 获取已经开通的永续合约数量
-    /// @return 已经开通的永续合约数量
+    /// @dev Obtain the number of futures that have been opened
+    /// @return Number of futures opened
     function getFutureCount() external view override returns (uint) {
         return _futures.length;
     }
 
-    /// @dev 获取永续合约信息
-    /// @param tokenAddress 永续合约的标的地产代币地址，0表示eth
-    /// @param lever 杠杆倍数
-    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
-    /// @return 永续合约地址
+    /// @dev Get information of future
+    /// @param tokenAddress Target token address, 0 means eth
+    /// @param lever Lever of future
+    /// @param orientation true: call, false: put
+    /// @return Information of future
     function getFutureInfo(
         address tokenAddress, 
         uint lever,
@@ -196,11 +197,11 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         return _toFutureView(_futures[index], index, msg.sender);
     }
 
-    /// @dev 买入永续合约
-    /// @param tokenAddress 永续合约的标的地产代币地址，0表示eth
-    /// @param lever 杠杆倍数
-    /// @param orientation 看涨/看跌两个方向。true：看涨，false：看跌
-    /// @param dcuAmount 支付的dcu数量
+    /// @dev Buy future
+    /// @param tokenAddress Target token address, 0 means eth
+    /// @param lever Lever of future
+    /// @param orientation true: call, false: put
+    /// @param dcuAmount Amount of paid DCU
     function buy(
         address tokenAddress,
         uint lever,
@@ -211,36 +212,36 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         _buy(_futures[index], index, dcuAmount, tokenAddress, orientation);
     }
 
-    /// @dev 买入永续合约
-    /// @param index 永续合约编号
-    /// @param dcuAmount 支付的dcu数量
+    /// @dev Buy future direct
+    /// @param index Index of future
+    /// @param dcuAmount Amount of paid DCU
     function buyDirect(uint index, uint dcuAmount) public payable override {
         FutureInfo storage fi = _futures[index];
         _buy(fi, index, dcuAmount, fi.tokenAddress, fi.orientation);
     }
 
-    /// @dev 卖出永续合约
-    /// @param index 永续合约编号
-    /// @param amount 卖出数量
+    /// @dev Sell future
+    /// @param index Index of future
+    /// @param amount Amount to sell
     function sell(uint index, uint amount) external payable override {
 
-        // 1. 销毁用户的永续合约
         require(index != 0, "HF:not exist");
+        
+        // 1. Load the future
         FutureInfo storage fi = _futures[index];
         bool orientation = fi.orientation;
 
-        // 看涨的时候，初始价格乘以(1+k)，卖出价格除以(1+k)
-        // 看跌的时候，初始价格除以(1+k)，卖出价格乘以(1+k)
-        // 合并的时候，s0用记录的价格，s1用k修正的
+        // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
+        // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
+        // When merger, s0 use recorded price, s1 use corrected by k
         uint oraclePrice = _queryPrice(0, fi.tokenAddress, !orientation, msg.sender);
 
-        // 更新目标账号信息
+        // Update account
         Account memory account = fi.accounts[msg.sender];
-
         account.balance -= _toUInt128(amount);
         fi.accounts[msg.sender] = account;
 
-        // 2. 给用户分发dcu
+        // 2. Mint DCU to user
         uint value = _balanceOf(
             amount, 
             _decodeFloat(account.basePrice), 
@@ -251,26 +252,26 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         );
         DCU(DCU_TOKEN_ADDRESS).mint(msg.sender, value);
 
-        // 卖出事件
+        // emit Sell event
         emit Sell(index, amount, msg.sender, value);
     }
 
-    /// @dev 清算
-    /// @param index 永续合约编号
-    /// @param addresses 清算目标账号数组
+    /// @dev Settle future
+    /// @param index Index of future
+    /// @param addresses Target addresses
     function settle(uint index, address[] calldata addresses) external payable override {
 
-        // 1. 销毁用户的永续合约
         require(index != 0, "HF:not exist");
+        // 1. Load the future
         FutureInfo storage fi = _futures[index];
         uint lever = uint(fi.lever);
 
         if (lever > 1) {
 
             bool orientation = fi.orientation;
-            // 看涨的时候，初始价格乘以(1+k)，卖出价格除以(1+k)
-            // 看跌的时候，初始价格除以(1+k)，卖出价格乘以(1+k)
-            // 合并的时候，s0用记录的价格，s1用k修正的
+            // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
+            // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
+            // When merger, s0 use recorded price, s1 use corrected by k
             uint oraclePrice = _queryPrice(0, fi.tokenAddress, !orientation, msg.sender);
 
             uint reward = 0;
@@ -278,7 +279,7 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
             for (uint i = addresses.length; i > 0;) {
                 address acc = addresses[--i];
 
-                // 更新目标账号信息
+                // Update account
                 Account memory account = accounts[acc];
                 uint balance = _balanceOf(
                     uint(account.balance), 
@@ -289,8 +290,8 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
                     lever
                 );
 
-                // 杠杆倍数大于1，并且余额小于最小额度时，可以清算
-                // 改成当账户净值低于Max(保证金 * 2%*g, 10) 时，清算
+                // lever is great than 1, and balance less than a regular value, can be liquidated
+                // the regular value is: Max(balance * lever * 2%, MIN_VALUE)
                 uint minValue = uint(account.balance) * lever / 50;
                 if (balance < (minValue < MIN_VALUE ? MIN_VALUE : minValue)) {
                     accounts[acc] = Account(uint128(0), uint64(0), uint32(0));
@@ -299,7 +300,7 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
                 }
             }
 
-            // 2. 给用户分发dcu
+            // 2. Mint DCU to user
             if (reward > 0) {
                 DCU(DCU_TOKEN_ADDRESS).mint(msg.sender, reward);
             }
@@ -310,7 +311,7 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         }
     }
 
-    // 根据杠杆信息计算索引key
+    // Compose key by tokenAddress, lever and orientation
     function _getKey(
         address tokenAddress, 
         uint lever,
@@ -321,19 +322,19 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         return (uint(uint160(tokenAddress)) << 96) | (lever << 8) | (orientation ? 1 : 0);
     }
 
-    // 买入永续合约
+    // Buy future
     function _buy(FutureInfo storage fi, uint index, uint dcuAmount, address tokenAddress, bool orientation) private {
 
         require(index != 0, "HF:not exist");
         require(dcuAmount >= 50 ether, "HF:at least 50 dcu");
 
-        // 1. 销毁用户的dcu
+        // 1. Burn dcu from user
         DCU(DCU_TOKEN_ADDRESS).burnFrom(msg.sender, dcuAmount);
 
-        // 2. 给用户分发永续合约
-        // 看涨的时候，初始价格乘以(1+k)，卖出价格除以(1+k)
-        // 看跌的时候，初始价格除以(1+k)，卖出价格乘以(1+k)
-        // 合并的时候，s0用记录的价格，s1用k修正的
+        // 2. Update account
+        // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
+        // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
+        // When merger, s0 use recorded price, s1 use corrected by k
         uint oraclePrice = _queryPrice(dcuAmount, tokenAddress, orientation, msg.sender);
 
         Account memory account = fi.accounts[msg.sender];
@@ -346,31 +347,29 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
             );
         }
         
-        // 更新接收账号信息
         account.balance = _toUInt128(balance + dcuAmount);
         account.basePrice = _encodeFloat(newPrice);
         account.baseBlock = uint32(block.number);
         
         fi.accounts[msg.sender] = account;
 
-        // 买入事件
+        // emit Buy event
         emit Buy(index, dcuAmount, msg.sender);
     }
 
-    // 查询预言机价格
+    // Query price
     function _queryPrice(uint dcuAmount, address tokenAddress, bool enlarge, address payback) private returns (uint oraclePrice) {
-        //require(tokenAddress== address(0), "HF:only support eth/usdt");
 
-        // 获取usdt相对于eth的价格
+        // Query price from oracle
         uint[] memory prices = _lastPriceList(tokenAddress, msg.value, payback);
         
-        // 将token价格转化为以usdt为单位计算的价格
+        // Convert to usdt based price
         oraclePrice = prices[1];
         uint k = calcRevisedK(prices[3], prices[2], oraclePrice, prices[0]);
 
-        // 看涨的时候，初始价格乘以(1+k)，卖出价格除以(1+k)
-        // 看跌的时候，初始价格除以(1+k)，卖出价格乘以(1+k)
-        // 合并的时候，s0用记录的价格，s1用k修正的
+        // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
+        // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
+        // When merger, s0 use recorded price, s1 use corrected by k
         if (enlarge) {
             oraclePrice = oraclePrice * (1 ether + k + impactCost(dcuAmount)) / 1 ether;
         } else {
@@ -399,14 +398,7 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
             sigmaISQ = 1 ether - sigmaISQ;
         }
 
-        // James:
-        // fort算法 把前面一项改成 max ((p2-p1)/p1,0.002) 后面不变
-        // jackson:
-        // 好
-        // jackson:
-        // 要取绝对值吧
-        // James:
-        // 对的
+        // The left part change to: Max((p2 - p1) / p1, 0.002)
         if (sigmaISQ > 0.002 ether) {
             k = sigmaISQ;
         } else {
@@ -468,25 +460,25 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         return (uint(floatValue) >> 6) << ((uint(floatValue) & 0x3F) << 2);
     }
 
-    // 将uint转化为uint128，有截断检查
+    // Convert uint to uint128
     function _toUInt128(uint value) private pure returns (uint128) {
         require(value < 0x100000000000000000000000000000000, "FEO:can't convert to uint128");
         return uint128(value);
     }
 
-    // 将uint转化为int128
+    // Convert uint to int128
     function _toInt128(uint v) private pure returns (int128) {
         require(v < 0x80000000000000000000000000000000, "FEO:can't convert to int128");
         return int128(int(v));
     }
 
-    // 将int128转化为uint
+    // Convert int128 to uint
     function _toUInt(int128 v) private pure returns (uint) {
         require(v >= 0, "FEO:can't convert to uint");
         return uint(int(v));
     }
     
-    // 根据新价格计算账户余额
+    // Calculate net worth
     function _balanceOf(
         uint balance,
         uint basePrice,
@@ -497,16 +489,14 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
     ) private view returns (uint) {
 
         if (balance > 0) {
-            //uint price = _decodeFloat(account.price);
-
             uint left;
             uint right;
-            // 看涨
+            // Call
             if (ORIENTATION) {
                 left = balance + (LEVER << 64) * balance * oraclePrice / basePrice / _expMiuT(ORIENTATION, baseBlock);
                 right = balance * LEVER;
             } 
-            // 看跌
+            // Put
             else {
                 left = balance * (1 + LEVER);
                 right = (LEVER << 64) * balance * oraclePrice / basePrice / _expMiuT(ORIENTATION, baseBlock);
@@ -522,21 +512,17 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         return balance;
     }
 
-    // 计算 e^μT
+    // Calculate e^μT
     function _expMiuT(bool orientation, uint baseBlock) private view returns (uint) {
         // return _toUInt(ABDKMath64x64.exp(
         //     _toInt128((orientation ? MIU_LONG : MIU_SHORT) * (block.number - baseBlock) * BLOCK_TIME)
         // ));
 
-        // 改为单利近似计算: x*(1+rt)
-        // by chenf 2021-12-28 15:27
-
-        // 64位二进制精度的1
-        //int128 constant ONE = 0x10000000000000000;
+        // Using approximate algorithm: x*(1+rt)
         return (orientation ? MIU_LONG : MIU_SHORT) * (block.number - baseBlock) * BLOCK_TIME + 0x10000000000000000;
     }
 
-    // 转换永续合约信息
+    // Convert FutureInfo to FutureView
     function _toFutureView(FutureInfo storage fi, uint index, address owner) private view returns (FutureView memory) {
         Account memory account = fi.accounts[owner];
         return FutureView(
