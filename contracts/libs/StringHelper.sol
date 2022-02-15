@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.6;
 
-/// @dev 字符串工具
+/// @dev String tools
 library StringHelper {
 
     /// @dev Convert to upper case

@@ -45,7 +45,7 @@ interface INestPriceView {
     /// @dev Get the last (num) effective price
     /// @param channelId Price channel id
     /// @param count The number of prices that want to return
-    /// @return An array which length is num * 2, each two element expresses one price like blockNumber｜price
+    /// @return An array which length is num * 2, each two element expresses one price like blockNumber|price
     function lastPriceList(uint channelId, uint count) external view returns (uint[] memory);
 
     /// @dev Returns the results of latestPrice() and triggeredPriceInfo()
@@ -71,7 +71,7 @@ interface INestPriceView {
     /// @dev Returns lastPriceList and triggered price info
     /// @param channelId Price channel id
     /// @param count The number of prices that want to return
-    /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber｜price
+    /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber|price
     /// @return triggeredPriceBlockNumber The block number of triggered price
     /// @return triggeredPriceValue The token triggered price. (1eth equivalent to (price) token)
     /// @return triggeredAvgPrice Average price

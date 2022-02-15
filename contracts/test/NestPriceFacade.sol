@@ -144,7 +144,7 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
     /// @param tokenAddress Destination token address
     /// @param count The number of prices that want to return
     /// @param payback As the charging fee may change, it is suggested that the caller pay more fees, and the excess fees will be returned through this address
-    /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber｜price
+    /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber|price
     /// @return triggeredPriceBlockNumber The block number of triggered price
     /// @return triggeredPriceValue The token triggered price. (1eth equivalent to (price) token)
     /// @return triggeredAvgPrice Average price
@@ -180,7 +180,7 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
     /// @param count The number of prices that want to return
     /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, 
     /// and the excess fees will be returned through this address
-    /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber｜price
+    /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber|price
     function lastPriceList(
         address tokenAddress, 
         uint count, 
@@ -238,8 +238,8 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
     ////////////////////////////////////////////////////////////////////////
 
     /// @dev Get the latest trigger price
-    /// @param channelId 报价通道编号
-    /// @param payback 如果费用有多余的，则退回到此地址
+    /// @param channelId Price channel id
+    /// @param payback Address to receive refund
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
     function triggeredPrice(uint channelId, address payback) external payable override returns (uint blockNumber, uint price) {
@@ -247,8 +247,8 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
     }
 
     /// @dev Get the full information of latest trigger price
-    /// @param channelId 报价通道编号
-    /// @param payback 如果费用有多余的，则退回到此地址
+    /// @param channelId Price channel id
+    /// @param payback Address to receive refund
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
     /// @return avgPrice Average price
@@ -265,9 +265,9 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
     }
 
     /// @dev Find the price at block number
-    /// @param channelId 报价通道编号
+    /// @param channelId Price channel id
     /// @param height Destination block number
-    /// @param payback 如果费用有多余的，则退回到此地址
+    /// @param payback Address to receive refund
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
     function findPrice(
@@ -298,8 +298,8 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
     }
 
     /// @dev Get the latest effective price
-    /// @param channelId 报价通道编号
-    /// @param payback 如果费用有多余的，则退回到此地址
+    /// @param channelId Price channel id
+    /// @param payback Address to receive refund
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
     function latestPrice(uint channelId, address payback) external payable override returns (uint blockNumber, uint price) {
@@ -319,10 +319,10 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
     }
 
     /// @dev Get the last (num) effective price
-    /// @param channelId 报价通道编号
+    /// @param channelId Price channel id
     /// @param count The number of prices that want to return
-    /// @param payback 如果费用有多余的，则退回到此地址
-    /// @return An array which length is num * 2, each two element expresses one price like blockNumber｜price
+    /// @param payback Address to receive refund
+    /// @return An array which length is num * 2, each two element expresses one price like blockNumber|price
     function lastPriceList(uint channelId, uint count, address payback) external payable override returns (uint[] memory) {
         require(channelId >= 0);
 
@@ -347,8 +347,8 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
     }
 
     /// @dev Returns the results of latestPrice() and triggeredPriceInfo()
-    /// @param channelId 报价通道编号
-    /// @param payback 如果费用有多余的，则退回到此地址
+    /// @param channelId Price channel id
+    /// @param payback Address to receive refund
     /// @return latestPriceBlockNumber The block number of latest price
     /// @return latestPriceValue The token latest price. (1eth equivalent to (price) token)
     /// @return triggeredPriceBlockNumber The block number of triggered price
@@ -370,10 +370,10 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
     }
 
     /// @dev Returns lastPriceList and triggered price info
-    /// @param channelId 报价通道编号
+    /// @param channelId Price channel id
     /// @param count The number of prices that want to return
-    /// @param payback 如果费用有多余的，则退回到此地址
-    /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber｜price
+    /// @param payback Address to receive refund
+    /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber|price
     /// @return triggeredPriceBlockNumber The block number of triggered price
     /// @return triggeredPriceValue The token triggered price. (1eth equivalent to (price) token)
     /// @return triggeredAvgPrice Average price

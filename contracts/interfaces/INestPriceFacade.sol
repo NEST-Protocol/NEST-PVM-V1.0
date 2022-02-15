@@ -32,10 +32,10 @@ interface INestPriceFacade {
     // /// @dev Price call entry configuration structure
     // struct Config {
 
-    //     // Single query fee（0.0001 ether, DIMI_ETHER). 100
+    //     // Single query fee(0.0001 ether, DIMI_ETHER). 100
     //     uint16 singleFee;
 
-    //     // Double query fee（0.0001 ether, DIMI_ETHER). 100
+    //     // Double query fee(0.0001 ether, DIMI_ETHER). 100
     //     uint16 doubleFee;
 
     //     // The normal state flag of the call address. 0
@@ -134,7 +134,7 @@ interface INestPriceFacade {
     /// @param count The number of prices that want to return
     /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, 
     /// and the excess fees will be returned through this address
-    /// @return An array which length is num * 2, each two element expresses one price like blockNumber｜price
+    /// @return An array which length is num * 2, each two element expresses one price like blockNumber|price
     function lastPriceList(
         address tokenAddress, 
         uint count, 
@@ -170,7 +170,7 @@ interface INestPriceFacade {
     /// @param count The number of prices that want to return
     /// @param paybackAddress As the charging fee may change, it is suggested that the caller pay more fees, 
     /// and the excess fees will be returned through this address
-    /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber｜price
+    /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber|price
     /// @return triggeredPriceBlockNumber The block number of triggered price
     /// @return triggeredPriceValue The token triggered price. (1eth equivalent to (price) token)
     /// @return triggeredAvgPrice Average price
