@@ -69,7 +69,6 @@ exports.deploy = async function() {
     const peth = await TestERC20.attach('0x53f878Fb7Ec7B86e4F9a0CB1E9a6c89C0555FbbD');
     console.log('peth: ' + peth.address);
 
-    // 1. 部署依赖合约
     // //const usdt = await TestERC20.deploy('USDT', 'USDT', 6);
     // const usdt = await TestERC20.attach('0xdAC17F958D2ee523a2206206994597C13D831ec7');
     // console.log('usdt: ' + usdt.address);

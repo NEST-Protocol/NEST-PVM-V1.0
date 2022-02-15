@@ -16,11 +16,11 @@ import "./DCU.sol";
 contract HedgeVaultForStaking is HedgeFrequentlyUsed, IHedgeVaultForStaking {
 
     /* *******************************************************************
-        There are three options：Stake, Get Reward, Withdraw
+        There are three options: Stake, Get Reward, Withdraw
 
         ----------------[1]-----[2]---------------[3]------------------->
 
-        a.  3 time points：1, 2, 3.
+        a.  3 time points: 1, 2, 3.
             For every stake channel, point 1 and 2 are the same, but point 3 
             are not the same for each stake channel.
             2 to 3 is stake period. Time converted into block by estimation

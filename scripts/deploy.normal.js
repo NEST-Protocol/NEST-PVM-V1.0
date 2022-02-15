@@ -18,7 +18,6 @@ exports.deploy = async function() {
 
     console.log('** Deploy: deploy.normal.js **');
     
-    // 1. 部署依赖合约
     const usdt = await TestERC20.deploy('USDT', 'USDT', 6);
     //const usdt = await TestERC20.attach('0x0000000000000000000000000000000000000000');
     console.log('usdt: ' + usdt.address);

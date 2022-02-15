@@ -291,7 +291,7 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
     /// @param index Index of option
     /// @param amount Amount of option to sell
     function sell(uint index, uint amount) external payable override {
-        // Sell formula：vt=Max(ct(T,K)*0.975，0). 
+        // Sell formula: vt=Max(ct(T,K)*0.975，0). 
         // ct(K,T) Is the price of option present
         // Note: No less than 1% condition
 
@@ -369,7 +369,7 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         return _accounts.length;
     }
 
-    // 转化位OptionView
+    // Convert to OptionView
     function _toOptionView(
         Option storage option, 
         uint index

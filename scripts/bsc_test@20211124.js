@@ -38,7 +38,6 @@ exports.deploy = async function() {
     // hedgeSwap: 0xD83C860d3A27cC5EddaB68EaBFCF9cc8ad38F15D
     // proxyAdmin: 0xB5604C3C3AE902513731037B9c7368842582642e
 
-    // 1. 部署依赖合约
     const nest = await TestERC20.attach('0x821edD79cc386E56FeC9DA5793b87a3A52373cdE');
     console.log('nest: ' + nest.address);
 
