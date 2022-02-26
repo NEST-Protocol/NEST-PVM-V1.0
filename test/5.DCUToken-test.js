@@ -64,7 +64,7 @@ describe('HedgeOptions', function() {
 
         if (true) {
             console.log('5. burn 700dcu');
-            await dcu.burn(addr1.address, toBigInt(700));
+            await dcu.burnFrom(addr1.address, toBigInt(700));
             console.log(await getStatus());
         }
     });

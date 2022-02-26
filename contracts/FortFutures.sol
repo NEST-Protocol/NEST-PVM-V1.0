@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.6;
 
-import "./interfaces/IHedgeFutures.sol";
+import "./interfaces/IFortFutures.sol";
 
 import "./custom/ChainParameter.sol";
 import "./custom/CommonParameter.sol";
@@ -12,7 +12,7 @@ import "./custom/NestPriceAdapter.sol";
 import "./DCU.sol";
 
 /// @dev Futures
-contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, NestPriceAdapter, IHedgeFutures {
+contract FortFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, NestPriceAdapter2, IFortFutures {
 
     /// @dev Account information
     struct Account {
@@ -32,6 +32,11 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         uint32 lever;
         // true: call, false: put
         bool orientation;
+
+        // 调用预言机查询token价格时对应的channelId
+        uint16 channelId;
+        // 调用预言机查询token价格时对应的pairIndex
+        uint16 pairIndex;
         
         // Account mapping
         mapping(address=>Account) accounts;
@@ -43,6 +48,10 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
     // Mapping from composite key to future index
     mapping(uint=>uint) _futureMapping;
 
+    // TODO: 占位符，无用
+    // 缓存代币的基数值
+    mapping(address=>uint) _bases;
+    
     // Future array
     FutureInfo[] _futures;
 
@@ -209,7 +218,8 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         uint dcuAmount
     ) external payable override {
         uint index = _futureMapping[_getKey(tokenAddress, lever, orientation)];
-        _buy(_futures[index], index, dcuAmount, tokenAddress, orientation);
+        //_buy(_futures[index], index, dcuAmount, tokenAddress, orientation);
+        return buyDirect(index, dcuAmount);
     }
 
     /// @dev Buy future direct
@@ -217,7 +227,7 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
     /// @param dcuAmount Amount of paid DCU
     function buyDirect(uint index, uint dcuAmount) public payable override {
         FutureInfo storage fi = _futures[index];
-        _buy(fi, index, dcuAmount, fi.tokenAddress, fi.orientation);
+        _buy(fi, index, dcuAmount, uint(fi.channelId), uint(fi.pairIndex), fi.orientation);
     }
 
     /// @dev Sell future
@@ -234,7 +244,7 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
         // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
         // When merger, s0 use recorded price, s1 use corrected by k
-        uint oraclePrice = _queryPrice(0, fi.tokenAddress, !orientation, msg.sender);
+        uint oraclePrice = _queryPrice(0, uint(fi.channelId), uint(fi.pairIndex), !orientation, msg.sender);
 
         // Update account
         Account memory account = fi.accounts[msg.sender];
@@ -272,7 +282,7 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
             // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
             // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
             // When merger, s0 use recorded price, s1 use corrected by k
-            uint oraclePrice = _queryPrice(0, fi.tokenAddress, !orientation, msg.sender);
+            uint oraclePrice = _queryPrice(0, uint(fi.channelId), uint(fi.pairIndex), !orientation, msg.sender);
 
             uint reward = 0;
             mapping(address=>Account) storage accounts = fi.accounts;
@@ -323,7 +333,7 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
     }
 
     // Buy future
-    function _buy(FutureInfo storage fi, uint index, uint dcuAmount, address tokenAddress, bool orientation) private {
+    function _buy(FutureInfo storage fi, uint index, uint dcuAmount, uint channelId, uint pairIndex, bool orientation) private {
 
         require(index != 0, "HF:not exist");
         require(dcuAmount >= 50 ether, "HF:at least 50 dcu");
@@ -335,7 +345,7 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
         // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
         // When merger, s0 use recorded price, s1 use corrected by k
-        uint oraclePrice = _queryPrice(dcuAmount, tokenAddress, orientation, msg.sender);
+        uint oraclePrice = _queryPrice(dcuAmount, channelId, pairIndex, orientation, msg.sender);
 
         Account memory account = fi.accounts[msg.sender];
         uint basePrice = _decodeFloat(account.basePrice);
@@ -358,10 +368,10 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
     }
 
     // Query price
-    function _queryPrice(uint dcuAmount, address tokenAddress, bool enlarge, address payback) private returns (uint oraclePrice) {
+    function _queryPrice(uint dcuAmount, uint channelId, uint pairIndex, bool enlarge, address payback) private returns (uint oraclePrice) {
 
         // Query price from oracle
-        uint[] memory prices = _lastPriceList(tokenAddress, msg.value, payback);
+        uint[] memory prices = _lastPriceList(channelId, pairIndex, msg.value, payback);
         
         // Convert to usdt based price
         oraclePrice = prices[1];

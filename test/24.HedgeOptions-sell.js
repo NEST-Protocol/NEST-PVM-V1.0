@@ -6,7 +6,7 @@ describe('HedgeOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
-        const { eth, usdt, hbtc, dcu, hedgeOptions, hedgeFutures, nestPriceFacade } = await deploy();
+        const { eth, usdt, hbtc, dcu, hedgeOptions, hedgeFutures, nestPriceFacade, USDT_DECIMALS } = await deploy();
 
         await dcu.setMinter(owner.address, 1);
         await dcu.mint(owner.address, '10000000000000000000000000');
@@ -15,7 +15,7 @@ describe('HedgeOptions', function() {
         console.log('owner: ' + owner.address);
 
         await nestPriceFacade.setPrice(hbtc.address, '74000000000000000', 1);
-        await nestPriceFacade.setPrice(usdt.address, '3510000000', 1);
+        await nestPriceFacade.setPrice(usdt.address, toBigInt(3510, USDT_DECIMALS), 1);
 
         const BLOCK = 100000;
         await hedgeOptions.open(eth.address, '2450000000', true, BLOCK, toBigInt(1000), {

@@ -4,7 +4,7 @@ pragma solidity ^0.8.6;
 
 import "./libs/ABDKMath64x64.sol";
 
-import "./interfaces/IHedgeOptions.sol";
+import "./interfaces/IFortOptions.sol";
 
 import "./custom/ChainParameter.sol";
 import "./custom/CommonParameter.sol";
@@ -14,12 +14,16 @@ import "./custom/NestPriceAdapter.sol";
 import "./DCU.sol";
 
 /// @dev European option
-contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, NestPriceAdapter, IHedgeOptions {
+contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, NestPriceAdapter2, IFortOptions {
 
     /// @dev Option structure
     struct Option {
         uint32 owner;
-        uint128 balance;
+        uint96 balance;
+        // 调用预言机查询token价格时对应的channelId
+        uint16 channelId;
+        // 调用预言机查询token价格时对应的pairIndex
+        uint16 pairIndex;
         uint56 strikePrice;
         bool orientation;
         uint32 exerciseBlock;
@@ -43,6 +47,22 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
     // Registered accounts
     address[] _accounts;
 
+    // token登记信息
+    struct TokenRegistration {
+        address tokenAddress;
+        // 调用预言机查询token价格时对应的channelId
+        uint16 channelId;
+        // 调用预言机查询token价格时对应的pairIndex
+        uint16 pairIndex;
+    }
+
+    // token地址映射
+    mapping(address=>uint) _tokenMapping;
+    // token报价对映射
+    mapping(uint=>uint) _pairIndexMapping;
+    // 代币登记信息
+    TokenRegistration[] _tokenRegistrations;
+
     constructor() {
     }
 
@@ -51,6 +71,31 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
     function initialize(address governance) public override {
         super.initialize(governance);
         _accounts.push();
+    }
+
+    // TODO: 考虑_tokenRegistrations中的第0个元素
+
+    /// @dev 注册代币信息，只有注册过的代币才能使用
+    /// @param tokenAddress Target token address, 0 means eth
+    /// @param channelId 调用预言机查询token价格时对应的channelId
+    /// @param pairIndex 调用预言机查询token价格时对应的pairIndex
+    function register(address tokenAddress, uint16 channelId, uint16 pairIndex) external onlyGovernance {
+        uint index = _tokenMapping[tokenAddress];
+        require(index == 0, "FO:exist");
+
+        _tokenRegistrations.push(TokenRegistration(tokenAddress, channelId, pairIndex));
+        index = _tokenRegistrations.length;
+        require(index < 0x100000000, "FO:too much tokenRegistrations");
+        _tokenMapping[tokenAddress] = index;
+        _pairIndexMapping[(uint(channelId) << 16) | uint(pairIndex)] = index;
+    }
+
+    /// @dev 注销代币信息
+    /// @param tokenAddress Target token address, 0 means eth
+    function unRegister(address tokenAddress) external onlyGovernance {
+        uint index = _tokenMapping[tokenAddress];
+        require(index == 0, "FO:exist");
+        _tokenMapping[tokenAddress] = 0;
     }
 
     /// @dev Returns the share of the specified option for target address
@@ -164,8 +209,16 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         uint dcuAmount
     ) external payable override {
 
+        // 只有_tokenMapping[tokenAddress]不为0的，才表示已经注册过
+        TokenRegistration memory tokenRegistration = _tokenRegistrations[_tokenMapping[tokenAddress] - 1];
+
         // 1. Query price from oracle
-        uint oraclePrice = _latestPrice(tokenAddress, msg.value, msg.sender);
+        uint oraclePrice = _latestPrice(
+            uint(tokenRegistration.channelId), 
+            uint(tokenRegistration.pairIndex),
+            msg.value, 
+            msg.sender
+        );
 
         // 2. Calculate the amount of option
         uint amount = estimate(tokenAddress, oraclePrice, strikePrice, orientation, exerciseBlock, dcuAmount);
@@ -177,8 +230,10 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         _options.push(Option(
             //uint32 owner;
             uint32(_addressIndex(msg.sender)),
-            //uint128 balance;
-            _toUInt128(amount),
+            //uint96 balance;
+            _toUInt96(amount),
+            tokenRegistration.channelId,
+            tokenRegistration.pairIndex,
             //uint56 strikePrice;
             _encodeFloat(strikePrice),
             //bool orientation;
@@ -257,10 +312,10 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         //require(block.number >= exerciseBlock, "FEO:at maturity");
 
         // 2. Deduct the specified amount
-        option.balance = _toUInt128(uint(option.balance) - amount);
+        option.balance = _toUInt96(uint(option.balance) - amount);
 
         // 3. Find the price by specified block from oracle
-        uint oraclePrice = _findPrice(address(0), exerciseBlock, msg.value, msg.sender);
+        uint oraclePrice = _findPrice(option.channelId, option.pairIndex, exerciseBlock, msg.value, msg.sender);
 
         // 4. Calculate the number of DCU that can be obtained
         uint gain = 0;
@@ -304,10 +359,10 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         uint exerciseBlock = uint(option.exerciseBlock);
 
         // 2. Deduct the specified amount
-        option.balance = _toUInt128(uint(option.balance) - amount);
+        option.balance = _toUInt96(uint(option.balance) - amount);
 
         // 3. Query price from oracle
-        uint oraclePrice = _latestPrice(tokenAddress, msg.value, msg.sender);
+        uint oraclePrice = _latestPrice(option.channelId, option.pairIndex, msg.value, msg.sender);
 
         // 4. Calculate option price
         uint dcuAmount = amount * calcV(
@@ -375,13 +430,15 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         Option storage option, 
         uint index
     ) private view returns (OptionView memory) {
+        uint pairId = (uint(option.channelId) << 16) | uint(option.pairIndex);
         return OptionView(
             index,
-            address(0), //option.tokenAddress,
+            _tokenRegistrations[_pairIndexMapping[pairId] - 1].tokenAddress,
             _decodeFloat(option.strikePrice),
             option.orientation,
             uint(option.exerciseBlock),
-            option.balance
+            option.balance,
+            _accounts[uint(option.owner)]
         );
     }
 
@@ -404,9 +461,9 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
     }
 
     // Convert uint to uint128
-    function _toUInt128(uint v) private pure returns (uint128) {
-        require(v < 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF, "HO:can't convert to uint128");
-        return uint128(v);
+    function _toUInt96(uint v) private pure returns (uint96) {
+        require(v < 0xFFFFFFFFFFFFFFFFFFFFFFFF, "HO:can't convert to uint96");
+        return uint96(v);
     }
 
     // Calculate standard normal distribution by table

@@ -4,10 +4,12 @@ pragma solidity ^0.8.6;
 
 import "../interfaces/INestPriceFacade.sol";
 import "../interfaces/INestOpenPrice.sol";
+import "../interfaces/INestBatchPrice2.sol";
+import "../custom/HedgeFrequentlyUsed.sol";
 
 import "hardhat/console.sol";
 
-contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
+contract NestPriceFacade is HedgeFrequentlyUsed, INestPriceFacade, INestOpenPrice, INestBatchPrice2 {
     
     struct Price {
         uint price;
@@ -34,7 +36,7 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
 
         Price memory p = _prices[tokenAddress];
         if (p.price == 0) {
-            p = Price(2700 * 1 ether, 1);
+            p = Price(2700 * USDT_BASE, 1);
         }
 
         return (block.number - p.dbn, p.price);
@@ -75,7 +77,7 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
     function triggeredPrice(
         address tokenAddress, 
         address payback
-    ) external payable override returns (uint blockNumber, uint price) {
+    ) public payable override returns (uint blockNumber, uint price) {
 
         if (msg.value > 0.01 ether) {
             payable(payback).transfer(msg.value - 0.01 ether);
@@ -98,7 +100,7 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
     function latestPrice(
         address tokenAddress, 
         address payback
-    ) external payable override returns (uint blockNumber, uint price) {
+    ) public payable override returns (uint blockNumber, uint price) {
 
         if (msg.value > 0.01 ether) {
             payable(payback).transfer(msg.value - 0.01 ether);
@@ -125,7 +127,7 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
     function triggeredPriceInfo(
         address tokenAddress, 
         address payback
-    ) external payable override returns (uint blockNumber, uint price, uint avgPrice, uint sigmaSQ) {
+    ) public payable override returns (uint blockNumber, uint price, uint avgPrice, uint sigmaSQ) {
 
         if (msg.value > 0.01 ether) {
             payable(payback).transfer(msg.value - 0.01 ether);
@@ -156,7 +158,7 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
         uint count, 
         address payback
     ) 
-    external 
+    public 
     payable 
     override
     returns (
@@ -185,7 +187,7 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
         address tokenAddress, 
         uint count, 
         address paybackAddress
-    ) external payable override returns (uint[] memory prices) {
+    ) public payable override returns (uint[] memory prices) {
         if (msg.value > 0.01 ether) {
             payable(paybackAddress).transfer(msg.value - 0.01 ether);
         } else {
@@ -242,7 +244,7 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
     /// @param payback Address to receive refund
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
-    function triggeredPrice(uint channelId, address payback) external payable override returns (uint blockNumber, uint price) {
+    function triggeredPrice(uint channelId, address payback) public payable override returns (uint blockNumber, uint price) {
 
     }
 
@@ -255,7 +257,7 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
     /// @return sigmaSQ The square of the volatility (18 decimal places). The current implementation assumes that 
     ///         the volatility cannot exceed 1. Correspondingly, when the return value is equal to 999999999999996447,
     ///         it means that the volatility has exceeded the range that can be expressed
-    function triggeredPriceInfo(uint channelId, address payback) external payable override returns (
+    function triggeredPriceInfo(uint channelId, address payback) public payable override returns (
         uint blockNumber,
         uint price,
         uint avgPrice,
@@ -274,7 +276,7 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
         uint channelId,
         uint height, 
         address payback
-    ) external payable override returns (uint blockNumber, uint price) {
+    ) public payable override returns (uint blockNumber, uint price) {
         require(channelId >= 0);
         require(height >= 0);
 
@@ -294,7 +296,7 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
     address DEFAULT_ADDRESS;
 
     function _toETHPrice(uint price) private pure returns (uint) {
-        return 2000 ether * 1 ether / price;
+        return 2000 * USDT_BASE * 1 ether / price;
     }
 
     /// @dev Get the latest effective price
@@ -302,7 +304,7 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
     /// @param payback Address to receive refund
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
-    function latestPrice(uint channelId, address payback) external payable override returns (uint blockNumber, uint price) {
+    function latestPrice(uint channelId, address payback) public payable override returns (uint blockNumber, uint price) {
         require(channelId >= 0);
 
         if (msg.value > 0.005 ether) {
@@ -323,7 +325,7 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
     /// @param count The number of prices that want to return
     /// @param payback Address to receive refund
     /// @return An array which length is num * 2, each two element expresses one price like blockNumber|price
-    function lastPriceList(uint channelId, uint count, address payback) external payable override returns (uint[] memory) {
+    function lastPriceList(uint channelId, uint count, address payback) public payable override returns (uint[] memory) {
         require(channelId >= 0);
 
         if (msg.value > 0.005 ether) {
@@ -340,8 +342,11 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
             //uint triggeredSigmaSQ
         ) = lastPriceListAndTriggeredPriceInfoView(DEFAULT_ADDRESS, count);
 
-        prices[1] = _toETHPrice(prices[1]);
-        prices[3] = _toETHPrice(prices[3]);
+        //prices[1] = _toETHPrice(prices[1]);
+        //prices[3] = _toETHPrice(prices[3]);
+        for (uint i = 1; i < prices.length; i += 2) {
+            prices[i] = _toETHPrice(prices[i]);
+        }
 
         return prices;
     }
@@ -357,7 +362,7 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
     /// @return triggeredSigmaSQ The square of the volatility (18 decimal places). The current implementation 
     /// assumes that the volatility cannot exceed 1. Correspondingly, when the return value is equal to 
     /// 999999999999996447, it means that the volatility has exceeded the range that can be expressed
-    function latestPriceAndTriggeredPriceInfo(uint channelId, address payback) external payable override
+    function latestPriceAndTriggeredPriceInfo(uint channelId, address payback) public payable override
     returns (
         uint latestPriceBlockNumber,
         uint latestPriceValue,
@@ -380,7 +385,7 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
     /// @return triggeredSigmaSQ The square of the volatility (18 decimal places). The current implementation 
     /// assumes that the volatility cannot exceed 1. Correspondingly, when the return value is equal to 
     /// 999999999999996447, it means that the volatility has exceeded the range that can be expressed
-    function lastPriceListAndTriggeredPriceInfo(uint channelId, uint count, address payback) external payable override
+    function lastPriceListAndTriggeredPriceInfo(uint channelId, uint count, address payback) public payable override
     returns (
         uint[] memory prices,
         uint triggeredPriceBlockNumber,
@@ -411,5 +416,116 @@ contract NestPriceFacade is INestPriceFacade, INestOpenPrice {
         avgPrice = _toETHPrice(avgPrice);
 
         return (prices, bn, price, avgPrice, 10853469234);
+    }
+
+    ////////////////////////////////////////////////////////////////////////
+
+    /// @dev Get the latest trigger price
+    /// @param channelId Price channel id
+    /// @param pairIndices Array of pair indices
+    /// @param payback Address to receive refund
+    /// @return prices Price array, i * 2 is the block where the ith price is located, and i * 2 + 1 is the ith price
+    function triggeredPrice(
+        uint channelId,
+        uint[] calldata pairIndices, 
+        address payback
+    ) public payable override returns (uint[] memory prices) {
+        require(pairIndices.length == 1, "NPF:pairIndices length must 1");
+        (uint blockNumber, uint price) = triggeredPrice(channelId, payback);
+        prices = new uint[](2);
+        prices[0] = blockNumber;
+        prices[1] = price;
+    }
+
+    /// @dev Get the full information of latest trigger price
+    /// @param channelId Price channel id
+    /// @param pairIndices Array of pair indices
+    /// @param payback Address to receive refund
+    /// @return prices Price array, i * 4 is the block where the ith price is located, i * 4 + 1 is the ith price,
+    /// i * 4 + 2 is the ith average price and i * 4 + 3 is the ith volatility
+    function triggeredPriceInfo(
+        uint channelId, 
+        uint[] calldata pairIndices,
+        address payback
+    ) public payable override returns (uint[] memory prices) {
+        require(pairIndices.length == 1, "NPF:pairIndices length must 1");
+        (
+            uint blockNumber,
+            uint price,
+            uint avgPrice,
+            uint sigmaSQ
+        ) = triggeredPriceInfo(channelId, payback);
+        prices = new uint[](4);
+        prices[0] = blockNumber;
+        prices[1] = price;
+        prices[2] = avgPrice;
+        prices[3] = sigmaSQ;
+    }
+
+    /// @dev Find the price at block number
+    /// @param channelId Price channel id
+    /// @param pairIndices Array of pair indices
+    /// @param height Destination block number
+    /// @param payback Address to receive refund
+    /// @return prices Price array, i * 2 is the block where the ith price is located, and i * 2 + 1 is the ith price
+    function findPrice(
+        uint channelId,
+        uint[] calldata pairIndices, 
+        uint height, 
+        address payback
+    ) public payable override returns (uint[] memory prices) {
+        require(pairIndices.length == 1, "NPF:pairIndices length must 1");
+        (uint blockNumber, uint price) = findPrice(channelId, height, payback);
+        prices = new uint[](2);
+        prices[0] = blockNumber;
+        prices[1] = price;
+    }
+
+    /// @dev Get the last (num) effective price
+    /// @param channelId Price channel id
+    /// @param pairIndices Array of pair indices
+    /// @param count The number of prices that want to return
+    /// @param payback Address to receive refund
+    /// @return prices Result array, i * count * 2 to (i + 1) * count * 2 - 1 are 
+    /// the price results of group i quotation pairs
+    function lastPriceList(
+        uint channelId, 
+        uint[] calldata pairIndices, 
+        uint count, 
+        address payback
+    ) public payable override returns (uint[] memory prices) {
+        require(pairIndices.length == 1, "NPF:pairIndices length must 1");
+        return lastPriceList(channelId, count, payback);
+    }
+
+    /// @dev Returns lastPriceList and triggered price info
+    /// @param channelId Price channel id
+    /// @param pairIndices Array of pair indices
+    /// @param count The number of prices that want to return
+    /// @param payback Address to receive refund
+    /// result of group i quotation pair. Among them, the first two count * are the latest prices, 
+    /// and the last four are: trigger price block number, trigger price, average price and volatility
+    function lastPriceListAndTriggeredPriceInfo(
+        uint channelId, 
+        uint[] calldata pairIndices,
+        uint count, 
+        address payback
+    ) public payable override returns (uint[] memory prices) {
+        require(pairIndices.length == 1, "NPF:pairIndices length must 1");
+        (
+            uint[] memory p,
+            uint triggeredPriceBlockNumber,
+            uint triggeredPriceValue,
+            uint triggeredAvgPrice,
+            uint triggeredSigmaSQ
+        ) = lastPriceListAndTriggeredPriceInfo(channelId, count, payback);
+        prices = new uint[]((count << 1) + 4);
+        for (uint i = 0; i < (count << 1); ++i) {
+            prices[i] = p[i];
+        }
+        prices[(count << 1) + 0]  = triggeredPriceBlockNumber;
+        prices[(count << 1) + 1]  = triggeredPriceValue;
+        prices[(count << 1) + 2]  = triggeredAvgPrice;
+        prices[(count << 1) + 3]  = triggeredSigmaSQ;
     }
 }

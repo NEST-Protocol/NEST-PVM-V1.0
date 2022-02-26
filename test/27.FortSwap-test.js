@@ -16,6 +16,8 @@ describe('HedgeOptions', function() {
         const busd = await TestERC20.deploy('BUSD', "BUSD", 18);
         console.log('busd: ' + busd.address);
 
+        await fortSwap.setTokenAddress(busd.address);
+
         await dcu.setMinter(owner.address, 1);
         await dcu.mint(owner.address, '10000000000000000000000000');
         

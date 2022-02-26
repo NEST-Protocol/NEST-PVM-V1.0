@@ -1,12 +1,13 @@
 const { expect } = require('chai');
 const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, snd, tableSnd, d1, Vc, Vp } = require('./utils.js');
+const { ethers, upgrades } = require('hardhat');
 
 describe('HedgeOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
-        const HedgeOptions = await ethers.getContractFactory('HedgeOptions');
-        const HedgeFutures = await ethers.getContractFactory('HedgeFutures');
+        const FortOptions = await ethers.getContractFactory('FortOptions');
+        const FortFutures = await ethers.getContractFactory('FortFutures');
 
         const { 
             eth, usdt, dcu, 
@@ -21,6 +22,64 @@ describe('HedgeOptions', function() {
 
         console.log('ok');
 
+        // fortOptions: 0x741AD178C22b901dFEDAB44491534BD2C90Dc7Ed
+        // newFortFutures: 0x831fE938eEEC8dd7b993aB64F5B596dEdE9513D0
+        //const fortOptions = await upgrades.deployProxy(FortOptions, [hedgeGovernance.address], { initializer: 'initialize' });
+        const fortOptions = await FortOptions.attach('0x741AD178C22b901dFEDAB44491534BD2C90Dc7Ed');
+        console.log('fortOptions: ' + fortOptions.address);
+
+        //const newFortFutures = await FortFutures.deploy(); //.attach('0xB31f969571e09d832E582820457d614Ca482C822');
+        //console.log('newFortFutures: ' + newFortFutures.address);
+        
+        const hbtc = { address: '0xaE73d363Cb4aC97734E07e48B01D0a1FF5D1190B' };
+        console.log('8.2 create lever');
+        await hedgeFutures.create(hbtc.address, 1, true);
+        await hedgeFutures.create(hbtc.address, 2, true);
+        await hedgeFutures.create(hbtc.address, 3, true);
+        await hedgeFutures.create(hbtc.address, 4, true);
+        await hedgeFutures.create(hbtc.address, 5, true);
+        await hedgeFutures.create(hbtc.address, 1, false);
+        await hedgeFutures.create(hbtc.address, 2, false);
+        await hedgeFutures.create(hbtc.address, 3, false);
+        await hedgeFutures.create(hbtc.address, 4, false);
+        await hedgeFutures.create(hbtc.address, 5, false);
+
+        return;
+
+        let count = await hedgeOptions.getOptionCount();
+        console.log(count.toString());
+        const M96 = 1n << 96n;
+        let list = await hedgeOptions.list(0, 298, 0);
+        let clist = [];
+        for (var i = 0; i < list.length; ++i) {
+            clist.push(list[i]);
+        }
+        list = clist;
+        for (var i = 0; i < list.length; ++i) {
+            for (var j = i + 1; j < list.length; ++j) {
+                if (BigInt(list[i].balance) > BigInt(list[j].balance)) {
+                    var tmp = list[i];
+                    list[i] = list[j];
+                    list[j] = tmp;
+                }
+            }
+        }
+
+        for (var i = 0; i < list.length; ++i) {
+            let o = list[i];
+            let r = {
+                index: o.index.toString(),
+                tokenAddress: o.tokenAddress.toString(),
+                strikePrice: o.strikePrice.toString(),
+                orientation: o.orientation.toString(),
+                exerciseBlock: o.exerciseBlock.toString(),
+                balance: o.balance.toString()
+            };
+            if (BigInt(o.balance) >= M96) {
+                console.log(r);
+            }
+        }
+
         return;
 
         //await nest.approve(hedgeSwap.address, toBigInt(100000000));
@@ -28,8 +87,10 @@ describe('HedgeOptions', function() {
         //await hedgeSwap.deposit(1);
 
         //await usdt.approve('0x4A448cBb12e449D7031f36C8122eCE6dDdf9cc84', toBigInt(10000000));
-        await usdt.transfer(owner.address, toBigInt(10000000));
-        console.log(await usdt.balanceOf(owner.address) + 'usdt');
+        //await usdt.transfer(owner.address, toBigInt(10000000));
+        //console.log(await usdt.balanceOf(owner.address) + 'usdt');
+
+
         return;
 
         const ONE_MONTH = 200000;
