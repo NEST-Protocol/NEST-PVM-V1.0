@@ -52,7 +52,7 @@ contract DCU is HedgeBase, ERC20("Decentralized Currency Unit", "DCU") {
     /// @dev Burn DCU
     /// @param from Target address
     /// @param value Burn amount
-    function burnFrom(address from, uint value) external onlyMinter {
+    function burn(address from, uint value) external onlyMinter {
         _burn(from, value);
     }
 }

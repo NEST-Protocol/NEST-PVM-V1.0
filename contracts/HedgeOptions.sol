@@ -188,7 +188,7 @@ contract HedgeOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         ));
 
         // 4. Burn DCU
-        DCU(DCU_TOKEN_ADDRESS).burnFrom(msg.sender, dcuAmount);
+        DCU(DCU_TOKEN_ADDRESS).burn(msg.sender, dcuAmount);
     }
 
     /// @dev Estimate the amount of option

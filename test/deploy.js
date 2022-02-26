@@ -25,25 +25,18 @@ describe('HedgeOptions', function() {
         // fortOptions: 0x741AD178C22b901dFEDAB44491534BD2C90Dc7Ed
         // newFortFutures: 0x831fE938eEEC8dd7b993aB64F5B596dEdE9513D0
         //const fortOptions = await upgrades.deployProxy(FortOptions, [hedgeGovernance.address], { initializer: 'initialize' });
-        const fortOptions = await FortOptions.attach('0x741AD178C22b901dFEDAB44491534BD2C90Dc7Ed');
-        console.log('fortOptions: ' + fortOptions.address);
+        //const fortOptions = await FortOptions.attach('0x741AD178C22b901dFEDAB44491534BD2C90Dc7Ed');
+        //console.log('fortOptions: ' + fortOptions.address);
 
-        //const newFortFutures = await FortFutures.deploy(); //.attach('0xB31f969571e09d832E582820457d614Ca482C822');
-        //console.log('newFortFutures: ' + newFortFutures.address);
+        //const newFortOptions = await FortOptions.deploy();
+        //console.log('newFortOptions: ' + newFortOptions.address);
+
+        // const newFortFutures = await FortFutures.deploy(); //.attach('0xB31f969571e09d832E582820457d614Ca482C822');
+        // console.log('newFortFutures: ' + newFortFutures.address);
         
-        const hbtc = { address: '0xaE73d363Cb4aC97734E07e48B01D0a1FF5D1190B' };
-        console.log('8.2 create lever');
-        await hedgeFutures.create(hbtc.address, 1, true);
-        await hedgeFutures.create(hbtc.address, 2, true);
-        await hedgeFutures.create(hbtc.address, 3, true);
-        await hedgeFutures.create(hbtc.address, 4, true);
-        await hedgeFutures.create(hbtc.address, 5, true);
-        await hedgeFutures.create(hbtc.address, 1, false);
-        await hedgeFutures.create(hbtc.address, 2, false);
-        await hedgeFutures.create(hbtc.address, 3, false);
-        await hedgeFutures.create(hbtc.address, 4, false);
-        await hedgeFutures.create(hbtc.address, 5, false);
-
+        //const hbtc = { address: '0xaE73d363Cb4aC97734E07e48B01D0a1FF5D1190B' };
+  
+        //await dcu.setMinter('0x741AD178C22b901dFEDAB44491534BD2C90Dc7Ed', 1);
         return;
 
         let count = await hedgeOptions.getOptionCount();

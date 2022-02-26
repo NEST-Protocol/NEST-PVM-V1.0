@@ -243,7 +243,7 @@ contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Ne
         ));
 
         // 4. Burn DCU
-        DCU(DCU_TOKEN_ADDRESS).burnFrom(msg.sender, dcuAmount);
+        DCU(DCU_TOKEN_ADDRESS).burn(msg.sender, dcuAmount);
     }
 
     /// @dev Estimate the amount of option

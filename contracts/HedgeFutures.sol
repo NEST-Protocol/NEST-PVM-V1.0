@@ -329,7 +329,7 @@ contract HedgeFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, N
         require(dcuAmount >= 50 ether, "HF:at least 50 dcu");
 
         // 1. Burn dcu from user
-        DCU(DCU_TOKEN_ADDRESS).burnFrom(msg.sender, dcuAmount);
+        DCU(DCU_TOKEN_ADDRESS).burn(msg.sender, dcuAmount);
 
         // 2. Update account
         // When call, the base price multiply (1 + k), and the sell price divide (1 + k)

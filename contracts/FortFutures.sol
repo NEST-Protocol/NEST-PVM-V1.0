@@ -51,7 +51,7 @@ contract FortFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Ne
     // TODO: 占位符，无用
     // 缓存代币的基数值
     mapping(address=>uint) _bases;
-    
+
     // Future array
     FutureInfo[] _futures;
 
@@ -339,7 +339,7 @@ contract FortFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Ne
         require(dcuAmount >= 50 ether, "HF:at least 50 dcu");
 
         // 1. Burn dcu from user
-        DCU(DCU_TOKEN_ADDRESS).burnFrom(msg.sender, dcuAmount);
+        DCU(DCU_TOKEN_ADDRESS).burn(msg.sender, dcuAmount);
 
         // 2. Update account
         // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
