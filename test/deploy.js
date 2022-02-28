@@ -22,41 +22,86 @@ describe('HedgeOptions', function() {
 
         console.log('ok');
 
+        /*
+        {
+            index: '197',
+            tokenAddress: '0x0000000000000000000000000000000000000000',
+            strikePrice: '1000000000000000000',
+            orientation: 'true',
+            exerciseBlock: '17152497',
+            balance: '7307056483945728370147'
+          }
+          {
+            index: '195',
+            tokenAddress: '0x0000000000000000000000000000000000000000',
+            strikePrice: '1000000000000000000',
+            orientation: 'true',
+            exerciseBlock: '15423154',
+            balance: '0'
+          }
+          {
+            index: '194',
+            tokenAddress: '0x0000000000000000000000000000000000000000',
+            strikePrice: '1000000000000000000',
+            orientation: 'true',
+            exerciseBlock: '15399717',
+            balance: '0'
+          }
+          {
+            index: '193',
+            tokenAddress: '0x0000000000000000000000000000000000000000',
+            strikePrice: '1000000000000000000',
+            orientation: 'true',
+            exerciseBlock: '15389717',
+            balance: '0'
+          }
+          {
+            index: '0',
+            tokenAddress: '0x0000000000000000000000000000000000000000',
+            strikePrice: '0',
+            orientation: 'false',
+            exerciseBlock: '0',
+            balance: '0'
+        } */
+
+        // function setOption(uint index, uint strikePrice, bool orientation, uint balance, uint exerciseBlock) external onlyGovernance {
+        //await hedgeOptions.setOption(197, 500000000000000000n, true, 7307056483945728370147n, 17060015 + 100);
+        //return;
         // fortOptions: 0x741AD178C22b901dFEDAB44491534BD2C90Dc7Ed
         // newFortFutures: 0x831fE938eEEC8dd7b993aB64F5B596dEdE9513D0
         //const fortOptions = await upgrades.deployProxy(FortOptions, [hedgeGovernance.address], { initializer: 'initialize' });
         //const fortOptions = await FortOptions.attach('0x741AD178C22b901dFEDAB44491534BD2C90Dc7Ed');
         //console.log('fortOptions: ' + fortOptions.address);
 
-        //const newFortOptions = await FortOptions.deploy();
-        //console.log('newFortOptions: ' + newFortOptions.address);
-
+        // const newFortOptions = await FortOptions.deploy();
+        // console.log('newFortOptions: ' + newFortOptions.address);
+        // return;
         // const newFortFutures = await FortFutures.deploy(); //.attach('0xB31f969571e09d832E582820457d614Ca482C822');
         // console.log('newFortFutures: ' + newFortFutures.address);
         
         //const hbtc = { address: '0xaE73d363Cb4aC97734E07e48B01D0a1FF5D1190B' };
   
         //await dcu.setMinter('0x741AD178C22b901dFEDAB44491534BD2C90Dc7Ed', 1);
-        return;
+        //return;
 
         let count = await hedgeOptions.getOptionCount();
         console.log(count.toString());
-        const M96 = 1n << 96n;
-        let list = await hedgeOptions.list(0, 298, 0);
+        const M96 = 0n << 96n;
+        let list = await hedgeOptions.find(0, 5, 1000, '0x0e20201B2e9bC6eba51bcC6E710C510dC2cFCfA4');
         let clist = [];
         for (var i = 0; i < list.length; ++i) {
             clist.push(list[i]);
         }
         list = clist;
-        for (var i = 0; i < list.length; ++i) {
-            for (var j = i + 1; j < list.length; ++j) {
-                if (BigInt(list[i].balance) > BigInt(list[j].balance)) {
-                    var tmp = list[i];
-                    list[i] = list[j];
-                    list[j] = tmp;
-                }
-            }
-        }
+        // for (var i = 0; i < list.length; ++i) {
+        //     for (var j = i + 1; j < list.length; ++j) {
+        //         if (BigInt(list[i].balance) > BigInt(list[j].balance)) {
+        //             var tmp = list[i];
+        //             list[i] = list[j];
+        //             list[j] = tmp;
+        //         }
+        //     }
+        // }
 
         for (var i = 0; i < list.length; ++i) {
             let o = list[i];
