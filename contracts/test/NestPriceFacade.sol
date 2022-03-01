@@ -431,6 +431,7 @@ contract NestPriceFacade is HedgeFrequentlyUsed, INestPriceFacade, INestOpenPric
         address payback
     ) public payable override returns (uint[] memory prices) {
         require(pairIndices.length == 1, "NPF:pairIndices length must 1");
+        _check(pairIndices);
         (uint blockNumber, uint price) = triggeredPrice(channelId, payback);
         prices = new uint[](2);
         prices[0] = blockNumber;
@@ -449,6 +450,7 @@ contract NestPriceFacade is HedgeFrequentlyUsed, INestPriceFacade, INestOpenPric
         address payback
     ) public payable override returns (uint[] memory prices) {
         require(pairIndices.length == 1, "NPF:pairIndices length must 1");
+        _check(pairIndices);
         (
             uint blockNumber,
             uint price,
@@ -475,6 +477,7 @@ contract NestPriceFacade is HedgeFrequentlyUsed, INestPriceFacade, INestOpenPric
         address payback
     ) public payable override returns (uint[] memory prices) {
         require(pairIndices.length == 1, "NPF:pairIndices length must 1");
+        _check(pairIndices);
         (uint blockNumber, uint price) = findPrice(channelId, height, payback);
         prices = new uint[](2);
         prices[0] = blockNumber;
@@ -495,6 +498,7 @@ contract NestPriceFacade is HedgeFrequentlyUsed, INestPriceFacade, INestOpenPric
         address payback
     ) public payable override returns (uint[] memory prices) {
         require(pairIndices.length == 1, "NPF:pairIndices length must 1");
+        _check(pairIndices);
         return lastPriceList(channelId, count, payback);
     }
 
@@ -512,6 +516,7 @@ contract NestPriceFacade is HedgeFrequentlyUsed, INestPriceFacade, INestOpenPric
         address payback
     ) public payable override returns (uint[] memory prices) {
         require(pairIndices.length == 1, "NPF:pairIndices length must 1");
+        _check(pairIndices);
         (
             uint[] memory p,
             uint triggeredPriceBlockNumber,
@@ -527,5 +532,9 @@ contract NestPriceFacade is HedgeFrequentlyUsed, INestPriceFacade, INestOpenPric
         prices[(count << 1) + 1]  = triggeredPriceValue;
         prices[(count << 1) + 2]  = triggeredAvgPrice;
         prices[(count << 1) + 3]  = triggeredSigmaSQ;
+    }
+
+    function _check(uint[] calldata pairIndices) private pure {
+        require(pairIndices[0] == 0 || pairIndices[0] == 2, "NPF:must ETH or BTC");
     }
 }

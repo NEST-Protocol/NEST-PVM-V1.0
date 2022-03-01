@@ -137,18 +137,30 @@ exports.deploy = async function() {
     //await hedgeFutures.setUsdtTokenAddress(usdt.address);
 
     console.log('8.2 create lever');
-    await hedgeFutures.create(eth.address, 1, true, 0, 0);
-    await hedgeFutures.create(eth.address, 2, true, 0, 0);
-    await hedgeFutures.create(eth.address, 3, true, 0, 0);
-    await hedgeFutures.create(eth.address, 4, true, 0, 0);
-    await hedgeFutures.create(eth.address, 5, true, 0, 0);
+    await hedgeFutures.create(eth.address, 1, true,  0, 0);
+    await hedgeFutures.create(eth.address, 2, true,  0, 0);
+    await hedgeFutures.create(eth.address, 3, true,  0, 0);
+    await hedgeFutures.create(eth.address, 4, true,  0, 0);
+    await hedgeFutures.create(eth.address, 5, true,  0, 0);
     await hedgeFutures.create(eth.address, 1, false, 0, 0);
     await hedgeFutures.create(eth.address, 2, false, 0, 0);
     await hedgeFutures.create(eth.address, 3, false, 0, 0);
     await hedgeFutures.create(eth.address, 4, false, 0, 0);
     await hedgeFutures.create(eth.address, 5, false, 0, 0);
 
+    await hedgeFutures.create(hbtc.address, 1, true,  0, 2);
+    await hedgeFutures.create(hbtc.address, 2, true,  0, 2);
+    await hedgeFutures.create(hbtc.address, 3, true,  0, 2);
+    await hedgeFutures.create(hbtc.address, 4, true,  0, 2);
+    await hedgeFutures.create(hbtc.address, 5, true,  0, 2);
+    await hedgeFutures.create(hbtc.address, 1, false, 0, 2);
+    await hedgeFutures.create(hbtc.address, 2, false, 0, 2);
+    await hedgeFutures.create(hbtc.address, 3, false, 0, 2);
+    await hedgeFutures.create(hbtc.address, 4, false, 0, 2);
+    await hedgeFutures.create(hbtc.address, 5, false, 0, 2);
+
     await hedgeOptions.register(eth.address, 0, 0);
+    await hedgeOptions.register(hbtc.address, 0, 2);
 
     console.log('---------- OK ----------');
     

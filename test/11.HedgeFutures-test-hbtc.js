@@ -22,7 +22,7 @@ describe('HedgeOptions', function() {
             let acc = account;
             account = account.address;
             return {
-                eth: toDecimal(acc.ethBalance ? await acc.ethBalance() : await ethers.provider.getBalance(account)),
+                hbtc: toDecimal(acc.ethBalance ? await acc.ethBalance() : await ethers.provider.getBalance(account)),
                 usdt: toDecimal(await usdt.balanceOf(account), USDT_DECIMALS),
                 dcu: toDecimal(await dcu.balanceOf(account), 18),
             };
@@ -62,7 +62,7 @@ describe('HedgeOptions', function() {
             console.log(l);
         }
 
-        let addrs = [eth.address/*, hbtc.address*/];
+        let addrs = [hbtc.address/*, hbtc.address*/];
         let futures = [1, 2, 5];
         let oriens = [true, false];
         if (true) {
@@ -124,16 +124,37 @@ describe('HedgeOptions', function() {
             }
         }
 
-        const queryPrice = async function(tokenAddress) {
+        const queryPrice = async function(tokenAddress, enlarge) {
             let tokenAmount = 1e18;
             let usdtAmount = (await nestPriceFacade.latestPriceView(usdt.address)).price;
             let decimals = 18;
-            if (tokenAddress != eth.address) {
+            if (tokenAddress != hbtc.address) {
                 decimals = await (await TestERC20.attach(tokenAddress)).decimals();
                 tokenAmount = (await nestPriceFacade.latestPriceView(tokenAddress)).price;
             }
-            
             return Math.floor(usdtAmount * 10 ** decimals / tokenAmount);
+
+            let pi = await nestPriceFacade.lastPriceListAndTriggeredPriceInfoView(usdt.address, 2);            
+            let k = await hedgeFutures._calcRevisedK(
+                pi.triggeredSigmaSQ, 
+                pi.prices[3],
+                pi.prices[2],
+                pi.prices[1],
+                pi.prices[0],
+            );
+
+            console.log('usdtAmount: ' + usdtAmount);
+            console.log('k: ' + k);
+            if (enlarge) {
+                usdtAmount = BigInt(usdtAmount) * (1000000000000000000n + BigInt(k)) / 1000000000000000000n;
+            } else {
+                usdtAmount = BigInt(usdtAmount) * 1000000000000000000n / (1000000000000000000n + BigInt(k));
+            }
+
+            //return Math.floor(usdtAmount * 10 ** decimals / tokenAmount);
+            //console.log('usdtAmount: ' + usdtAmount);
+            //return Math.floor(usdtAmount);
+            return usdtAmount;
         };
         
         if (true) {
@@ -142,12 +163,12 @@ describe('HedgeOptions', function() {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
                         let receipt = await hedgeFutures.buy(addrs[addr], futures[lever], oriens[orien], toBigInt(100), {
-                            value: addrs[addr] == eth.address ? toBigInt(0.01) : toBigInt(0.02)
+                            value: addrs[addr] == hbtc.address ? toBigInt(0.01) : toBigInt(0.02)
                         });
                         await showReceipt(receipt);
                         let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
 
-                        let oraclePrice = await queryPrice(addrs[addr]);
+                        let oraclePrice = await queryPrice(addrs[addr], oriens[orien]);
                         console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
                     }
                 }
@@ -157,7 +178,7 @@ describe('HedgeOptions', function() {
         //const MIU = 0.000000025367;
 
         if (true) {
-            console.log('5. Set eth price to 3000usdt');
+            console.log('5. Set hbtc price to 3000usdt');
             await nestPriceFacade.setPrice(usdt.address, '3000000000', 1);
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
@@ -165,7 +186,7 @@ describe('HedgeOptions', function() {
                         let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
 
-                        let oraclePrice = await queryPrice(addrs[addr]);
+                        let oraclePrice = await queryPrice(addrs[addr], oriens[orien]);
                         console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
                         let bn = parseFloat(lot.baseBlock);
                         let nbn = parseFloat(await ethers.provider.getBlockNumber());
@@ -177,20 +198,20 @@ describe('HedgeOptions', function() {
                             x: x.toString(),
                             b: b.toString()
                         });
-                        expect(Math.abs(x - b)).to.lt(0.00000001);
+                        expect(Math.abs(x - b)).to.lt(0.0000001);
                     }
                 }
             }
         }
         if (true) {
-            console.log('6. Set eth price to 2000usdt');
+            console.log('6. Set hbtc price to 2000usdt');
             await nestPriceFacade.setPrice(usdt.address, '2000000000', 1);
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
                         let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
-                        let oraclePrice = await queryPrice(addrs[addr]);
+                        let oraclePrice = await queryPrice(addrs[addr], oriens[orien]);
                         console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
 
                         let bn = parseFloat(lot.baseBlock);
@@ -213,7 +234,7 @@ describe('HedgeOptions', function() {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
                         let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
-                        let oraclePrice = await queryPrice(addrs[addr]);
+                        let oraclePrice = await queryPrice(addrs[addr], oriens[orien]);
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
 
                         await hedgeFutures.settle(lot.index, [owner.address], { value: toBigInt(0.02) });
@@ -233,14 +254,14 @@ describe('HedgeOptions', function() {
         }
 
         if (true) {
-            console.log('8. Set eth price to 3510usdt');
+            console.log('8. Set hbtc price to 3510usdt');
             await nestPriceFacade.setPrice(usdt.address, '3510000000', 1);
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
                         let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
-                        let oraclePrice = await queryPrice(addrs[addr]);
+                        let oraclePrice = await queryPrice(addrs[addr], oriens[orien]);
                         console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
 
                         let bn = parseFloat(lot.baseBlock);
@@ -267,11 +288,11 @@ describe('HedgeOptions', function() {
                     for (var orien = 0; orien < oriens.length; ++orien) {
                         let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
-                        let oraclePrice = await queryPrice(addrs[addr]);
+                        let oraclePrice = await queryPrice(addrs[addr], oriens[orien]);
                         console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
-                        // await hedgeFutures.sell(lot.index, lot.balance, { 
-                        //     value: toBigInt(0.02)
-                        // });
+                        await hedgeFutures.sell(lot.index, lot.balance, { 
+                            value: toBigInt(0.02)
+                        });
                         console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
                         console.log(toDecimal(await dcu.balanceOf(owner.address)) + 'dcu');
                         console.log();
@@ -283,26 +304,6 @@ describe('HedgeOptions', function() {
                         //expect(Math.abs(x - b)).to.lt(0.00000001);
                     }
                 }
-            }
-        }
-
-        if (true) {
-            console.log();
-            console.log('10. find');
-            console.log('count: ' + await hedgeFutures.getFutureCount());
-            let find = await hedgeFutures.find(0, 3, 100, owner.address);
-            for (var i = 0; i < find.length; ++i) {
-                let fi = find[i];
-                console.log({
-                    index: fi.index.toString(),
-                    tokenAddress: fi.tokenAddress.toString(),
-                    lever: fi.lever.toString(),
-                    orientation: fi.orientation.toString(),
-                    
-                    balance: fi.balance.toString(),
-                    basePrice: fi.basePrice.toString(),
-                    baseBlock: fi.baseBlock.toString()
-                });
             }
         }
     });

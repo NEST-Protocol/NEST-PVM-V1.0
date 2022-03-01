@@ -9,6 +9,7 @@ describe('HedgeOptions', function() {
         const { eth, usdt, hbtc, dcu, hedgeOptions, hedgeFutures, nestPriceFacade, 
             BLOCK_TIME, USDT_DECIMALS, miuT } = await deploy();
         const TestERC20 = await ethers.getContractFactory('TestERC20');
+
         await dcu.setMinter(owner.address, 1);
         await dcu.mint(owner.address, '10000000000000000000000000');
         
@@ -22,7 +23,7 @@ describe('HedgeOptions', function() {
             let acc = account;
             account = account.address;
             return {
-                eth: toDecimal(acc.ethBalance ? await acc.ethBalance() : await ethers.provider.getBalance(account)),
+                hbtc: toDecimal(acc.ethBalance ? await acc.ethBalance() : await ethers.provider.getBalance(account)),
                 usdt: toDecimal(await usdt.balanceOf(account), USDT_DECIMALS),
                 dcu: toDecimal(await dcu.balanceOf(account), 18),
             };
@@ -62,7 +63,7 @@ describe('HedgeOptions', function() {
             console.log(l);
         }
 
-        let addrs = [eth.address/*, hbtc.address*/];
+        let addrs = [hbtc.address/*, hbtc.address*/];
         let futures = [1, 2, 5];
         let oriens = [true, false];
         if (true) {
@@ -71,27 +72,33 @@ describe('HedgeOptions', function() {
             console.log('tokenCount=' + tokenCount);
             let l = await hedgeFutures.list(0, tokenCount, 0);
             for (var i = 0; i < l.length; ++i) {
-                //let addr = l[i];
-                //let ti = await fot.getFutureInfo();
+                // let addr = l[i];
+                // let ti = await fot.getFutureInfo();
+                // console.log({
+                //     name: await fot.name(),
+                //     tokenAddress: ti.tokenAddress.toString(),
+                //     price: ti.price.toString(),
+                //     blockNumber: ti.blockNumber.toString()
+                // })
                 let fi = l[i];
                 console.log({
-                    //name: await fot.name(),
-                    // tokenAddress: fi.tokenAddress.toString(),
-                    // price: fi.price.toString(),
-                    // blockNumber: fi.blockNumber.toString()
-
                     index: fi.index.toString(),
-                    tokenAddress: fi.tokenAddress.toString(),
+                    tokenAddress: fi.tokenAddress,
                     lever: fi.lever.toString(),
-                    orientation: fi.orientation.toString()
-                })
+                    orientation: fi.orientation
+                });
             }
 
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
-                        let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
-                        console.log(await lot.index);
+                        let fi = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
+                        console.log({
+                            index: fi.index.toString(),
+                            tokenAddress: fi.tokenAddress,
+                            lever: fi.lever.toString(),
+                            orientation: fi.orientation
+                        });
                     }
                 }
             }
@@ -105,22 +112,13 @@ describe('HedgeOptions', function() {
             console.log('tokenCount=' + tokenCount);
             let l = await hedgeFutures.list(0, tokenCount, 0);
             for (var i = 0; i < l.length; ++i) {
-                // let addr = l[i];
-                // let ti = await fot.getFutureInfo();
-                // console.log({
-                //     name: await fot.name(),
-                //     tokenAddress: ti.tokenAddress.toString(),
-                //     price: ti.price.toString(),
-                //     blockNumber: ti.blockNumber.toString()
-                // })
-
                 let fi = l[i];
                 console.log({
                     index: fi.index.toString(),
-                    tokenAddress: fi.tokenAddress.toString(),
+                    tokenAddress: fi.tokenAddress,
                     lever: fi.lever.toString(),
-                    orientation: fi.orientation.toString()
-                })
+                    orientation: fi.orientation
+                });
             }
         }
 
@@ -128,26 +126,26 @@ describe('HedgeOptions', function() {
             let tokenAmount = 1e18;
             let usdtAmount = (await nestPriceFacade.latestPriceView(usdt.address)).price;
             let decimals = 18;
-            if (tokenAddress != eth.address) {
+            if (tokenAddress != hbtc.address) {
                 decimals = await (await TestERC20.attach(tokenAddress)).decimals();
                 tokenAmount = (await nestPriceFacade.latestPriceView(tokenAddress)).price;
             }
             
             return Math.floor(usdtAmount * 10 ** decimals / tokenAmount);
         };
-        
+
         if (true) {
-            console.log('4. buy');
+            console.log('4. buyDirect');
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
-                        let receipt = await hedgeFutures.buy(addrs[addr], futures[lever], oriens[orien], toBigInt(100), {
-                            value: addrs[addr] == eth.address ? toBigInt(0.01) : toBigInt(0.02)
+                        let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
+                        let receipt = await hedgeFutures.buyDirect(lot.index, toBigInt(100), {
+                            value: addrs[addr] == hbtc.address ? toBigInt(0.01) : toBigInt(0.02)
                         });
                         await showReceipt(receipt);
-                        let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
-
-                        let oraclePrice = await queryPrice(addrs[addr]);
+                        
+                        let oraclePrice = queryPrice(addrs[addr]);
                         console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
                     }
                 }
@@ -157,40 +155,34 @@ describe('HedgeOptions', function() {
         //const MIU = 0.000000025367;
 
         if (true) {
-            console.log('5. Set eth price to 3000usdt');
+            console.log('5. Set hbtc pricve to 3000usdt');
             await nestPriceFacade.setPrice(usdt.address, '3000000000', 1);
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
                         let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
-
-                        let oraclePrice = await queryPrice(addrs[addr]);
+                        let oraclePrice = queryPrice(addrs[addr]);
                         console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
+
                         let bn = parseFloat(lot.baseBlock);
                         let nbn = parseFloat(await ethers.provider.getBlockNumber());
                         let x = 100 * (1 + futures[lever] * (3000 / miuT((oriens[orien]), (nbn - bn)) - 3510) / 3510 * (oriens[orien] ? 1 : -1));
                         let b = parseFloat(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)));
-
-                        console.log({
-                            addr: addrs[addr],
-                            x: x.toString(),
-                            b: b.toString()
-                        });
                         expect(Math.abs(x - b)).to.lt(0.00000001);
                     }
                 }
             }
         }
         if (true) {
-            console.log('6. Set eth price to 2000usdt');
+            console.log('6. Set hbtc price to 2000usdt');
             await nestPriceFacade.setPrice(usdt.address, '2000000000', 1);
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
                         let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
-                        let oraclePrice = await queryPrice(addrs[addr]);
+                        let oraclePrice = queryPrice(addrs[addr]);
                         console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
 
                         let bn = parseFloat(lot.baseBlock);
@@ -213,12 +205,12 @@ describe('HedgeOptions', function() {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
                         let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
-                        let oraclePrice = await queryPrice(addrs[addr]);
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
 
                         await hedgeFutures.settle(lot.index, [owner.address], { value: toBigInt(0.02) });
+                        let oraclePrice = queryPrice(addrs[addr]);
                         console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
-                        
+
                         let bn = parseFloat(lot.baseBlock);
                         let nbn = parseFloat(await ethers.provider.getBlockNumber());
                         let x = 100 * (1 + futures[lever] * (2000 / miuT((oriens[orien]), (nbn - bn)) - 3510) / 3510 * (oriens[orien] ? 1 : -1));
@@ -233,14 +225,14 @@ describe('HedgeOptions', function() {
         }
 
         if (true) {
-            console.log('8. Set eth price to 3510usdt');
+            console.log('8. Set hbtc price to 3510usdt');
             await nestPriceFacade.setPrice(usdt.address, '3510000000', 1);
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
                         let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
-                        //await lot.update(owner.address, { value: toBigInt(0.02) });
-                        let oraclePrice = await queryPrice(addrs[addr]);
+                        // await lot.update(owner.address, { value: toBigInt(0.02) });
+                        let oraclePrice = queryPrice(addrs[addr]);
                         console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
 
                         let bn = parseFloat(lot.baseBlock);
@@ -257,7 +249,46 @@ describe('HedgeOptions', function() {
         }
 
         if (true) {
-            console.log('9. sell');
+            console.log('11. sync');
+            await nestPriceFacade.setPrice(usdt.address, '1000000000', 1);
+            for (var addr = 0; addr < addrs.length; ++addr) {
+                for (var lever = 0; lever < futures.length; ++lever) {
+                    for (var orien = 0; orien < oriens.length; ++orien) {
+                        // let lotAddress = await hedgeFutures.getLeverToken(addrs[addr], futures[lever], oriens[orien]);
+                        // await hedgeFutures.sync([lotAddress]);
+                    }
+                }
+            }
+        }
+
+        if (true) {
+            console.log('9. updateLeverInfo');
+            await nestPriceFacade.setPrice(usdt.address, '1000000000', 1);
+            for (var addr = 0; addr < addrs.length; ++addr) {
+                for (var lever = 0; lever < futures.length; ++lever) {
+                    for (var orien = 0; orien < oriens.length; ++orien) {
+                        let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
+                        let before = await dcu.balanceOf(owner.address); 
+                        console.log(toDecimal(await dcu.balanceOf(owner.address)) + 'dcu');
+                        // await hedgeFutures.updateLeverInfo([lotAddress], owner.address, {
+                        //     value: toBigInt(0.02)
+                        // });
+                        console.log(toDecimal(await dcu.balanceOf(owner.address)) + 'dcu');
+                        console.log(toDecimal(await dcu.balanceOf(owner.address) - before) + 'earn');
+                        console.log();
+                        // let x = 100 * (1 + futures[lever] * (3510 - 3510) / 3510 * (oriens[orien] ? 1 : -1));
+                        // let b = parseFloat(toDecimal(await lot.balanceOf(owner.address)));
+                        // if (x < 0) {
+                        //     x = 0;
+                        // }
+                        //expect(Math.abs(x - b)).to.lt(0.00000001);
+                    }
+                }
+            }
+        }
+
+        if (true) {
+            console.log('10. sell');
             for(var i = 0; i < 90; ++i) {
                 await usdt.transfer(owner.address, 0);
             }
@@ -267,11 +298,11 @@ describe('HedgeOptions', function() {
                     for (var orien = 0; orien < oriens.length; ++orien) {
                         let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
-                        let oraclePrice = await queryPrice(addrs[addr]);
+                        let oraclePrice = queryPrice(addrs[addr]);
                         console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
-                        // await hedgeFutures.sell(lot.index, lot.balance, { 
-                        //     value: toBigInt(0.02)
-                        // });
+                        await hedgeFutures.sell(lot.index, lot.balance, { 
+                            value: toBigInt(0.02)
+                        });
                         console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
                         console.log(toDecimal(await dcu.balanceOf(owner.address)) + 'dcu');
                         console.log();
@@ -286,24 +317,32 @@ describe('HedgeOptions', function() {
             }
         }
 
-        if (true) {
-            console.log();
-            console.log('10. find');
-            console.log('count: ' + await hedgeFutures.getFutureCount());
-            let find = await hedgeFutures.find(0, 3, 100, owner.address);
-            for (var i = 0; i < find.length; ++i) {
-                let fi = find[i];
-                console.log({
-                    index: fi.index.toString(),
-                    tokenAddress: fi.tokenAddress.toString(),
-                    lever: fi.lever.toString(),
-                    orientation: fi.orientation.toString(),
-                    
-                    balance: fi.balance.toString(),
-                    basePrice: fi.basePrice.toString(),
-                    baseBlock: fi.baseBlock.toString()
-                });
-            }
+        if (false) {
+            console.log('12. getKey');
+            const test = async function(tokenAddress, lever, orientation) {
+                let key = await hedgeFutures._getKey(tokenAddress, lever, orientation);
+                console.log(key);
+            };
+
+            await test(hbtc.address, 1, true);
+            await test(hbtc.address, 2, true);
+            await test(hbtc.address, 5, true);
+            await test(hbtc.address, 1, false);
+            await test(hbtc.address, 2, false);
+            await test(hbtc.address, 5, false);
+            await test(hbtc.address, 1, true);
+            await test(hbtc.address, 2, true);
+            await test(hbtc.address, 5, true);
+            await test(hbtc.address, 1, false);
+            await test(hbtc.address, 2, false);
+            await test(hbtc.address, 5, false);
+
+            await test(dcu.address, 1, true);
+            await test(dcu.address, 2, true);
+            await test(dcu.address, 5, true);
+            await test(dcu.address, 1, false);
+            await test(dcu.address, 2, false);
+            await test(dcu.address, 5, false);
         }
     });
 });
