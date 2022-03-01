@@ -97,7 +97,11 @@ interface IFortFutures {
     function create(
         address tokenAddress, 
         uint lever,
-        bool orientation
+        bool orientation,
+        // 调用预言机查询token价格时对应的channelId
+        uint channelId,
+        // 调用预言机查询token价格时对应的pairIndex
+        uint pairIndex 
     ) external;
 
     /// @dev Obtain the number of futures that have been opened

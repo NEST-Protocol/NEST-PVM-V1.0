@@ -137,16 +137,16 @@ exports.deploy = async function() {
     //await hedgeFutures.setUsdtTokenAddress(usdt.address);
 
     console.log('8.2 create lever');
-    await hedgeFutures.create(eth.address, 1, true);
-    await hedgeFutures.create(eth.address, 2, true);
-    await hedgeFutures.create(eth.address, 3, true);
-    await hedgeFutures.create(eth.address, 4, true);
-    await hedgeFutures.create(eth.address, 5, true);
-    await hedgeFutures.create(eth.address, 1, false);
-    await hedgeFutures.create(eth.address, 2, false);
-    await hedgeFutures.create(eth.address, 3, false);
-    await hedgeFutures.create(eth.address, 4, false);
-    await hedgeFutures.create(eth.address, 5, false);
+    await hedgeFutures.create(eth.address, 1, true, 0, 0);
+    await hedgeFutures.create(eth.address, 2, true, 0, 0);
+    await hedgeFutures.create(eth.address, 3, true, 0, 0);
+    await hedgeFutures.create(eth.address, 4, true, 0, 0);
+    await hedgeFutures.create(eth.address, 5, true, 0, 0);
+    await hedgeFutures.create(eth.address, 1, false, 0, 0);
+    await hedgeFutures.create(eth.address, 2, false, 0, 0);
+    await hedgeFutures.create(eth.address, 3, false, 0, 0);
+    await hedgeFutures.create(eth.address, 4, false, 0, 0);
+    await hedgeFutures.create(eth.address, 5, false, 0, 0);
 
     await hedgeOptions.register(eth.address, 0, 0);
 

@@ -79,6 +79,9 @@ describe('HedgeOptions', function() {
         // const newFortFutures = await FortFutures.deploy(); //.attach('0xB31f969571e09d832E582820457d614Ca482C822');
         // console.log('newFortFutures: ' + newFortFutures.address);
         
+
+        return;
+        
         //const hbtc = { address: '0xaE73d363Cb4aC97734E07e48B01D0a1FF5D1190B' };
   
         //await dcu.setMinter('0x741AD178C22b901dFEDAB44491534BD2C90Dc7Ed', 1);
@@ -86,8 +89,8 @@ describe('HedgeOptions', function() {
 
         let count = await hedgeOptions.getOptionCount();
         console.log(count.toString());
-        const M96 = 0n << 96n;
-        let list = await hedgeOptions.find(0, 5, 1000, '0x0e20201B2e9bC6eba51bcC6E710C510dC2cFCfA4');
+        const M96 = 1n << 48n;
+        let list = await hedgeOptions.list(0, 318, 0);
         let clist = [];
         for (var i = 0; i < list.length; ++i) {
             clist.push(list[i]);
@@ -117,6 +120,8 @@ describe('HedgeOptions', function() {
                 console.log(r);
             }
         }
+
+        console.log('end');
 
         return;
 

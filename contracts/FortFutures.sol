@@ -166,7 +166,11 @@ contract FortFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Ne
     function create(
         address tokenAddress, 
         uint lever,
-        bool orientation
+        bool orientation,
+        // 调用预言机查询token价格时对应的channelId
+        uint channelId,
+        // 调用预言机查询token价格时对应的pairIndex
+        uint pairIndex 
     ) external override onlyGovernance {
 
         // Check if the future exists
@@ -180,10 +184,21 @@ contract FortFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Ne
         fi.tokenAddress = tokenAddress;
         fi.lever = uint32(lever);
         fi.orientation = orientation;
+        fi.channelId = uint16(channelId);
+        fi.pairIndex = uint16(pairIndex);
+
         _futureMapping[key] = index;
 
         // emit New event
         emit New(tokenAddress, lever, orientation, index);
+    }
+
+    // TODO: 测试方法
+    function modify(uint index, uint channelId, uint pairIndex) external onlyGovernance {
+        require(index > 0, "HF:!exists");
+        FutureInfo storage fi = _futures[index];
+        fi.channelId = uint16(channelId);
+        fi.pairIndex = uint16(pairIndex);
     }
 
     /// @dev Obtain the number of futures that have been opened

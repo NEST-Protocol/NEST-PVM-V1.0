@@ -106,7 +106,7 @@ describe('HedgeOptions', function() {
 
         if (true) {
             console.log('3. create');
-            let receipt = await hedgeFutures.create(hbtc.address, 3, false);
+            let receipt = await hedgeFutures.create(hbtc.address, 3, false, 0, 2);
             await showReceipt(receipt);
             let tokenCount = await hedgeFutures.getFutureCount();
             console.log('tokenCount=' + tokenCount);
