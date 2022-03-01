@@ -7,12 +7,12 @@ import "./interfaces/IFortFutures.sol";
 import "./custom/ChainParameter.sol";
 import "./custom/CommonParameter.sol";
 import "./custom/HedgeFrequentlyUsed.sol";
-import "./custom/NestPriceAdapter.sol";
+import "./custom/FortPriceAdapter.sol";
 
 import "./DCU.sol";
 
 /// @dev Futures
-contract FortFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, NestPriceAdapter2, IFortFutures {
+contract FortFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, FortPriceAdapter, IFortFutures {
 
     /// @dev Account information
     struct Account {

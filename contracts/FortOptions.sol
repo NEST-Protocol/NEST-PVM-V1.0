@@ -9,12 +9,12 @@ import "./interfaces/IFortOptions.sol";
 import "./custom/ChainParameter.sol";
 import "./custom/CommonParameter.sol";
 import "./custom/HedgeFrequentlyUsed.sol";
-import "./custom/NestPriceAdapter.sol";
+import "./custom/FortPriceAdapter.sol";
 
 import "./DCU.sol";
 
 /// @dev European option
-contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, NestPriceAdapter2, IFortOptions {
+contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, FortPriceAdapter, IFortOptions {
 
     /// @dev Option structure
     struct Option {
