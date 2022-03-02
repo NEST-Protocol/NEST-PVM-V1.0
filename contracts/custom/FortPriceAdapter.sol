@@ -9,15 +9,18 @@ import "../interfaces/INestBatchPrice2.sol";
 /// @dev Base contract of Hedge
 contract FortPriceAdapter is HedgeFrequentlyUsed {
     
-    // token配置信息
+    // token configuration
     struct TokenConfig {
-        // 调用预言机查询token价格时对应的channelId
+        // The channelId for call nest price
         uint16 channelId;
-        // 调用预言机查询token价格时对应的pairIndex
+        // The pairIndex for call nest price
         uint16 pairIndex;
 
+        // SigmaSQ for token
         uint64 sigmaSQ;
+        // MIU_LONG for token
         uint64 miuLong;
+        // MIU_SHORT for token
         uint64 miuShort;
     }
 

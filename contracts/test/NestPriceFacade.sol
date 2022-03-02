@@ -206,7 +206,7 @@ contract NestPriceFacade is HedgeFrequentlyUsed, INestPriceFacade, INestOpenPric
     /// @dev Returns lastPriceList and triggered price info
     /// @param tokenAddress Destination token address
     /// @param count The number of prices that want to return
-    /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber｜price
+    /// @return prices An array which length is num * 2, each two element expresses one price like blockNumber|price
     /// @return triggeredPriceBlockNumber The block number of triggered price
     /// @return triggeredPriceValue The token triggered price. (1eth equivalent to (price) token)
     /// @return triggeredAvgPrice Average price

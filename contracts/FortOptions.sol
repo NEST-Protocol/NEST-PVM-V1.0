@@ -7,14 +7,13 @@ import "./libs/ABDKMath64x64.sol";
 import "./interfaces/IFortOptions.sol";
 
 import "./custom/ChainParameter.sol";
-import "./custom/CommonParameter.sol";
 import "./custom/HedgeFrequentlyUsed.sol";
 import "./custom/FortPriceAdapter.sol";
 
 import "./DCU.sol";
 
 /// @dev European option
-contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, FortPriceAdapter, IFortOptions {
+contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, IFortOptions {
 
     /// @dev Option structure
     struct Option {
@@ -26,9 +25,9 @@ contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
         uint32 exerciseBlock;
     }
 
-    // token登记信息
+    // token registration information
     struct TokenRegistration {
-        TokenConfig config;
+        TokenConfig tokenConfig;
         address tokenAddress;
     }
 
@@ -54,10 +53,10 @@ contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
     // Registered accounts
     address[] _accounts;
 
-    // token地址映射
+    // token to index mapping
     mapping(address=>uint) _tokenMapping;
 
-    // 代币登记信息
+    // token registration information array
     TokenRegistration[] _tokenRegistrations;
 
     constructor() {
@@ -70,7 +69,6 @@ contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
         _accounts.push();
     }
 
-    // TODO: 考虑_tokenRegistrations中的第0个元素
     // TODO: 删除测试代码
     function setOption(uint index, uint strikePrice, bool orientation, uint balance, uint exerciseBlock) external onlyGovernance {
         if (strikePrice > 0) {
@@ -85,23 +83,23 @@ contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
         }
     }
 
-    /// @dev 注册代币信息，只有注册过的代币才能使用
+    /// @dev Register token information
     /// @param tokenAddress Target token address, 0 means eth
-    /// @param config token配置信息
-    function register(address tokenAddress, TokenConfig calldata config) external onlyGovernance {
+    /// @param tokenConfig token configuration
+    function register(address tokenAddress, TokenConfig calldata tokenConfig) external onlyGovernance {
         uint index = _tokenMapping[tokenAddress];
         
         if (index == 0) {
-            _tokenRegistrations.push(TokenRegistration(config, tokenAddress));
+            _tokenRegistrations.push(TokenRegistration(tokenConfig, tokenAddress));
             index = _tokenRegistrations.length;
             require(index < 0x10000, "FO:too much tokenRegistrations");
             _tokenMapping[tokenAddress] = index;
         } else {
-            _tokenRegistrations[index].config = config;
+            _tokenRegistrations[index].tokenConfig = tokenConfig;
         }
     }
 
-    /// @dev 注销代币信息
+    /// @dev unregister token information
     /// @param tokenAddress Target token address, 0 means eth
     function unRegister(address tokenAddress) external onlyGovernance {
         _tokenMapping[tokenAddress] = 0;
@@ -218,9 +216,9 @@ contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
         uint dcuAmount
     ) external payable override {
 
-        // 只有_tokenMapping[tokenAddress]不为0的，才表示已经注册过
+        // _tokenMapping[tokenAddress] > 0 means token registered
         uint tokenIndex = _tokenMapping[tokenAddress] - 1;
-        TokenConfig memory tokenConfig = _tokenRegistrations[tokenIndex].config;
+        TokenConfig memory tokenConfig = _tokenRegistrations[tokenIndex].tokenConfig;
 
         // 1. Query price from oracle
         uint oraclePrice = _latestPrice(tokenConfig, msg.value, msg.sender);
@@ -269,7 +267,7 @@ contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
         uint dcuAmount
     ) public view override returns (uint amount) {
         return _estimate(
-            _tokenRegistrations[_tokenMapping[tokenAddress] - 1].config,
+            _tokenRegistrations[_tokenMapping[tokenAddress] - 1].tokenConfig,
             oraclePrice,
             strikePrice,
             orientation,
@@ -289,7 +287,7 @@ contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
         bool orientation = option.orientation;
         uint exerciseBlock = uint(option.exerciseBlock);
 
-        TokenConfig memory tokenConfig = _tokenRegistrations[option.tokenIndex].config;
+        TokenConfig memory tokenConfig = _tokenRegistrations[option.tokenIndex].tokenConfig;
 
         // TODO: 测试时不检查
         //require(block.number >= exerciseBlock, "FEO:at maturity");
@@ -341,7 +339,7 @@ contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
         bool orientation = option.orientation;
         uint exerciseBlock = uint(option.exerciseBlock);
 
-        TokenConfig memory tokenConfig = _tokenRegistrations[option.tokenIndex].config;
+        TokenConfig memory tokenConfig = _tokenRegistrations[option.tokenIndex].tokenConfig;
 
         // 2. Deduct the specified amount
         option.balance = _toUInt112(uint(option.balance) - amount);
@@ -383,7 +381,7 @@ contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
         uint exerciseBlock
     ) public view override returns (uint v) {
         return _calcV(
-            _tokenRegistrations[_tokenMapping[tokenAddress] - 1].config,
+            _tokenRegistrations[_tokenMapping[tokenAddress] - 1].tokenConfig,
             oraclePrice,
             strikePrice,
             orientation,
@@ -523,7 +521,7 @@ contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
     /// @param dcuAmount Amount of paid DCU
     /// @return amount Amount of option
     function _estimate(
-        TokenConfig memory config,
+        TokenConfig memory tokenConfig,
         uint oraclePrice,
         uint strikePrice,
         bool orientation,
@@ -533,10 +531,9 @@ contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
 
         require(exerciseBlock > block.number + MIN_PERIOD, "FEO:exerciseBlock too small");
 
-        // TODO: 使用TokenConfig计算
         // 1. Calculate option price
         uint v = _calcV(
-            config, 
+            tokenConfig, 
             oraclePrice,
             strikePrice,
             orientation,
@@ -573,7 +570,7 @@ contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
     /// recorded in the system using the block number
     /// @return v Option price. Need to divide (USDT_BASE << 64)
     function _calcV(
-        TokenConfig memory config,
+        TokenConfig memory tokenConfig,
         uint oraclePrice,
         uint strikePrice,
         bool orientation,
@@ -583,15 +580,15 @@ contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
         // Convert the total time according to the average block out time
         uint T = (exerciseBlock - block.number) * BLOCK_TIME;
         v = orientation 
-            ? _calcVc(config, oraclePrice, T, strikePrice) 
-            : _calcVp(config, oraclePrice, T, strikePrice);
+            ? _calcVc(tokenConfig, oraclePrice, T, strikePrice) 
+            : _calcVp(tokenConfig, oraclePrice, T, strikePrice);
     }
 
     // Calculate option price for call
-    function _calcVc(TokenConfig memory config, uint S0, uint T, uint K) private pure returns (uint vc) {
+    function _calcVc(TokenConfig memory tokenConfig, uint S0, uint T, uint K) private pure returns (uint vc) {
 
-        int128 sigmaSQ_T = _d18TOb64(uint(config.sigmaSQ) * T);
-        int128 miu_T = _toInt128(uint(config.miuLong) * T);
+        int128 sigmaSQ_T = _d18TOb64(uint(tokenConfig.sigmaSQ) * T);
+        int128 miu_T = _toInt128(uint(tokenConfig.miuLong) * T);
         int128 sigma_t = ABDKMath64x64.sqrt(sigmaSQ_T);
         int128 D1 = _D1(S0, K, sigmaSQ_T, miu_T);
         int128 d = ABDKMath64x64.div(D1, sigma_t);
@@ -612,10 +609,10 @@ contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
     }
 
     // Calculate option price for put
-    function _calcVp(TokenConfig memory config, uint S0, uint T, uint K) private pure returns (uint vp) {
+    function _calcVp(TokenConfig memory tokenConfig, uint S0, uint T, uint K) private pure returns (uint vp) {
 
-        int128 sigmaSQ_T = _d18TOb64(uint(config.sigmaSQ) * T);
-        int128 miu_T = _toInt128(uint(config.miuShort) * T);
+        int128 sigmaSQ_T = _d18TOb64(uint(tokenConfig.sigmaSQ) * T);
+        int128 miu_T = _toInt128(uint(tokenConfig.miuShort) * T);
         int128 sigma_t = ABDKMath64x64.sqrt(sigmaSQ_T);
         int128 D1 = _D1(S0, K, sigmaSQ_T, miu_T);
         int128 d = ABDKMath64x64.div(D1, sigma_t);
