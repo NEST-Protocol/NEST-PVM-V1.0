@@ -8,6 +8,18 @@ import "../interfaces/INestBatchPrice2.sol";
 
 /// @dev Base contract of Hedge
 contract FortPriceAdapter is HedgeFrequentlyUsed {
+    
+    // token配置信息
+    struct TokenConfig {
+        // 调用预言机查询token价格时对应的channelId
+        uint16 channelId;
+        // 调用预言机查询token价格时对应的pairIndex
+        uint16 pairIndex;
+
+        uint64 sigmaSQ;
+        uint64 miuLong;
+        uint64 miuShort;
+    }
 
     // Post unit: 2000usd
     uint constant POST_UNIT = 2000 * USDT_BASE;
@@ -16,30 +28,44 @@ contract FortPriceAdapter is HedgeFrequentlyUsed {
         pairIndices = new uint[](1);
         pairIndices[0] = pairIndex;
     }
+
     // Query latest 2 price
-    function _lastPriceList(uint channelId, uint pairIndex, uint fee, address payback) internal returns (uint[] memory prices) {
+    function _lastPriceList(
+        TokenConfig memory tokenConfig, 
+        uint fee, 
+        address payback
+    ) internal returns (uint[] memory prices) {
         prices = INestBatchPrice2(NEST_OPEN_PRICE).lastPriceList {
             value: fee
-        } (channelId, _pairIndices(pairIndex), 2, payback);
+        } (uint(tokenConfig.channelId), _pairIndices(uint(tokenConfig.pairIndex)), 2, payback);
 
         prices[1] = _toUSDTPrice(prices[1]);
         prices[3] = _toUSDTPrice(prices[3]);
     }
 
     // Query latest price
-    function _latestPrice(uint channelId, uint pairIndex, uint fee, address payback) internal returns (uint oraclePrice) {
+    function _latestPrice(
+        TokenConfig memory tokenConfig, 
+        uint fee, 
+        address payback
+    ) internal returns (uint oraclePrice) {
         uint[] memory prices = INestBatchPrice2(NEST_OPEN_PRICE).lastPriceList {
             value: fee
-        } (channelId, _pairIndices(pairIndex), 1, payback);
+        } (uint(tokenConfig.channelId), _pairIndices(uint(tokenConfig.pairIndex)), 1, payback);
 
         oraclePrice = _toUSDTPrice(prices[1]);
     }
 
     // Find price by blockNumber
-    function _findPrice(uint channelId, uint pairIndex, uint blockNumber, uint fee, address payback) internal returns (uint oraclePrice) {
+    function _findPrice(
+        TokenConfig memory tokenConfig, 
+        uint blockNumber, 
+        uint fee, 
+        address payback
+    ) internal returns (uint oraclePrice) {
         uint[] memory prices = INestBatchPrice2(NEST_OPEN_PRICE).findPrice {
             value: fee
-        } (channelId, _pairIndices(pairIndex), blockNumber, payback);
+        } (uint(tokenConfig.channelId), _pairIndices(uint(tokenConfig.pairIndex)), blockNumber, payback);
 
         oraclePrice = _toUSDTPrice(prices[1]);
     }

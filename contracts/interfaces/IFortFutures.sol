@@ -94,15 +94,7 @@ interface IFortFutures {
     /// @param tokenAddress Target token address, 0 means eth
     /// @param lever Lever of future
     /// @param orientation true: call, false: put
-    function create(
-        address tokenAddress, 
-        uint lever,
-        bool orientation,
-        // 调用预言机查询token价格时对应的channelId
-        uint channelId,
-        // 调用预言机查询token价格时对应的pairIndex
-        uint pairIndex 
-    ) external;
+    function create(address tokenAddress, uint lever, bool orientation) external;
 
     /// @dev Obtain the number of futures that have been opened
     /// @return Number of futures opened

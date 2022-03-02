@@ -19,14 +19,17 @@ contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
     /// @dev Option structure
     struct Option {
         uint32 owner;
-        uint96 balance;
-        // 调用预言机查询token价格时对应的channelId
-        uint16 channelId;
-        // 调用预言机查询token价格时对应的pairIndex
-        uint16 pairIndex;
+        uint112 balance;
+        uint16 tokenIndex;
         uint56 strikePrice;
         bool orientation;
         uint32 exerciseBlock;
+    }
+
+    // token登记信息
+    struct TokenRegistration {
+        TokenConfig config;
+        address tokenAddress;
     }
 
     // 64bits 1
@@ -51,19 +54,9 @@ contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
     // Registered accounts
     address[] _accounts;
 
-    // token登记信息
-    struct TokenRegistration {
-        address tokenAddress;
-        // 调用预言机查询token价格时对应的channelId
-        uint16 channelId;
-        // 调用预言机查询token价格时对应的pairIndex
-        uint16 pairIndex;
-    }
-
     // token地址映射
     mapping(address=>uint) _tokenMapping;
-    // token报价对映射
-    mapping(uint=>uint) _pairIndexMapping;
+
     // 代币登记信息
     TokenRegistration[] _tokenRegistrations;
 
@@ -94,24 +87,23 @@ contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
 
     /// @dev 注册代币信息，只有注册过的代币才能使用
     /// @param tokenAddress Target token address, 0 means eth
-    /// @param channelId 调用预言机查询token价格时对应的channelId
-    /// @param pairIndex 调用预言机查询token价格时对应的pairIndex
-    function register(address tokenAddress, uint16 channelId, uint16 pairIndex) external onlyGovernance {
+    /// @param config token配置信息
+    function register(address tokenAddress, TokenConfig calldata config) external onlyGovernance {
         uint index = _tokenMapping[tokenAddress];
-        require(index == 0, "FO:exist");
-
-        _tokenRegistrations.push(TokenRegistration(tokenAddress, channelId, pairIndex));
-        index = _tokenRegistrations.length;
-        require(index < 0x100000000, "FO:too much tokenRegistrations");
-        _tokenMapping[tokenAddress] = index;
-        _pairIndexMapping[(uint(channelId) << 16) | uint(pairIndex)] = index;
+        
+        if (index == 0) {
+            _tokenRegistrations.push(TokenRegistration(config, tokenAddress));
+            index = _tokenRegistrations.length;
+            require(index < 0x10000, "FO:too much tokenRegistrations");
+            _tokenMapping[tokenAddress] = index;
+        } else {
+            _tokenRegistrations[index].config = config;
+        }
     }
 
     /// @dev 注销代币信息
     /// @param tokenAddress Target token address, 0 means eth
     function unRegister(address tokenAddress) external onlyGovernance {
-        uint index = _tokenMapping[tokenAddress];
-        require(index == 0, "FO:exist");
         _tokenMapping[tokenAddress] = 0;
     }
 
@@ -227,15 +219,11 @@ contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
     ) external payable override {
 
         // 只有_tokenMapping[tokenAddress]不为0的，才表示已经注册过
-        TokenRegistration memory tokenRegistration = _tokenRegistrations[_tokenMapping[tokenAddress] - 1];
+        uint tokenIndex = _tokenMapping[tokenAddress] - 1;
+        TokenConfig memory tokenConfig = _tokenRegistrations[tokenIndex].config;
 
         // 1. Query price from oracle
-        uint oraclePrice = _latestPrice(
-            uint(tokenRegistration.channelId), 
-            uint(tokenRegistration.pairIndex),
-            msg.value, 
-            msg.sender
-        );
+        uint oraclePrice = _latestPrice(tokenConfig, msg.value, msg.sender);
 
         // 2. Calculate the amount of option
         uint amount = estimate(tokenAddress, oraclePrice, strikePrice, orientation, exerciseBlock, dcuAmount);
@@ -247,10 +235,9 @@ contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
         _options.push(Option(
             //uint32 owner;
             uint32(_addressIndex(msg.sender)),
-            //uint96 balance;
-            _toUInt96(amount),
-            tokenRegistration.channelId,
-            tokenRegistration.pairIndex,
+            //uint112 balance;
+            _toUInt112(amount),
+            uint16(tokenIndex),
             //uint56 strikePrice;
             _encodeFloat(strikePrice),
             //bool orientation;
@@ -281,37 +268,14 @@ contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
         uint exerciseBlock,
         uint dcuAmount
     ) public view override returns (uint amount) {
-
-        require(exerciseBlock > block.number + MIN_PERIOD, "FEO:exerciseBlock too small");
-
-        // 1. Calculate option price
-        uint v = calcV(
-            tokenAddress, 
+        return _estimate(
+            _tokenRegistrations[_tokenMapping[tokenAddress] - 1].config,
             oraclePrice,
             strikePrice,
             orientation,
-            exerciseBlock
+            exerciseBlock,
+            dcuAmount
         );
-
-        // 2. Correct option price
-        if (orientation) {
-            //v = _calcVc(config, oraclePrice, T, strikePrice);
-            // Vc>=S0*1%; Vp>=K*1%
-            // require(v * 100 >> 64 >= oraclePrice, "FEO:vc must greater than S0*1%");
-            if (v * 100 >> 64 < oraclePrice) {
-                v = oraclePrice * 0x10000000000000000 / 100;
-            }
-        } else {
-            //v = _calcVp(config, oraclePrice, T, strikePrice);
-            // Vc>=S0*1%; Vp>=K*1%
-            // require(v * 100 >> 64 >= strikePrice, "FEO:vp must greater than K*1%");
-            if (v * 100 >> 64 < strikePrice) {
-                v = strikePrice * 0x10000000000000000 / 100;
-            }
-        }
-
-        // 3. Calculate the amount of option
-        amount = (USDT_BASE << 64) * dcuAmount / v;
     }
     
     /// @dev Exercise option
@@ -325,14 +289,16 @@ contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
         bool orientation = option.orientation;
         uint exerciseBlock = uint(option.exerciseBlock);
 
+        TokenConfig memory tokenConfig = _tokenRegistrations[option.tokenIndex].config;
+
         // TODO: 测试时不检查
         //require(block.number >= exerciseBlock, "FEO:at maturity");
 
         // 2. Deduct the specified amount
-        option.balance = _toUInt96(uint(option.balance) - amount);
+        option.balance = _toUInt112(uint(option.balance) - amount);
 
         // 3. Find the price by specified block from oracle
-        uint oraclePrice = _findPrice(option.channelId, option.pairIndex, exerciseBlock, msg.value, msg.sender);
+        uint oraclePrice = _findPrice(tokenConfig, exerciseBlock, msg.value, msg.sender);
 
         // 4. Calculate the number of DCU that can be obtained
         uint gain = 0;
@@ -375,11 +341,13 @@ contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
         bool orientation = option.orientation;
         uint exerciseBlock = uint(option.exerciseBlock);
 
+        TokenConfig memory tokenConfig = _tokenRegistrations[option.tokenIndex].config;
+
         // 2. Deduct the specified amount
-        option.balance = _toUInt96(uint(option.balance) - amount);
+        option.balance = _toUInt112(uint(option.balance) - amount);
 
         // 3. Query price from oracle
-        uint oraclePrice = _latestPrice(option.channelId, option.pairIndex, msg.value, msg.sender);
+        uint oraclePrice = _latestPrice(tokenConfig, msg.value, msg.sender);
 
         // 4. Calculate option price
         uint dcuAmount = amount * calcV(
@@ -408,18 +376,19 @@ contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
     /// recorded in the system using the block number
     /// @return v Option price. Need to divide (USDT_BASE << 64)
     function calcV(
-        address,
+        address tokenAddress,
         uint oraclePrice,
         uint strikePrice,
         bool orientation,
         uint exerciseBlock
     ) public view override returns (uint v) {
-
-        // Convert the total time according to the average block out time
-        uint T = (exerciseBlock - block.number) * BLOCK_TIME;
-        v = orientation 
-            ? _calcVc(oraclePrice, T, strikePrice) 
-            : _calcVp(oraclePrice, T, strikePrice);
+        return _calcV(
+            _tokenRegistrations[_tokenMapping[tokenAddress] - 1].config,
+            oraclePrice,
+            strikePrice,
+            orientation,
+            exerciseBlock
+        );
     }
 
     /// @dev Gets the address corresponding to the given index number
@@ -447,10 +416,9 @@ contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
         Option storage option, 
         uint index
     ) private view returns (OptionView memory) {
-        uint pairId = (uint(option.channelId) << 16) | uint(option.pairIndex);
         return OptionView(
             index,
-            _tokenRegistrations[_pairIndexMapping[pairId] - 1].tokenAddress,
+            _tokenRegistrations[option.tokenIndex].tokenAddress,
             _decodeFloat(option.strikePrice),
             option.orientation,
             uint(option.exerciseBlock),
@@ -477,10 +445,10 @@ contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
         return uint(int(v));
     }
 
-    // Convert uint to uint128
-    function _toUInt96(uint v) private pure returns (uint96) {
-        require(v < 0xFFFFFFFFFFFFFFFFFFFFFFFF, "HO:can't convert to uint96");
-        return uint96(v);
+    // Convert uint to uint112
+    function _toUInt112(uint v) private pure returns (uint112) {
+        require(v < 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFF,"HO:can't convert to uint112");
+        return uint112(v);
     }
 
     // Calculate standard normal distribution by table
@@ -545,11 +513,85 @@ contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
         return int128(int(v / 100000));
     }
 
-    // Calculate option price for call
-    function _calcVc(uint S0, uint T, uint K) private pure returns (uint vc) {
+    /// @dev Estimate the amount of option
+    /// @param oraclePrice Current price from oracle
+    /// @param strikePrice The exercise price set by the user. During settlement, the system will compare the 
+    /// current price of the subject matter with the exercise price to calculate the user's profit and loss
+    /// @param orientation true: call, false: put
+    /// @param exerciseBlock After reaching this block, the user will exercise manually, and the block will be
+    /// recorded in the system using the block number
+    /// @param dcuAmount Amount of paid DCU
+    /// @return amount Amount of option
+    function _estimate(
+        TokenConfig memory config,
+        uint oraclePrice,
+        uint strikePrice,
+        bool orientation,
+        uint exerciseBlock,
+        uint dcuAmount
+    ) private view returns (uint amount) {
 
-        int128 sigmaSQ_T = _d18TOb64(SIGMA_SQ * T);
-        int128 miu_T = _toInt128(MIU_LONG * T);
+        require(exerciseBlock > block.number + MIN_PERIOD, "FEO:exerciseBlock too small");
+
+        // TODO: 使用TokenConfig计算
+        // 1. Calculate option price
+        uint v = _calcV(
+            config, 
+            oraclePrice,
+            strikePrice,
+            orientation,
+            exerciseBlock
+        );
+
+        // 2. Correct option price
+        if (orientation) {
+            //v = _calcVc(config, oraclePrice, T, strikePrice);
+            // Vc>=S0*1%; Vp>=K*1%
+            // require(v * 100 >> 64 >= oraclePrice, "FEO:vc must greater than S0*1%");
+            if (v * 100 >> 64 < oraclePrice) {
+                v = oraclePrice * 0x10000000000000000 / 100;
+            }
+        } else {
+            //v = _calcVp(config, oraclePrice, T, strikePrice);
+            // Vc>=S0*1%; Vp>=K*1%
+            // require(v * 100 >> 64 >= strikePrice, "FEO:vp must greater than K*1%");
+            if (v * 100 >> 64 < strikePrice) {
+                v = strikePrice * 0x10000000000000000 / 100;
+            }
+        }
+
+        // 3. Calculate the amount of option
+        amount = (USDT_BASE << 64) * dcuAmount / v;
+    }
+
+    /// @dev Calculate option price
+    /// @param oraclePrice Current price from oracle
+    /// @param strikePrice The exercise price set by the user. During settlement, the system will compare the 
+    /// current price of the subject matter with the exercise price to calculate the user's profit and loss
+    /// @param orientation true: call, false: put
+    /// @param exerciseBlock After reaching this block, the user will exercise manually, and the block will be
+    /// recorded in the system using the block number
+    /// @return v Option price. Need to divide (USDT_BASE << 64)
+    function _calcV(
+        TokenConfig memory config,
+        uint oraclePrice,
+        uint strikePrice,
+        bool orientation,
+        uint exerciseBlock
+    ) private view returns (uint v) {
+
+        // Convert the total time according to the average block out time
+        uint T = (exerciseBlock - block.number) * BLOCK_TIME;
+        v = orientation 
+            ? _calcVc(config, oraclePrice, T, strikePrice) 
+            : _calcVp(config, oraclePrice, T, strikePrice);
+    }
+
+    // Calculate option price for call
+    function _calcVc(TokenConfig memory config, uint S0, uint T, uint K) private pure returns (uint vc) {
+
+        int128 sigmaSQ_T = _d18TOb64(uint(config.sigmaSQ) * T);
+        int128 miu_T = _toInt128(uint(config.miuLong) * T);
         int128 sigma_t = ABDKMath64x64.sqrt(sigmaSQ_T);
         int128 D1 = _D1(S0, K, sigmaSQ_T, miu_T);
         int128 d = ABDKMath64x64.div(D1, sigma_t);
@@ -570,10 +612,10 @@ contract FortOptions is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
     }
 
     // Calculate option price for put
-    function _calcVp(uint S0, uint T, uint K) private pure returns (uint vp) {
+    function _calcVp(TokenConfig memory config, uint S0, uint T, uint K) private pure returns (uint vp) {
 
-        int128 sigmaSQ_T = _d18TOb64(SIGMA_SQ * T);
-        int128 miu_T = _toInt128(MIU_SHORT * T);
+        int128 sigmaSQ_T = _d18TOb64(uint(config.sigmaSQ) * T);
+        int128 miu_T = _toInt128(uint(config.miuShort) * T);
         int128 sigma_t = ABDKMath64x64.sqrt(sigmaSQ_T);
         int128 D1 = _D1(S0, K, sigmaSQ_T, miu_T);
         int128 d = ABDKMath64x64.div(D1, sigma_t);

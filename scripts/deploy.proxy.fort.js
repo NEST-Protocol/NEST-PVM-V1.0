@@ -18,7 +18,7 @@ exports.deploy = async function() {
     const HedgeVaultForStaking = await ethers.getContractFactory('HedgeVaultForStaking');
     const HedgeSwap = await ethers.getContractFactory('HedgeSwap');
 
-    console.log('** Deploy: deploy.proxy.js **');
+    console.log('** Deploy: deploy.proxy.fort.js **');
     
     // const nest = await TestERC20.deploy('NEST', 'NEST', 18);
     // //const nest = await TestERC20.attach('0x0000000000000000000000000000000000000000');
@@ -136,31 +136,70 @@ exports.deploy = async function() {
     //await hedgeOptions.setUsdtTokenAddress(usdt.address);
     //await hedgeFutures.setUsdtTokenAddress(usdt.address);
 
+    await hedgeOptions.register(eth.address, {
+        // 调用预言机查询token价格时对应的channelId
+        channelId: 0,
+        // 调用预言机查询token价格时对应的pairIndex
+        pairIndex: 0,
+        
+        sigmaSQ: 45659142400n,
+        miuLong: 64051194700n,
+        miuShort: 0n
+    });
+    await hedgeOptions.register(hbtc.address, {
+        // 调用预言机查询token价格时对应的channelId
+        channelId: 0,
+        // 调用预言机查询token价格时对应的pairIndex
+        pairIndex: 2,
+        
+        sigmaSQ: 45659142400n,
+        miuLong: 64051194700n,
+        miuShort: 0n
+    });
+
+    await hedgeFutures.register(eth.address, {
+        // 调用预言机查询token价格时对应的channelId
+        channelId: 0,
+        // 调用预言机查询token价格时对应的pairIndex
+        pairIndex: 0,
+        
+        sigmaSQ: 45659142400n,
+        miuLong: 64051194700n,
+        miuShort: 0n
+    });
+    await hedgeFutures.register(hbtc.address, {
+        // 调用预言机查询token价格时对应的channelId
+        channelId: 0,
+        // 调用预言机查询token价格时对应的pairIndex
+        pairIndex: 2,
+        
+        sigmaSQ: 45659142400n,
+        miuLong: 64051194700n,
+        miuShort: 0n
+    });
+
     console.log('8.2 create lever');
-    await hedgeFutures.create(eth.address, 1, true,  0, 0);
-    await hedgeFutures.create(eth.address, 2, true,  0, 0);
-    await hedgeFutures.create(eth.address, 3, true,  0, 0);
-    await hedgeFutures.create(eth.address, 4, true,  0, 0);
-    await hedgeFutures.create(eth.address, 5, true,  0, 0);
-    await hedgeFutures.create(eth.address, 1, false, 0, 0);
-    await hedgeFutures.create(eth.address, 2, false, 0, 0);
-    await hedgeFutures.create(eth.address, 3, false, 0, 0);
-    await hedgeFutures.create(eth.address, 4, false, 0, 0);
-    await hedgeFutures.create(eth.address, 5, false, 0, 0);
+    await hedgeFutures.create(eth.address, 1, true);
+    await hedgeFutures.create(eth.address, 2, true);
+    await hedgeFutures.create(eth.address, 3, true);
+    await hedgeFutures.create(eth.address, 4, true);
+    await hedgeFutures.create(eth.address, 5, true);
+    await hedgeFutures.create(eth.address, 1, false);
+    await hedgeFutures.create(eth.address, 2, false);
+    await hedgeFutures.create(eth.address, 3, false);
+    await hedgeFutures.create(eth.address, 4, false);
+    await hedgeFutures.create(eth.address, 5, false);
 
-    await hedgeFutures.create(hbtc.address, 1, true,  0, 2);
-    await hedgeFutures.create(hbtc.address, 2, true,  0, 2);
-    await hedgeFutures.create(hbtc.address, 3, true,  0, 2);
-    await hedgeFutures.create(hbtc.address, 4, true,  0, 2);
-    await hedgeFutures.create(hbtc.address, 5, true,  0, 2);
-    await hedgeFutures.create(hbtc.address, 1, false, 0, 2);
-    await hedgeFutures.create(hbtc.address, 2, false, 0, 2);
-    await hedgeFutures.create(hbtc.address, 3, false, 0, 2);
-    await hedgeFutures.create(hbtc.address, 4, false, 0, 2);
-    await hedgeFutures.create(hbtc.address, 5, false, 0, 2);
-
-    await hedgeOptions.register(eth.address, 0, 0);
-    await hedgeOptions.register(hbtc.address, 0, 2);
+    await hedgeFutures.create(hbtc.address, 1, true);
+    await hedgeFutures.create(hbtc.address, 2, true);
+    await hedgeFutures.create(hbtc.address, 3, true);
+    await hedgeFutures.create(hbtc.address, 4, true);
+    await hedgeFutures.create(hbtc.address, 5, true);
+    await hedgeFutures.create(hbtc.address, 1, false);
+    await hedgeFutures.create(hbtc.address, 2, false);
+    await hedgeFutures.create(hbtc.address, 3, false);
+    await hedgeFutures.create(hbtc.address, 4, false);
+    await hedgeFutures.create(hbtc.address, 5, false);
 
     console.log('---------- OK ----------');
     

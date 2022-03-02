@@ -33,10 +33,7 @@ contract FortFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
         // true: call, false: put
         bool orientation;
 
-        // 调用预言机查询token价格时对应的channelId
-        uint16 channelId;
-        // 调用预言机查询token价格时对应的pairIndex
-        uint16 pairIndex;
+        uint16 tokenIndex;
         
         // Account mapping
         mapping(address=>Account) accounts;
@@ -55,6 +52,12 @@ contract FortFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
     // Future array
     FutureInfo[] _futures;
 
+    // token地址映射
+    mapping(address=>uint) _tokenMapping;
+
+    // 代币登记信息
+    TokenConfig[] _tokenConfigs;
+
     constructor() {
     }
 
@@ -63,6 +66,28 @@ contract FortFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
     function initialize(address governance) public override {
         super.initialize(governance);
         _futures.push();
+    }
+
+    /// @dev 注册代币信息，只有注册过的代币才能使用
+    /// @param tokenAddress Target token address, 0 means eth
+    /// @param config token配置信息
+    function register(address tokenAddress, TokenConfig calldata config) external onlyGovernance {
+        uint index = _tokenMapping[tokenAddress];
+        
+        if (index == 0) {
+            _tokenConfigs.push(config);
+            index = _tokenConfigs.length;
+            require(index < 0x10000, "FO:too much tokenConfigs");
+            _tokenMapping[tokenAddress] = index;
+        } else {
+            _tokenConfigs[index] = config;
+        }
+    }
+
+    /// @dev 注销代币信息
+    /// @param tokenAddress Target token address, 0 means eth
+    function unRegister(address tokenAddress) external onlyGovernance {
+        _tokenMapping[tokenAddress] = 0;
     }
 
     /// @dev Returns the current value of the specified future
@@ -163,15 +188,7 @@ contract FortFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
     /// @param tokenAddress Target token address, 0 means eth
     /// @param lever Lever of future
     /// @param orientation true: call, false: put
-    function create(
-        address tokenAddress, 
-        uint lever,
-        bool orientation,
-        // 调用预言机查询token价格时对应的channelId
-        uint channelId,
-        // 调用预言机查询token价格时对应的pairIndex
-        uint pairIndex 
-    ) external override onlyGovernance {
+    function create(address tokenAddress, uint lever, bool orientation) external override onlyGovernance {
 
         // Check if the future exists
         uint key = _getKey(tokenAddress, lever, orientation);
@@ -184,8 +201,7 @@ contract FortFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
         fi.tokenAddress = tokenAddress;
         fi.lever = uint32(lever);
         fi.orientation = orientation;
-        fi.channelId = uint16(channelId);
-        fi.pairIndex = uint16(pairIndex);
+        fi.tokenIndex = uint16(_tokenMapping[tokenAddress] - 1);
 
         _futureMapping[key] = index;
 
@@ -194,11 +210,10 @@ contract FortFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
     }
 
     // TODO: 测试方法
-    function modify(uint index, uint channelId, uint pairIndex) external onlyGovernance {
+    function modify(uint index, uint16 tokenIndex) external onlyGovernance {
         require(index > 0, "HF:!exists");
         FutureInfo storage fi = _futures[index];
-        fi.channelId = uint16(channelId);
-        fi.pairIndex = uint16(pairIndex);
+        fi.tokenIndex = tokenIndex;
     }
 
     /// @dev Obtain the number of futures that have been opened
@@ -242,7 +257,38 @@ contract FortFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
     /// @param dcuAmount Amount of paid DCU
     function buyDirect(uint index, uint dcuAmount) public payable override {
         FutureInfo storage fi = _futures[index];
-        _buy(fi, index, dcuAmount, uint(fi.channelId), uint(fi.pairIndex), fi.orientation);
+
+        require(index != 0, "HF:not exist");
+        require(dcuAmount >= 50 ether, "HF:at least 50 dcu");
+
+        // 1. Burn dcu from user
+        DCU(DCU_TOKEN_ADDRESS).burn(msg.sender, dcuAmount);
+        
+        // 2. Update account
+        // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
+        // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
+        // When merger, s0 use recorded price, s1 use corrected by k
+        bool orientation = fi.orientation;
+        uint oraclePrice = _queryPrice(dcuAmount, fi.tokenIndex, orientation, msg.sender);
+
+        Account memory account = fi.accounts[msg.sender];
+        uint basePrice = _decodeFloat(account.basePrice);
+        uint balance = uint(account.balance);
+        uint newPrice = oraclePrice;
+        if (uint(account.baseBlock) > 0) {
+            newPrice = (balance + dcuAmount) * oraclePrice * basePrice / (
+                basePrice * dcuAmount + (balance << 64) * oraclePrice / _expMiuT(orientation, uint(account.baseBlock))
+            );
+        }
+        
+        account.balance = _toUInt128(balance + dcuAmount);
+        account.basePrice = _encodeFloat(newPrice);
+        account.baseBlock = uint32(block.number);
+        
+        fi.accounts[msg.sender] = account;
+
+        // emit Buy event
+        emit Buy(index, dcuAmount, msg.sender);
     }
 
     /// @dev Sell future
@@ -259,7 +305,7 @@ contract FortFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
         // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
         // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
         // When merger, s0 use recorded price, s1 use corrected by k
-        uint oraclePrice = _queryPrice(0, uint(fi.channelId), uint(fi.pairIndex), !orientation, msg.sender);
+        uint oraclePrice = _queryPrice(0, uint(fi.tokenIndex), !orientation, msg.sender);
 
         // Update account
         Account memory account = fi.accounts[msg.sender];
@@ -297,7 +343,7 @@ contract FortFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
             // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
             // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
             // When merger, s0 use recorded price, s1 use corrected by k
-            uint oraclePrice = _queryPrice(0, uint(fi.channelId), uint(fi.pairIndex), !orientation, msg.sender);
+            uint oraclePrice = _queryPrice(0, uint(fi.tokenIndex), !orientation, msg.sender);
 
             uint reward = 0;
             mapping(address=>Account) storage accounts = fi.accounts;
@@ -347,46 +393,11 @@ contract FortFutures is ChainParameter, CommonParameter, HedgeFrequentlyUsed, Fo
         return (uint(uint160(tokenAddress)) << 96) | (lever << 8) | (orientation ? 1 : 0);
     }
 
-    // Buy future
-    function _buy(FutureInfo storage fi, uint index, uint dcuAmount, uint channelId, uint pairIndex, bool orientation) private {
-
-        require(index != 0, "HF:not exist");
-        require(dcuAmount >= 50 ether, "HF:at least 50 dcu");
-
-        // 1. Burn dcu from user
-        DCU(DCU_TOKEN_ADDRESS).burn(msg.sender, dcuAmount);
-
-        // 2. Update account
-        // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
-        // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
-        // When merger, s0 use recorded price, s1 use corrected by k
-        uint oraclePrice = _queryPrice(dcuAmount, channelId, pairIndex, orientation, msg.sender);
-
-        Account memory account = fi.accounts[msg.sender];
-        uint basePrice = _decodeFloat(account.basePrice);
-        uint balance = uint(account.balance);
-        uint newPrice = oraclePrice;
-        if (uint(account.baseBlock) > 0) {
-            newPrice = (balance + dcuAmount) * oraclePrice * basePrice / (
-                basePrice * dcuAmount + (balance << 64) * oraclePrice / _expMiuT(orientation, uint(account.baseBlock))
-            );
-        }
-        
-        account.balance = _toUInt128(balance + dcuAmount);
-        account.basePrice = _encodeFloat(newPrice);
-        account.baseBlock = uint32(block.number);
-        
-        fi.accounts[msg.sender] = account;
-
-        // emit Buy event
-        emit Buy(index, dcuAmount, msg.sender);
-    }
-
     // Query price
-    function _queryPrice(uint dcuAmount, uint channelId, uint pairIndex, bool enlarge, address payback) private returns (uint oraclePrice) {
+    function _queryPrice(uint dcuAmount, uint tokenIndex, bool enlarge, address payback) private returns (uint oraclePrice) {
 
         // Query price from oracle
-        uint[] memory prices = _lastPriceList(channelId, pairIndex, msg.value, payback);
+        uint[] memory prices = _lastPriceList(_tokenConfigs[tokenIndex], msg.value, payback);
         
         // Convert to usdt based price
         oraclePrice = prices[1];

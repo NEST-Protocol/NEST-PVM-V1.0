@@ -80,7 +80,6 @@ describe('HedgeOptions', function() {
         // console.log('newFortFutures: ' + newFortFutures.address);
         
 
-        return;
         
         //const hbtc = { address: '0xaE73d363Cb4aC97734E07e48B01D0a1FF5D1190B' };
   
@@ -90,7 +89,7 @@ describe('HedgeOptions', function() {
         let count = await hedgeOptions.getOptionCount();
         console.log(count.toString());
         const M96 = 1n << 48n;
-        let list = await hedgeOptions.list(0, 318, 0);
+        let list = await hedgeOptions.list(0, 1, 0);
         let clist = [];
         for (var i = 0; i < list.length; ++i) {
             clist.push(list[i]);
