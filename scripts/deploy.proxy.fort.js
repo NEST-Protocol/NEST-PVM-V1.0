@@ -137,9 +137,7 @@ exports.deploy = async function() {
     //await hedgeFutures.setUsdtTokenAddress(usdt.address);
 
     await hedgeOptions.register(eth.address, {
-        // 调用预言机查询token价格时对应的channelId
         channelId: 0,
-        // 调用预言机查询token价格时对应的pairIndex
         pairIndex: 0,
         
         sigmaSQ: 45659142400n,
@@ -147,9 +145,7 @@ exports.deploy = async function() {
         miuShort: 0n
     });
     await hedgeOptions.register(hbtc.address, {
-        // 调用预言机查询token价格时对应的channelId
         channelId: 0,
-        // 调用预言机查询token价格时对应的pairIndex
         pairIndex: 2,
         
         sigmaSQ: 45659142400n,
@@ -158,9 +154,7 @@ exports.deploy = async function() {
     });
 
     await hedgeFutures.register(eth.address, {
-        // 调用预言机查询token价格时对应的channelId
         channelId: 0,
-        // 调用预言机查询token价格时对应的pairIndex
         pairIndex: 0,
         
         sigmaSQ: 45659142400n,
@@ -168,9 +162,7 @@ exports.deploy = async function() {
         miuShort: 0n
     });
     await hedgeFutures.register(hbtc.address, {
-        // 调用预言机查询token价格时对应的channelId
         channelId: 0,
-        // 调用预言机查询token价格时对应的pairIndex
         pairIndex: 2,
         
         sigmaSQ: 45659142400n,

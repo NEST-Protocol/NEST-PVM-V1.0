@@ -41,7 +41,6 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
     uint constant SELL_RATE = 9500;
     
     // TODO: 占位符，无用
-    // 缓存代币的基数值
     mapping(address=>uint) _bases;
 
     // Option array
@@ -629,7 +628,7 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
         vp = left > right ? left - right : 0;
     }
 
-    // d1 in formula，Because didn't divide by σ, So it's named D1
+    // d1 in formula, Because didn't divide by σ, So it's named D1
     function _D1(uint S0, uint K, int128 sigmaSQ_T, int128 miu_T) private pure returns (int128) {
 
         //require(K < 0x1000000000000000000000000000000000000000000000000, "FEO:K can't ROL 64bits");

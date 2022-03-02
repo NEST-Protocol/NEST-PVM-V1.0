@@ -46,7 +46,6 @@ contract FortFutures is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
     mapping(uint=>uint) _futureMapping;
 
     // TODO: 占位符，无用
-    // 缓存代币的基数值
     mapping(address=>uint) _bases;
 
     // Future array
