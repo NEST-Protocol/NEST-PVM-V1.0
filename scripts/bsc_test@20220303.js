@@ -19,7 +19,7 @@ exports.deploy = async function() {
     const HedgeSwap = await ethers.getContractFactory('HedgeSwap');
     const FortSwap = await ethers.getContractFactory('FortSwap');
 
-    console.log('** Deploy: bsc_test@20220226.js **');
+    console.log('** Deploy: bsc_test@20220303.js **');
     
     // nest: 0x821edD79cc386E56FeC9DA5793b87a3A52373cdE
     // pusd: 0x3DA5c9aafc6e6D6839E62e2fB65825869019F291
@@ -42,7 +42,7 @@ exports.deploy = async function() {
     // hedgeGovernance: 0x38831FF0d6133D2d45C2eb876602C0249BA601eE
     // hedgeDAO: 0x81c952c4EEE91DF16A7908E1869a31E438FbCE44
     // fortSwap: 0xc61409835E6A23e31f2fb06F76ae13A1b4c5fD26
-    // fortOptions: 0x741AD178C22b901dFEDAB44491534BD2C90Dc7Ed
+    // fortOptions: 0x19465d54ba7c492174127244cc26dE49F0cC1F1f
     // fortFutures: 0xFD42E41B96BC69e8B0763B2Ed75CD50347b9778D
     // proxyAdmin: 0xB5604C3C3AE902513731037B9c7368842582642e
 
@@ -73,7 +73,7 @@ exports.deploy = async function() {
     console.log('hedgeDAO: ' + hedgeDAO.address);
 
     //const hedgeOptions = await upgrades.deployProxy(HedgeOptions, [hedgeGovernance.address], { initializer: 'initialize' });
-    const hedgeOptions = await HedgeOptions.attach('0x741AD178C22b901dFEDAB44491534BD2C90Dc7Ed');
+    const hedgeOptions = await HedgeOptions.attach('0x19465d54ba7c492174127244cc26dE49F0cC1F1f');
     console.log('hedgeOptions: ' + hedgeOptions.address);
 
     //const hedgeFutures = await upgrades.deployProxy(HedgeFutures, [hedgeGovernance.address], { initializer: 'initialize' });

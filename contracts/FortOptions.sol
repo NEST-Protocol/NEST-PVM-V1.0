@@ -52,6 +52,15 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
     // Registered accounts
     address[] _accounts;
 
+    // TODO: 占位符
+    mapping(address=>uint) _oldTokenMapping;
+    // TODO: 占位符
+    mapping(uint=>uint) _pairIndexMapping;
+    // TODO: 占位符
+    TokenRegistration[] _oldTokenRegistrations;
+    // TODO: 占位符
+    TokenRegistration[] _old2TokenRegistrations;
+
     // token to index mapping
     mapping(address=>uint) _tokenMapping;
 

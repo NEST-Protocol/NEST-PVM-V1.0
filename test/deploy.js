@@ -10,7 +10,7 @@ describe('HedgeOptions', function() {
         const FortFutures = await ethers.getContractFactory('FortFutures');
 
         const { 
-            eth, usdt, dcu, 
+            eth, usdt, dcu, hbtc,
             cofi,
             pusd,
             peth,
@@ -22,6 +22,71 @@ describe('HedgeOptions', function() {
 
         console.log('ok');
 
+        // let newFortFutures = await FortFutures.deploy();
+        // console.log('newFortFutures: ' + newFortFutures.address);
+        // return;
+
+        // let newFortOptions = await FortOptions.deploy();
+        // console.log('newFortOptions: ' + newFortOptions.address);
+        // return;
+
+
+        {
+            console.log('hedgeOptions: ' + hedgeOptions.address);
+            let count = await hedgeOptions.getOptionCount();
+            console.log('count: ' + count);
+
+            let options = await hedgeOptions.find(0, 10, 1000, owner.address);
+            for (var i = 0; i < options.length; ++i) {
+                let o = options[i];
+                let option = {
+                    index: o.index.toString(),
+                    tokenAddress: o.tokenAddress.toString(),
+                    strikePrice: o.strikePrice.toString(),
+                    orientation: o.orientation.toString(),
+                    exerciseBlock: o.exerciseBlock.toString(),
+                    balance: o.balance.toString()
+                };
+                console.log(option);
+            }
+        }
+        
+        
+        return;
+
+        // await hedgeFutures.register(eth.address, {
+        //     channelId: 0,
+        //     pairIndex: 0,
+            
+        //     sigmaSQ: 45659142400n,
+        //     miuLong: 64051194700n,
+        //     miuShort: 0n
+        // });
+
+
+        {
+            let count = await hedgeFutures.getFutureCount();
+            console.log('count: ' + count);
+            let futures = await hedgeFutures.list(0, 21, 1);
+
+            for (var i = 0; i < futures.length; ++i) {
+                let future = futures[i];
+                let f = {
+                    index: future.index.toString(),
+                    tokenAddress: future.tokenAddress.toString(),
+                    lever: future.lever.toString(),
+                    orientation: future.orientation.toString(),
+                    
+                    balance: future.balance.toString(),
+                    // Base price
+                    basePrice: future.basePrice.toString(),
+                    // Base block
+                    baseBlock: future.baseBlock.toString()
+                }
+                console.log(f);
+            }
+        }
+        return;
         /*
         {
             index: '197',
