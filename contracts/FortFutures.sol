@@ -32,7 +32,7 @@ contract FortFutures is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
         // true: call, false: put
         bool orientation;
 
-        // Token
+        // Token index in _tokenConfigs
         uint16 tokenIndex;
         
         // Account mapping
@@ -71,22 +71,21 @@ contract FortFutures is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
     /// @param tokenAddress Target token address, 0 means eth
     /// @param tokenConfig token configuration
     function register(address tokenAddress, TokenConfig calldata tokenConfig) external onlyGovernance {
+
+        // Get index + 1 by tokenAddress
         uint index = _tokenMapping[tokenAddress];
         
+        // index == 0 means token not registered, add
         if (index == 0) {
+            // Add tokenConfig to array
             _tokenConfigs.push(tokenConfig);
+            // Record index + 1
             index = _tokenConfigs.length;
             require(index < 0x10000, "FO:too much tokenConfigs");
             _tokenMapping[tokenAddress] = index;
         } else {
-            _tokenConfigs[index] = tokenConfig;
+            _tokenConfigs[index - 1] = tokenConfig;
         }
-    }
-
-    /// @dev unregister token information
-    /// @param tokenAddress Target token address, 0 means eth
-    function unRegister(address tokenAddress) external onlyGovernance {
-        _tokenMapping[tokenAddress] = 0;
     }
 
     /// @dev Returns the current value of the specified future
@@ -190,9 +189,13 @@ contract FortFutures is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
     /// @param orientation true: call, false: put
     function create(address tokenAddress, uint[] calldata levers, bool orientation) external override onlyGovernance {
 
+        // Get index by tokenAddress
         uint16 tokenIndex = uint16(_tokenMapping[tokenAddress] - 1);
+
+        // Create futures
         for (uint i = 0; i < levers.length; ++i) {
             uint lever = levers[i];
+
             // Check if the future exists
             uint key = _getKey(tokenAddress, lever, orientation);
             uint index = _futureMapping[key];
@@ -251,9 +254,7 @@ contract FortFutures is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
         bool orientation,
         uint dcuAmount
     ) external payable override {
-        uint index = _futureMapping[_getKey(tokenAddress, lever, orientation)];
-        //_buy(_futures[index], index, dcuAmount, tokenAddress, orientation);
-        return buyDirect(index, dcuAmount);
+        return buyDirect(_futureMapping[_getKey(tokenAddress, lever, orientation)], dcuAmount);
     }
 
     /// @dev Buy future direct
@@ -281,6 +282,8 @@ contract FortFutures is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
         uint basePrice = _decodeFloat(account.basePrice);
         uint balance = uint(account.balance);
         uint newPrice = oraclePrice;
+        
+        // Merger
         if (uint(account.baseBlock) > 0) {
             newPrice = (balance + dcuAmount) * oraclePrice * basePrice / (
                 basePrice * dcuAmount + (balance << 64) * oraclePrice / _expMiuT(
@@ -293,7 +296,6 @@ contract FortFutures is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
         account.balance = _toUInt128(balance + dcuAmount);
         account.basePrice = _encodeFloat(newPrice);
         account.baseBlock = uint32(block.number);
-        
         fi.accounts[msg.sender] = account;
 
         // emit Buy event

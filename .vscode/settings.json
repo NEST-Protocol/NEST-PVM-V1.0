@@ -21,6 +21,7 @@
         "staking xtoken",
         "string",
         "string concat",
+        "unregister",
         "x",
         "xtoken",
         "xtokens"

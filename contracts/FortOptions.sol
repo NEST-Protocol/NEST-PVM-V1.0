@@ -86,22 +86,21 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
     /// @param tokenAddress Target token address, 0 means eth
     /// @param tokenConfig token configuration
     function register(address tokenAddress, TokenConfig calldata tokenConfig) external onlyGovernance {
+
+        // Get index + 1 by tokenAddress
         uint index = _tokenMapping[tokenAddress];
         
+        // index == 0 means token not registered, add
         if (index == 0) {
+            // Add TokenRegistration to array
             _tokenRegistrations.push(TokenRegistration(tokenConfig, tokenAddress));
+            // Record index + 1
             index = _tokenRegistrations.length;
             require(index < 0x10000, "FO:too much tokenRegistrations");
             _tokenMapping[tokenAddress] = index;
         } else {
-            _tokenRegistrations[index].tokenConfig = tokenConfig;
+            _tokenRegistrations[index - 1].tokenConfig = tokenConfig;
         }
-    }
-
-    /// @dev unregister token information
-    /// @param tokenAddress Target token address, 0 means eth
-    function unRegister(address tokenAddress) external onlyGovernance {
-        _tokenMapping[tokenAddress] = 0;
     }
 
     /// @dev Returns the share of the specified option for target address
