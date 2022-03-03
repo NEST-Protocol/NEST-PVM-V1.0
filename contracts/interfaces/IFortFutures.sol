@@ -92,9 +92,9 @@ interface IFortFutures {
 
     /// @dev Create future
     /// @param tokenAddress Target token address, 0 means eth
-    /// @param lever Lever of future
+    /// @param levers Levers of future
     /// @param orientation true: call, false: put
-    function create(address tokenAddress, uint lever, bool orientation) external;
+    function create(address tokenAddress, uint[] calldata levers, bool orientation) external;
 
     /// @dev Obtain the number of futures that have been opened
     /// @return Number of futures opened

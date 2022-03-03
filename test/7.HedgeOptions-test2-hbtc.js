@@ -10,7 +10,7 @@ describe('HedgeOptions', function() {
             BLOCK_TIME, USDT_DECIMALS, MIU_LONG, MIU_SHORT } = await deploy();
         const USDT_BASE = (10 ** USDT_DECIMALS);
 
-        const sigma = 0.00021368;
+        const sigma = 0.00017807;
         //const miu = 0.000000025367;
 
         await dcu.setMinter(owner.address, 1);

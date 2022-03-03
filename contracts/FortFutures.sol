@@ -186,27 +186,31 @@ contract FortFutures is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
 
     /// @dev Create future
     /// @param tokenAddress Target token address, 0 means eth
-    /// @param lever Lever of future
+    /// @param levers Levers of future
     /// @param orientation true: call, false: put
-    function create(address tokenAddress, uint lever, bool orientation) external override onlyGovernance {
+    function create(address tokenAddress, uint[] calldata levers, bool orientation) external override onlyGovernance {
 
-        // Check if the future exists
-        uint key = _getKey(tokenAddress, lever, orientation);
-        uint index = _futureMapping[key];
-        require(index == 0, "HF:exists");
+        uint16 tokenIndex = uint16(_tokenMapping[tokenAddress] - 1);
+        for (uint i = 0; i < levers.length; ++i) {
+            uint lever = levers[i];
+            // Check if the future exists
+            uint key = _getKey(tokenAddress, lever, orientation);
+            uint index = _futureMapping[key];
+            require(index == 0, "HF:exists");
 
-        // Create future
-        index = _futures.length;
-        FutureInfo storage fi = _futures.push();
-        fi.tokenAddress = tokenAddress;
-        fi.lever = uint32(lever);
-        fi.orientation = orientation;
-        fi.tokenIndex = uint16(_tokenMapping[tokenAddress] - 1);
+            // Create future
+            index = _futures.length;
+            FutureInfo storage fi = _futures.push();
+            fi.tokenAddress = tokenAddress;
+            fi.lever = uint32(lever);
+            fi.orientation = orientation;
+            fi.tokenIndex = tokenIndex;
 
-        _futureMapping[key] = index;
+            _futureMapping[key] = index;
 
-        // emit New event
-        emit New(tokenAddress, lever, orientation, index);
+            // emit New event
+            emit New(tokenAddress, lever, orientation, index);
+        }
     }
 
     // TODO: 测试方法

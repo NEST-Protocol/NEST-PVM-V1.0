@@ -148,7 +148,7 @@ exports.deploy = async function() {
         channelId: 0,
         pairIndex: 2,
         
-        sigmaSQ: 45659142400n,
+        sigmaSQ: 31708924900n,
         miuLong: 64051194700n,
         miuShort: 0n
     });
@@ -165,33 +165,17 @@ exports.deploy = async function() {
         channelId: 0,
         pairIndex: 2,
         
-        sigmaSQ: 45659142400n,
+        sigmaSQ: 31708924900n,
         miuLong: 64051194700n,
         miuShort: 0n
     });
 
     console.log('8.2 create lever');
-    await hedgeFutures.create(eth.address, 1, true);
-    await hedgeFutures.create(eth.address, 2, true);
-    await hedgeFutures.create(eth.address, 3, true);
-    await hedgeFutures.create(eth.address, 4, true);
-    await hedgeFutures.create(eth.address, 5, true);
-    await hedgeFutures.create(eth.address, 1, false);
-    await hedgeFutures.create(eth.address, 2, false);
-    await hedgeFutures.create(eth.address, 3, false);
-    await hedgeFutures.create(eth.address, 4, false);
-    await hedgeFutures.create(eth.address, 5, false);
+    await hedgeFutures.create(eth.address, [1, 2, 3, 4, 5], true);
+    await hedgeFutures.create(eth.address, [1, 2, 3, 4, 5], false);
 
-    await hedgeFutures.create(hbtc.address, 1, true);
-    await hedgeFutures.create(hbtc.address, 2, true);
-    await hedgeFutures.create(hbtc.address, 3, true);
-    await hedgeFutures.create(hbtc.address, 4, true);
-    await hedgeFutures.create(hbtc.address, 5, true);
-    await hedgeFutures.create(hbtc.address, 1, false);
-    await hedgeFutures.create(hbtc.address, 2, false);
-    await hedgeFutures.create(hbtc.address, 3, false);
-    await hedgeFutures.create(hbtc.address, 4, false);
-    await hedgeFutures.create(hbtc.address, 5, false);
+    await hedgeFutures.create(hbtc.address, [1, 2, 3, 4, 5], true);
+    await hedgeFutures.create(hbtc.address, [1, 2, 3, 4, 5], false);
 
     console.log('---------- OK ----------');
     

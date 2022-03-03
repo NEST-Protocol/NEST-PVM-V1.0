@@ -37,7 +37,7 @@ describe('HedgeOptions', function() {
         {
             let S0 = 3510;
             let K = 2450;
-            let sigma = 0.00021368; //Math.sqrt(4168125400/1e18);
+            let sigma = 0.00017807; //Math.sqrt(4168125400/1e18);
             //let miu = 0.000000025367;
             let T = (BLOCK - await ethers.provider.getBlockNumber()) * BLOCK_TIME;
 
