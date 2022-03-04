@@ -428,8 +428,6 @@ contract FortFutures is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
     /// @return Impact cost
     function impactCost(uint vol) public pure override returns (uint) {
         //impactCost = vol / 10000 / 1000;
-        // TODO: 测试时不计算冲击成本
-        return 0;
         return vol / 10000000;
     }
 
@@ -461,9 +459,6 @@ contract FortFutures is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
         } else {
             k += _sqrt(1 ether * BLOCK_TIME * sigmaSQ * (block.number - bn));
         }
-
-        // TODO: 测试时不计算k值
-        k = 0;
     }
 
     function _sqrt(uint256 x) private pure returns (uint256) {

@@ -16,14 +16,7 @@ contract FortSwapWithdraw is HedgeFrequentlyUsed {
     address constant FORT_DAO_ADDRESS = address(0);
 
     // Target token address
-    // TODO: 使用BSC上的USDT地址
-    //address constant TOKEN_ADDRESS = 0x55d398326f99059fF775485246999027B3197955;
-    address TOKEN_ADDRESS;
-
-    // TODO: 删除此测试方法
-    function setTokenAddress(address tokenAddress) external {
-        TOKEN_ADDRESS = tokenAddress;
-    }
+    address constant TOKEN_ADDRESS = 0x55d398326f99059fF775485246999027B3197955;
 
     // K value, according to schedule, sell out nest from HedgeSwap pool on ethereum mainnet,
     // Exchange to usdt, and cross to BSC smart chain. Excluding exchange and cross chain consumption, 
