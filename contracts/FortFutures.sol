@@ -45,9 +45,6 @@ contract FortFutures is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
     // Mapping from composite key to future index
     mapping(uint=>uint) _futureMapping;
 
-    // TODO: 占位符，无用
-    mapping(address=>uint) _bases;
-
     // Future array
     FutureInfo[] _futures;
 
@@ -214,13 +211,6 @@ contract FortFutures is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
             // emit New event
             emit New(tokenAddress, lever, orientation, index);
         }
-    }
-
-    // TODO: 测试方法
-    function modify(uint index, uint16 tokenIndex) external onlyGovernance {
-        require(index > 0, "HF:!exists");
-        FutureInfo storage fi = _futures[index];
-        fi.tokenIndex = tokenIndex;
     }
 
     /// @dev Obtain the number of futures that have been opened

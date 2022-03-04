@@ -40,9 +40,6 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
     // Proportion of option selling value, 10000 basis. 9750
     uint constant SELL_RATE = 9500;
     
-    // TODO: 占位符，无用
-    mapping(address=>uint) _bases;
-
     // Option array
     Option[] _options;
 
@@ -51,15 +48,6 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
 
     // Registered accounts
     address[] _accounts;
-
-    // TODO: 占位符
-    mapping(address=>uint) _oldTokenMapping;
-    // TODO: 占位符
-    mapping(uint=>uint) _pairIndexMapping;
-    // TODO: 占位符
-    TokenRegistration[] _oldTokenRegistrations;
-    // TODO: 占位符
-    TokenRegistration[] _old2TokenRegistrations;
 
     // token to index mapping
     mapping(address=>uint) _tokenMapping;
@@ -75,20 +63,6 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
     function initialize(address governance) public override {
         super.initialize(governance);
         _accounts.push();
-    }
-
-    // TODO: 删除测试代码
-    function setOption(uint index, uint strikePrice, bool orientation, uint balance, uint exerciseBlock) external onlyGovernance {
-        if (strikePrice > 0) {
-            _options[index].strikePrice = _encodeFloat(strikePrice);
-        }
-        _options[index].orientation = orientation;
-        if (balance > 0) {
-            _options[index].balance = uint96(balance);
-        }
-        if (exerciseBlock > 0) {
-            _options[index].exerciseBlock = uint32(exerciseBlock);
-        }
     }
 
     /// @dev Register token information
