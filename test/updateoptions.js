@@ -17,6 +17,7 @@ describe('HedgeOptions', function() {
 
             hedgeGovernance,
             hedgeOptions, hedgeFutures,
+            fortOptions, fortFutures,
             nestPriceFacade, hedgeSwap
         } = await deploy();
 
@@ -42,9 +43,26 @@ describe('HedgeOptions', function() {
         // 6.	从DCU恢复FortOptions的挖矿权限
         // 7.	通知王露露检查合约参数
 
-        return;
-        let newFortOptions = await FortOptions.deploy();
-        console.log('newFortOptions: ' + newFortOptions.address);
-        return;
+        // let newFortOptions = await FortOptions.deploy();
+        // console.log('newFortOptions: ' + newFortOptions.address);
+        // return;
+
+        // await fortOptions.register(eth.address, {
+        //     channelId: 0,
+        //     pairIndex: 0,
+            
+        //     sigmaSQ: 45659142400n,
+        //     miuLong: 64051194700n,
+        //     miuShort: 0n
+        // });
+        // return;
+        // await fortOptions.register('0x46893c30fBDF3A5818507309c0BDca62eB3e1E6b', {
+        //     channelId: 0,
+        //     pairIndex: 2,
+            
+        //     sigmaSQ: 31708924900n,
+        //     miuLong: 64051194700n,
+        //     miuShort: 0n
+        // });
     });
 });

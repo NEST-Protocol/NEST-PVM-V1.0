@@ -24,9 +24,9 @@ describe('HedgeOptions', function() {
         console.log('ok');
 
         {
-            let count = await hedgeFutures.getFutureCount();
+            let count = await fortFutures.getFutureCount();
             console.log('count: ' + count);
-            let futures = await hedgeFutures.find(0, 20, 1000, '0x5fa1dd7f6DCE7066d8be8B8787575d66a20Dc44C');
+            let futures = await fortFutures.find(0, 20, 1000, '0x5fa1dd7f6DCE7066d8be8B8787575d66a20Dc44C');
 
             for (var i = 0; i < futures.length; ++i) {
                 let future = futures[i];

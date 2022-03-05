@@ -30,8 +30,8 @@ exports.deploy = async function() {
     // dcu: 0xf56c6eCE0C0d6Fbb9A53282C0DF71dBFaFA933eF
     // hedgeGovernance: 0x3e7D350BbAb71cAA2304e979aa6Af007EF5ECcB8
     // nestPriceFacade: 0x09CE0e021195BA2c1CDE62A8B187abf810951540
-    // hedgeOptions: 0x284935F8C571d054Df98eDA8503ea13cde5fd8Cc
-    // hedgeFutures: 0x8c5052f7747D8Ebc2F069286416b6aE8Ad3Cc149
+    // fortOptions: 0x284935F8C571d054Df98eDA8503ea13cde5fd8Cc
+    // fortFutures: 0x8c5052f7747D8Ebc2F069286416b6aE8Ad3Cc149
     // hedgeSwap: 0x2Cd1Bf9345E969b5DFc6D88000475aD6d487363A
     // fortSwap: 0x9484f12044b9d5707AfeaC5BD02b5E0214381801
     // proxyAdmin: 0xB16260599777EFFB17fd2a8fD30c449e5b71C088
@@ -141,6 +141,7 @@ exports.deploy = async function() {
     console.log('---------- OK ----------');
     
     const contracts = {
+        eth: eth,
         dcu: dcu,
         hedgeGovernance: hedgeGovernance,
 

@@ -27,14 +27,14 @@ describe('HedgeOptions', function() {
         const Zero = 0n;
         {
             console.log('hedgeOptions: ' + hedgeOptions.address);
-            let count = await hedgeOptions.getOptionCount();
+            let count = await fortOptions.getOptionCount();
             console.log('count: ' + count);
 
-            let options = await hedgeOptions.list(0, count, 1);
+            let options = await fortOptions.list(0, count, 1);
             for (var i = 0; i < options.length; ++i) {
                 let o = options[i];
                 let b = BigInt(o.balance);
-                if (b >= 1n) {
+                if (b >= M112) {
                     let option = {
                         index: o.index.toString(),
                         tokenAddress: o.tokenAddress.toString(),
