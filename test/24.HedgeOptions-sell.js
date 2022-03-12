@@ -33,9 +33,12 @@ describe('HedgeOptions', function() {
         console.log('owner: ' + toDecimal(await hedgeOptions.balanceOf(fot.index, owner.address)) + '(fot)');
         console.log();
 
-        await hedgeOptions.sell(fot.index, await hedgeOptions.balanceOf(fot.index, owner.address), { value: toBigInt(0.01) });
+        await hedgeOptions.connect(owner).sell(fot.index, await hedgeOptions.balanceOf(fot.index, owner.address), { value: toBigInt(0.01) });
         console.log('After sell');
         console.log('owner: ' + toDecimal(await dcu.balanceOf(owner.address)) + 'dcu');
         console.log('owner: ' + toDecimal(await hedgeOptions.balanceOf(fot.index, owner.address)) + '(fot)');
+
+        console.log('addr1: ' + toDecimal(await dcu.balanceOf(addr1.address)) + 'dcu');
+        console.log('addr1: ' + toDecimal(await hedgeOptions.balanceOf(fot.index, addr1.address)) + '(fot)');
     });
 });

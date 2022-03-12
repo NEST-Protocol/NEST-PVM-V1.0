@@ -264,6 +264,7 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
 
         // 1. Load the option
         Option storage option = _options[index];
+        address owner = _accounts[uint(option.owner)];
         uint strikePrice = _decodeFloat(option.strikePrice);
         bool orientation = option.orientation;
         uint exerciseBlock = uint(option.exerciseBlock);
@@ -297,11 +298,11 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
 
         // 5. If win, mint DCU to user
         if (gain > 0) {
-            DCU(DCU_TOKEN_ADDRESS).mint(msg.sender, gain);
+            DCU(DCU_TOKEN_ADDRESS).mint(owner, gain);
         }
 
         // emit Exercise event
-        emit Exercise(index, amount, msg.sender, gain);
+        emit Exercise(index, amount, owner, gain);
     }
 
     /// @dev Sell option
@@ -314,7 +315,8 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
 
         // 1. Load the option
         Option storage option = _options[index];
-        address tokenAddress = address(0);
+        address owner = _accounts[uint(option.owner)];
+        require(owner == msg.sender, "FO:not owner");
         uint strikePrice = _decodeFloat(option.strikePrice);
         bool orientation = option.orientation;
         uint exerciseBlock = uint(option.exerciseBlock);
@@ -328,8 +330,8 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
         uint oraclePrice = _latestPrice(tokenConfig, msg.value, msg.sender);
 
         // 4. Calculate option price
-        uint dcuAmount = amount * calcV(
-            tokenAddress, 
+        uint dcuAmount = amount * _calcV(
+            tokenConfig, 
             oraclePrice,
             strikePrice,
             orientation,
