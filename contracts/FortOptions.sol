@@ -37,9 +37,9 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
     // 64bits 50000
     uint constant V50000 = 0x0C3500000000000000000;
 
-    // Proportion of option selling value, 10000 basis. 9750
+    // Proportion of option selling value, 10000 basis. 9500
     uint constant SELL_RATE = 9500;
-    
+
     // Option array
     Option[] _options;
 
@@ -309,7 +309,7 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
     /// @param index Index of option
     /// @param amount Amount of option to sell
     function sell(uint index, uint amount) external payable override {
-        // Sell formula: vt=Max(ct(T,K)*0.975，0). 
+        // Sell formula: vt=Max(ct(T,K)*0.95, 0). 
         // ct(K,T) Is the price of option present
         // Note: No less than 1% condition
 
