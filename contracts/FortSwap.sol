@@ -24,7 +24,10 @@ contract FortSwap is HedgeFrequentlyUsed, IFortSwap {
     // The remaining 775269.92usdt transfer to the new usdt/dcu swap pool.
     // According to the price when nest/dcu swap pool stops, 1dcu=0.3289221986usdt,
     // The calculated number of dcu is 2357000.92.
-    uint constant K = 775269925761307568974296 * 2357000923200406848351572;
+
+    // 868,616.188258191063223411 DCU  868616188258191063223411
+    // 200,000 BSC-USD                 200000000000000000000000
+    uint constant K = 200000000000000000000000 * 868616188258191063223411;
 
     constructor() {
     }

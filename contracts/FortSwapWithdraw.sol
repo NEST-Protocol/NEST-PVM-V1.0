@@ -4,16 +4,12 @@ pragma solidity ^0.8.6;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "./libs/TransferHelper.sol";
-
-import "./interfaces/IFortSwap.sol";
-
 import "./custom/HedgeFrequentlyUsed.sol";
 
 /// @dev Swap dcu with token
 contract FortSwapWithdraw is HedgeFrequentlyUsed {
 
-    address constant FORT_DAO_ADDRESS = address(0);
+    address constant FORT_DAO_ADDRESS = 0x9221295CE0E0D2E505CbeA635fa6730961FB5dFa;
 
     // Target token address
     address constant TOKEN_ADDRESS = 0x55d398326f99059fF775485246999027B3197955;
