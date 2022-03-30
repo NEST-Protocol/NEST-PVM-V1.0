@@ -205,7 +205,7 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
         uint oraclePrice = _latestPrice(tokenConfig, msg.value, msg.sender);
 
         // 2. Calculate the amount of option
-        uint amount = estimate(tokenAddress, oraclePrice, strikePrice, orientation, exerciseBlock, dcuAmount);
+        uint amount = _estimate(tokenConfig, oraclePrice, strikePrice, orientation, exerciseBlock, dcuAmount);
 
         // 3. Open
         // Emit open event
@@ -246,7 +246,7 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
         bool orientation,
         uint exerciseBlock,
         uint dcuAmount
-    ) public view override returns (uint amount) {
+    ) external view override returns (uint amount) {
         return _estimate(
             _tokenRegistrations[_tokenMapping[tokenAddress] - 1].tokenConfig,
             oraclePrice,
