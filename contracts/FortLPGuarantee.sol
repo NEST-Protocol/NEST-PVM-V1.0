@@ -12,14 +12,14 @@ import "./custom/FortPriceAdapter.sol";
 
 import "./DCU.sol";
 
-/// @dev European option
-contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, IFortLPGuarantee {
+/// @dev Guarantee
+contract FortLPGuarantee is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, IFortLPGuarantee {
 
     struct Guarantee {
         uint32 owner;
         uint56 x0;
         uint56 y0;
-        uint56 balance;
+        uint32 balance;
         uint32 exerciseBlock;
         uint16 tokenIndex;
     }
@@ -78,8 +78,8 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
         }
     }
 
-    /// @dev Returns the share of the specified option for target address
-    /// @param index Index of the option
+    /// @dev Returns the share of the specified guarantee for target address
+    /// @param index Index of the guarantee
     /// @param addr Target address
     function balanceOf(uint index, address addr) external view override returns (uint) {
         Guarantee memory guarantee = _guarantees[index];
@@ -89,7 +89,7 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
         return 0;
     }
 
-    /// @dev Find the options of the target address (in reverse order)
+    /// @dev Find the guarantees of the target address (in reverse order)
     /// @param start Find forward from the index corresponding to the given contract address 
     /// (excluding the record corresponding to start)
     /// @param count Maximum number of records returned
@@ -130,7 +130,7 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
     /// @param offset Skip previous (offset) records
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
-    /// @return guaranteeArray Matched option array
+    /// @return guaranteeArray Matched guarantee array
     function list(
         uint offset, 
         uint count, 
@@ -173,19 +173,17 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
         return _guarantees.length;
     }
 
-    /// @dev Open option
+    /// @dev Open guarantee
     /// @param tokenIndex Target token index
     /// @param x0 x0
     /// @param y0 y0
     /// @param exerciseBlock After reaching this block, the user will exercise manually, and the block will be
     /// recorded in the system using the block number
-    /// @param dcuAmount Amount of paid DCU
     function open(
         uint tokenIndex,
         uint x0,
         uint y0,
-        uint exerciseBlock,
-        uint dcuAmount
+        uint exerciseBlock
     ) external payable override {
 
         TokenConfig memory tokenConfig = _tokenRegistrations[tokenIndex].tokenConfig;
@@ -194,20 +192,21 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
         // TODO: verify oraclePrice
         uint oraclePrice = _latestPrice(tokenConfig, msg.value, msg.sender);
 
-        // 2. Calculate the amount of option
-        uint amount = _estimate(tokenConfig, x0, y0, exerciseBlock, dcuAmount);
+        // 2. Calculate the dcuAmount
+        uint dcuAmount = _estimate(tokenConfig, x0, y0, exerciseBlock);
 
         // 3. Open
         // Emit open event
-        //emit Open(_options.length, dcuAmount, msg.sender, amount);
-        // Add option to array
+        emit Open(_guarantees.length, dcuAmount, msg.sender);
+
+        // Add guarantee to array
         _guarantees.push(Guarantee(
             //uint32 owner;
             uint32(_addressIndex(msg.sender)),
             //uint112 balance;
             _encodeFloat(x0),
             _encodeFloat(y0),
-            _encodeFloat(amount),
+            uint32(1),
             uint32(exerciseBlock),
             uint16(tokenIndex)
         ));
@@ -216,36 +215,32 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
         DCU(DCU_TOKEN_ADDRESS).burn(msg.sender, dcuAmount);
     }
 
-    /// @dev Estimate the amount of option
+    /// @dev Estimate the amount of dcu
     /// @param tokenIndex Target token index
     /// @param x0 x0
     /// @param y0 y0
     /// @param exerciseBlock After reaching this block, the user will exercise manually, and the block will be
     /// recorded in the system using the block number
-    /// @param dcuAmount Amount of paid DCU
-    /// @return amount Amount of option
+    /// @return dcuAmount Amount of dcu
     function estimate(
         uint tokenIndex,
         uint x0,
         uint y0,
-        uint exerciseBlock,
-        uint dcuAmount
-    ) external view override returns (uint amount) {
+        uint exerciseBlock
+    ) external view override returns (uint dcuAmount) {
         return _estimate(
             _tokenRegistrations[tokenIndex].tokenConfig,
             x0,
             y0,
-            exerciseBlock,
-            dcuAmount
+            exerciseBlock
         );
     }
     
     /// @dev Exercise guarantee
     /// @param index Index of guarantee
-    /// @param amount Amount of guarantee to exercise
-    function exercise(uint index, uint amount) external payable override {
+    function exercise(uint index) external payable override {
 
-        // 1. Load the option
+        // 1. Load the guarantee
         Guarantee storage guarantee = _guarantees[index];
         address owner = _accounts[uint(guarantee.owner)];
         uint exerciseBlock = uint(guarantee.exerciseBlock);
@@ -259,13 +254,27 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
         }
 
         // 2. Deduct the specified amount
-        guarantee.balance = _encodeFloat(_decodeFloat(guarantee.balance) - amount);
+        guarantee.balance -= uint32(1);
 
         // 3. Find the price by specified block from oracle
         uint oraclePrice = _findPrice(tokenConfig, exerciseBlock, msg.value, msg.sender);
 
-        // (St * y0 + x0 - 2 ^(St*x0 * y0))
-        uint gain = oraclePrice * y0 + x0 - (_sqrt(oraclePrice * x0 * y0) << 1);
+        // formula:
+        // uniswap LP (U, E) amount (x0, y0), S0 = x0 / y0, k = x0 * y0
+        // (U, E) parameters: (μ, σ^2)
+        // exercise time: T
+        // pay: (e^μT - 2e^(μT/2 - σ^2*T/8) + 1) * x0
+        // when exercise between (0, T): sqrt(k) * (St/sqrt(S0) + sqrt(S0) - 2*sqrt(St))
+        // when exercise after T:        sqrt(k) * (ST/sqrt(S0) + sqrt(S0) - 2*sqrt(ST))
+
+        // sqrt(k) * (St/sqrt(S0) + sqrt(S0) - 2*sqrt(St))
+        // = sqrt(x0*y0) * (St/sqrt(x0/y0) + sqrt(x0/y0) - 2*sqrt(St))
+        // = sqrt(k) * (St + S0 - 2*sqrt(St*S0))/sqrt(S0)
+        // = sqrt(x0y0) * (St + x0/y0 - 2*sqrt(St*x0/y0))/sqrt(x0/y0)
+        // = y0 * (St + x0/y0 - 2*sqrt(St*x0/y0))
+        // = (St * y0 + x0 - 2 * sqrt(St * x0 * y0))
+        // = St * y0 + x0 - 2 * sqrt(St * x0 * y0)
+        uint gain = (oraclePrice * y0 / 1 ether + x0 - (_sqrt(oraclePrice * x0 * y0 / 1 ether) << 1));
 
         // 5. If win, mint DCU to user
         if (gain > 0) {
@@ -273,7 +282,7 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
         }
 
         // emit Exercise event
-        //emit Exercise(index, amount, owner, gain);
+        emit Exercise(index, owner, gain);
     }
 
     /// @dev Gets the address corresponding to the given index number
@@ -302,49 +311,45 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
             index,
             _decodeFloat(guarantee.x0),
             _decodeFloat(guarantee.y0),
-            _decodeFloat(guarantee.balance),
+            uint(guarantee.balance),
             _accounts[uint(guarantee.owner)],
             guarantee.exerciseBlock,
             guarantee.tokenIndex
         );
     }
 
-    // Convert uint to uint112
-    function _toUInt112(uint v) private pure returns (uint112) {
-        require(v < 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFF,"HO:can't convert to uint112");
-        return uint112(v);
-    }
-
-    /// @dev Estimate the amount of option
+    /// @dev Estimate the amount of dcu
     /// @param x0 x0
     /// @param y0 y0
     /// @param exerciseBlock After reaching this block, the user will exercise manually, and the block will be
     /// recorded in the system using the block number
-    /// @param dcuAmount Amount of paid DCU
-    /// @param dcuAmount Amount of paid DCU
-    /// @return amount Amount of option
+    /// @return dcuAmount Amount of dcu
     function _estimate(
         TokenConfig memory tokenConfig,
         uint x0,
         uint y0,
-        uint exerciseBlock,
-        uint dcuAmount
-    ) private view returns (uint amount) {
+        uint exerciseBlock
+    ) private view returns (uint dcuAmount) {
 
         require(exerciseBlock > block.number + MIN_PERIOD, "FEO:exerciseBlock too small");
         uint T = (exerciseBlock - block.number) * BLOCK_TIME;
 
-        // 1. Calculate option price
-        //uint v = 
-        //int128 sigmaSQ_T = _d18TOb64(uint(tokenConfig.sigmaSQ) * T);
-        int128 miu_T = _toInt128(uint(tokenConfig.miuLong) * T);
-        //int128 sigma_t = ABDKMath64x64.sqrt(sigmaSQ_T);
-        int128 tmp = ABDKMath64x64.exp(miu_T >> 1) - ONE;
-        tmp = ABDKMath64x64.mul(tmp, tmp);
-        uint v = _toUInt(ABDKMath64x64.mul(tmp, tmp)) * x0;
+        // formula:
+        // uniswap LP (U, E) amount (x0, y0), S0 = x0 / y0, k = x0 * y0
+        // (U, E) parameters: (μ, σ^2)
+        // exercise time: T
+        // pay: (e^μT - 2e^(μT/2 - σ^2*T/8) + 1) * x0
+        // when exercise between (0, T): sqrt(k) * (St/sqrt(S0) + sqrt(S0) - 2*sqrt(St))
+        // when exercise after T:        sqrt(k) * (ST/sqrt(S0) + sqrt(S0) - 2*sqrt(ST))
 
-        // 3. Calculate the amount of option
-        amount = dcuAmount * (1 << 64) / v;
+        // 1. Calculate dcuAmount
+        int128 sigmaSQ_T = _d18TOb64(uint(tokenConfig.sigmaSQ) * T);
+        int128 miu_T = _toInt128(uint(tokenConfig.miuLong) * T);
+        
+        return (_toUInt(ABDKMath64x64.sub(
+            ABDKMath64x64.exp(miu_T),
+            ABDKMath64x64.exp((miu_T >> 1) - (sigmaSQ_T >> 3)) * 2
+        ) + ONE) * x0) >> 64;
     }
 
     /// @dev Encode the uint value as a floating-point representation in the form of fraction * 16 ^ exponent
@@ -409,6 +414,11 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
         }
     }
 
+    // Convert 18 decimal points to 64 binary points
+    function _d18TOb64(uint v) private pure returns (int128) {
+        require(v < 0x6F05B59D3B200000000000000000000, "FEO:can't convert to 64bits");
+        return int128(int((v << 64) / 1 ether));
+    }
     // Convert uint to int128
     function _toInt128(uint v) private pure returns (int128) {
         require(v < 0x80000000000000000000000000000000, "FEO:can't convert to int128");

@@ -15,6 +15,7 @@ exports.deploy = async function() {
     const HedgeDAO = await ethers.getContractFactory('HedgeDAO');
     const HedgeOptions = await ethers.getContractFactory('FortOptions');
     const HedgeFutures = await ethers.getContractFactory('FortFutures');
+    const FortLPGuarantee = await ethers.getContractFactory('FortLPGuarantee');
     const HedgeVaultForStaking = await ethers.getContractFactory('HedgeVaultForStaking');
     const HedgeSwap = await ethers.getContractFactory('HedgeSwap');
 
@@ -72,6 +73,10 @@ exports.deploy = async function() {
     //const hedgeFutures = await HedgeFutures.attach('0x0000000000000000000000000000000000000000');
     console.log('hedgeFutures: ' + hedgeFutures.address);
 
+    const fortLPGuarantee = await upgrades.deployProxy(FortLPGuarantee, [hedgeGovernance.address], { initializer: 'initialize' });
+    //const fortLPGuarantee = await FortLPGuarantee.attach('0x0000000000000000000000000000000000000000');
+    console.log('fortLPGuarantee: ' + fortLPGuarantee.address);
+
     const hedgeVaultForStaking = await upgrades.deployProxy(HedgeVaultForStaking, [hedgeGovernance.address], { initializer: 'initialize' });
     //const hedgeVaultForStaking = await HedgeVaultForStaking.attach('0x0000000000000000000000000000000000000000');
     console.log('hedgeVaultForStaking: ' + hedgeVaultForStaking.address);
@@ -111,18 +116,8 @@ exports.deploy = async function() {
     console.log('8. hedgeVaultForStaking.update()');
     await hedgeSwap.update(hedgeGovernance.address);
 
-    // console.log('8. hedgeOptions.setConfig()');
-    // await hedgeOptions.setConfig(eth.address, { 
-    //     sigmaSQ: '45659142400', 
-    //     miu: '467938556917', 
-    //     minPeriod: 6000 
-    // });
-    // console.log('8.1. hedgeOptions.setConfig()');
-    // await hedgeOptions.setConfig(hbtc.address, { 
-    //     sigmaSQ: '45659142400', 
-    //     miu: '467938556917', 
-    //     minPeriod: 6000 
-    // });
+    console.log('9. fortLPGuarantee.update()');
+    await fortLPGuarantee.update(hedgeGovernance.address);
 
     console.log('9. dcu.setMinter(hedgeOptions.address, 1)');
     await dcu.setMinter(hedgeOptions.address, 1);
@@ -130,6 +125,8 @@ exports.deploy = async function() {
     await dcu.setMinter(hedgeFutures.address, 1);
     console.log('11. dcu.setMinter(hedgeVaultForStaking.address, 1)');
     await dcu.setMinter(hedgeVaultForStaking.address, 1);
+    console.log('11. dcu.setMinter(fortLPGuarantee.address, 1)');
+    await dcu.setMinter(fortLPGuarantee.address, 1);
 
     //await usdt.transfer(usdt.address, 0);
     //await usdt.transfer(usdt.address, 0);
@@ -169,6 +166,23 @@ exports.deploy = async function() {
         miuLong: 64051194700n,
         miuShort: 0n
     });
+    
+    await fortLPGuarantee.register(eth.address, {
+        channelId: 0,
+        pairIndex: 0,
+        
+        sigmaSQ: 45659142400n,
+        miuLong: 64051194700n,
+        miuShort: 0n
+    });
+    // await hedgeFutures.register(hbtc.address, {
+    //     channelId: 0,
+    //     pairIndex: 2,
+        
+    //     sigmaSQ: 31708924900n,
+    //     miuLong: 64051194700n,
+    //     miuShort: 0n
+    // });
 
     console.log('8.2 create lever');
     await hedgeFutures.create(eth.address, [1, 2, 3, 4, 5], true);
@@ -193,6 +207,7 @@ exports.deploy = async function() {
         hedgeDAO: hedgeDAO,
         hedgeOptions: hedgeOptions,
         hedgeFutures: hedgeFutures,
+        fortLPGuarantee: fortLPGuarantee,
         hedgeVaultForStaking: hedgeVaultForStaking,
         nestPriceFacade: nestPriceFacade,
         hedgeSwap: hedgeSwap,

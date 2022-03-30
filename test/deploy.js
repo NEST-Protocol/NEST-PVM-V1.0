@@ -17,6 +17,7 @@ describe('HedgeOptions', function() {
 
             hedgeGovernance,
             hedgeOptions, hedgeFutures,
+            fortLPGuarantee,
             nestPriceFacade, hedgeSwap
         } = await deploy();
 
