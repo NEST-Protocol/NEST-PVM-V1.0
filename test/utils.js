@@ -19,7 +19,9 @@ exports.showReceipt = async function(receipt) {
 };
 
 exports.toDecimal = function(bi, decimals) {
-    decimals = decimals || 18;
+    if (decimals == undefined) {
+        decimals = 18;
+    }
     decimals = BigInt(decimals.toString());
     bi = BigInt(bi.toString());
     let BASE = BigInt(10);
