@@ -18,7 +18,8 @@ exports.deploy = async function() {
     const FortLPGuarantee = await ethers.getContractFactory('FortLPGuarantee');
     const FortPRC = await ethers.getContractFactory('FortPRC');
     const HedgeVaultForStaking = await ethers.getContractFactory('HedgeVaultForStaking');
-    const HedgeSwap = await ethers.getContractFactory('HedgeSwap');
+    const FortSwap = await ethers.getContractFactory('FortSwap');
+    const FortPRCSwap = await ethers.getContractFactory('FortPRCSwap');
 
     console.log('** Deploy: deploy.proxy.fort.js **');
     
@@ -42,7 +43,7 @@ exports.deploy = async function() {
     // //const fortube = await TestERC20.attach('0x0000000000000000000000000000000000000000');
     // console.log('fortube: ' + fortube.address);
 
-    const usdt = await TestERC20.deploy('USDT', 'USDT', 6);
+    const usdt = await TestERC20.deploy('USDT', 'USDT', 18);
     //const usdt = await TestERC20.attach('0x0000000000000000000000000000000000000000');
     console.log('usdt: ' + usdt.address);
 
@@ -86,9 +87,13 @@ exports.deploy = async function() {
     //const hedgeVaultForStaking = await HedgeVaultForStaking.attach('0x0000000000000000000000000000000000000000');
     console.log('hedgeVaultForStaking: ' + hedgeVaultForStaking.address);
 
-    const hedgeSwap = await upgrades.deployProxy(HedgeSwap, [hedgeGovernance.address], { initializer: 'initialize' });
-    //const hedgeSwap = await HedgeSwap.attach('0x0000000000000000000000000000000000000000');
-    console.log('hedgeSwap: ' + hedgeSwap.address);
+    const fortSwap = await upgrades.deployProxy(FortSwap, [hedgeGovernance.address], { initializer: 'initialize' });
+    //const fortSwap = await FortSwap.attach('0x0000000000000000000000000000000000000000');
+    console.log('fortSwap: ' + fortSwap.address);
+
+    const fortPRCSwap = await upgrades.deployProxy(FortPRCSwap, [hedgeGovernance.address], { initializer: 'initialize' });
+    //const fortPRCSwap = await FortPRCSwap.attach('0x0000000000000000000000000000000000000000');
+    console.log('fortPRCSwap: ' + fortPRCSwap.address);
 
     // await hedgeGovernance.initialize('0x0000000000000000000000000000000000000000');
     console.log('1. dcu.initialize(hedgeGovernance.address)');
@@ -115,8 +120,10 @@ exports.deploy = async function() {
     await hedgeFutures.update(hedgeGovernance.address);
     console.log('7. hedgeVaultForStaking.update()');
     await hedgeVaultForStaking.update(hedgeGovernance.address);
-    console.log('8. hedgeVaultForStaking.update()');
-    await hedgeSwap.update(hedgeGovernance.address);
+    console.log('8. fortSwap.update()');
+    await fortSwap.update(hedgeGovernance.address);
+    console.log('8. fortPRCSwap.update()');
+    await fortPRCSwap.update(hedgeGovernance.address);
 
     console.log('9. fortLPGuarantee.update()');
     await fortLPGuarantee.update(hedgeGovernance.address);
@@ -204,7 +211,8 @@ exports.deploy = async function() {
         fortPRC: fortPRC,
         hedgeVaultForStaking: hedgeVaultForStaking,
         nestPriceFacade: nestPriceFacade,
-        hedgeSwap: hedgeSwap,
+        fortSwap: fortSwap,
+        fortPRCSwap: fortPRCSwap,
 
         BLOCK_TIME: BLOCK_TIME,
         USDT_DECIMALS: 18,

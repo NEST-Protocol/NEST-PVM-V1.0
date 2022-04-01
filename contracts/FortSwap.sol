@@ -14,7 +14,13 @@ import "./custom/HedgeFrequentlyUsed.sol";
 contract FortSwap is HedgeFrequentlyUsed, IFortSwap {
 
     // Target token address
-    address constant TOKEN_ADDRESS = 0x55d398326f99059fF775485246999027B3197955;
+    //address constant TOKEN_ADDRESS = 0x55d398326f99059fF775485246999027B3197955;
+    
+    // TODO:
+    address TOKEN_ADDRESS;
+    function setTokenAddress(address tokenAddress) external onlyGovernance {
+        TOKEN_ADDRESS = tokenAddress;
+    }
 
     // K value, according to schedule, sell out nest from HedgeSwap pool on ethereum mainnet,
     // Exchange to usdt, and cross to BSC smart chain. Excluding exchange and cross chain consumption, 
