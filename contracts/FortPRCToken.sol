@@ -2,14 +2,14 @@
 
 pragma solidity ^0.8.6;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "./libs/SimpleERC20.sol";
 
 import "./custom/HedgeFrequentlyUsed.sol";
 
 import "./DCU.sol";
 
 /// @dev Guarantee
-contract FortPRCToken is HedgeFrequentlyUsed, ERC20("Probability Coin", "PRC") {
+contract FortPRCToken is HedgeFrequentlyUsed, SimpleERC20 {
 
     /// @dev Mining permission flag change event
     /// @param account Target address
@@ -26,6 +26,38 @@ contract FortPRCToken is HedgeFrequentlyUsed, ERC20("Probability Coin", "PRC") {
     modifier onlyMinter {
         require(_minters[msg.sender] == 1, "DCU:not minter");
         _;
+    }
+
+    /**
+     * @dev Returns the name of the token.
+     */
+    function name() public pure virtual override returns (string memory) {
+        return "Probability Coin";
+    }
+
+    /**
+     * @dev Returns the symbol of the token, usually a shorter version of the
+     * name.
+     */
+    function symbol() public pure virtual override returns (string memory) {
+        return "PRC";
+    }
+
+    /**
+     * @dev Returns the number of decimals used to get its user representation.
+     * For example, if `decimals` equals `2`, a balance of `505` tokens should
+     * be displayed to a user as `5.05` (`505 / 10 ** 2`).
+     *
+     * Tokens usually opt for a value of 18, imitating the relationship between
+     * Ether and Wei. This is the value {ERC20} uses, unless this function is
+     * overridden;
+     *
+     * NOTE: This information is only used for _display_ purposes: it in
+     * no way affects any of the arithmetic of the contract, including
+     * {IERC20-balanceOf} and {IERC20-transfer}.
+     */
+    function decimals() public pure virtual override returns (uint8) {
+        return 18;
     }
 
     /// @dev Set mining permission flag

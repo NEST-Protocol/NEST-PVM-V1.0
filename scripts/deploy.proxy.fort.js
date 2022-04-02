@@ -79,7 +79,7 @@ exports.deploy = async function() {
     //const fortLPGuarantee = await FortLPGuarantee.attach('0x0000000000000000000000000000000000000000');
     console.log('fortLPGuarantee: ' + fortLPGuarantee.address);
 
-    const fortPRC = await FortPRC.deploy();
+    const fortPRC = await upgrades.deployProxy(FortPRC, [hedgeGovernance.address], { initializer: 'initialize' });
     //const fortPRC = await FortPRC.attach('0x0000000000000000000000000000000000000000');
     console.log('fortPRC: ' + fortPRC.address);
 
@@ -98,7 +98,7 @@ exports.deploy = async function() {
     // await hedgeGovernance.initialize('0x0000000000000000000000000000000000000000');
     console.log('1. dcu.initialize(hedgeGovernance.address)');
     await dcu.initialize(hedgeGovernance.address);
-    await fortPRC.initialize(hedgeGovernance.address);
+    //await fortPRC.initialize(hedgeGovernance.address);
 
     console.log('2. hedgeGovernance.setBuiltinAddress()');
     await hedgeGovernance.setBuiltinAddress(
