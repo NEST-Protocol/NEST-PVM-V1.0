@@ -63,11 +63,11 @@ describe('HedgeOptions', function() {
             let config = await hedgeVaultForStaking.getConfig();
             console.log(config.toString());
 
-            await hedgeVaultForStaking.setConfig(toBigInt(0.7), 10, 9527);
+            await hedgeVaultForStaking.setConfig(toBigInt(0.7), 20, 9527);
             config = await hedgeVaultForStaking.getConfig();
             console.log(config.toString());
 
-            await hedgeVaultForStaking.setConfig(toBigInt(0.1), 10, 56);
+            await hedgeVaultForStaking.setConfig(toBigInt(0.1), 20, 66);
             config = await hedgeVaultForStaking.getConfig();
             console.log(config.toString());
         }
@@ -199,7 +199,7 @@ describe('HedgeOptions', function() {
         if (true) {
             console.log('6. Second');
             
-            await hedgeVaultForStaking.setConfig(toBigInt(0.1), 65, 91);
+            await hedgeVaultForStaking.setConfig(toBigInt(0.1), 75, 101);
             config = await hedgeVaultForStaking.getConfig();
             console.log(config.toString());
 

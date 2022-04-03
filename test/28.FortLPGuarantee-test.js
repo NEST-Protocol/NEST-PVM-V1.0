@@ -63,7 +63,7 @@ describe('HedgeOptions', function() {
         if (true) {
             console.log('1. open');
 
-            await fortLPGuarantee.open(0, toBigInt(x0), toBigInt(y0), exerciseBlock, {
+            await fortLPGuarantee.open(0, toBigInt(x0), exerciseBlock, {
                 value: toBigInt(0.1)
             });
 
