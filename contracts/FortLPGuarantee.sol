@@ -19,9 +19,10 @@ contract FortLPGuarantee is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapte
         uint32 owner;
         uint56 x0;
         uint56 y0;
-        uint32 balance;
+        uint32 openBlock;
         uint32 exerciseBlock;
         uint16 tokenIndex;
+        uint16 balance;
     }
 
     // token registration information
@@ -176,24 +177,22 @@ contract FortLPGuarantee is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapte
     /// @dev Open guarantee
     /// @param tokenIndex Target token index
     /// @param x0 x0
-    /// @param y0 y0
     /// @param exerciseBlock After reaching this block, the user will exercise manually, and the block will be
     /// recorded in the system using the block number
     function open(
         uint tokenIndex,
         uint x0,
-        uint y0,
         uint exerciseBlock
     ) external payable override {
 
         TokenConfig memory tokenConfig = _tokenRegistrations[tokenIndex].tokenConfig;
 
         // 1. Query price from oracle
-        // TODO: verify oraclePrice
         uint oraclePrice = _latestPrice(tokenConfig, msg.value, msg.sender);
+        uint y0 = x0 * 1 ether / oraclePrice;
 
         // 2. Calculate the dcuAmount
-        uint dcuAmount = _estimate(tokenConfig, x0, y0, exerciseBlock);
+        uint dcuAmount = _estimate(tokenConfig, x0, exerciseBlock);
 
         // 3. Open
         // Emit open event
@@ -201,14 +200,13 @@ contract FortLPGuarantee is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapte
 
         // Add guarantee to array
         _guarantees.push(Guarantee(
-            //uint32 owner;
             uint32(_addressIndex(msg.sender)),
-            //uint112 balance;
             _encodeFloat(x0),
             _encodeFloat(y0),
-            uint32(1),
+            uint32(block.number),
             uint32(exerciseBlock),
-            uint16(tokenIndex)
+            uint16(tokenIndex),
+            uint16(1)
         ));
 
         // 4. Burn DCU
@@ -218,20 +216,17 @@ contract FortLPGuarantee is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapte
     /// @dev Estimate the amount of dcu
     /// @param tokenIndex Target token index
     /// @param x0 x0
-    /// @param y0 y0
     /// @param exerciseBlock After reaching this block, the user will exercise manually, and the block will be
     /// recorded in the system using the block number
     /// @return dcuAmount Amount of dcu
     function estimate(
         uint tokenIndex,
         uint x0,
-        uint y0,
         uint exerciseBlock
     ) external view override returns (uint dcuAmount) {
         return _estimate(
             _tokenRegistrations[tokenIndex].tokenConfig,
             x0,
-            y0,
             exerciseBlock
         );
     }
@@ -242,6 +237,7 @@ contract FortLPGuarantee is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapte
 
         // 1. Load the guarantee
         Guarantee storage guarantee = _guarantees[index];
+        require(block.number >= uint(guarantee.openBlock) + MIN_EXERCISE_BLOCK, "LPG:too early");
         address owner = _accounts[uint(guarantee.owner)];
         uint exerciseBlock = uint(guarantee.exerciseBlock);
         uint x0 = _decodeFloat(guarantee.x0);
@@ -249,15 +245,13 @@ contract FortLPGuarantee is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapte
 
         TokenConfig memory tokenConfig = _tokenRegistrations[guarantee.tokenIndex].tokenConfig;
 
-        if (block.number < exerciseBlock) {
-            exerciseBlock = block.number;
-        }
-
         // 2. Deduct the specified amount
-        guarantee.balance -= uint32(1);
+        guarantee.balance = uint16(0);
 
         // 3. Find the price by specified block from oracle
-        uint oraclePrice = _findPrice(tokenConfig, exerciseBlock, msg.value, msg.sender);
+        uint oraclePrice = block.number < exerciseBlock
+                ? _latestPrice(tokenConfig, msg.value, msg.sender)
+                : _findPrice(tokenConfig, exerciseBlock, msg.value, msg.sender);
 
         // formula:
         // uniswap LP (U, E) amount (x0, y0), S0 = x0 / y0, k = x0 * y0
@@ -311,23 +305,22 @@ contract FortLPGuarantee is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapte
             index,
             _decodeFloat(guarantee.x0),
             _decodeFloat(guarantee.y0),
-            uint(guarantee.balance),
-            _accounts[uint(guarantee.owner)],
+            guarantee.openBlock,
             guarantee.exerciseBlock,
-            guarantee.tokenIndex
+            guarantee.tokenIndex,
+            guarantee.balance,
+            _accounts[uint(guarantee.owner)]
         );
     }
 
     /// @dev Estimate the amount of dcu
     /// @param x0 x0
-    /// @param y0 y0
     /// @param exerciseBlock After reaching this block, the user will exercise manually, and the block will be
     /// recorded in the system using the block number
     /// @return dcuAmount Amount of dcu
     function _estimate(
         TokenConfig memory tokenConfig,
         uint x0,
-        uint y0,
         uint exerciseBlock
     ) private view returns (uint dcuAmount) {
 

@@ -10,4 +10,6 @@ contract ChainParameter {
     
     // Minimal exercise block period. 840000
     uint constant MIN_PERIOD = 840000;
+
+    uint constant MIN_EXERCISE_BLOCK = 840000;
 }

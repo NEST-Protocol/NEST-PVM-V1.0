@@ -10,10 +10,11 @@ interface IFortLPGuarantee {
         uint index;
         uint x0;
         uint y0;
-        uint balance;
-        address owner;
+        uint32 openBlock;
         uint32 exerciseBlock;
         uint16 tokenIndex;
+        uint16 balance;
+        address owner;
     }
     
     /// @dev Guarantee open event
@@ -65,27 +66,23 @@ interface IFortLPGuarantee {
     /// @dev Estimate the amount of dcu
     /// @param tokenIndex Target token index
     /// @param x0 x0
-    /// @param y0 y0
     /// @param exerciseBlock After reaching this block, the user will exercise manually, and the block will be
     /// recorded in the system using the block number
     /// @return dcuAmount Amount of dcu
     function estimate(
         uint tokenIndex,
         uint x0,
-        uint y0,
         uint exerciseBlock
     ) external view returns (uint dcuAmount);
 
     /// @dev Open guarantee
     /// @param tokenIndex Target token index
     /// @param x0 x0
-    /// @param y0 y0
     /// @param exerciseBlock After reaching this block, the user will exercise manually, and the block will be
     /// recorded in the system using the block number
     function open(
         uint tokenIndex,
         uint x0,
-        uint y0,
         uint exerciseBlock
     ) external payable;
 
