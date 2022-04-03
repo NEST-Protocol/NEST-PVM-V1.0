@@ -4,8 +4,6 @@ pragma solidity ^0.8.6;
 
 import "./FortPRCToken.sol";
 
-import "hardhat/console.sol";
-
 /// @dev Guarantee
 contract FortPRC is FortPRCToken {
 
@@ -170,8 +168,6 @@ contract FortPRC is FortPRCToken {
             if (hashValue % uint(dice.m) == 0) {
                 gain += uint(dice.n) * uint(dice.m) * 1 ether;
             }
-        } else {
-            console.log("cash-expired", hashValue);
         }
     }
 
