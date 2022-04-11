@@ -56,10 +56,10 @@ contract FortPRCSwap is HedgeFrequentlyUsed {
         } else if (src == DCU_TOKEN_ADDRESS && dest == PRC_TOKEN_ADDRESS) {
             amountOut = amountIn >> 1;
         } else {
-            revert("HS:pair not allowed");
+            revert("PRCSwap:pair not allowed");
         }
-        TransferHelper.safeTransfer(dest, to, amountOut);
 
+        TransferHelper.safeTransfer(dest, to, amountOut);
         mined = 0;
     }
 }

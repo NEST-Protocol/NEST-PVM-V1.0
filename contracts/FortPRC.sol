@@ -7,6 +7,7 @@ import "./FortPRCToken.sol";
 /// @dev Guarantee
 contract FortPRC is FortPRCToken {
 
+    // Roll dice structure
     struct Dice {
         address owner;
         uint32 n;
@@ -14,6 +15,7 @@ contract FortPRC is FortPRCToken {
         uint32 openBlock;
     }
 
+    // Roll dice information view
     struct DiceView {
         uint index;
         address owner;
@@ -28,6 +30,7 @@ contract FortPRC is FortPRCToken {
     // Max times
     uint constant MAX_M = 100000;
 
+    // Roll dice array
     Dice[] _dices;
 
     /// @dev Find the dices of the target address (in reverse order)
@@ -117,7 +120,7 @@ contract FortPRC is FortPRCToken {
     /// @param n count of PRC
     /// @param m times
     function roll(uint n, uint m) external {
-        require(n == 1 && m <= MAX_M, "PRC:value to large");
+        require(n == 1 && m > 0 && m <= MAX_M, "PRC:value to large");
         _burn(msg.sender, n * 1 ether);
         _dices.push(Dice(msg.sender, uint32(n), uint32(m), uint32(block.number)));
     }
