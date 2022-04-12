@@ -4,6 +4,8 @@ pragma solidity ^0.8.6;
 
 import "./FortPRCToken.sol";
 
+import "./DCU.sol";
+
 /// @dev Guarantee
 contract FortPRCExt is FortPRCToken {
 

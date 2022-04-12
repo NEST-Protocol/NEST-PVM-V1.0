@@ -6,8 +6,6 @@ import "./libs/SimpleERC20.sol";
 
 import "./custom/HedgeFrequentlyUsed.sol";
 
-import "./DCU.sol";
-
 /// @dev Guarantee
 contract FortPRCToken is HedgeFrequentlyUsed, SimpleERC20 {
 
@@ -18,14 +16,9 @@ contract FortPRCToken is HedgeFrequentlyUsed, SimpleERC20 {
     event MinterChanged(address account, uint oldFlag, uint newFlag);
 
     // Flags for account
-    mapping(address=>uint) _minters;
+    mapping(address=>uint) _flags;
 
     constructor() {
-    }
-
-    modifier onlyMinter {
-        require(_minters[msg.sender] == 1, "DCU:not minter");
-        _;
     }
 
     /**
@@ -64,29 +57,30 @@ contract FortPRCToken is HedgeFrequentlyUsed, SimpleERC20 {
     /// @param account Target address
     /// @param flag Mining permission flag
     function setMinter(address account, uint flag) external onlyGovernance {
-
-        emit MinterChanged(account, _minters[account], flag);
-        _minters[account] = flag;
+        emit MinterChanged(account, _flags[account], flag);
+        _flags[account] = flag;
     }
 
     /// @dev Check mining permission flag
     /// @param account Target address
     /// @return flag Mining permission flag
     function checkMinter(address account) external view returns (uint) {
-        return _minters[account];
+        return _flags[account];
     }
 
-    /// @dev Mint DCU
+    /// @dev Mint FortRPC
     /// @param to Target address
     /// @param value Mint amount
-    function mint(address to, uint value) external onlyMinter {
+    function mint(address to, uint value) external {
+        require(_flags[msg.sender] & 0x01 == 0x01, "FortRPC:!mint");
         _mint(to, value);
     }
 
-    /// @dev Burn DCU
+    /// @dev Burn FortRPC
     /// @param from Target address
     /// @param value Burn amount
-    function burn(address from, uint value) external onlyMinter {
+    function burn(address from, uint value) external {
+        require(_flags[msg.sender] & 0x02 == 0x02, "FortRPC:!burn");
         _burn(from, value);
     }
 }
