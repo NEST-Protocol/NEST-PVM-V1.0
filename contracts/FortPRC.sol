@@ -169,7 +169,7 @@ contract FortPRC is FortPRCToken {
         if (hashValue > 0) {
             hashValue = uint(keccak256(abi.encodePacked(hashValue, index)));
             if (hashValue % uint(dice.m) == 0) {
-                gain += uint(dice.n) * uint(dice.m) * 1 ether;
+                gain = uint(dice.n) * uint(dice.m) * 1 ether;
             }
         }
     }
