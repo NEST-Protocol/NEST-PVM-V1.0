@@ -82,9 +82,9 @@ describe('HedgeOptions', function() {
         // }
         if (true) {
             console.log('1. big data');
-            const N = 10000;
+            const N = 100;
             for (var i = 0; i < N; ++i) {
-                await fortPRC.roll(1, 13710);
+                await fortPRC.roll(1, 11000);
                 if (i > 1) {
                     await fortPRC.claim(i - 2);
                 }

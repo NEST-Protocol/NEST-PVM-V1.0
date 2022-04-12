@@ -59,7 +59,7 @@ describe('HedgeOptions', function() {
 
         if (true) {
             console.log('1. roll');
-            await fortPRC.roll(1, 3);
+            await fortPRC.roll(1, 30000);
             console.log(await getStatus());
         }
         if (false) {

@@ -10,7 +10,7 @@ import "./custom/HedgeFrequentlyUsed.sol";
 contract FortPRCSwap is HedgeFrequentlyUsed {
 
     // TODO:
-    // address constant COFIX_ROUTER_ADDRESS = address(0);
+    // address constant COFIX_ROUTER_ADDRESS = 0xb29a8d980e1408e487b9968f5e4f7fd7a9b0cac5;
 
     // TODO:
     // // Target token address
