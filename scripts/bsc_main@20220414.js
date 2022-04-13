@@ -12,7 +12,7 @@ exports.deploy = async function() {
     const NestPriceFacade = await ethers.getContractFactory('NestPriceFacade');
     const HedgeGovernance = await ethers.getContractFactory('HedgeGovernance');
     const DCU = await ethers.getContractFactory('DCU');
-    const FortPRCExt = await ethers.getContractFactory('FortPRCExt');
+    const FortPRC = await ethers.getContractFactory('FortPRC');
     const FortPRCSwap = await ethers.getContractFactory('FortPRCSwap');
 
     console.log('** Deploy: bsc_main@20220414.js **');
@@ -35,15 +35,15 @@ exports.deploy = async function() {
     const hedgeGovernance = await HedgeGovernance.attach('0x3e7D350BbAb71cAA2304e979aa6Af007EF5ECcB8');
     console.log('hedgeGovernance: ' + hedgeGovernance.address);
 
-    const fortPRCExt = await upgrades.deployProxy(FortPRCExt, [hedgeGovernance.address], { initializer: 'initialize' });
-    //const fortPRCExt = await FortPRCExt.attach('0x0000000000000000000000000000000000000000');
-    console.log('fortPRCExt: ' + fortPRCExt.address);
+    const fortPRC = await upgrades.deployProxy(FortPRC, [hedgeGovernance.address], { initializer: 'initialize' });
+    //const fortPRC = await FortPRC.attach('0x0000000000000000000000000000000000000000');
+    console.log('fortPRC: ' + fortPRC.address);
 
-    console.log('3. fortPRCExt.update()');
-    await fortPRCExt.update(hedgeGovernance.address);
+    console.log('3. fortPRC.update()');
+    await fortPRC.update(hedgeGovernance.address);
 
-    console.log('9. dcu.setMinter(fortPRCExt.address, 1)');
-    await dcu.setMinter(fortPRCExt.address, 1);
+    console.log('9. dcu.setMinter(fortPRC.address, 1)');
+    await dcu.setMinter(fortPRC.address, 1);
 
     // TODO: Modify FortPRCSwap.PRC_TOKEN_ADDRESS and FortPRCSwap.COFIX_ROUTER_ADDRESS before execute
     
@@ -61,7 +61,7 @@ exports.deploy = async function() {
         dcu: dcu,
         hedgeGovernance: hedgeGovernance,
 
-        fortPRCExt: fortPRCExt,
+        fortPRC: fortPRC,
 
         fortPRCSwap: fortPRCSwap
     };
