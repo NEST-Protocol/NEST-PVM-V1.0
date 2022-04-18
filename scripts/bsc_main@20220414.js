@@ -25,6 +25,7 @@ exports.deploy = async function() {
     // fortFutures: 0x8c5052f7747D8Ebc2F069286416b6aE8Ad3Cc149
     // hedgeSwap: 0x2Cd1Bf9345E969b5DFc6D88000475aD6d487363A
     // fortSwap: 0x9484f12044b9d5707AfeaC5BD02b5E0214381801
+    // fortPRC: 0xf43A71e4Da398e5731c9580D11014dE5e8fD0530
     // proxyAdmin: 0xB16260599777EFFB17fd2a8fD30c449e5b71C088
 
     //const dcu = await DCU.deploy();
@@ -35,15 +36,15 @@ exports.deploy = async function() {
     const hedgeGovernance = await HedgeGovernance.attach('0x3e7D350BbAb71cAA2304e979aa6Af007EF5ECcB8');
     console.log('hedgeGovernance: ' + hedgeGovernance.address);
 
-    const fortPRC = await upgrades.deployProxy(FortPRC, [hedgeGovernance.address], { initializer: 'initialize' });
-    //const fortPRC = await FortPRC.attach('0x0000000000000000000000000000000000000000');
+    //const fortPRC = await upgrades.deployProxy(FortPRC, [hedgeGovernance.address], { initializer: 'initialize' });
+    const fortPRC = await FortPRC.attach('0xf43A71e4Da398e5731c9580D11014dE5e8fD0530');
     console.log('fortPRC: ' + fortPRC.address);
 
-    console.log('3. fortPRC.update()');
-    await fortPRC.update(hedgeGovernance.address);
+    // console.log('3. fortPRC.update()');
+    // await fortPRC.update(hedgeGovernance.address);
 
-    console.log('9. dcu.setMinter(fortPRC.address, 1)');
-    await dcu.setMinter(fortPRC.address, 1);
+    // console.log('9. dcu.setMinter(fortPRC.address, 1)');
+    // await dcu.setMinter(fortPRC.address, 1);
 
     // TODO: Modify FortPRCSwap.PRC_TOKEN_ADDRESS and FortPRCSwap.COFIX_ROUTER_ADDRESS before execute
     
