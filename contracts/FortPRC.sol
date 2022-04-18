@@ -29,10 +29,10 @@ contract FortPRC is FortPRCToken {
 
     // The span from current block to hash block
     uint constant OPEN_BLOCK_SPAN = 1;
-    // Time base, 4 decimals
-    uint constant TIME_BASE = 10000;
+    // Times base, 4 decimals
+    uint constant TIMES_BASE = 10000;
     // Max times, 100000.0000. [1.0000, 100000.0000]
-    uint constant MAX_M = 100000 * TIME_BASE;
+    uint constant MAX_M = 100000 * TIMES_BASE;
 
     // Roll dice array
     Dice[] _dices;
@@ -124,7 +124,7 @@ contract FortPRC is FortPRCToken {
     /// @param n count of PRC
     /// @param m times, 4 decimals
     function roll(uint n, uint m) external {
-        require(n == 1 && m >= TIME_BASE && m <= MAX_M, "PRC:n or m not valid");
+        require(n == 1 && m >= TIMES_BASE && m <= MAX_M, "PRC:n or m not valid");
         _burn(msg.sender, n * 1 ether);
         _dices.push(Dice(msg.sender, uint32(n), uint32(m), uint32(block.number)));
     }
@@ -172,8 +172,8 @@ contract FortPRC is FortPRCToken {
         uint hashValue = uint(blockhash(hashBlock));
         if (hashValue > 0) {
             hashValue = uint(keccak256(abi.encodePacked(hashValue, index)));
-            if (hashValue % uint(dice.m) < TIME_BASE) {
-                gain = uint(dice.n) * uint(dice.m) * 1 ether / TIME_BASE;
+            if (hashValue % uint(dice.m) < TIMES_BASE) {
+                gain = uint(dice.n) * uint(dice.m) * 1 ether / TIMES_BASE;
             }
         }
     }
