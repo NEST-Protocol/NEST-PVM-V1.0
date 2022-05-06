@@ -9,21 +9,11 @@ import "./custom/HedgeFrequentlyUsed.sol";
 /// @dev Swap dcu with token
 contract FortPRCSwap is HedgeFrequentlyUsed {
 
-    // TODO:
-    // address constant COFIX_ROUTER_ADDRESS = 0xb29a8d980e1408e487b9968f5e4f7fd7a9b0cac5;
+    // CoFiXRouter address
+    address constant COFIX_ROUTER_ADDRESS = 0xb29A8d980E1408E487B9968f5E4f7fD7a9B0CaC5;
 
-    // TODO:
-    // // Target token address
-    // address constant PRC_TOKEN_ADDRESS = address(0);
-
-    // TODO:
-    address COFIX_ROUTER_ADDRESS;
     // Target token address
-    address PRC_TOKEN_ADDRESS;   
-    function setAddress(address cofixRouter, address fortPRC) external onlyGovernance {
-        COFIX_ROUTER_ADDRESS = cofixRouter;
-        PRC_TOKEN_ADDRESS = fortPRC;
-    }
+    address constant PRC_TOKEN_ADDRESS = 0xf43A71e4Da398e5731c9580D11014dE5e8fD0530;
 
     constructor() {
     }
@@ -53,9 +43,10 @@ contract FortPRCSwap is HedgeFrequentlyUsed {
             TransferHelper.safeTransferETH(payback, msg.value);
         }
 
-        if (src == PRC_TOKEN_ADDRESS && dest == DCU_TOKEN_ADDRESS) {
-            amountOut = amountIn;
-        } else if (src == DCU_TOKEN_ADDRESS && dest == PRC_TOKEN_ADDRESS) {
+        // if (src == PRC_TOKEN_ADDRESS && dest == DCU_TOKEN_ADDRESS) {
+        //     amountOut = amountIn;
+        // } else 
+        if (src == DCU_TOKEN_ADDRESS && dest == PRC_TOKEN_ADDRESS) {
             amountOut = amountIn >> 1;
         } else {
             revert("PRCSwap:pair not allowed");
