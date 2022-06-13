@@ -84,13 +84,13 @@ describe('FortOptions', function() {
             console.log('1. big data');
             const N = 100;
             for (var i = 0; i < N; ++i) {
-                await fortPRC.roll(1, 11000);
+                await fortPRC.roll44(10000, 11000);
                 if (i > 1) {
-                    await fortPRC.claim(i - 2);
+                    await fortPRC.claim44(i - 2);
                 }
             }
             for (var i = N - 2; i < N; ++i) {
-                await fortPRC.claim(i);
+                await fortPRC.claim44(i);
             }
 
             console.log(await getStatus());

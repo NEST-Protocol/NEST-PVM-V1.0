@@ -59,13 +59,13 @@ describe('FortOptions', function() {
 
         if (true) {
             console.log('1. roll');
-            await fortPRC.roll(1, 30000);
+            await fortPRC.roll44(10000, 30000);
             console.log(await getStatus());
         }
         if (false) {
             console.log('2. claim');
             for (var i = 0; i < 256; ++i) {
-                console.log('gained: ' + (await fortPRC.list(0, 1, 0))[0].gained.toString());
+                console.log('gained: ' + (await fortPRC.list44(0, 1, 0))[0].gained.toString());
                 await dcu.transfer(owner.address, 0);
             }
             await fortPRC.claim(0);
@@ -74,10 +74,10 @@ describe('FortOptions', function() {
         if (true) {
             console.log('3. batchClaim');
             for (var i = 0; i < 256; ++i) {
-                console.log('gained: ' + (await fortPRC.list(0, 1, 0))[0].gained.toString());
+                console.log('gained: ' + (await fortPRC.list44(0, 1, 0))[0].gained.toString());
                 await dcu.transfer(owner.address, 0);
             }
-            await fortPRC.batchClaim([0]);
+            await fortPRC.batchClaim44([0]);
             console.log(await getStatus());
         }
     });
