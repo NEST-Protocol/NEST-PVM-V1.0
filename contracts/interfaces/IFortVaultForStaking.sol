@@ -3,7 +3,7 @@
 pragma solidity ^0.8.6;
 
 /// @dev Stake xtoken, earn dcu
-interface IHedgeVaultForStaking {
+interface IFortVaultForStaking {
 
     /// @dev Initialize ore drawing weight
     /// @param xtokens xtoken array

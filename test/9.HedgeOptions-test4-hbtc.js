@@ -2,11 +2,11 @@ const { expect } = require('chai');
 const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, snd, tableSnd, d1, Vc, Vp } = require('./utils.js');
 
-describe('HedgeOptions', function() {
+describe('FortOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
-        const { eth, usdt, hbtc, dcu, hedgeOptions, hedgeFutures, nestPriceFacade, USDT_DECIMALS } = await deploy();
+        const { eth, usdt, hbtc, dcu, fortOptions, fortFutures, nestPriceFacade, USDT_DECIMALS } = await deploy();
 
         await dcu.setMinter(owner.address, 1);
         await dcu.mint(owner.address, '10000000000000000000000000');
@@ -35,7 +35,7 @@ describe('HedgeOptions', function() {
         }
 
         const cfg = async function(tokenAddress) {
-            let c = await hedgeOptions.getConfig(tokenAddress);
+            let c = await fortOptions.getConfig(tokenAddress);
             return {
                 sigmaSQ: c.sigmaSQ.toString(),
                 miu: c.miu.toString(),
@@ -56,12 +56,12 @@ describe('HedgeOptions', function() {
             console.log("1. open"); 
             for (var i = 0; i < 10; ++i)
             {
-                let receipt = await hedgeOptions.open(hbtc.address, 45000000000, true, 100000, toBigInt(100000), {
+                let receipt = await fortOptions.open(hbtc.address, 45000000000, true, 100000, toBigInt(100000), {
                     value: toBigInt(0.02)
                 });
                 await showReceipt(receipt);
-                let fot = await hedgeOptions.getOptionInfo(hbtc.address, 45000000000, true, 100000);
-                console.log('fot: ' + toDecimal(await hedgeOptions.balanceOf(fot.index, owner.address)));
+                let fot = await fortOptions.getOptionInfo(hbtc.address, 45000000000, true, 100000);
+                console.log('fot: ' + toDecimal(await fortOptions.balanceOf(fot.index, owner.address)));
             }
         }
     });

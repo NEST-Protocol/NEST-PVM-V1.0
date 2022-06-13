@@ -2,11 +2,11 @@ const { expect } = require('chai');
 const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, snd, tableSnd, d1, Vc, Vp } = require('./utils.js');
 
-describe('HedgeOptions', function() {
+describe('FortOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
-        const { eth, usdt, hbtc, dcu, hedgeOptions, hedgeFutures, nestPriceFacade, 
+        const { eth, usdt, hbtc, dcu, fortOptions, fortFutures, nestPriceFacade, 
             BLOCK_TIME, USDT_DECIMALS, MIU_LONG, MIU_SHORT } = await deploy();
         const USDT_BASE = (10 ** USDT_DECIMALS);
         const sigma = 0.00017807;
@@ -39,7 +39,7 @@ describe('HedgeOptions', function() {
         }
 
         const cfg = async function(tokenAddress) {
-            let c = await hedgeOptions.getConfig(tokenAddress);
+            let c = await fortOptions.getConfig(tokenAddress);
             return {
                 sigmaSQ: c.sigmaSQ.toString(),
                 miu: c.miu.toString(),
@@ -56,13 +56,13 @@ describe('HedgeOptions', function() {
 
         if (false) {
             console.log('2. Set config');
-            await hedgeOptions.setConfig(hbtc.address, {
+            await fortOptions.setConfig(hbtc.address, {
                 sigmaSQ: '99999999',
                 miu: '88888',
                 minPeriod: '77777'
             });
 
-            await hedgeOptions.setConfig(hbtc.address, {
+            await fortOptions.setConfig(hbtc.address, {
                 sigmaSQ: '333333',
                 miu: '22222',
                 minPeriod: '1111'
@@ -75,34 +75,34 @@ describe('HedgeOptions', function() {
 
         if (true) {
             console.log('3. list1');
-            console.log('tokenCount=' + await hedgeOptions.getOptionCount());
-            let options = await hedgeOptions.list(0, 5, 0);
+            console.log('tokenCount=' + await fortOptions.getOptionCount());
+            let options = await fortOptions.list(0, 5, 0);
             console.log(options);
 
-            options = await hedgeOptions.list(0, 5, 1);
+            options = await fortOptions.list(0, 5, 1);
             console.log(options);
         }
 
         if (false) {
             console.log('4. list2');
 
-            console.log('tokenCount=' + await hedgeOptions.getOptionCount());
-            await hedgeOptions.open(hbtc.address, 2450000000, true, 100000, toBigInt(1000), {
+            console.log('tokenCount=' + await fortOptions.getOptionCount());
+            await fortOptions.open(hbtc.address, 2450000000, true, 100000, toBigInt(1000), {
                 value: toBigInt(0.01)
             });
 
-            await hedgeOptions.open(hbtc.address, 52450000000, false, 100000, toBigInt(100000), {
+            await fortOptions.open(hbtc.address, 52450000000, false, 100000, toBigInt(100000), {
                 value: toBigInt(0.02)
             });
-            console.log('tokenCount=' + await hedgeOptions.getOptionCount());
-            let options = await hedgeOptions.list(0, 5, 0);
+            console.log('tokenCount=' + await fortOptions.getOptionCount());
+            let options = await fortOptions.list(0, 5, 0);
             console.log(options);
 
-            options = await hedgeOptions.list(0, 5, 1);
+            options = await fortOptions.list(0, 5, 1);
             console.log(options);
 
-            let fot1 = await hedgeOptions.getOptionInfo(hbtc.address, 2450000000, true, 100000);
-            let fot2 = await hedgeOptions.getOptionInfo(hbtc.address, 52450000000, false, 100000);
+            let fot1 = await fortOptions.getOptionInfo(hbtc.address, 2450000000, true, 100000);
+            let fot2 = await fortOptions.getOptionInfo(hbtc.address, 52450000000, false, 100000);
 
             console.log('fot1: ' + fot1.index);
             console.log('fot2: ' + fot2.index);
@@ -129,22 +129,22 @@ describe('HedgeOptions', function() {
             for (var i = toBigInt(2450, USDT_DECIMALS) / 3n; i < toBigInt(2450, USDT_DECIMALS) * 3n; ) {
                 //i = Math.floor(i);
                 console.log('call, price:' + i);
-                await hedgeOptions.open(hbtc.address, i, true, BLOCK, toBigInt(1000), {
+                await fortOptions.open(hbtc.address, i, true, BLOCK, toBigInt(1000), {
                     value: toBigInt(0.01)
                 });
-                //let fot = await hedgeOptions.getOptionInfo(hbtc.address, i, true, BLOCK);
+                //let fot = await fortOptions.getOptionInfo(hbtc.address, i, true, BLOCK);
                 let fot = { index: j++ };
-                console.log('fot: ' + toDecimal(await hedgeOptions.balanceOf(fot.index, owner.address)));
+                console.log('fot: ' + toDecimal(await fortOptions.balanceOf(fot.index, owner.address)));
                 let vc = Vc(oraclePrice, i, sigma, MIU_LONG, (BLOCK - await ethers.provider.getBlockNumber()) * BLOCK_TIME);
                 let cal = 1000 * USDT_BASE / vc;
                 console.log('cal: ' + cal);
 
-                expect(Math.abs(parseFloat(toDecimal(await hedgeOptions.balanceOf(fot.index, owner.address))) - cal)).to.lt(0.0001);
+                expect(Math.abs(parseFloat(toDecimal(await fortOptions.balanceOf(fot.index, owner.address))) - cal)).to.lt(0.0001);
                 
                 // exercise
-                let fotBalance = await hedgeOptions.balanceOf(fot.index, owner.address);
+                let fotBalance = await fortOptions.balanceOf(fot.index, owner.address);
                 let before = BigInt(await dcu.balanceOf(owner.address));
-                await hedgeOptions.exercise(fot.index, await hedgeOptions.balanceOf(fot.index, owner.address), {
+                await fortOptions.exercise(fot.index, await fortOptions.balanceOf(fot.index, owner.address), {
                     value: toBigInt(0.01)
                 });
                 let earn = BigInt(await dcu.balanceOf(owner.address)) - before;
@@ -169,22 +169,22 @@ describe('HedgeOptions', function() {
             for (var i = toBigInt(2650, USDT_DECIMALS); i < toBigInt(2450, USDT_DECIMALS) * 5n; ) {
                 //i = Math.floor(i);
                 console.log('put, price:' + i);
-                await hedgeOptions.open(hbtc.address, i, false, BLOCK, toBigInt(1000), {
+                await fortOptions.open(hbtc.address, i, false, BLOCK, toBigInt(1000), {
                     value: toBigInt(0.01)
                 });
-                // let fot = await hedgeOptions.getOptionInfo(hbtc.address, i, false, BLOCK);
+                // let fot = await fortOptions.getOptionInfo(hbtc.address, i, false, BLOCK);
                 let fot = { index: j++ };
-                console.log('fot: ' + toDecimal(await hedgeOptions.balanceOf(fot.index, owner.address)));
+                console.log('fot: ' + toDecimal(await fortOptions.balanceOf(fot.index, owner.address)));
                 let vp = Vp(oraclePrice, i, sigma, MIU_SHORT, (BLOCK - await ethers.provider.getBlockNumber()) * BLOCK_TIME);
                 let put = 1000 * USDT_BASE / vp;
                 console.log('put: ' + put);
 
-                expect(Math.abs(parseFloat(toDecimal(await hedgeOptions.balanceOf(fot.index, owner.address))) - put)).to.lt(0.00001);
+                expect(Math.abs(parseFloat(toDecimal(await fortOptions.balanceOf(fot.index, owner.address))) - put)).to.lt(0.00001);
                 
                 // exercise
-                let fotBalance = await hedgeOptions.balanceOf(fot.index, owner.address);
+                let fotBalance = await fortOptions.balanceOf(fot.index, owner.address);
                 let before = BigInt(await dcu.balanceOf(owner.address));
-                await hedgeOptions.exercise(fot.index, await hedgeOptions.balanceOf(fot.index, owner.address), {
+                await fortOptions.exercise(fot.index, await fortOptions.balanceOf(fot.index, owner.address), {
                     value: toBigInt(0.01)
                 });
                 let earn = BigInt(await dcu.balanceOf(owner.address)) - before;
@@ -210,22 +210,22 @@ describe('HedgeOptions', function() {
             for (var i = toBigInt(2450, USDT_DECIMALS) / 3n; i < toBigInt(2450, USDT_DECIMALS) * 3n; ) {
                 //i = Math.floor(i);
                 console.log('call, price:' + i);
-                await hedgeOptions.open(hbtc.address, i, true, BLOCK, toBigInt(1000), {
+                await fortOptions.open(hbtc.address, i, true, BLOCK, toBigInt(1000), {
                     value: toBigInt(0.01)
                 });
-                // let fot = await hedgeOptions.getOptionInfo(hbtc.address, i, true, BLOCK);
+                // let fot = await fortOptions.getOptionInfo(hbtc.address, i, true, BLOCK);
                 let fot = { index: j++ };
-                console.log('fot: ' + toDecimal(await hedgeOptions.balanceOf(fot.index, owner.address)));
+                console.log('fot: ' + toDecimal(await fortOptions.balanceOf(fot.index, owner.address)));
                 let vc = Vc(oraclePrice, i, sigma, MIU_LONG, (BLOCK - await ethers.provider.getBlockNumber()) * BLOCK_TIME);
                 let cal = 1000 * USDT_BASE / vc;
                 console.log('cal: ' + cal);
 
-                expect(Math.abs(parseFloat(toDecimal(await hedgeOptions.balanceOf(fot.index, owner.address))) - cal)).to.lt(0.0001);
+                expect(Math.abs(parseFloat(toDecimal(await fortOptions.balanceOf(fot.index, owner.address))) - cal)).to.lt(0.0001);
                 
                 // exercise
-                let fotBalance = await hedgeOptions.balanceOf(fot.index, owner.address);
+                let fotBalance = await fortOptions.balanceOf(fot.index, owner.address);
                 let before = BigInt(await dcu.balanceOf(owner.address));
-                await hedgeOptions.exercise(fot.index, await hedgeOptions.balanceOf(fot.index, owner.address), {
+                await fortOptions.exercise(fot.index, await fortOptions.balanceOf(fot.index, owner.address), {
                     value: toBigInt(0.01)
                 });
                 let earn = BigInt(await dcu.balanceOf(owner.address)) - before;
@@ -250,22 +250,22 @@ describe('HedgeOptions', function() {
             for (var i = toBigInt(2650, USDT_DECIMALS); i < toBigInt(2450, USDT_DECIMALS) * 5n; ) {
                 //i = Math.floor(i);
                 console.log('put, price:' + i);
-                await hedgeOptions.open(hbtc.address, i, false, BLOCK, toBigInt(1000), {
+                await fortOptions.open(hbtc.address, i, false, BLOCK, toBigInt(1000), {
                     value: toBigInt(0.01)
                 });
-                // let fot = await hedgeOptions.getOptionInfo(hbtc.address, i, false, BLOCK);
+                // let fot = await fortOptions.getOptionInfo(hbtc.address, i, false, BLOCK);
                 let fot = { index: j++ };
-                console.log('fot: ' + toDecimal(await hedgeOptions.balanceOf(fot.index, owner.address)));
+                console.log('fot: ' + toDecimal(await fortOptions.balanceOf(fot.index, owner.address)));
                 let vp = Vp(oraclePrice, i, sigma, MIU_SHORT, (BLOCK - await ethers.provider.getBlockNumber()) * BLOCK_TIME);
                 let put = 1000 * USDT_BASE / vp;
                 console.log('put: ' + put);
 
-                expect(Math.abs(parseFloat(toDecimal(await hedgeOptions.balanceOf(fot.index, owner.address))) - put)).to.lt(0.00001);
+                expect(Math.abs(parseFloat(toDecimal(await fortOptions.balanceOf(fot.index, owner.address))) - put)).to.lt(0.00001);
                 
                 // exercise
-                let fotBalance = await hedgeOptions.balanceOf(fot.index, owner.address);
+                let fotBalance = await fortOptions.balanceOf(fot.index, owner.address);
                 let before = BigInt(await dcu.balanceOf(owner.address));
-                await hedgeOptions.exercise(fot.index, await hedgeOptions.balanceOf(fot.index, owner.address), {
+                await fortOptions.exercise(fot.index, await fortOptions.balanceOf(fot.index, owner.address), {
                     value: toBigInt(0.01)
                 });
                 let earn = BigInt(await dcu.balanceOf(owner.address)) - before;
@@ -286,9 +286,9 @@ describe('HedgeOptions', function() {
         if (true) {
             console.log();
             console.log('15. find');
-            console.log('count: ' + await hedgeOptions.getOptionCount());
+            console.log('count: ' + await fortOptions.getOptionCount());
 
-            let find = await hedgeOptions.find(0, 3, 410, owner.address);
+            let find = await fortOptions.find(0, 3, 410, owner.address);
             for (var i = 0; i < find.length; ++i) {
                 let fi = find[i];
                 console.log({

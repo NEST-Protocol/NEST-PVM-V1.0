@@ -4,10 +4,10 @@ pragma solidity ^0.8.6;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import "./HedgeBase.sol";
+import "./FortBase.sol";
 
 /// @dev DCU token
-contract DCU is HedgeBase, ERC20("Decentralized Currency Unit", "DCU") {
+contract DCU is FortBase, ERC20("Decentralized Currency Unit", "DCU") {
 
     /// @dev Mining permission flag change event
     /// @param account Target address

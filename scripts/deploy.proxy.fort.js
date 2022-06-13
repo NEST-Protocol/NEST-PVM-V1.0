@@ -10,14 +10,14 @@ exports.deploy = async function() {
     const eth = { address: '0x0000000000000000000000000000000000000000' };
     const TestERC20 = await ethers.getContractFactory('TestERC20');
     const NestPriceFacade = await ethers.getContractFactory('NestPriceFacade');
-    const HedgeGovernance = await ethers.getContractFactory('HedgeGovernance');
+    const FortGovernance = await ethers.getContractFactory('FortGovernance');
     const DCU = await ethers.getContractFactory('DCU');
-    const HedgeDAO = await ethers.getContractFactory('HedgeDAO');
-    const HedgeOptions = await ethers.getContractFactory('FortOptions');
-    const HedgeFutures = await ethers.getContractFactory('FortFutures');
+    const FortDAO = await ethers.getContractFactory('FortDAO');
+    const FortOptions = await ethers.getContractFactory('FortOptions');
+    const FortFutures = await ethers.getContractFactory('FortFutures');
     const FortLPGuarantee = await ethers.getContractFactory('FortLPGuarantee');
     const FortPRC = await ethers.getContractFactory('FortPRC');
-    const HedgeVaultForStaking = await ethers.getContractFactory('HedgeVaultForStaking');
+    const FortVaultForStaking = await ethers.getContractFactory('FortVaultForStaking');
     const FortSwap = await ethers.getContractFactory('FortSwap');
     const FortPRCSwap = await ethers.getContractFactory('FortPRCSwap');
 
@@ -59,89 +59,89 @@ exports.deploy = async function() {
     //const nestPriceFacade = await NestPriceFacade.attach('0x0000000000000000000000000000000000000000');
     console.log('nestPriceFacade: ' + nestPriceFacade.address);
 
-    const hedgeGovernance = await upgrades.deployProxy(HedgeGovernance, ['0x0000000000000000000000000000000000000000'], { initializer: 'initialize' });
-    //const hedgeGovernance = await HedgeGovernance.attach('0x0000000000000000000000000000000000000000');
-    console.log('hedgeGovernance: ' + hedgeGovernance.address);
+    const fortGovernance = await upgrades.deployProxy(FortGovernance, ['0x0000000000000000000000000000000000000000'], { initializer: 'initialize' });
+    //const fortGovernance = await FortGovernance.attach('0x0000000000000000000000000000000000000000');
+    console.log('fortGovernance: ' + fortGovernance.address);
 
-    const hedgeDAO = await upgrades.deployProxy(HedgeDAO, [hedgeGovernance.address], { initializer: 'initialize' });
-    //const hedgeDAO = await HedgeDAO.attach('0x0000000000000000000000000000000000000000');
-    console.log('hedgeDAO: ' + hedgeDAO.address);
+    const fortDAO = await upgrades.deployProxy(FortDAO, [fortGovernance.address], { initializer: 'initialize' });
+    //const fortDAO = await FortDAO.attach('0x0000000000000000000000000000000000000000');
+    console.log('fortDAO: ' + fortDAO.address);
 
-    const hedgeOptions = await upgrades.deployProxy(HedgeOptions, [hedgeGovernance.address], { initializer: 'initialize' });
-    //const hedgeOptions = await HedgeOptions.attach('0x0000000000000000000000000000000000000000');
-    console.log('hedgeOptions: ' + hedgeOptions.address);
+    const fortOptions = await upgrades.deployProxy(FortOptions, [fortGovernance.address], { initializer: 'initialize' });
+    //const fortOptions = await FortOptions.attach('0x0000000000000000000000000000000000000000');
+    console.log('fortOptions: ' + fortOptions.address);
 
-    const hedgeFutures = await upgrades.deployProxy(HedgeFutures, [hedgeGovernance.address], { initializer: 'initialize' });
-    //const hedgeFutures = await HedgeFutures.attach('0x0000000000000000000000000000000000000000');
-    console.log('hedgeFutures: ' + hedgeFutures.address);
+    const fortFutures = await upgrades.deployProxy(FortFutures, [fortGovernance.address], { initializer: 'initialize' });
+    //const fortFutures = await FortFutures.attach('0x0000000000000000000000000000000000000000');
+    console.log('fortFutures: ' + fortFutures.address);
 
-    const fortLPGuarantee = await upgrades.deployProxy(FortLPGuarantee, [hedgeGovernance.address], { initializer: 'initialize' });
+    const fortLPGuarantee = await upgrades.deployProxy(FortLPGuarantee, [fortGovernance.address], { initializer: 'initialize' });
     //const fortLPGuarantee = await FortLPGuarantee.attach('0x0000000000000000000000000000000000000000');
     console.log('fortLPGuarantee: ' + fortLPGuarantee.address);
 
-    const fortPRC = await upgrades.deployProxy(FortPRC, [hedgeGovernance.address], { initializer: 'initialize' });
+    const fortPRC = await upgrades.deployProxy(FortPRC, [fortGovernance.address], { initializer: 'initialize' });
     //const fortPRC = await FortPRC.attach('0x0000000000000000000000000000000000000000');
     console.log('fortPRC: ' + fortPRC.address);
 
-    const hedgeVaultForStaking = await upgrades.deployProxy(HedgeVaultForStaking, [hedgeGovernance.address], { initializer: 'initialize' });
-    //const hedgeVaultForStaking = await HedgeVaultForStaking.attach('0x0000000000000000000000000000000000000000');
-    console.log('hedgeVaultForStaking: ' + hedgeVaultForStaking.address);
+    const fortVaultForStaking = await upgrades.deployProxy(FortVaultForStaking, [fortGovernance.address], { initializer: 'initialize' });
+    //const fortVaultForStaking = await FortVaultForStaking.attach('0x0000000000000000000000000000000000000000');
+    console.log('fortVaultForStaking: ' + fortVaultForStaking.address);
 
-    const fortSwap = await upgrades.deployProxy(FortSwap, [hedgeGovernance.address], { initializer: 'initialize' });
+    const fortSwap = await upgrades.deployProxy(FortSwap, [fortGovernance.address], { initializer: 'initialize' });
     //const fortSwap = await FortSwap.attach('0x0000000000000000000000000000000000000000');
     console.log('fortSwap: ' + fortSwap.address);
 
-    const fortPRCSwap = await upgrades.deployProxy(FortPRCSwap, [hedgeGovernance.address], { initializer: 'initialize' });
+    const fortPRCSwap = await upgrades.deployProxy(FortPRCSwap, [fortGovernance.address], { initializer: 'initialize' });
     //const fortPRCSwap = await FortPRCSwap.attach('0x0000000000000000000000000000000000000000');
     console.log('fortPRCSwap: ' + fortPRCSwap.address);
 
-    // await hedgeGovernance.initialize('0x0000000000000000000000000000000000000000');
-    console.log('1. dcu.initialize(hedgeGovernance.address)');
-    await dcu.initialize(hedgeGovernance.address);
-    //await fortPRC.initialize(hedgeGovernance.address);
+    // await fortGovernance.initialize('0x0000000000000000000000000000000000000000');
+    console.log('1. dcu.initialize(fortGovernance.address)');
+    await dcu.initialize(fortGovernance.address);
+    //await fortPRC.initialize(fortGovernance.address);
 
-    console.log('2. hedgeGovernance.setBuiltinAddress()');
-    await hedgeGovernance.setBuiltinAddress(
+    console.log('2. fortGovernance.setBuiltinAddress()');
+    await fortGovernance.setBuiltinAddress(
         dcu.address,
-        hedgeDAO.address,
-        hedgeOptions.address,
-        hedgeFutures.address,
-        hedgeVaultForStaking.address,
+        fortDAO.address,
+        fortOptions.address,
+        fortFutures.address,
+        fortVaultForStaking.address,
         nestPriceFacade.address
     );
 
     console.log('3. dcu.update()');
-    await dcu.update(hedgeGovernance.address);
-    console.log('4. hedgeDAO.update()');
-    await hedgeDAO.update(hedgeGovernance.address);
-    console.log('5. hedgeOptions.update()');
-    await hedgeOptions.update(hedgeGovernance.address);
-    console.log('6. hedgeFutures.update()');
-    await hedgeFutures.update(hedgeGovernance.address);
-    console.log('7. hedgeVaultForStaking.update()');
-    await hedgeVaultForStaking.update(hedgeGovernance.address);
+    await dcu.update(fortGovernance.address);
+    console.log('4. fortDAO.update()');
+    await fortDAO.update(fortGovernance.address);
+    console.log('5. fortOptions.update()');
+    await fortOptions.update(fortGovernance.address);
+    console.log('6. fortFutures.update()');
+    await fortFutures.update(fortGovernance.address);
+    console.log('7. fortVaultForStaking.update()');
+    await fortVaultForStaking.update(fortGovernance.address);
     console.log('8. fortSwap.update()');
-    await fortSwap.update(hedgeGovernance.address);
+    await fortSwap.update(fortGovernance.address);
     console.log('8. fortPRCSwap.update()');
-    await fortPRCSwap.update(hedgeGovernance.address);
+    await fortPRCSwap.update(fortGovernance.address);
 
     console.log('9. fortLPGuarantee.update()');
-    await fortLPGuarantee.update(hedgeGovernance.address);
+    await fortLPGuarantee.update(fortGovernance.address);
     console.log('10. fortPRC.update()');
-    await fortPRC.update(hedgeGovernance.address);
+    await fortPRC.update(fortGovernance.address);
 
-    console.log('9. dcu.setMinter(hedgeOptions.address, 1)');
-    await dcu.setMinter(hedgeOptions.address, 1);
-    console.log('10. dcu.setMinter(hedgeFutures.address, 1)');
-    await dcu.setMinter(hedgeFutures.address, 1);
-    console.log('11. dcu.setMinter(hedgeVaultForStaking.address, 1)');
-    await dcu.setMinter(hedgeVaultForStaking.address, 1);
+    console.log('9. dcu.setMinter(fortOptions.address, 1)');
+    await dcu.setMinter(fortOptions.address, 1);
+    console.log('10. dcu.setMinter(fortFutures.address, 1)');
+    await dcu.setMinter(fortFutures.address, 1);
+    console.log('11. dcu.setMinter(fortVaultForStaking.address, 1)');
+    await dcu.setMinter(fortVaultForStaking.address, 1);
     console.log('11. dcu.setMinter(fortLPGuarantee.address, 1)');
     await dcu.setMinter(fortLPGuarantee.address, 1);
     console.log('12. dcu.setMinter(fortPRC.address, 1)');
     await dcu.setMinter(fortPRC.address, 1);
 
-    await hedgeOptions.register(eth.address, {
+    await fortOptions.register(eth.address, {
         channelId: 0,
         pairIndex: 0,
         
@@ -149,7 +149,7 @@ exports.deploy = async function() {
         miuLong: 64051194700n,
         miuShort: 0n
     });
-    await hedgeOptions.register(hbtc.address, {
+    await fortOptions.register(hbtc.address, {
         channelId: 0,
         pairIndex: 2,
         
@@ -158,7 +158,7 @@ exports.deploy = async function() {
         miuShort: 0n
     });
 
-    await hedgeFutures.register(eth.address, {
+    await fortFutures.register(eth.address, {
         channelId: 0,
         pairIndex: 0,
         
@@ -166,7 +166,7 @@ exports.deploy = async function() {
         miuLong: 64051194700n,
         miuShort: 0n
     });
-    await hedgeFutures.register(hbtc.address, {
+    await fortFutures.register(hbtc.address, {
         channelId: 0,
         pairIndex: 2,
         
@@ -185,11 +185,11 @@ exports.deploy = async function() {
     });
 
     console.log('8.2 create lever');
-    await hedgeFutures.create(eth.address, [1, 2, 3, 4, 5], true);
-    await hedgeFutures.create(eth.address, [1, 2, 3, 4, 5], false);
+    await fortFutures.create(eth.address, [1, 2, 3, 4, 5], true);
+    await fortFutures.create(eth.address, [1, 2, 3, 4, 5], false);
 
-    await hedgeFutures.create(hbtc.address, [1, 2, 3, 4, 5], true);
-    await hedgeFutures.create(hbtc.address, [1, 2, 3, 4, 5], false);
+    await fortFutures.create(hbtc.address, [1, 2, 3, 4, 5], true);
+    await fortFutures.create(hbtc.address, [1, 2, 3, 4, 5], false);
 
     console.log('---------- OK ----------');
     
@@ -202,14 +202,14 @@ exports.deploy = async function() {
         usdt: usdt,
         hbtc: hbtc,
 
-        hedgeGovernance: hedgeGovernance,
+        fortGovernance: fortGovernance,
         dcu: dcu,
-        hedgeDAO: hedgeDAO,
-        hedgeOptions: hedgeOptions,
-        hedgeFutures: hedgeFutures,
+        fortDAO: fortDAO,
+        fortOptions: fortOptions,
+        fortFutures: fortFutures,
         fortLPGuarantee: fortLPGuarantee,
         fortPRC: fortPRC,
-        hedgeVaultForStaking: hedgeVaultForStaking,
+        fortVaultForStaking: fortVaultForStaking,
         nestPriceFacade: nestPriceFacade,
         fortSwap: fortSwap,
         fortPRCSwap: fortPRCSwap,

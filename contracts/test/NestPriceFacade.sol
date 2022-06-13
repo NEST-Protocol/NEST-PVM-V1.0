@@ -5,11 +5,11 @@ pragma solidity ^0.8.6;
 import "../interfaces/INestPriceFacade.sol";
 import "../interfaces/INestOpenPrice.sol";
 import "../interfaces/INestBatchPrice2.sol";
-import "../custom/HedgeFrequentlyUsed.sol";
+import "../custom/FortFrequentlyUsed.sol";
 
 import "hardhat/console.sol";
 
-contract NestPriceFacade is HedgeFrequentlyUsed, INestPriceFacade, INestOpenPrice, INestBatchPrice2 {
+contract NestPriceFacade is FortFrequentlyUsed, INestPriceFacade, INestOpenPrice, INestBatchPrice2 {
     
     struct Price {
         uint price;

@@ -4,17 +4,17 @@ pragma solidity ^0.8.6;
 
 import "./libs/TransferHelper.sol";
 
-import "./interfaces/IHedgeDAO.sol";
+import "./interfaces/IFortDAO.sol";
 
-import "./HedgeBase.sol";
+import "./FortBase.sol";
 
 /// @dev Management of hedge public funds
-contract HedgeDAO is HedgeBase, IHedgeDAO {
+contract FortDAO is FortBase, IFortDAO {
 
     // DAO applications
     mapping(address=>uint) _applications;
 
-    /// @dev Create HedgeDAO contract
+    /// @dev Create FortDAO contract
     constructor() {
     }
 
@@ -50,7 +50,7 @@ contract HedgeDAO is HedgeBase, IHedgeDAO {
     /// @param value Amount to receive
     function settle(address, address tokenAddress, address to, uint value) external payable override {
         //require(pool != address(0));
-        require(_applications[msg.sender] == 1, "HedgeDAO:!app");
+        require(_applications[msg.sender] == 1, "FortDAO:!app");
 
         // Pay eth from ledger
         if (tokenAddress == address(0)) {

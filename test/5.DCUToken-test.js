@@ -2,11 +2,11 @@ const { expect } = require('chai');
 const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, snd, tableSnd, d1, Vc, Vp } = require('./utils.js');
 
-describe('HedgeOptions', function() {
+describe('FortOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
-        const { eth, usdt, hbtc, dcu, hedgeOptions, hedgeFutures, nestPriceFacade, USDT_DECIMALS } = await deploy();
+        const { eth, usdt, hbtc, dcu, fortOptions, fortFutures, nestPriceFacade, USDT_DECIMALS } = await deploy();
 
         await dcu.setMinter(owner.address, 1);
         await dcu.mint(owner.address, '10000000000000000000000000');

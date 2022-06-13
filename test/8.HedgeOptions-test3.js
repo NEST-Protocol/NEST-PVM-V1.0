@@ -2,11 +2,11 @@ const { expect } = require('chai');
 const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, snd, tableSnd, d1, Vc, Vp } = require('./utils.js');
 
-describe('HedgeOptions', function() {
+describe('FortOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
-        const { eth, usdt, hbtc, dcu, hedgeOptions, hedgeFutures, nestPriceFacade, BLOCK_TIME, USDT_DECIMALS } = await deploy();
+        const { eth, usdt, hbtc, dcu, fortOptions, fortFutures, nestPriceFacade, BLOCK_TIME, USDT_DECIMALS } = await deploy();
 
         await dcu.setMinter(owner.address, 1);
         await dcu.mint(owner.address, '10000000000000000000000000');
@@ -37,7 +37,7 @@ describe('HedgeOptions', function() {
         }
 
         const cfg = async function(tokenAddress) {
-            let c = await hedgeOptions.getConfig(tokenAddress);
+            let c = await fortOptions.getConfig(tokenAddress);
             return {
                 sigmaSQ: c.sigmaSQ.toString(),
                 miu: c.miu.toString(),
@@ -50,87 +50,87 @@ describe('HedgeOptions', function() {
         if (TEST_PRIVATE) {
             console.log('1. getKey');
 
-            let key = await hedgeOptions._getKey(usdt.address, 99999, true, 1000000);
+            let key = await fortOptions._getKey(usdt.address, 99999, true, 1000000);
             console.log('key=' + key);
-            key = await hedgeOptions._getKey(usdt.address, 99999, false, 1000000);
-            console.log('key=' + key);
-
-            key = await hedgeOptions._getKey(usdt.address, 99999 + 1, false, 1000000);
+            key = await fortOptions._getKey(usdt.address, 99999, false, 1000000);
             console.log('key=' + key);
 
-            key = await hedgeOptions._getKey(usdt.address, 99999 + 1, false, 1000000 - 1);
+            key = await fortOptions._getKey(usdt.address, 99999 + 1, false, 1000000);
             console.log('key=' + key);
 
-            key = await hedgeOptions._getKey(eth.address, 99999 + 1, false, 1000000 - 1);
+            key = await fortOptions._getKey(usdt.address, 99999 + 1, false, 1000000 - 1);
+            console.log('key=' + key);
+
+            key = await fortOptions._getKey(eth.address, 99999 + 1, false, 1000000 - 1);
             console.log('key=' + key);
         }
 
         if (TEST_PRIVATE) {
             console.log('2. align');
 
-            console.log('align(0)=' + await hedgeOptions._align(0)); 
-            console.log('align(1)=' + await hedgeOptions._align(1));
-            console.log('align(10)=' + await hedgeOptions._align(10));
-            console.log('align(100)=' + await hedgeOptions._align(100));
-            console.log('align(1000)=' + await hedgeOptions._align(1000));
-            console.log('align(10000)=' + await hedgeOptions._align(10000));
-            console.log('align(100000)=' + await hedgeOptions._align(100000));
-            console.log('align(1000000)=' + await hedgeOptions._align(1000000));
-            console.log('align(10000000)=' + await hedgeOptions._align(10000000));
-            console.log('align(100000000)=' + await hedgeOptions._align(100000000));
-            console.log('align(123)=' + await hedgeOptions._align(123));
-            console.log('align(1234567)=' + await hedgeOptions._align(1234567));
-            console.log('align(12345678)=' + await hedgeOptions._align(12345678));
-            console.log('align(9999999999)=' + await hedgeOptions._align(9999999999));
-            console.log('align(34518)=' + await hedgeOptions._align(34518));
-            console.log('align(9527)=' + await hedgeOptions._align(9527));
-            console.log('align(245000000)=' + await hedgeOptions._align(245000000));
-            console.log('align(99999999999999999999999999999999999)=' + await hedgeOptions._align('99999999999999999999999999999999999'));
-            console.log('align(56666)=' + await hedgeOptions._align(56666));
-            console.log('align(245000001)=' + await hedgeOptions._align(245000001));
+            console.log('align(0)=' + await fortOptions._align(0)); 
+            console.log('align(1)=' + await fortOptions._align(1));
+            console.log('align(10)=' + await fortOptions._align(10));
+            console.log('align(100)=' + await fortOptions._align(100));
+            console.log('align(1000)=' + await fortOptions._align(1000));
+            console.log('align(10000)=' + await fortOptions._align(10000));
+            console.log('align(100000)=' + await fortOptions._align(100000));
+            console.log('align(1000000)=' + await fortOptions._align(1000000));
+            console.log('align(10000000)=' + await fortOptions._align(10000000));
+            console.log('align(100000000)=' + await fortOptions._align(100000000));
+            console.log('align(123)=' + await fortOptions._align(123));
+            console.log('align(1234567)=' + await fortOptions._align(1234567));
+            console.log('align(12345678)=' + await fortOptions._align(12345678));
+            console.log('align(9999999999)=' + await fortOptions._align(9999999999));
+            console.log('align(34518)=' + await fortOptions._align(34518));
+            console.log('align(9527)=' + await fortOptions._align(9527));
+            console.log('align(245000000)=' + await fortOptions._align(245000000));
+            console.log('align(99999999999999999999999999999999999)=' + await fortOptions._align('99999999999999999999999999999999999'));
+            console.log('align(56666)=' + await fortOptions._align(56666));
+            console.log('align(245000001)=' + await fortOptions._align(245000001));
 
-            expect(await hedgeOptions._align(0)).to.equal(0);
+            expect(await fortOptions._align(0)).to.equal(0);
 
-            expect(await hedgeOptions._align(1)).to.equal(1);
-            expect(await hedgeOptions._align(10)).to.equal(10);
-            expect(await hedgeOptions._align(100)).to.equal(100);
-            expect(await hedgeOptions._align(1000)).to.equal(1000);
-            expect(await hedgeOptions._align(10000)).to.equal(10000);
-            expect(await hedgeOptions._align(100000)).to.equal(100000);
-            expect(await hedgeOptions._align(1000000)).to.equal(1000000);
-            expect(await hedgeOptions._align(10000000)).to.equal(10000000);
-            expect(await hedgeOptions._align(100000000)).to.equal(100000000);
+            expect(await fortOptions._align(1)).to.equal(1);
+            expect(await fortOptions._align(10)).to.equal(10);
+            expect(await fortOptions._align(100)).to.equal(100);
+            expect(await fortOptions._align(1000)).to.equal(1000);
+            expect(await fortOptions._align(10000)).to.equal(10000);
+            expect(await fortOptions._align(100000)).to.equal(100000);
+            expect(await fortOptions._align(1000000)).to.equal(1000000);
+            expect(await fortOptions._align(10000000)).to.equal(10000000);
+            expect(await fortOptions._align(100000000)).to.equal(100000000);
             
-            expect(await hedgeOptions._align(123)).to.equal(123);
-            expect(await hedgeOptions._align(1234567)).to.equal(1234567);
-            expect(await hedgeOptions._align(12345678)).to.eq(12345670);
-            expect(await hedgeOptions._align(9999999999)).to.equal(9999999000);
-            expect(await hedgeOptions._align(34518)).to.equal(34518);
-            expect(await hedgeOptions._align(9527)).to.eq(9527);
-            expect(await hedgeOptions._align(245000000)).to.eq(245000000);
-            expect(await hedgeOptions._align('99999999999999999999999999999999999')).to.eq(BigInt('99999990000000000000000000000000000'));
-            expect(await hedgeOptions._align(56666)).to.eq(56666);
-            expect(await hedgeOptions._align(245000001)).to.eq(245000000);
+            expect(await fortOptions._align(123)).to.equal(123);
+            expect(await fortOptions._align(1234567)).to.equal(1234567);
+            expect(await fortOptions._align(12345678)).to.eq(12345670);
+            expect(await fortOptions._align(9999999999)).to.equal(9999999000);
+            expect(await fortOptions._align(34518)).to.equal(34518);
+            expect(await fortOptions._align(9527)).to.eq(9527);
+            expect(await fortOptions._align(245000000)).to.eq(245000000);
+            expect(await fortOptions._align('99999999999999999999999999999999999')).to.eq(BigInt('99999990000000000000000000000000000'));
+            expect(await fortOptions._align(56666)).to.eq(56666);
+            expect(await fortOptions._align(245000001)).to.eq(245000000);
         }
 
         // if (TEST_PRIVATE) {
         //     console.log("3. getDecimals");
 
-        //     console.log('getDecimals(eth.address)=' + await hedgeOptions._getDecimals(eth.address));
-        //     console.log('getDecimals(usdt.address)=' + await hedgeOptions._getDecimals(usdt.address));
-        //     console.log('getDecimals(hbtc.address)=' + await hedgeOptions._getDecimals(hbtc.address));
-        //     console.log('getDecimals(dcu.address)=' + await hedgeOptions._getDecimals(dcu.address));
+        //     console.log('getDecimals(eth.address)=' + await fortOptions._getDecimals(eth.address));
+        //     console.log('getDecimals(usdt.address)=' + await fortOptions._getDecimals(usdt.address));
+        //     console.log('getDecimals(hbtc.address)=' + await fortOptions._getDecimals(hbtc.address));
+        //     console.log('getDecimals(dcu.address)=' + await fortOptions._getDecimals(dcu.address));
 
-        //     expect(await hedgeOptions._getDecimals(eth.address)).to.equal(18);
-        //     expect(await hedgeOptions._getDecimals(usdt.address)).to.equal(6);
-        //     expect(await hedgeOptions._getDecimals(hbtc.address)).to.equal(18);
-        //     expect(await hedgeOptions._getDecimals(dcu.address)).to.equal(18);
+        //     expect(await fortOptions._getDecimals(eth.address)).to.equal(18);
+        //     expect(await fortOptions._getDecimals(usdt.address)).to.equal(6);
+        //     expect(await fortOptions._getDecimals(hbtc.address)).to.equal(18);
+        //     expect(await fortOptions._getDecimals(dcu.address)).to.equal(18);
         // }
 
         if (TEST_PRIVATE) {
             console.log('4. optionName');
             const test = async function(name, price, orientation, endblock, v) {
-                let n = await hedgeOptions._optionName(name, price, orientation, endblock);
+                let n = await fortOptions._optionName(name, price, orientation, endblock);
                 console.log({
                     name, price, orientation, endblock,
                     n
@@ -150,7 +150,7 @@ describe('HedgeOptions', function() {
             console.log('5. _d18TOb64');
             const test = async function(v) {
                 let x = (v << BigInt(64)) / BigInt('1000000000000000000');
-                let r = BigInt(await hedgeOptions._d18TOb64(v));
+                let r = BigInt(await fortOptions._d18TOb64(v));
                 console.log(v + '; ' + r + ':' + x);
                 expect(x).to.eq(r);
             };
@@ -179,7 +179,7 @@ describe('HedgeOptions', function() {
 
             const test = async function(v) {
                 let x = v;
-                let r = BigInt(await hedgeOptions._toInt128(v));
+                let r = BigInt(await fortOptions._toInt128(v));
                 console.log(v + '; ' + r + ':' + x);
                 expect(x).to.eq(r);
             };
@@ -208,7 +208,7 @@ describe('HedgeOptions', function() {
 
             const test = async function(v) {
                 let x = v;
-                let r = BigInt(await hedgeOptions._toUInt(v));
+                let r = BigInt(await fortOptions._toUInt(v));
                 console.log(v + '; ' + r + ':' + x);
                 expect(x).to.eq(r);
             };
@@ -240,7 +240,7 @@ describe('HedgeOptions', function() {
             const test = async function(v) {
                 let s1 = snd(v);
                 let vi = BigInt(Math.floor(v * 1e18));
-                let s2 = await hedgeOptions._snd((vi << BigInt(64)) / BigInt(1e18));
+                let s2 = await fortOptions._snd((vi << BigInt(64)) / BigInt(1e18));
                 s2 = BigInt(s2) * BigInt(1e18) / (BigInt(1) << BigInt(64));
                 s2 = parseFloat(toDecimal(s2));
 
@@ -264,7 +264,7 @@ describe('HedgeOptions', function() {
                 console.log({ sigma, miu, S0, T, K });
                 let s1 = Vc(S0, K, sigma, miu, T);
                 console.log('s1=' + s1);
-                let s2 = await hedgeOptions._calcVc({
+                let s2 = await fortOptions._calcVc({
                     sigmaSQ: Math.floor(sigma * sigma * 1e18),
                     miu: (BigInt(Math.floor(miu * 1e18)) << BigInt(64)) / BigInt(1e18),
                     minPeriod: 10
@@ -301,7 +301,7 @@ describe('HedgeOptions', function() {
                 console.log({ sigma, miu, S0, T, K });
                 let s1 = Vp(S0, K, sigma, miu, T);
                 console.log('s1=' + s1);
-                let s2 = await hedgeOptions._calcVp({
+                let s2 = await fortOptions._calcVp({
                     sigmaSQ: Math.floor(sigma * sigma * 1e18),
                     miu: (BigInt(Math.floor(miu * 1e18)) << BigInt(64)) / BigInt(1e18),
                     minPeriod: 10

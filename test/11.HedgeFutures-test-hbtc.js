@@ -2,11 +2,11 @@ const { expect } = require('chai');
 const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, snd, tableSnd, d1, Vc, Vp } = require('./utils.js');
 
-describe('HedgeOptions', function() {
+describe('FortOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
-        const { eth, usdt, hbtc, dcu, hedgeOptions, hedgeFutures, nestPriceFacade, 
+        const { eth, usdt, hbtc, dcu, fortOptions, fortFutures, nestPriceFacade, 
             BLOCK_TIME, USDT_DECIMALS, miuT } = await deploy();
         const TestERC20 = await ethers.getContractFactory('TestERC20');
         await dcu.setMinter(owner.address, 1);
@@ -36,7 +36,7 @@ describe('HedgeOptions', function() {
         }
 
         const cfg = async function(tokenAddress) {
-            let c = await hedgeOptions.getConfig(tokenAddress);
+            let c = await fortOptions.getConfig(tokenAddress);
             return {
                 sigmaSQ: c.sigmaSQ.toString(),
                 miu: c.miu.toString(),
@@ -56,9 +56,9 @@ describe('HedgeOptions', function() {
 
         if (true) {
             console.log('1. list');
-            let l = await hedgeFutures.list(0, 20, 0);
+            let l = await fortFutures.list(0, 20, 0);
             console.log(l);
-            l = await hedgeFutures.list(0, 20, 1);
+            l = await fortFutures.list(0, 20, 1);
             console.log(l);
         }
 
@@ -67,9 +67,9 @@ describe('HedgeOptions', function() {
         let oriens = [true, false];
         if (true) {
             console.log('2. getFutureCount');
-            let tokenCount = await hedgeFutures.getFutureCount();
+            let tokenCount = await fortFutures.getFutureCount();
             console.log('tokenCount=' + tokenCount);
-            let l = await hedgeFutures.list(0, tokenCount, 0);
+            let l = await fortFutures.list(0, tokenCount, 0);
             for (var i = 0; i < l.length; ++i) {
                 //let addr = l[i];
                 //let ti = await fot.getFutureInfo();
@@ -90,7 +90,7 @@ describe('HedgeOptions', function() {
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
-                        let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
+                        let lot = await fortFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
                         console.log(await lot.index);
                     }
                 }
@@ -99,11 +99,11 @@ describe('HedgeOptions', function() {
 
         if (true) {
             console.log('3. create');
-            let receipt = await hedgeFutures.create(hbtc.address, [6], false);
+            let receipt = await fortFutures.create(hbtc.address, [6], false);
             await showReceipt(receipt);
-            let tokenCount = await hedgeFutures.getFutureCount();
+            let tokenCount = await fortFutures.getFutureCount();
             console.log('tokenCount=' + tokenCount);
-            let l = await hedgeFutures.list(0, tokenCount, 0);
+            let l = await fortFutures.list(0, tokenCount, 0);
             for (var i = 0; i < l.length; ++i) {
                 // let addr = l[i];
                 // let ti = await fot.getFutureInfo();
@@ -135,7 +135,7 @@ describe('HedgeOptions', function() {
             return Math.floor(usdtAmount * 10 ** decimals / tokenAmount);
 
             let pi = await nestPriceFacade.lastPriceListAndTriggeredPriceInfoView(usdt.address, 2);            
-            let k = await hedgeFutures._calcRevisedK(
+            let k = await fortFutures._calcRevisedK(
                 pi.triggeredSigmaSQ, 
                 pi.prices[3],
                 pi.prices[2],
@@ -162,14 +162,14 @@ describe('HedgeOptions', function() {
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
-                        let receipt = await hedgeFutures.buy(addrs[addr], futures[lever], oriens[orien], toBigInt(100), {
+                        let receipt = await fortFutures.buy(addrs[addr], futures[lever], oriens[orien], toBigInt(100), {
                             value: addrs[addr] == hbtc.address ? toBigInt(0.01) : toBigInt(0.02)
                         });
                         await showReceipt(receipt);
-                        let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
+                        let lot = await fortFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
 
                         let oraclePrice = await queryPrice(addrs[addr], oriens[orien]);
-                        console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
+                        console.log(toDecimal(await fortFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
                     }
                 }
             }
@@ -183,15 +183,15 @@ describe('HedgeOptions', function() {
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
-                        let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
+                        let lot = await fortFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
 
                         let oraclePrice = await queryPrice(addrs[addr], oriens[orien]);
-                        console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
+                        console.log(toDecimal(await fortFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
                         let bn = parseFloat(lot.baseBlock);
                         let nbn = parseFloat(await ethers.provider.getBlockNumber());
                         let x = 100 * (1 + futures[lever] * (3000 / miuT((oriens[orien]), (nbn - bn)) - 3510) / 3510 * (oriens[orien] ? 1 : -1));
-                        let b = parseFloat(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)));
+                        let b = parseFloat(toDecimal(await fortFutures.balanceOf(lot.index, oraclePrice, owner.address)));
 
                         console.log({
                             addr: addrs[addr],
@@ -209,15 +209,15 @@ describe('HedgeOptions', function() {
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
-                        let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
+                        let lot = await fortFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
                         let oraclePrice = await queryPrice(addrs[addr], oriens[orien]);
-                        console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
+                        console.log(toDecimal(await fortFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
 
                         let bn = parseFloat(lot.baseBlock);
                         let nbn = parseFloat(await ethers.provider.getBlockNumber());
                         let x = 100 * (1 + futures[lever] * (2000 / miuT((oriens[orien]), (nbn - bn)) - 3510) / 3510 * (oriens[orien] ? 1 : -1));
-                        let b = parseFloat(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)));
+                        let b = parseFloat(toDecimal(await fortFutures.balanceOf(lot.index, oraclePrice, owner.address)));
                         if (x < 0) {
                             x = 0;
                         }
@@ -233,17 +233,17 @@ describe('HedgeOptions', function() {
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
-                        let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
+                        let lot = await fortFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
                         let oraclePrice = await queryPrice(addrs[addr], oriens[orien]);
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
 
-                        await hedgeFutures.settle(lot.index, [owner.address], { value: toBigInt(0.02) });
-                        console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
+                        await fortFutures.settle(lot.index, [owner.address], { value: toBigInt(0.02) });
+                        console.log(toDecimal(await fortFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
                         
                         let bn = parseFloat(lot.baseBlock);
                         let nbn = parseFloat(await ethers.provider.getBlockNumber());
                         let x = 100 * (1 + futures[lever] * (2000 / miuT((oriens[orien]), (nbn - bn)) - 3510) / 3510 * (oriens[orien] ? 1 : -1));
-                        let b = parseFloat(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)));
+                        let b = parseFloat(toDecimal(await fortFutures.balanceOf(lot.index, oraclePrice, owner.address)));
                         if (x < 0) {
                             x = 0;
                         }
@@ -259,15 +259,15 @@ describe('HedgeOptions', function() {
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
-                        let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
+                        let lot = await fortFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
                         let oraclePrice = await queryPrice(addrs[addr], oriens[orien]);
-                        console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
+                        console.log(toDecimal(await fortFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
 
                         let bn = parseFloat(lot.baseBlock);
                         let nbn = parseFloat(await ethers.provider.getBlockNumber());
                         let x = 100 * (1 + futures[lever] * (3510 / miuT((oriens[orien]), (nbn - bn)) - 3510) / 3510 * (oriens[orien] ? 1 : -1));
-                        let b = parseFloat(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)));
+                        let b = parseFloat(toDecimal(await fortFutures.balanceOf(lot.index, oraclePrice, owner.address)));
                         if (x < 0) {
                             x = 0;
                         }
@@ -286,14 +286,14 @@ describe('HedgeOptions', function() {
             for (var addr = 0; addr < addrs.length; ++addr) {
                 for (var lever = 0; lever < futures.length; ++lever) {
                     for (var orien = 0; orien < oriens.length; ++orien) {
-                        let lot = await hedgeFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
+                        let lot = await fortFutures.getFutureInfo(addrs[addr], futures[lever], oriens[orien]);
                         //await lot.update(owner.address, { value: toBigInt(0.02) });
                         let oraclePrice = await queryPrice(addrs[addr], oriens[orien]);
-                        console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
-                        await hedgeFutures.sell(lot.index, lot.balance, { 
+                        console.log(toDecimal(await fortFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
+                        await fortFutures.sell(lot.index, lot.balance, { 
                             value: toBigInt(0.02)
                         });
-                        console.log(toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
+                        console.log(toDecimal(await fortFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '[' + lot.index + ']');
                         console.log(toDecimal(await dcu.balanceOf(owner.address)) + 'dcu');
                         console.log();
                         // let x = 100 * (1 + futures[lever] * (3510 - 3510) / 3510 * (oriens[orien] ? 1 : -1));

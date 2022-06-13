@@ -7,13 +7,13 @@ import "./libs/ABDKMath64x64.sol";
 import "./interfaces/IFortLPGuarantee.sol";
 
 import "./custom/ChainParameter.sol";
-import "./custom/HedgeFrequentlyUsed.sol";
+import "./custom/FortFrequentlyUsed.sol";
 import "./custom/FortPriceAdapter.sol";
 
 import "./DCU.sol";
 
 /// @dev Guarantee
-contract FortLPGuarantee is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, IFortLPGuarantee {
+contract FortLPGuarantee is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IFortLPGuarantee {
 
     struct Guarantee {
         uint32 owner;
@@ -52,7 +52,7 @@ contract FortLPGuarantee is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapte
     }
 
     /// @dev To support open-zeppelin/upgrades
-    /// @param governance IHedgeGovernance implementation contract address
+    /// @param governance IFortGovernance implementation contract address
     function initialize(address governance) public override {
         super.initialize(governance);
         _accounts.push();
@@ -237,7 +237,8 @@ contract FortLPGuarantee is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapte
 
         // 1. Load the guarantee
         Guarantee storage guarantee = _guarantees[index];
-        require(block.number >= uint(guarantee.openBlock) + MIN_EXERCISE_BLOCK, "LPG:too early");
+        // TODO:
+        //require(block.number >= uint(guarantee.openBlock) + MIN_EXERCISE_BLOCK, "LPG:too early");
         address owner = _accounts[uint(guarantee.owner)];
         uint exerciseBlock = uint(guarantee.exerciseBlock);
         uint x0 = _decodeFloat(guarantee.x0);
@@ -324,7 +325,8 @@ contract FortLPGuarantee is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapte
         uint exerciseBlock
     ) private view returns (uint dcuAmount) {
 
-        require(exerciseBlock > block.number + MIN_PERIOD, "FEO:exerciseBlock too small");
+        // TODO:
+        //require(exerciseBlock > block.number + MIN_PERIOD, "FEO:exerciseBlock too small");
         uint T = (exerciseBlock - block.number) * BLOCK_TIME;
 
         // formula:

@@ -2,11 +2,11 @@ const { expect } = require('chai');
 const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt } = require('./utils.js');
 
-describe('HedgeOptions', function() {
+describe('FortOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
-        const { eth, usdt, hbtc, dcu, hedgeOptions, hedgeFutures, nestPriceFacade, BLOCK_TIME } = await deploy();
+        const { eth, usdt, hbtc, dcu, fortOptions, fortFutures, nestPriceFacade, BLOCK_TIME } = await deploy();
         const TestERC20 = await ethers.getContractFactory('TestERC20');
 
         await dcu.setMinter(owner.address, 1);
@@ -33,18 +33,18 @@ describe('HedgeOptions', function() {
         };
 
         const leverTest = async function(tokenAddress, lever, orientation, amount, fee) {
-            await hedgeFutures.buy(tokenAddress, lever, orientation, amount, { value: fee });
-            let lot = await hedgeFutures.getFutureInfo(tokenAddress, lever, orientation);
+            await fortFutures.buy(tokenAddress, lever, orientation, amount, { value: fee });
+            let lot = await fortFutures.getFutureInfo(tokenAddress, lever, orientation);
             let oraclePrice = await queryPrice(tokenAddress);
-            console.log('owner: ' + toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '(lot)');
+            console.log('owner: ' + toDecimal(await fortFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '(lot)');
         } 
 
         const show = async function(tokenAddress, lever, orientation, amount, fee) {
-            //await hedgeFutures.buy(tokenAddress, lever, orientation, amount, { value: fee });
-            let lot = await hedgeFutures.getFutureInfo(tokenAddress, lever, orientation);
+            //await fortFutures.buy(tokenAddress, lever, orientation, amount, { value: fee });
+            let lot = await fortFutures.getFutureInfo(tokenAddress, lever, orientation);
             //await lot.update(owner.address, { value: fee });
             let oraclePrice = await queryPrice(tokenAddress);
-            console.log('owner: ' + toDecimal(await hedgeFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '(lot)');
+            console.log('owner: ' + toDecimal(await fortFutures.balanceOf(lot.index, oraclePrice, owner.address)) + '(lot)');
         } 
 
         await leverTest(eth.address, 1, true, toBigInt(100),   toBigInt(0.01));

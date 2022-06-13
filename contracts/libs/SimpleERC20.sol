@@ -32,11 +32,11 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
  * allowances. See {IERC20-approve}.
  */
 abstract contract SimpleERC20 is IERC20, IERC20Metadata {
-    mapping(address => uint256) private _balances;
+    mapping(address => uint256) _balances;
 
-    mapping(address => mapping(address => uint256)) private _allowances;
+    mapping(address => mapping(address => uint256)) _allowances;
 
-    uint256 private _totalSupply;
+    uint256 _totalSupply;
 
     /**
      * @dev See {IERC20-totalSupply}.

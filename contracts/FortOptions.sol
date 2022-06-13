@@ -7,13 +7,13 @@ import "./libs/ABDKMath64x64.sol";
 import "./interfaces/IFortOptions.sol";
 
 import "./custom/ChainParameter.sol";
-import "./custom/HedgeFrequentlyUsed.sol";
+import "./custom/FortFrequentlyUsed.sol";
 import "./custom/FortPriceAdapter.sol";
 
 import "./DCU.sol";
 
 /// @dev European option
-contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, IFortOptions {
+contract FortOptions is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IFortOptions {
 
     /// @dev Option structure
     struct Option {
@@ -59,7 +59,7 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
     }
 
     /// @dev To support open-zeppelin/upgrades
-    /// @param governance IHedgeGovernance implementation contract address
+    /// @param governance IFortGovernance implementation contract address
     function initialize(address governance) public override {
         super.initialize(governance);
         _accounts.push();
@@ -271,7 +271,8 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
 
         TokenConfig memory tokenConfig = _tokenRegistrations[option.tokenIndex].tokenConfig;
 
-        require(block.number >= exerciseBlock, "FEO:at maturity");
+        // TODO:
+        //require(block.number >= exerciseBlock, "FEO:at maturity");
 
         // 2. Deduct the specified amount
         option.balance = _toUInt112(uint(option.balance) - amount);
@@ -427,7 +428,7 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
 
     // Convert uint to uint112
     function _toUInt112(uint v) private pure returns (uint112) {
-        require(v < 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFF,"HO:can't convert to uint112");
+        require(v <= 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFF,"HO:can't convert to uint112");
         return uint112(v);
     }
 
@@ -511,7 +512,8 @@ contract FortOptions is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
         uint dcuAmount
     ) private view returns (uint amount) {
 
-        require(exerciseBlock > block.number + MIN_PERIOD, "FEO:exerciseBlock too small");
+        // TODO:
+        //require(exerciseBlock > block.number + MIN_PERIOD, "FEO:exerciseBlock too small");
 
         // 1. Calculate option price
         uint v = _calcV(

@@ -3,17 +3,17 @@ const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, snd, tableSnd, d1, Vc, Vp } = require('./utils.js');
 const { ethers, upgrades } = require('hardhat');
 
-describe('HedgeOptions', function() {
+describe('FortOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
         const { 
-            eth, usdt, hbtc, dcu, hedgeOptions, hedgeFutures, fortLPGuarantee, fortPRC, fortPRCSwap, fortSwap,
-            nestPriceFacade, hedgeGovernance, BLOCK_TIME, USDT_DECIMALS 
+            eth, usdt, hbtc, dcu, fortOptions, fortFutures, fortLPGuarantee, fortPRC, fortPRCSwap, fortSwap,
+            nestPriceFacade, fortGovernance, BLOCK_TIME, USDT_DECIMALS 
         } = await deploy();
 
         const CoFiXRouter = await ethers.getContractFactory('CoFiXRouter');
-        const cofixRouter = await upgrades.deployProxy(CoFiXRouter, [hedgeGovernance.address], { initializer: 'initialize' });
+        const cofixRouter = await upgrades.deployProxy(CoFiXRouter, [fortGovernance.address], { initializer: 'initialize' });
         console.log('cofixRouter: ' + cofixRouter.address);
 
         await fortSwap.setTokenAddress(usdt.address);
@@ -41,7 +41,7 @@ describe('HedgeOptions', function() {
         }
 
         const cfg = async function(tokenAddress) {
-            let c = await hedgeOptions.getConfig(tokenAddress);
+            let c = await fortOptions.getConfig(tokenAddress);
             return {
                 sigmaSQ: c.sigmaSQ.toString(),
                 miu: c.miu.toString(),
@@ -87,7 +87,7 @@ describe('HedgeOptions', function() {
             );
             console.log(await getStatus());            
         }
-        if (true) {
+        if (false) {
             console.log('2. buy DCU with PRC');
             await cofixRouter.swapExactTokensForTokens(
                 [fortPRC.address, dcu.address],
@@ -100,7 +100,7 @@ describe('HedgeOptions', function() {
             console.log(await getStatus());            
         }
         if (true) {
-            console.log('1. buy PRC with USDT');
+            console.log('3. buy PRC with USDT');
             await cofixRouter.swapExactTokensForTokens(
                 [usdt.address, dcu.address, fortPRC.address],
                 toBigInt(1),
@@ -111,8 +111,8 @@ describe('HedgeOptions', function() {
             );
             console.log(await getStatus());            
         }
-        if (true) {
-            console.log('1. buy USDT with PRC');
+        if (false) {
+            console.log('4. buy USDT with PRC');
             await cofixRouter.swapExactTokensForTokens(
                 [fortPRC.address, dcu.address, usdt.address],
                 toBigInt(2.171529),

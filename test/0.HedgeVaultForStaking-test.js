@@ -2,14 +2,14 @@ const { expect } = require('chai');
 const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, snd, tableSnd, d1, Vc, Vp } = require('./utils.js');
 
-describe('HedgeOptions', function() {
+describe('FortOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
         const { 
             eth, usdt, hbtc, dcu, 
-            hedgeOptions, hedgeFutures, nestPriceFacade, hedgeGovernance,
-            hedgeVaultForStaking, BLOCK_TIME
+            fortOptions, fortFutures, nestPriceFacade, fortGovernance,
+            fortVaultForStaking, BLOCK_TIME
         } = await deploy();
 
         await dcu.setMinter(owner.address, 1);
@@ -36,12 +36,12 @@ describe('HedgeOptions', function() {
                 height: await ethers.provider.getBlockNumber(),
                 owner: await getAccountInfo(owner),
                 addr1: await getAccountInfo(addr1),
-                hedgeVaultForStaking: await getAccountInfo(hedgeVaultForStaking),
+                fortVaultForStaking: await getAccountInfo(fortVaultForStaking),
             };
         }
 
         const cfg = async function(tokenAddress) {
-            let c = await hedgeOptions.getConfig(tokenAddress);
+            let c = await fortOptions.getConfig(tokenAddress);
             return {
                 sigmaSQ: c.sigmaSQ.toString(),
                 miu: c.miu.toString(),
@@ -60,15 +60,15 @@ describe('HedgeOptions', function() {
 
         if (true) {
             console.log('1. getConfig');
-            let config = await hedgeVaultForStaking.getConfig();
+            let config = await fortVaultForStaking.getConfig();
             console.log(config.toString());
 
-            await hedgeVaultForStaking.setConfig(toBigInt(0.7), 20, 9527);
-            config = await hedgeVaultForStaking.getConfig();
+            await fortVaultForStaking.setConfig(toBigInt(0.7), 20, 9527);
+            config = await fortVaultForStaking.getConfig();
             console.log(config.toString());
 
-            await hedgeVaultForStaking.setConfig(toBigInt(0.1), 20, 66);
-            config = await hedgeVaultForStaking.getConfig();
+            await fortVaultForStaking.setConfig(toBigInt(0.1), 20, 66);
+            config = await fortVaultForStaking.getConfig();
             console.log(config.toString());
         }
 
@@ -101,7 +101,7 @@ describe('HedgeOptions', function() {
         if (true) {
             console.log('2. batchSetPoolWeight');
             console.log(tokens.map(e=>e.address));
-            await hedgeVaultForStaking.batchSetPoolWeight(
+            await fortVaultForStaking.batchSetPoolWeight(
                 tokens.map(e=>e.address), 
                 cycles,
                 weights
@@ -110,7 +110,7 @@ describe('HedgeOptions', function() {
             for (var i = 0; i < tokens.length; ++i) {
                 let token = tokens[i];
                 let cycle = cycles[i];
-                let ti = await hedgeVaultForStaking.getChannelInfo(token.address, cycle);
+                let ti = await fortVaultForStaking.getChannelInfo(token.address, cycle);
                 let ts = {
                     name: token.name,
                     address: token.address,
@@ -128,13 +128,13 @@ describe('HedgeOptions', function() {
 
             await usdt.transfer(addr1.address, toBigInt(10000000, 6));
             await usdt.transfer(owner.address, toBigInt(10000000, 6));
-            await usdt.approve(hedgeVaultForStaking.address, toBigInt(100, 6));
-            await usdt.connect(addr1).approve(hedgeVaultForStaking.address, toBigInt(50, 6));
+            await usdt.approve(fortVaultForStaking.address, toBigInt(100, 6));
+            await usdt.connect(addr1).approve(fortVaultForStaking.address, toBigInt(50, 6));
             for (var i = 0; i < 2; ++i) {
                 await usdt.transfer(owner.address, toBigInt(10000000, 6));
             }
-            await hedgeVaultForStaking.stake(usdt.address, 10, toBigInt(100, 6));
-            await hedgeVaultForStaking.connect(addr1).stake(usdt.address, 10, toBigInt(50, 6));
+            await fortVaultForStaking.stake(usdt.address, 10, toBigInt(100, 6));
+            await fortVaultForStaking.connect(addr1).stake(usdt.address, 10, toBigInt(50, 6));
             console.log(await getStatus());
         }
         
@@ -144,20 +144,20 @@ describe('HedgeOptions', function() {
                 await usdt.transfer(owner.address, toBigInt(0, 6));
             }
 
-            console.log('owner earned:' + await hedgeVaultForStaking.earned(usdt.address, 10, owner.address));
-            console.log('addr1 earned:' + await hedgeVaultForStaking.earned(usdt.address, 10, addr1.address));
-            console.log('owner balance:' + await hedgeVaultForStaking.balanceOf(usdt.address, 10, owner.address));
-            console.log('addr1 balance:' + await hedgeVaultForStaking.balanceOf(usdt.address, 10, addr1.address));
+            console.log('owner earned:' + await fortVaultForStaking.earned(usdt.address, 10, owner.address));
+            console.log('addr1 earned:' + await fortVaultForStaking.earned(usdt.address, 10, addr1.address));
+            console.log('owner balance:' + await fortVaultForStaking.balanceOf(usdt.address, 10, owner.address));
+            console.log('addr1 balance:' + await fortVaultForStaking.balanceOf(usdt.address, 10, addr1.address));
 
             for (var i = 0; i < 1; ++i) {
                 console.log('getReward ' + i);
-                await hedgeVaultForStaking.getReward(usdt.address, 10);
-                await hedgeVaultForStaking.connect(addr1).getReward(usdt.address, 10);
+                await fortVaultForStaking.getReward(usdt.address, 10);
+                await fortVaultForStaking.connect(addr1).getReward(usdt.address, 10);
                 console.log(await getStatus());
-                console.log('owner earned:' + await hedgeVaultForStaking.earned(usdt.address, 10, owner.address));
-                console.log('addr1 earned:' + await hedgeVaultForStaking.earned(usdt.address, 10, addr1.address));
-                console.log('owner balance:' + await hedgeVaultForStaking.balanceOf(usdt.address, 10, owner.address));
-                console.log('addr1 balance:' + await hedgeVaultForStaking.balanceOf(usdt.address, 10, addr1.address));
+                console.log('owner earned:' + await fortVaultForStaking.earned(usdt.address, 10, owner.address));
+                console.log('addr1 earned:' + await fortVaultForStaking.earned(usdt.address, 10, addr1.address));
+                console.log('owner balance:' + await fortVaultForStaking.balanceOf(usdt.address, 10, owner.address));
+                console.log('addr1 balance:' + await fortVaultForStaking.balanceOf(usdt.address, 10, addr1.address));
             }
         }
 
@@ -167,17 +167,17 @@ describe('HedgeOptions', function() {
                 await usdt.transfer(owner.address, toBigInt(0, 6));
             }
 
-            console.log('owner earned:' + await hedgeVaultForStaking.earned(usdt.address, 10, owner.address));
-            console.log('addr1 earned:' + await hedgeVaultForStaking.earned(usdt.address, 10, addr1.address));
-            console.log('owner balance:' + await hedgeVaultForStaking.balanceOf(usdt.address, 10, owner.address));
-            console.log('addr1 balance:' + await hedgeVaultForStaking.balanceOf(usdt.address, 10, addr1.address));
-            await hedgeVaultForStaking.withdraw(usdt.address, 10);
-            await hedgeVaultForStaking.connect(addr1).withdraw(usdt.address, 10);
+            console.log('owner earned:' + await fortVaultForStaking.earned(usdt.address, 10, owner.address));
+            console.log('addr1 earned:' + await fortVaultForStaking.earned(usdt.address, 10, addr1.address));
+            console.log('owner balance:' + await fortVaultForStaking.balanceOf(usdt.address, 10, owner.address));
+            console.log('addr1 balance:' + await fortVaultForStaking.balanceOf(usdt.address, 10, addr1.address));
+            await fortVaultForStaking.withdraw(usdt.address, 10);
+            await fortVaultForStaking.connect(addr1).withdraw(usdt.address, 10);
             console.log(await getStatus());
-            console.log('owner earned:' + await hedgeVaultForStaking.earned(usdt.address, 10, owner.address));
-            console.log('addr1 earned:' + await hedgeVaultForStaking.earned(usdt.address, 10, addr1.address));
-            console.log('owner balance:' + await hedgeVaultForStaking.balanceOf(usdt.address, 10, owner.address));
-            console.log('addr1 balance:' + await hedgeVaultForStaking.balanceOf(usdt.address, 10, addr1.address));
+            console.log('owner earned:' + await fortVaultForStaking.earned(usdt.address, 10, owner.address));
+            console.log('addr1 earned:' + await fortVaultForStaking.earned(usdt.address, 10, addr1.address));
+            console.log('owner balance:' + await fortVaultForStaking.balanceOf(usdt.address, 10, owner.address));
+            console.log('addr1 balance:' + await fortVaultForStaking.balanceOf(usdt.address, 10, addr1.address));
         }
 
         if (false) {
@@ -185,7 +185,7 @@ describe('HedgeOptions', function() {
 
             const test = async function(xtoken, cycle) {
                 console.log('xtoken=' + xtoken);
-                let s = await hedgeVaultForStaking._getKey(xtoken, cycle);
+                let s = await fortVaultForStaking._getKey(xtoken, cycle);
                 console.log('s=' + s.toHexString());
                 console.log();
             };
@@ -199,14 +199,14 @@ describe('HedgeOptions', function() {
         if (true) {
             console.log('6. Second');
             
-            await hedgeVaultForStaking.setConfig(toBigInt(0.1), 75, 101);
-            config = await hedgeVaultForStaking.getConfig();
+            await fortVaultForStaking.setConfig(toBigInt(0.1), 75, 101);
+            config = await fortVaultForStaking.getConfig();
             console.log(config.toString());
 
             if (true) {
                 console.log('2. batchSetPoolWeight');
                 console.log(tokens.map(e=>e.address));
-                await hedgeVaultForStaking.batchSetPoolWeight(
+                await fortVaultForStaking.batchSetPoolWeight(
                     tokens.map(e=>e.address), 
                     cycles,
                     weights
@@ -215,7 +215,7 @@ describe('HedgeOptions', function() {
                 for (var i = 0; i < tokens.length; ++i) {
                     let token = tokens[i];
                     let cycle = cycles[i];
-                    let ti = await hedgeVaultForStaking.getChannelInfo(token.address, cycle);
+                    let ti = await fortVaultForStaking.getChannelInfo(token.address, cycle);
                     let ts = {
                         name: token.name,
                         address: token.address,
@@ -232,13 +232,13 @@ describe('HedgeOptions', function() {
     
                 //await usdt.transfer(addr1.address, toBigInt(10000000, 6));
                 //await usdt.transfer(owner.address, toBigInt(10000000, 6));
-                await usdt.approve(hedgeVaultForStaking.address, toBigInt(100, 6));
-                await usdt.connect(addr1).approve(hedgeVaultForStaking.address, toBigInt(100, 6));
+                await usdt.approve(fortVaultForStaking.address, toBigInt(100, 6));
+                await usdt.connect(addr1).approve(fortVaultForStaking.address, toBigInt(100, 6));
                 for (var i = 0; i < 2; ++i) {
                 //    await usdt.transfer(owner.address, toBigInt(10000000, 6));
                 }
-                await hedgeVaultForStaking.stake(usdt.address, 10, toBigInt(50, 6));
-                await hedgeVaultForStaking.connect(addr1).stake(usdt.address, 10, toBigInt(100, 6));
+                await fortVaultForStaking.stake(usdt.address, 10, toBigInt(50, 6));
+                await fortVaultForStaking.connect(addr1).stake(usdt.address, 10, toBigInt(100, 6));
                 console.log(await getStatus());
             }
             
@@ -248,20 +248,20 @@ describe('HedgeOptions', function() {
                     await usdt.transfer(owner.address, toBigInt(0, 6));
                 }
     
-                console.log('owner earned:' + await hedgeVaultForStaking.earned(usdt.address, 10, owner.address));
-                console.log('addr1 earned:' + await hedgeVaultForStaking.earned(usdt.address, 10, addr1.address));
-                console.log('owner balance:' + await hedgeVaultForStaking.balanceOf(usdt.address, 10, owner.address));
-                console.log('addr1 balance:' + await hedgeVaultForStaking.balanceOf(usdt.address, 10, addr1.address));
+                console.log('owner earned:' + await fortVaultForStaking.earned(usdt.address, 10, owner.address));
+                console.log('addr1 earned:' + await fortVaultForStaking.earned(usdt.address, 10, addr1.address));
+                console.log('owner balance:' + await fortVaultForStaking.balanceOf(usdt.address, 10, owner.address));
+                console.log('addr1 balance:' + await fortVaultForStaking.balanceOf(usdt.address, 10, addr1.address));
     
                 for (var i = 0; i < 1; ++i) {
                     console.log('getReward ' + i);
-                    await hedgeVaultForStaking.getReward(usdt.address, 10);
-                    await hedgeVaultForStaking.connect(addr1).getReward(usdt.address, 10);
+                    await fortVaultForStaking.getReward(usdt.address, 10);
+                    await fortVaultForStaking.connect(addr1).getReward(usdt.address, 10);
                     console.log(await getStatus());
-                    console.log('owner earned:' + await hedgeVaultForStaking.earned(usdt.address, 10, owner.address));
-                    console.log('addr1 earned:' + await hedgeVaultForStaking.earned(usdt.address, 10, addr1.address));
-                    console.log('owner balance:' + await hedgeVaultForStaking.balanceOf(usdt.address, 10, owner.address));
-                    console.log('addr1 balance:' + await hedgeVaultForStaking.balanceOf(usdt.address, 10, addr1.address));
+                    console.log('owner earned:' + await fortVaultForStaking.earned(usdt.address, 10, owner.address));
+                    console.log('addr1 earned:' + await fortVaultForStaking.earned(usdt.address, 10, addr1.address));
+                    console.log('owner balance:' + await fortVaultForStaking.balanceOf(usdt.address, 10, owner.address));
+                    console.log('addr1 balance:' + await fortVaultForStaking.balanceOf(usdt.address, 10, addr1.address));
                 }
             }
         }

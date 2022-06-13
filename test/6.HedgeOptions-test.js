@@ -2,11 +2,11 @@ const { expect } = require('chai');
 const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, snd, tableSnd, d1, Vc, Vp } = require('./utils.js');
 
-describe('HedgeOptions', function() {
+describe('FortOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
-        const { eth, usdt, hbtc, dcu, hedgeOptions, hedgeFutures, nestPriceFacade, USDT_DECIMALS } = await deploy();
+        const { eth, usdt, hbtc, dcu, fortOptions, fortFutures, nestPriceFacade, USDT_DECIMALS } = await deploy();
 
         await dcu.setMinter(owner.address, 1);
         await dcu.mint(owner.address, '10000000000000000000000000');
@@ -37,7 +37,7 @@ describe('HedgeOptions', function() {
         }
 
         const cfg = async function(tokenAddress) {
-            let c = await hedgeOptions.getConfig(tokenAddress);
+            let c = await fortOptions.getConfig(tokenAddress);
             return {
                 sigmaSQ: c.sigmaSQ.toString(),
                 miu: c.miu.toString(),
@@ -54,13 +54,13 @@ describe('HedgeOptions', function() {
 
         // if (true) {
         //     console.log('2. Read config');
-        //     await hedgeOptions.setConfig(eth.address, {
+        //     await fortOptions.setConfig(eth.address, {
         //         sigmaSQ: '99999999',
         //         miu: '88888',
         //         minPeriod: '77777'
         //     });
 
-        //     await hedgeOptions.setConfig(hbtc.address, {
+        //     await fortOptions.setConfig(hbtc.address, {
         //         sigmaSQ: '333333',
         //         miu: '22222',
         //         minPeriod: '1111'
@@ -73,19 +73,19 @@ describe('HedgeOptions', function() {
 
         if (true) {
             console.log('3. list1');
-            console.log('tokenCount=' + await hedgeOptions.getOptionCount());
-            let options = await hedgeOptions.list(0, 5, 0);
+            console.log('tokenCount=' + await fortOptions.getOptionCount());
+            let options = await fortOptions.list(0, 5, 0);
             console.log(options);
 
-            options = await hedgeOptions.list(0, 5, 1);
+            options = await fortOptions.list(0, 5, 1);
             console.log(options);
         }
 
         if (true) {
             console.log('4. list2');
 
-            console.log('tokenCount=' + await hedgeOptions.getOptionCount());
-            await hedgeOptions.open(eth.address, toBigInt(2450000000000, USDT_DECIMALS), true, 100000, toBigInt(1000), {
+            console.log('tokenCount=' + await fortOptions.getOptionCount());
+            await fortOptions.open(eth.address, toBigInt(2450000000000, USDT_DECIMALS), true, 100000, toBigInt(1000), {
                 value: toBigInt(0.01)
             });
             // /// @dev Open option
@@ -104,18 +104,18 @@ describe('HedgeOptions', function() {
             //     uint dcuAmount
             // )
 
-            // await hedgeOptions.open(hbtc.address, 52450000000, false, 100000, toBigInt(100000), {
+            // await fortOptions.open(hbtc.address, 52450000000, false, 100000, toBigInt(100000), {
             //     value: toBigInt(0.02)
             // });
-            console.log('tokenCount=' + await hedgeOptions.getOptionCount());
-            let options = await hedgeOptions.list(0, 5, 0);
+            console.log('tokenCount=' + await fortOptions.getOptionCount());
+            let options = await fortOptions.list(0, 5, 0);
             console.log(options);
 
-            options = await hedgeOptions.list(0, 5, 1);
+            options = await fortOptions.list(0, 5, 1);
             console.log(options);
 
-            //let fot1 = await hedgeOptions.getOptionInfo(eth.address, 2450000000, true, 100000);
-            //let fot2 = await hedgeOptions.getOptionInfo(hbtc.address, 52450000000, false, 100000);
+            //let fot1 = await fortOptions.getOptionInfo(eth.address, 2450000000, true, 100000);
+            //let fot2 = await fortOptions.getOptionInfo(hbtc.address, 52450000000, false, 100000);
 
             //console.log('fot1: ' + fot1.index);
             //console.log('fot2: ' + fot2.index);

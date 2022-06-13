@@ -2,12 +2,12 @@
 
 pragma solidity ^0.8.6;
 
-import "./interfaces/IHedgeGovernance.sol";
+import "./interfaces/IFortGovernance.sol";
 
-import "./HedgeMapping.sol";
+import "./FortMapping.sol";
 
 /// @dev Hedge governance contract
-contract HedgeGovernance is HedgeMapping, IHedgeGovernance {
+contract FortGovernance is FortMapping, IFortGovernance {
 
     /// @dev Structure of governance address information
     struct GovernanceInfo {
@@ -19,12 +19,12 @@ contract HedgeGovernance is HedgeMapping, IHedgeGovernance {
     mapping(address=>GovernanceInfo) _governanceMapping;
 
     /// @dev To support open-zeppelin/upgrades
-    /// @param governance IHedgeGovernance implementation contract address
+    /// @param governance IFortGovernance implementation contract address
     function initialize(address governance) public override {
 
-        // While initialize HedgeGovernance, newGovernance is address(this),
+        // While initialize FortGovernance, newGovernance is address(this),
         // So must let newGovernance to 0
-        require(governance == address(0), "HedgeGovernance:!address");
+        require(governance == address(0), "FortGovernance:!address");
 
         // newGovernance is address(this)
         super.initialize(address(this));

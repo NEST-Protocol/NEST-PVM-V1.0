@@ -5,13 +5,13 @@ pragma solidity ^0.8.6;
 import "./interfaces/IFortFutures.sol";
 
 import "./custom/ChainParameter.sol";
-import "./custom/HedgeFrequentlyUsed.sol";
+import "./custom/FortFrequentlyUsed.sol";
 import "./custom/FortPriceAdapter.sol";
 
 import "./DCU.sol";
 
 /// @dev Futures
-contract FortFutures is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, IFortFutures {
+contract FortFutures is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IFortFutures {
 
     /// @dev Account information
     struct Account {
@@ -58,7 +58,7 @@ contract FortFutures is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
     }
 
     /// @dev To support open-zeppelin/upgrades
-    /// @param governance IHedgeGovernance implementation contract address
+    /// @param governance IFortGovernance implementation contract address
     function initialize(address governance) public override {
         super.initialize(governance);
         _futures.push();
@@ -428,6 +428,8 @@ contract FortFutures is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
     /// @return Impact cost
     function impactCost(uint vol) public pure override returns (uint) {
         //impactCost = vol / 10000 / 1000;
+        // TODO:
+        return 0;
         return vol / 10000000;
     }
 
@@ -459,6 +461,9 @@ contract FortFutures is ChainParameter, HedgeFrequentlyUsed, FortPriceAdapter, I
         } else {
             k += _sqrt(1 ether * BLOCK_TIME * sigmaSQ * (block.number - bn));
         }
+
+        // TODO:
+        k = 0;
     }
 
     function _sqrt(uint256 x) private pure returns (uint256) {

@@ -6,14 +6,14 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "./libs/TransferHelper.sol";
 
-import "./interfaces/IHedgeVaultForStaking.sol";
+import "./interfaces/IFortVaultForStaking.sol";
 
-import "./custom/HedgeFrequentlyUsed.sol";
+import "./custom/FortFrequentlyUsed.sol";
 
 import "./DCU.sol";
 
 /// @dev Stake xtoken, earn dcu
-contract HedgeVaultForStaking is HedgeFrequentlyUsed, IHedgeVaultForStaking {
+contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
 
     /* *******************************************************************
         There are three options: Stake, Get Reward, Withdraw
@@ -76,7 +76,7 @@ contract HedgeVaultForStaking is HedgeFrequentlyUsed, IHedgeVaultForStaking {
     // Stake channels. xtoken=>StakeChannel
     mapping(uint=>StakeChannel) _channels;
     
-    /// @dev Create HedgeVaultForStaking
+    /// @dev Create FortVaultForStaking
     constructor () {
     }
 

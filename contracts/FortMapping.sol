@@ -2,26 +2,26 @@
 
 pragma solidity ^0.8.6;
 
-import "./interfaces/IHedgeMapping.sol";
+import "./interfaces/IFortMapping.sol";
 
-import "./HedgeBase.sol";
+import "./FortBase.sol";
 
 /// @dev The contract is for Hedge builtin contract address mapping
-abstract contract HedgeMapping is HedgeBase, IHedgeMapping {
+abstract contract FortMapping is FortBase, IFortMapping {
 
     /// @dev Address of dcu token contract
     address _dcuToken;
 
-    /// @dev IHedgeDAO implementation contract address
+    /// @dev IFortDAO implementation contract address
     address _hedgeDAO;
 
-    /// @dev IHedgeOptions implementation contract address
+    /// @dev IFortOptions implementation contract address
     address _hedgeOptions;
 
-    /// @dev IHedgeFutures implementation contract address
+    /// @dev IFortFutures implementation contract address
     address _hedgeFutures;
 
-    /// @dev IHedgeVaultForStaking implementation contract address
+    /// @dev IFortVaultForStaking implementation contract address
     address _hedgeVaultForStaking;
 
     /// @dev INestPriceFacade implementation contract address
@@ -32,17 +32,17 @@ abstract contract HedgeMapping is HedgeBase, IHedgeMapping {
 
     /// @dev Set the built-in contract address of the system
     /// @param dcuToken Address of dcu token contract
-    /// @param hedgeDAO IHedgeDAO implementation contract address
-    /// @param hedgeOptions IHedgeOptions implementation contract address for Hedge
-    /// @param hedgeFutures IHedgeFutures implementation contract address
-    /// @param hedgeVaultForStaking IHedgeVaultForStaking implementation contract address
+    /// @param fortDAO IFortDAO implementation contract address
+    /// @param fortOptions IFortOptions implementation contract address for Hedge
+    /// @param fortFutures IFortFutures implementation contract address
+    /// @param fortVaultForStaking IFortVaultForStaking implementation contract address
     /// @param nestPriceFacade INestPriceFacade implementation contract address
     function setBuiltinAddress(
         address dcuToken,
-        address hedgeDAO,
-        address hedgeOptions,
-        address hedgeFutures,
-        address hedgeVaultForStaking,
+        address fortDAO,
+        address fortOptions,
+        address fortFutures,
+        address fortVaultForStaking,
         address nestPriceFacade
     ) external override onlyGovernance {
 
@@ -50,21 +50,21 @@ abstract contract HedgeMapping is HedgeBase, IHedgeMapping {
             emit AddressUpdated("dcuToken", _dcuToken, dcuToken);
             _dcuToken = dcuToken;
         }
-        if (hedgeDAO != address(0)) {
-            emit AddressUpdated("hedgeDAO", _hedgeDAO, hedgeDAO);
-            _hedgeDAO = hedgeDAO;
+        if (fortDAO != address(0)) {
+            emit AddressUpdated("fortDAO", _hedgeDAO, fortDAO);
+            _hedgeDAO = fortDAO;
         }
-        if (hedgeOptions != address(0)) {
-            emit AddressUpdated("hedgeOptions", _hedgeOptions, hedgeOptions);
-            _hedgeOptions = hedgeOptions;
+        if (fortOptions != address(0)) {
+            emit AddressUpdated("fortOptions", _hedgeOptions, fortOptions);
+            _hedgeOptions = fortOptions;
         }
-        if (hedgeFutures != address(0)) {
-            emit AddressUpdated("hedgeFutures", _hedgeFutures, hedgeFutures);
-            _hedgeFutures = hedgeFutures;
+        if (fortFutures != address(0)) {
+            emit AddressUpdated("fortFutures", _hedgeFutures, fortFutures);
+            _hedgeFutures = fortFutures;
         }
-        if (hedgeVaultForStaking != address(0)) {
-            emit AddressUpdated("hedgeVaultForStaking", _hedgeVaultForStaking, hedgeVaultForStaking);
-            _hedgeVaultForStaking = hedgeVaultForStaking;
+        if (fortVaultForStaking != address(0)) {
+            emit AddressUpdated("fortVaultForStaking", _hedgeVaultForStaking, fortVaultForStaking);
+            _hedgeVaultForStaking = fortVaultForStaking;
         }
         if (nestPriceFacade != address(0)) {
             emit AddressUpdated("nestPriceFacade", _nestPriceFacade, nestPriceFacade);
@@ -74,17 +74,17 @@ abstract contract HedgeMapping is HedgeBase, IHedgeMapping {
 
     /// @dev Get the built-in contract address of the system
     /// @return dcuToken Address of dcu token contract
-    /// @return hedgeDAO IHedgeDAO implementation contract address
-    /// @return hedgeOptions IHedgeOptions implementation contract address
-    /// @return hedgeFutures IHedgeFutures implementation contract address
-    /// @return hedgeVaultForStaking IHedgeVaultForStaking implementation contract address
+    /// @return fortDAO IFortDAO implementation contract address
+    /// @return fortOptions IFortOptions implementation contract address
+    /// @return fortFutures IFortFutures implementation contract address
+    /// @return fortVaultForStaking IFortVaultForStaking implementation contract address
     /// @return nestPriceFacade INestPriceFacade implementation contract address
     function getBuiltinAddress() external view override returns (
         address dcuToken,
-        address hedgeDAO,
-        address hedgeOptions,
-        address hedgeFutures,
-        address hedgeVaultForStaking,
+        address fortDAO,
+        address fortOptions,
+        address fortFutures,
+        address fortVaultForStaking,
         address nestPriceFacade
     ) {
         return (
@@ -101,20 +101,20 @@ abstract contract HedgeMapping is HedgeBase, IHedgeMapping {
     /// @return Address of dcu token contract
     function getDCUTokenAddress() external view override returns (address) { return _dcuToken; }
 
-    /// @dev Get IHedgeDAO implementation contract address
-    /// @return IHedgeDAO implementation contract address
+    /// @dev Get IFortDAO implementation contract address
+    /// @return IFortDAO implementation contract address
     function getHedgeDAOAddress() external view override returns (address) { return _hedgeDAO; }
 
-    /// @dev Get IHedgeOptions implementation contract address
-    /// @return IHedgeOptions implementation contract address
+    /// @dev Get IFortOptions implementation contract address
+    /// @return IFortOptions implementation contract address
     function getHedgeOptionsAddress() external view override returns (address) { return _hedgeOptions; }
 
-    /// @dev Get IHedgeFutures implementation contract address
-    /// @return IHedgeFutures implementation contract address
+    /// @dev Get IFortFutures implementation contract address
+    /// @return IFortFutures implementation contract address
     function getHedgeFuturesAddress() external view override returns (address) { return _hedgeFutures; }
 
-    /// @dev Get IHedgeVaultForStaking implementation contract address
-    /// @return IHedgeVaultForStaking implementation contract address
+    /// @dev Get IFortVaultForStaking implementation contract address
+    /// @return IFortVaultForStaking implementation contract address
     function getHedgeVaultForStakingAddress() external view override returns (address) { return _hedgeVaultForStaking; }
 
     /// @dev Get INestPriceFacade implementation contract address

@@ -2,14 +2,14 @@ const { expect } = require('chai');
 const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, snd, tableSnd, d1, Vc, Vp } = require('./utils.js');
 
-describe('HedgeOptions', function() {
+describe('FortOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
         const { 
             eth, usdt, hbtc, dcu, 
-            hedgeOptions, hedgeFutures, nestPriceFacade, hedgeGovernance,
-            hedgeVaultForStaking, hedgeDAO, USDT_DECIMALS
+            fortOptions, fortFutures, nestPriceFacade, fortGovernance,
+            fortVaultForStaking, fortDAO, USDT_DECIMALS
         } = await deploy();
 
         await dcu.setMinter(owner.address, 1);
@@ -36,12 +36,12 @@ describe('HedgeOptions', function() {
                 height: await ethers.provider.getBlockNumber(),
                 owner: await getAccountInfo(owner),
                 dcu: await getAccountInfo(dcu),
-                hedgeDAO: await getAccountInfo(hedgeDAO),
+                fortDAO: await getAccountInfo(fortDAO),
             };
         }
 
         const cfg = async function(tokenAddress) {
-            let c = await hedgeOptions.getConfig(tokenAddress);
+            let c = await fortOptions.getConfig(tokenAddress);
             return {
                 sigmaSQ: c.sigmaSQ.toString(),
                 miu: c.miu.toString(),
@@ -60,35 +60,35 @@ describe('HedgeOptions', function() {
 
         if (true) {
             console.log('1. initialize');
-            //await hedgeGovernance.initialize(eth.address);
-            //await hedgeGovernance.initialize(hedgeGovernance.address);
+            //await fortGovernance.initialize(eth.address);
+            //await fortGovernance.initialize(fortGovernance.address);
         }
 
         if (true) {
             console.log('2. getGovernance');
-            //await hedgeGovernance.initialize(eth.address);
-            console.log('gov: ' + await hedgeGovernance.getGovernance(hedgeGovernance.address));
-            console.log('addr1: ' + await hedgeGovernance.getGovernance(addr1.address));
-            console.log('owner: ' + await hedgeGovernance.getGovernance(owner.address));
+            //await fortGovernance.initialize(eth.address);
+            console.log('gov: ' + await fortGovernance.getGovernance(fortGovernance.address));
+            console.log('addr1: ' + await fortGovernance.getGovernance(addr1.address));
+            console.log('owner: ' + await fortGovernance.getGovernance(owner.address));
             console.log();
 
-            await hedgeGovernance.setGovernance(addr1.address, 1);
+            await fortGovernance.setGovernance(addr1.address, 1);
             
-            console.log('gov: ' + await hedgeGovernance.getGovernance(hedgeGovernance.address));
-            console.log('addr1: ' + await hedgeGovernance.getGovernance(addr1.address));
-            console.log('owner: ' + await hedgeGovernance.getGovernance(owner.address));
+            console.log('gov: ' + await fortGovernance.getGovernance(fortGovernance.address));
+            console.log('addr1: ' + await fortGovernance.getGovernance(addr1.address));
+            console.log('owner: ' + await fortGovernance.getGovernance(owner.address));
             console.log();
 
-            console.log('gov: ' + await hedgeGovernance.checkGovernance(hedgeGovernance.address, 0));
-            console.log('addr1: ' + await hedgeGovernance.checkGovernance(addr1.address, 0));
-            console.log('owner: ' + await hedgeGovernance.checkGovernance(owner.address, 0));
+            console.log('gov: ' + await fortGovernance.checkGovernance(fortGovernance.address, 0));
+            console.log('addr1: ' + await fortGovernance.checkGovernance(addr1.address, 0));
+            console.log('owner: ' + await fortGovernance.checkGovernance(owner.address, 0));
             console.log();
 
-            await hedgeGovernance.setGovernance(hedgeGovernance.address, 7);
+            await fortGovernance.setGovernance(fortGovernance.address, 7);
             
-            console.log('gov: ' + await hedgeGovernance.getGovernance(hedgeGovernance.address));
-            console.log('addr1: ' + await hedgeGovernance.getGovernance(addr1.address));
-            console.log('owner: ' + await hedgeGovernance.getGovernance(owner.address));
+            console.log('gov: ' + await fortGovernance.getGovernance(fortGovernance.address));
+            console.log('addr1: ' + await fortGovernance.getGovernance(addr1.address));
+            console.log('owner: ' + await fortGovernance.getGovernance(owner.address));
         }
     });
 });

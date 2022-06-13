@@ -8,10 +8,10 @@ import "./libs/TransferHelper.sol";
 
 import "./interfaces/IFortSwap.sol";
 
-import "./custom/HedgeFrequentlyUsed.sol";
+import "./custom/FortFrequentlyUsed.sol";
 
 /// @dev Swap dcu with token
-contract FortSwap is HedgeFrequentlyUsed, IFortSwap {
+contract FortSwap is FortFrequentlyUsed, IFortSwap {
 
     // Target token address
     //address constant TOKEN_ADDRESS = 0x55d398326f99059fF775485246999027B3197955;

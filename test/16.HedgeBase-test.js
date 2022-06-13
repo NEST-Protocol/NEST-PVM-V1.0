@@ -2,14 +2,14 @@ const { expect } = require('chai');
 const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, snd, tableSnd, d1, Vc, Vp } = require('./utils.js');
 
-describe('HedgeOptions', function() {
+describe('FortOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
         const { 
             eth, usdt, hbtc, dcu, 
-            hedgeOptions, hedgeFutures, nestPriceFacade, hedgeGovernance,
-            hedgeVaultForStaking, hedgeDAO, USDT_DECIMALS
+            fortOptions, fortFutures, nestPriceFacade, fortGovernance,
+            fortVaultForStaking, fortDAO, USDT_DECIMALS
         } = await deploy();
 
         await dcu.setMinter(owner.address, 1);
@@ -36,12 +36,12 @@ describe('HedgeOptions', function() {
                 height: await ethers.provider.getBlockNumber(),
                 owner: await getAccountInfo(owner),
                 dcu: await getAccountInfo(dcu),
-                hedgeDAO: await getAccountInfo(hedgeDAO),
+                fortDAO: await getAccountInfo(fortDAO),
             };
         }
 
         const cfg = async function(tokenAddress) {
-            let c = await hedgeOptions.getConfig(tokenAddress);
+            let c = await fortOptions.getConfig(tokenAddress);
             return {
                 sigmaSQ: c.sigmaSQ.toString(),
                 miu: c.miu.toString(),
@@ -61,14 +61,14 @@ describe('HedgeOptions', function() {
         if (true) {
             console.log('1. initialize');
             await dcu.update(eth.address);
-            await dcu.initialize(hedgeGovernance.address);
-            await dcu.update(hedgeGovernance.address);
-            await dcu.update(hedgeGovernance.address);
-            await dcu.update(hedgeGovernance.address);
-            await dcu.update(hedgeGovernance.address);
-            await dcu.update(hedgeGovernance.address);
-            await dcu.update(hedgeGovernance.address);
-            await dcu.update(hedgeGovernance.address);
+            await dcu.initialize(fortGovernance.address);
+            await dcu.update(fortGovernance.address);
+            await dcu.update(fortGovernance.address);
+            await dcu.update(fortGovernance.address);
+            await dcu.update(fortGovernance.address);
+            await dcu.update(fortGovernance.address);
+            await dcu.update(fortGovernance.address);
+            await dcu.update(fortGovernance.address);
         }
 
         if (false) {

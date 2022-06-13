@@ -2,12 +2,12 @@
 
 pragma solidity ^0.8.6;
 
-import "./HedgeFrequentlyUsed.sol";
+import "./FortFrequentlyUsed.sol";
 
 import "../interfaces/INestBatchPrice2.sol";
 
 /// @dev Base contract of Hedge
-contract FortPriceAdapter is HedgeFrequentlyUsed {
+contract FortPriceAdapter is FortFrequentlyUsed {
     
     // token configuration
     struct TokenConfig {

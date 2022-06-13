@@ -1,7 +1,7 @@
-# IHedgeOptions
+# IFortOptions
 
 ## 1. Interface Description
-    IHedgeVaultForStaking
+    IFortVaultForStaking
 
 ## 2. Method Description
 

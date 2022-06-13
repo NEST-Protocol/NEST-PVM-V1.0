@@ -1,4 +1,4 @@
-# IHedgeOptions
+# IFortOptions
 
 ## 1. Interface Description
     Define methods for european option

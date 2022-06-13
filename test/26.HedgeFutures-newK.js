@@ -2,11 +2,11 @@ const { expect } = require('chai');
 const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, snd, tableSnd, d1, Vc, Vp } = require('./utils.js');
 
-describe('HedgeOptions', function() {
+describe('FortOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
-        const { eth, usdt, hbtc, dcu, hedgeOptions, hedgeFutures, nestPriceFacade, BLOCK_TIME, USDT_DECIMALS } = await deploy();
+        const { eth, usdt, hbtc, dcu, fortOptions, fortFutures, nestPriceFacade, BLOCK_TIME, USDT_DECIMALS } = await deploy();
         const TestERC20 = await ethers.getContractFactory('TestERC20');
         await dcu.setMinter(owner.address, 1);
         await dcu.mint(owner.address, '10000000000000000000000000');
@@ -35,7 +35,7 @@ describe('HedgeOptions', function() {
         }
 
         const cfg = async function(tokenAddress) {
-            let c = await hedgeOptions.getConfig(tokenAddress);
+            let c = await fortOptions.getConfig(tokenAddress);
             return {
                 sigmaSQ: c.sigmaSQ.toString(),
                 miu: c.miu.toString(),
@@ -66,7 +66,7 @@ describe('HedgeOptions', function() {
             return Math.floor(usdtAmount * 10 ** decimals / tokenAmount);
         };
 
-        let receipt = await hedgeFutures.buy(
+        let receipt = await fortFutures.buy(
             eth.address,
             5,
             true,
@@ -24056,7 +24056,7 @@ describe('HedgeOptions', function() {
             let bn0 = prices[i-4];
             let p = Math.floor(prices[i+1] * 1000000);
             let bn = prices[i];
-            let k = await hedgeFutures.calcRevisedK(p0, bn0, p, bn);
+            let k = await fortFutures.calcRevisedK(p0, bn0, p, bn);
 
             let rk = parseFloat(toDecimal(k));
             let ck = await calcK(p0, bn0, p, bn);

@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.6;
 
-import "./IHedgeMapping.sol";
+import "./IFortMapping.sol";
 
 /// @dev This interface defines the governance methods
-interface IHedgeGovernance is IHedgeMapping {
+interface IFortGovernance is IFortMapping {
 
     /// @dev Governance flag changed event
     /// @param addr Target address

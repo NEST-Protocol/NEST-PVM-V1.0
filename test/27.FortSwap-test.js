@@ -3,16 +3,16 @@ const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, snd, tableSnd, d1, Vc, Vp } = require('./utils.js');
 const { ethers, upgrades } = require('hardhat');
 
-describe('HedgeOptions', function() {
+describe('FortOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
-        const { eth, usdt, hbtc, dcu, hedgeOptions, hedgeFutures, nestPriceFacade, hedgeGovernance, BLOCK_TIME, USDT_DECIMALS } = await deploy();
+        const { eth, usdt, hbtc, dcu, fortOptions, fortFutures, nestPriceFacade, fortGovernance, BLOCK_TIME, USDT_DECIMALS } = await deploy();
         const FortSwap = await ethers.getContractFactory('FortSwap');
         const TestERC20 = await ethers.getContractFactory('TestERC20');
         
-        const fortSwap = await upgrades.deployProxy(FortSwap, [hedgeGovernance.address], { initializer: 'initialize' }); 
-        await fortSwap.update(hedgeGovernance.address);
+        const fortSwap = await upgrades.deployProxy(FortSwap, [fortGovernance.address], { initializer: 'initialize' }); 
+        await fortSwap.update(fortGovernance.address);
         const busd = await TestERC20.deploy('BUSD', "BUSD", 18);
         console.log('busd: ' + busd.address);
 
@@ -46,7 +46,7 @@ describe('HedgeOptions', function() {
         }
 
         const cfg = async function(tokenAddress) {
-            let c = await hedgeOptions.getConfig(tokenAddress);
+            let c = await fortOptions.getConfig(tokenAddress);
             return {
                 sigmaSQ: c.sigmaSQ.toString(),
                 miu: c.miu.toString(),

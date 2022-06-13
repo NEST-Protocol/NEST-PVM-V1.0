@@ -3,7 +3,7 @@
 pragma solidity ^0.8.6;
 
 /// @dev The interface defines methods for Hedge builtin contract address mapping
-interface IHedgeMapping {
+interface IFortMapping {
 
     /// @dev Address updated event
     /// @param name Address name
@@ -13,33 +13,33 @@ interface IHedgeMapping {
 
     /// @dev Set the built-in contract address of the system
     /// @param dcuToken Address of dcu token contract
-    /// @param hedgeDAO IHedgeDAO implementation contract address
-    /// @param hedgeOptions IHedgeOptions implementation contract address
-    /// @param hedgeFutures IHedgeFutures implementation contract address
-    /// @param hedgeVaultForStaking IHedgeVaultForStaking implementation contract address
+    /// @param fortDAO IFortDAO implementation contract address
+    /// @param fortOptions IFortOptions implementation contract address
+    /// @param fortFutures IFortFutures implementation contract address
+    /// @param fortVaultForStaking IFortVaultForStaking implementation contract address
     /// @param nestPriceFacade INestPriceFacade implementation contract address
     function setBuiltinAddress(
         address dcuToken,
-        address hedgeDAO,
-        address hedgeOptions,
-        address hedgeFutures,
-        address hedgeVaultForStaking,
+        address fortDAO,
+        address fortOptions,
+        address fortFutures,
+        address fortVaultForStaking,
         address nestPriceFacade
     ) external;
 
     /// @dev Get the built-in contract address of the system
     /// @return dcuToken Address of dcu token contract
-    /// @return hedgeDAO IHedgeDAO implementation contract address
-    /// @return hedgeOptions IHedgeOptions implementation contract address
-    /// @return hedgeFutures IHedgeFutures implementation contract address
-    /// @return hedgeVaultForStaking IHedgeVaultForStaking implementation contract address
+    /// @return fortDAO IFortDAO implementation contract address
+    /// @return fortOptions IFortOptions implementation contract address
+    /// @return fortFutures IFortFutures implementation contract address
+    /// @return fortVaultForStaking IFortVaultForStaking implementation contract address
     /// @return nestPriceFacade INestPriceFacade implementation contract address
     function getBuiltinAddress() external view returns (
         address dcuToken,
-        address hedgeDAO,
-        address hedgeOptions,
-        address hedgeFutures,
-        address hedgeVaultForStaking,
+        address fortDAO,
+        address fortOptions,
+        address fortFutures,
+        address fortVaultForStaking,
         address nestPriceFacade
     );
 
@@ -47,20 +47,20 @@ interface IHedgeMapping {
     /// @return Address of dcu token contract
     function getDCUTokenAddress() external view returns (address);
 
-    /// @dev Get IHedgeDAO implementation contract address
-    /// @return IHedgeDAO implementation contract address
+    /// @dev Get IFortDAO implementation contract address
+    /// @return IFortDAO implementation contract address
     function getHedgeDAOAddress() external view returns (address);
 
-    /// @dev Get IHedgeOptions implementation contract address
-    /// @return IHedgeOptions implementation contract address
+    /// @dev Get IFortOptions implementation contract address
+    /// @return IFortOptions implementation contract address
     function getHedgeOptionsAddress() external view returns (address);
 
-    /// @dev Get IHedgeFutures implementation contract address
-    /// @return IHedgeFutures implementation contract address
+    /// @dev Get IFortFutures implementation contract address
+    /// @return IFortFutures implementation contract address
     function getHedgeFuturesAddress() external view returns (address);
 
-    /// @dev Get IHedgeVaultForStaking implementation contract address
-    /// @return IHedgeVaultForStaking implementation contract address
+    /// @dev Get IFortVaultForStaking implementation contract address
+    /// @return IFortVaultForStaking implementation contract address
     function getHedgeVaultForStakingAddress() external view returns (address);
 
     /// @dev Get INestPriceFacade implementation contract address

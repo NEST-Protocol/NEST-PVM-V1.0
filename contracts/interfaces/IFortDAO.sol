@@ -3,7 +3,7 @@
 pragma solidity ^0.8.6;
 
 /// @dev This interface defines the DAO methods
-interface IHedgeDAO {
+interface IFortDAO {
 
     /// @dev Application Flag Changed event
     /// @param addr DAO application contract address

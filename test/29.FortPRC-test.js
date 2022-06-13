@@ -3,13 +3,13 @@ const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, snd, tableSnd, d1, Vc, Vp } = require('./utils.js');
 const { ethers, upgrades } = require('hardhat');
 
-describe('HedgeOptions', function() {
+describe('FortOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
         const { 
-            eth, usdt, hbtc, dcu, hedgeOptions, hedgeFutures, fortLPGuarantee, fortPRC,
-            nestPriceFacade, hedgeGovernance, BLOCK_TIME, USDT_DECIMALS 
+            eth, usdt, hbtc, dcu, fortOptions, fortFutures, fortLPGuarantee, fortPRC,
+            nestPriceFacade, fortGovernance, BLOCK_TIME, USDT_DECIMALS 
         } = await deploy();
 
         await nestPriceFacade.setPrice(hbtc.address, '74000000000000000', 1);
@@ -32,7 +32,7 @@ describe('HedgeOptions', function() {
         }
 
         const cfg = async function(tokenAddress) {
-            let c = await hedgeOptions.getConfig(tokenAddress);
+            let c = await fortOptions.getConfig(tokenAddress);
             return {
                 sigmaSQ: c.sigmaSQ.toString(),
                 miu: c.miu.toString(),

@@ -4,10 +4,10 @@ pragma solidity ^0.8.6;
 
 import "./libs/SimpleERC20.sol";
 
-import "./custom/HedgeFrequentlyUsed.sol";
+import "./custom/FortFrequentlyUsed.sol";
 
 /// @dev Guarantee
-contract FortPRCToken is HedgeFrequentlyUsed, SimpleERC20 {
+contract FortPRCToken is FortFrequentlyUsed, SimpleERC20 {
 
     /// @dev Mining permission flag change event
     /// @param account Target address

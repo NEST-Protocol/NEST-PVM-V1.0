@@ -2,11 +2,11 @@ const { expect } = require('chai');
 const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, snd, tableSnd, d1, Vc, Vp } = require('./utils.js');
 
-describe('HedgeOptions', function() {
+describe('FortOptions', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
-        const { eth, usdt, hbtc, dcu, hedgeOptions, hedgeFutures, nestPriceFacade, 
+        const { eth, usdt, hbtc, dcu, fortOptions, fortFutures, nestPriceFacade, 
             BLOCK_TIME, USDT_DECIMALS, MIU_LONG, MIU_SHORT } = await deploy();
         const USDT_BASE = BigInt(10 ** USDT_DECIMALS);
 
@@ -20,10 +20,10 @@ describe('HedgeOptions', function() {
         await nestPriceFacade.setPrice(usdt.address, toBigInt(3510, USDT_DECIMALS), 1);
 
         const BLOCK = 100000;
-        await hedgeOptions.open(hbtc.address, toBigInt(2450.123456, USDT_DECIMALS), true, BLOCK, toBigInt(1000), {
+        await fortOptions.open(hbtc.address, toBigInt(2450.123456, USDT_DECIMALS), true, BLOCK, toBigInt(1000), {
             value: toBigInt(0.01)
         });
-        // let fot = await hedgeOptions.getOptionInfo(
+        // let fot = await fortOptions.getOptionInfo(
         //     hbtc.address,
         //     '2450123456',
         //     true,
@@ -32,7 +32,7 @@ describe('HedgeOptions', function() {
         let fot = { index: 0 };
 
         console.log('owner: ' + toDecimal(await dcu.balanceOf(owner.address)) + 'dcu');
-        console.log('owner: ' + toDecimal(await hedgeOptions.balanceOf(fot.index, owner.address)) + '(fot)');
+        console.log('owner: ' + toDecimal(await fortOptions.balanceOf(fot.index, owner.address)) + '(fot)');
         let v;
         {
             let S0 = 3510;
@@ -46,30 +46,30 @@ describe('HedgeOptions', function() {
             console.log('vc=' + vc);
             //console.log('vp=' + vp);
             console.log('FOT=' + 1000 / vc);
-            expect(Math.abs(1000 / vc - (await hedgeOptions.balanceOf(fot.index, owner.address))/1e18)).to.lt(1e-5);
+            expect(Math.abs(1000 / vc - (await fortOptions.balanceOf(fot.index, owner.address))/1e18)).to.lt(1e-5);
             console.log('gained=' + 1000 / vc * (3510 - 2450.123456));
             v = 1000 / vc * (3510 - 2450.123456) + (await dcu.balanceOf(owner.address)) / 1e18;
         }
 
-        await hedgeOptions.exercise(fot.index, await hedgeOptions.balanceOf(fot.index, owner.address), {
+        await fortOptions.exercise(fot.index, await fortOptions.balanceOf(fot.index, owner.address), {
             value: toBigInt(0.01)
         });
         console.log('owner: ' + toDecimal(await dcu.balanceOf(owner.address)) + 'dcu');
-        console.log('owner: ' + toDecimal(await hedgeOptions.balanceOf(fot.index, owner.address)) + '(fot)');
+        console.log('owner: ' + toDecimal(await fortOptions.balanceOf(fot.index, owner.address)) + '(fot)');
         expect(Math.abs(v - (await dcu.balanceOf(owner.address)) / 1e18)).to.lt(1e-4);
         console.log();
 
-        // await hedgeOptions.open(hbtc.address, '47215471234', true, BLOCK, toBigInt(100000), {
+        // await fortOptions.open(hbtc.address, '47215471234', true, BLOCK, toBigInt(100000), {
         //     value: toBigInt(0.02)
         // });
-        // fot = await hedgeOptions.getOptionInfo(
+        // fot = await fortOptions.getOptionInfo(
         //     hbtc.address,
         //     '47215471234',
         //     true,
         //     BLOCK
         // );
         // console.log('owner: ' + toDecimal(await dcu.balanceOf(owner.address)) + 'dcu');
-        // console.log('owner: ' + toDecimal(await hedgeOptions.balanceOf(fot.index, owner.address)) + '(fot)');
+        // console.log('owner: ' + toDecimal(await fortOptions.balanceOf(fot.index, owner.address)) + '(fot)');
         // {
         //     let S0 = 47432.432432;
         //     let K = 47215.471234;
@@ -82,16 +82,16 @@ describe('HedgeOptions', function() {
         //     console.log('vc=' + vc);
         //     //console.log('vp=' + vp);
         //     console.log('FOT=' + 100000 / vc);
-        //     expect(Math.abs(100000 / vc - (await hedgeOptions.balanceOf(fot.index, owner.address))/1e18)).to.lt(1e-2);
+        //     expect(Math.abs(100000 / vc - (await fortOptions.balanceOf(fot.index, owner.address))/1e18)).to.lt(1e-2);
         //     console.log('gained=' + 100000 / vc * (47432.432432 - 47215.471234));
         //     v = 100000 / vc * (47432.432432 - 47215.471234) + (await dcu.balanceOf(owner.address)) / 1e18;
         // }
 
-        // await hedgeOptions.exercise(fot.index, await hedgeOptions.balanceOf(fot.index, owner.address), {
+        // await fortOptions.exercise(fot.index, await fortOptions.balanceOf(fot.index, owner.address), {
         //     value: toBigInt(0.02)
         // });
         // console.log('owner: ' + toDecimal(await dcu.balanceOf(owner.address)) + 'dcu');
-        // console.log('owner: ' + toDecimal(await hedgeOptions.balanceOf(fot.index, owner.address)) + '(fot)');
+        // console.log('owner: ' + toDecimal(await fortOptions.balanceOf(fot.index, owner.address)) + '(fot)');
         // expect(Math.abs(v - (await dcu.balanceOf(owner.address)) / 1e18)).to.lt(1e0);
         // console.log();
     });

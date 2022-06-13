@@ -1,4 +1,4 @@
-# IHedgeOptions
+# IFortOptions
 
 ## 1. Interface Description
     Defines methods for Futures
