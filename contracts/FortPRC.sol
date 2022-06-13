@@ -120,6 +120,7 @@ contract FortPRC is FortPRCToken {
         return _dices.length;
     }
 
+    /*
     /// @dev start a roll dice
     /// @param n count of PRC
     /// @param m times, 4 decimals
@@ -164,7 +165,8 @@ contract FortPRC is FortPRCToken {
             DCU(DCU_TOKEN_ADDRESS).mint(owner, gain);
         }
     }
-
+    */
+    
     // Calculate gained number of DCU
     function _gained(Dice memory dice, uint index) private view returns (uint gain) {
         uint hashBlock = uint(dice.openBlock) + OPEN_BLOCK_SPAN;

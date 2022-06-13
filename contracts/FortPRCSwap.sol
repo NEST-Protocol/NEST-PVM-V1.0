@@ -15,7 +15,7 @@ contract FortPRCSwap is FortFrequentlyUsed {
     // // Target token address
     // address constant PRC_TOKEN_ADDRESS = 0xf43A71e4Da398e5731c9580D11014dE5e8fD0530;
 
-    // TODO:
+    // TODO: Use constant version
     address COFIX_ROUTER_ADDRESS;
     address PRC_TOKEN_ADDRESS;
     function setAddress(address cofixRouter, address prcAddress) external onlyGovernance {
@@ -55,7 +55,7 @@ contract FortPRCSwap is FortFrequentlyUsed {
         //     amountOut = amountIn;
         // } else 
         if (src == DCU_TOKEN_ADDRESS && dest == PRC_TOKEN_ADDRESS) {
-            amountOut = amountIn >> 1;
+            amountOut = amountIn * 1 ether / 1.01 ether;
         } else {
             revert("PRCSwap:pair not allowed");
         }
