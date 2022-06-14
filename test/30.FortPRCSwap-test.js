@@ -3,12 +3,12 @@ const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, snd, tableSnd, d1, Vc, Vp } = require('./utils.js');
 const { ethers, upgrades } = require('hardhat');
 
-describe('FortOptions', function() {
+describe('30.FortPRCSwap-test', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
         const { 
-            eth, usdt, hbtc, dcu, fortOptions, fortFutures, fortLPGuarantee, fortPRC, fortPRCSwap, fortSwap,
+            eth, usdt, hbtc, dcu, fortOptions, fortFutures, fortLPGuarantee, fortPRC44, fortPRCSwap, fortSwap,
             nestPriceFacade, fortGovernance, BLOCK_TIME, USDT_DECIMALS 
         } = await deploy();
 
@@ -17,9 +17,9 @@ describe('FortOptions', function() {
         console.log('cofixRouter: ' + cofixRouter.address);
 
         await fortSwap.setTokenAddress(usdt.address);
-        await fortPRCSwap.setAddress(cofixRouter.address, fortPRC.address);
+        await fortPRCSwap.setAddress(cofixRouter.address, fortPRC44.address);
         await cofixRouter.registerPair(dcu.address, usdt.address, fortSwap.address);
-        await cofixRouter.registerPair(dcu.address, fortPRC.address, fortPRCSwap.address);
+        await cofixRouter.registerPair(dcu.address, fortPRC44.address, fortPRCSwap.address);
 
         const getAccountInfo = async function(account) {
             let acc = account;
@@ -28,7 +28,7 @@ describe('FortOptions', function() {
                 eth: toDecimal(acc.ethBalance ? await acc.ethBalance() : await ethers.provider.getBalance(account)),
                 usdt: toDecimal(await usdt.balanceOf(account), 18),
                 dcu: toDecimal(await dcu.balanceOf(account), 18),
-                fortPRC: toDecimal(await fortPRC.balanceOf(account))
+                fortPRC44: toDecimal(await fortPRC44.balanceOf(account))
             };
         }
         const getStatus = async function() {
@@ -61,11 +61,11 @@ describe('FortOptions', function() {
 
         await dcu.setMinter(owner.address, 1);
         await dcu.mint(owner.address, toBigInt(10000000));
-        await fortPRC.setMinter(owner.address, 1);
-        await fortPRC.mint(owner.address, toBigInt(10000));
+        await fortPRC44.setMinter(owner.address, 1);
+        await fortPRC44.mint(owner.address, toBigInt(10000));
 
         // uint constant K = 200000000000000000000000 * 868616188258191063223411;
-        await fortPRC.mint(fortPRCSwap.address, toBigInt(20000000));
+        await fortPRC44.mint(fortPRCSwap.address, toBigInt(20000000));
         await dcu.mint(fortSwap.address, 868616188258191063223411n);
         await usdt.transfer(fortSwap.address, 200000000000000000000000n);
         await usdt.transfer(owner.address, toBigInt(1000));
@@ -76,9 +76,9 @@ describe('FortOptions', function() {
             console.log('1. buy PRC with DCU');
             await dcu.approve(cofixRouter.address, toBigInt(100000000));
             await usdt.approve(cofixRouter.address, toBigInt(100000000));
-            await fortPRC.approve(cofixRouter.address, toBigInt(100000000));
+            await fortPRC44.approve(cofixRouter.address, toBigInt(100000000));
             await cofixRouter.swapExactTokensForTokens(
-                [dcu.address, fortPRC.address],
+                [dcu.address, fortPRC44.address],
                 toBigInt(1),
                 toBigInt(0),
                 owner.address,
@@ -90,7 +90,7 @@ describe('FortOptions', function() {
         if (false) {
             console.log('2. buy DCU with PRC');
             await cofixRouter.swapExactTokensForTokens(
-                [fortPRC.address, dcu.address],
+                [fortPRC44.address, dcu.address],
                 toBigInt(0.5),
                 toBigInt(0),
                 owner.address,
@@ -102,7 +102,7 @@ describe('FortOptions', function() {
         if (true) {
             console.log('3. buy PRC with USDT');
             await cofixRouter.swapExactTokensForTokens(
-                [usdt.address, dcu.address, fortPRC.address],
+                [usdt.address, dcu.address, fortPRC44.address],
                 toBigInt(1),
                 toBigInt(0),
                 owner.address,
@@ -114,7 +114,7 @@ describe('FortOptions', function() {
         if (false) {
             console.log('4. buy USDT with PRC');
             await cofixRouter.swapExactTokensForTokens(
-                [fortPRC.address, dcu.address, usdt.address],
+                [fortPRC44.address, dcu.address, usdt.address],
                 toBigInt(2.171529),
                 toBigInt(0),
                 owner.address,

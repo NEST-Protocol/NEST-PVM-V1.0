@@ -65,14 +65,6 @@ exports.deploy = async function() {
     const peth = await TestERC20.attach('0x53f878Fb7Ec7B86e4F9a0CB1E9a6c89C0555FbbD');
     console.log('peth: ' + peth.address);
 
-    // //const usdt = await TestERC20.deploy('USDT', 'USDT', 6);
-    // const usdt = await TestERC20.attach('0xdAC17F958D2ee523a2206206994597C13D831ec7');
-    // console.log('usdt: ' + usdt.address);
-
-    // //const hbtc = await TestERC20.deploy('HBTC', 'HBTC', 18);
-    // const hbtc = await TestERC20.attach('0x0316EB71485b0Ab14103307bf65a021042c6d380');
-    // console.log('hbtc: ' + hbtc.address);
-
     //const dcu = await DCU.deploy();
     const dcu = await DCU.attach('0xf56c6eCE0C0d6Fbb9A53282C0DF71dBFaFA933eF');
     console.log('dcu: ' + dcu.address);
@@ -85,111 +77,9 @@ exports.deploy = async function() {
     const fortGovernance = await FortGovernance.attach('0xfD6dF48df7E0989355B23f200d0D454b9101d17D');
     console.log('fortGovernance: ' + fortGovernance.address);
 
-    // const fortDAO = await upgrades.deployProxy(FortDAO, [fortGovernance.address], { initializer: 'initialize' });
-    // //const fortDAO = await FortDAO.attach('0x0000000000000000000000000000000000000000');
-    // console.log('fortDAO: ' + fortDAO.address);
-
-    // const fortOptions = await upgrades.deployProxy(FortOptions, [fortGovernance.address], { initializer: 'initialize' });
-    // //const fortOptions = await FortOptions.attach('0x0000000000000000000000000000000000000000');
-    // console.log('fortOptions: ' + fortOptions.address);
-
-    // const fortFutures = await upgrades.deployProxy(FortFutures, [fortGovernance.address], { initializer: 'initialize' });
-    // //const fortFutures = await FortFutures.attach('0x0000000000000000000000000000000000000000');
-    // console.log('fortFutures: ' + fortFutures.address);
-
     //const fortVaultForStaking = await upgrades.deployProxy(FortVaultForStaking, [fortGovernance.address], { initializer: 'initialize' });
     const fortVaultForStaking = await FortVaultForStaking.attach('0xE3940A3E94bca34B9175d156a5E9C5728dFE922F');
     console.log('fortVaultForStaking: ' + fortVaultForStaking.address);
-
-    // // await fortGovernance.initialize('0x0000000000000000000000000000000000000000');
-    // //console.log('1. dcu.initialize(fortGovernance.address)');
-    // //await dcu.initialize(fortGovernance.address, { nonce: 9 });
-    // // await fortDAO.initialize(fortGovernance.address);
-    // // await fortOptions.initialize(fortGovernance.address);
-    // // await fortFutures.initialize(fortGovernance.address);
-    // // await fortVaultForStaking.initialize(fortGovernance.address);
-
-    // console.log('2. fortGovernance.setBuiltinAddress()');
-    // await fortGovernance.setBuiltinAddress(
-    //     dcu.address,
-    //     '0x0000000000000000000000000000000000000000', //fortDAO.address,
-    //     '0x0000000000000000000000000000000000000000', //fortOptions.address,
-    //     '0x0000000000000000000000000000000000000000', //fortFutures.address,
-    //     fortVaultForStaking.address,
-    //     nestPriceFacade.address,
-    //     { nonce: 14 }
-    // );
-
-    // console.log('3. dcu.update()');
-    // await dcu.update(fortGovernance.address, { nonce: 12 });
-    // console.log('4. fortDAO.update()');
-    // await fortDAO.update(fortGovernance.address);
-    // console.log('5. fortOptions.update()');
-    // await fortOptions.update(fortGovernance.address);
-    // console.log('6. fortFutures.update()');
-    //await fortFutures.update(fortGovernance.address);
-    // console.log('7. fortVaultForStaking.update()');
-    // await fortVaultForStaking.update(fortGovernance.address, { nonce: 12 });
-
-    // console.log('8. fortOptions.setConfig()');
-    // await fortOptions.setConfig(eth.address, { 
-    //     sigmaSQ: '45659142400', 
-    //     miu: '467938556917', 
-    //     minPeriod: 6000 
-    // });
-    // console.log('8.1. fortOptions.setConfig()');
-    // await fortOptions.setConfig(hbtc.address, { 
-    //     sigmaSQ: '45659142400', 
-    //     miu: '467938556917', 
-    //     minPeriod: 6000 
-    // });
-
-    // // console.log('9. dcu.setMinter(fortOptions.address, 1)');
-    // // await dcu.setMinter(fortOptions.address, 1);
-    // // console.log('10. dcu.setMinter(fortFutures.address, 1)');
-    // // await dcu.setMinter(fortFutures.address, 1);
-    // console.log('11. dcu.setMinter(fortVaultForStaking.address, 1)');
-    // await dcu.setMinter(fortVaultForStaking.address, 1, { nonce: 13 });
-
-    // await fortOptions.setUsdtTokenAddress(usdt.address);
-    // await fortFutures.setUsdtTokenAddress(usdt.address);
-
-    // console.log('8.2 create lever');
-    // await fortFutures.create(eth.address, 1, true);
-    // await fortFutures.create(eth.address, 2, true);
-    // await fortFutures.create(eth.address, 3, true);
-    // await fortFutures.create(eth.address, 4, true);
-    // await fortFutures.create(eth.address, 5, true);
-    // await fortFutures.create(eth.address, 1, false);
-    // await fortFutures.create(eth.address, 2, false);
-    // await fortFutures.create(eth.address, 3, false);
-    // await fortFutures.create(eth.address, 4, false);
-    // await fortFutures.create(eth.address, 5, false);
-
-    // const ONE_MONTH = 200000;
-    // // const ONE_YEAR = ONE_MONTH * 12;
-    // // const TWO_YEAR = ONE_YEAR * 2;
-
-    // let xtokens = [
-    //     fortube.address,
-    //     peth.address
-    // ];
-
-    // let cycles = [
-    //     ONE_MONTH,
-    //     ONE_MONTH
-    // ];
-
-    // let weights = [
-    //     0,
-    //     500000
-    // ];
-    
-    // // console.log('9.fortVaultForStaking.setConfig()');
-    // // await fortVaultForStaking.setConfig(1000000000000000000n, 13408888, 13458888, { nonce: 14 });
-
-    //console.log('10.fortVaultForStaking.batchSetPoolWeight()');
-    //await fortVaultForStaking.batchSetPoolWeight(xtokens, cycles, weights);
 
     console.log('---------- OK ----------');
     

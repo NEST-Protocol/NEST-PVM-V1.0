@@ -16,7 +16,7 @@ exports.deploy = async function() {
     const FortOptions = await ethers.getContractFactory('FortOptions');
     const FortFutures = await ethers.getContractFactory('FortFutures');
     const FortVaultForStaking = await ethers.getContractFactory('FortVaultForStaking');
-    const HedgeSwap = await ethers.getContractFactory('HedgeSwap');
+    const FortSwap = await ethers.getContractFactory('FortSwap');
 
     console.log('** Deploy: bsc_test@20211123.js **');
     
@@ -35,7 +35,7 @@ exports.deploy = async function() {
     // fortDAO: 0x81c952c4EEE91DF16A7908E1869a31E438FbCE44
     // fortOptions: 0x19465d54ba7c492174127244cc26dE49F0cC1F1f
     // fortFutures: 0xFD42E41B96BC69e8B0763B2Ed75CD50347b9778D
-    // hedgeSwap: 0xD83C860d3A27cC5EddaB68EaBFCF9cc8ad38F15D
+    // fortSwap: 0xD83C860d3A27cC5EddaB68EaBFCF9cc8ad38F15D
     // proxyAdmin: 0xB5604C3C3AE902513731037B9c7368842582642e
 
     const nest = await TestERC20.attach('0x821edD79cc386E56FeC9DA5793b87a3A52373cdE');
@@ -69,81 +69,9 @@ exports.deploy = async function() {
     const fortFutures = await FortFutures.attach('0xFD42E41B96BC69e8B0763B2Ed75CD50347b9778D');
     console.log('fortFutures: ' + fortFutures.address);
 
-    // const fortVaultForStaking = await upgrades.deployProxy(FortVaultForStaking, [fortGovernance.address], { initializer: 'initialize' });
-    // //const fortVaultForStaking = await FortVaultForStaking.attach('0x0000000000000000000000000000000000000000');
-    // console.log('fortVaultForStaking: ' + fortVaultForStaking.address);
-
-    //const hedgeSwap = await upgrades.deployProxy(HedgeSwap, [fortGovernance.address], { initializer: 'initialize' });
-    const hedgeSwap = await HedgeSwap.attach('0xD83C860d3A27cC5EddaB68EaBFCF9cc8ad38F15D');
-    console.log('hedgeSwap: ' + hedgeSwap.address);
-
-    // // await fortGovernance.initialize('0x0000000000000000000000000000000000000000');
-    // console.log('1. dcu.initialize(fortGovernance.address)');
-    // await dcu.initialize(fortGovernance.address);
-    // // await fortDAO.initialize(fortGovernance.address);
-    // // await fortOptions.initialize(fortGovernance.address);
-    // // await fortFutures.initialize(fortGovernance.address);
-    // // await fortVaultForStaking.initialize(fortGovernance.address);
-
-    // console.log('2. fortGovernance.setBuiltinAddress()');
-    // await fortGovernance.setBuiltinAddress(
-    //     dcu.address,
-    //     fortDAO.address,
-    //     fortOptions.address,
-    //     fortFutures.address,
-    //     '0x0000000000000000000000000000000000000000', //fortVaultForStaking.address,
-    //     nestPriceFacade.address
-    // );
-
-    // console.log('3. dcu.update()');
-    // await dcu.update(fortGovernance.address);
-    // console.log('4. fortDAO.update()');
-    // await fortDAO.update(fortGovernance.address);
-    // console.log('5. fortOptions.update()');
-    // await fortOptions.update(fortGovernance.address);
-    // console.log('6. fortFutures.update()');
-    // await fortFutures.update(fortGovernance.address);
-    // // console.log('7. fortVaultForStaking.update()');
-    // // await fortVaultForStaking.update(fortGovernance.address);
-    // console.log('8. fortVaultForStaking.update()');
-    // await hedgeSwap.update(fortGovernance.address);
-
-    // // console.log('8. fortOptions.setConfig()');
-    // // await fortOptions.setConfig(eth.address, { 
-    // //     sigmaSQ: '45659142400', 
-    // //     miu: '467938556917', 
-    // //     minPeriod: 6000 
-    // // });
-    // // console.log('8.1. fortOptions.setConfig()');
-    // // await fortOptions.setConfig(hbtc.address, { 
-    // //     sigmaSQ: '45659142400', 
-    // //     miu: '467938556917', 
-    // //     minPeriod: 6000 
-    // // });
-
-    // console.log('9. dcu.setMinter(fortOptions.address, 1)');
-    // await dcu.setMinter(fortOptions.address, 1);
-    // console.log('10. dcu.setMinter(fortFutures.address, 1)');
-    // await dcu.setMinter(fortFutures.address, 1);
-    // console.log('11. dcu.setMinter(hedgeSwap.address, 1)');
-    // await dcu.setMinter(hedgeSwap.address, 1);
-
-    // //await usdt.transfer(usdt.address, 0);
-    // //await usdt.transfer(usdt.address, 0);
-    // await fortOptions.setUsdtTokenAddress(usdt.address);
-    // await fortFutures.setUsdtTokenAddress(usdt.address);
-
-    // console.log('8.2 create lever');
-    // await fortFutures.create(eth.address, 1, true);
-    // await fortFutures.create(eth.address, 2, true);
-    // await fortFutures.create(eth.address, 3, true);
-    // await fortFutures.create(eth.address, 4, true);
-    // await fortFutures.create(eth.address, 5, true);
-    // await fortFutures.create(eth.address, 1, false);
-    // await fortFutures.create(eth.address, 2, false);
-    // await fortFutures.create(eth.address, 3, false);
-    // await fortFutures.create(eth.address, 4, false);
-    // await fortFutures.create(eth.address, 5, false);
+    //const fortSwap = await upgrades.deployProxy(FortSwap, [fortGovernance.address], { initializer: 'initialize' });
+    const fortSwap = await FortSwap.attach('0xD83C860d3A27cC5EddaB68EaBFCF9cc8ad38F15D');
+    console.log('fortSwap: ' + fortSwap.address);
 
     console.log('---------- OK ----------');
     
@@ -159,7 +87,7 @@ exports.deploy = async function() {
         fortFutures: fortFutures,
         //fortVaultForStaking: fortVaultForStaking,
         nestPriceFacade: nestPriceFacade,
-        hedgeSwap: hedgeSwap,
+        fortSwap: fortSwap,
 
         BLOCK_TIME: 3
     };

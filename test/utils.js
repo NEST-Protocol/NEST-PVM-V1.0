@@ -160,3 +160,45 @@ exports.Vp = function(S0, K, sigma, miu, T) {
     }
     return vp;
 }
+
+exports.UI = function(obj) {
+    if (obj) {
+        var res = {};
+
+        var index = 0;
+        var empty = true;
+        for (var i in obj) {
+            if (i == index++) continue;
+            empty = false;
+            if (obj[i] && typeof obj[i] == 'object') {
+                if (obj[i]._isBigNumber) {
+                    res[i] = obj[i].toString();
+                } else {
+                    res[i] = exports.UI(obj[i]);
+                }
+            } else {
+                res[i] = obj[i];
+            }
+        }
+
+        if (empty) {
+            var arr = [];
+            for (var i in obj) {
+                empty = false;
+                if (obj[i] && typeof obj[i] == 'object') {
+                    if (obj[i]._isBigNumber) {
+                        arr.push(obj[i].toString());
+                    } else {
+                        arr.push(exports.UI(obj[i]));
+                    }
+                } else {
+                    arr.push(obj[i]);
+                }
+            }
+            return arr;
+        }
+        return res;
+    }
+
+    return obj;
+};

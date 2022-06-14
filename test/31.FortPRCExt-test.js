@@ -3,12 +3,12 @@ const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, snd, tableSnd, d1, Vc, Vp } = require('./utils.js');
 const { ethers, upgrades } = require('hardhat');
 
-describe('FortOptions', function() {
+describe('31.FortPRCExt-test', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
         const { 
-            eth, usdt, hbtc, dcu, fortOptions, fortFutures, fortLPGuarantee, fortPRC,
+            eth, usdt, hbtc, dcu, fortOptions, fortFutures, fortLPGuarantee, fortPRC44,
             nestPriceFacade, fortGovernance, BLOCK_TIME, USDT_DECIMALS 
         } = await deploy();
 
@@ -21,7 +21,7 @@ describe('FortOptions', function() {
             return {
                 eth: toDecimal(acc.ethBalance ? await acc.ethBalance() : await ethers.provider.getBalance(account)),
                 dcu: toDecimal(await dcu.balanceOf(account), 18),
-                fortPRC: toDecimal(await fortPRC.balanceOf(account))
+                fortPRC44: toDecimal(await fortPRC44.balanceOf(account))
             };
         }
         const getStatus = async function() {
@@ -52,45 +52,45 @@ describe('FortOptions', function() {
 
         await dcu.setMinter(owner.address, 1);
         await dcu.mint(owner.address, toBigInt(10000000));
-        await fortPRC.setMinter(owner.address, 1);
-        await fortPRC.mint(owner.address, toBigInt(10000));
+        await fortPRC44.setMinter(owner.address, 1);
+        await fortPRC44.mint(owner.address, toBigInt(10000));
 
         console.log(await getStatus());
 
         // if (true) {
         //     console.log('1. roll');
-        //     await fortPRC.roll(1, 15000);
+        //     await fortPRC44.roll(1, 15000);
         //     console.log(await getStatus());
         // }
         // if (false) {
         //     console.log('2. claim');
         //     for (var i = 0; i < 256; ++i) {
-        //         console.log('gained: ' + (await fortPRC.list(0, 1, 0))[0].gained.toString());
+        //         console.log('gained: ' + (await fortPRC44.list(0, 1, 0))[0].gained.toString());
         //         await dcu.transfer(owner.address, 0);
         //     }
-        //     await fortPRC.claim(0);
+        //     await fortPRC44.claim(0);
         //     console.log(await getStatus());
         // }
         // if (true) {
         //     console.log('3. batchClaim');
         //     for (var i = 0; i < 1; ++i) {
-        //         console.log('gained: ' + (await fortPRC.list(0, 1, 0))[0].gained.toString());
+        //         console.log('gained: ' + (await fortPRC44.list(0, 1, 0))[0].gained.toString());
         //         await dcu.transfer(owner.address, 0);
         //     }
-        //     await fortPRC.batchClaim([0]);
+        //     await fortPRC44.batchClaim([0]);
         //     console.log(await getStatus());
         // }
         if (true) {
             console.log('1. big data');
             const N = 100;
             for (var i = 0; i < N; ++i) {
-                await fortPRC.roll44(10000, 11000);
+                await fortPRC44.roll44(10000, 11000);
                 if (i > 1) {
-                    await fortPRC.claim44(i - 2);
+                    await fortPRC44.claim44(i - 2);
                 }
             }
             for (var i = N - 2; i < N; ++i) {
-                await fortPRC.claim44(i);
+                await fortPRC44.claim44(i);
             }
 
             console.log(await getStatus());

@@ -38,15 +38,6 @@ exports.deploy = async function() {
     // fortDAO: 0x55D6Fe1C851181F5C1779Bf04822675Ae144b38F
     // fortOptions: 0x66bD0139b6216B740820a54a71a2CDFf2070e76B
     // fortFutures: 0xc5086B5a9AC3A4036416690E382AbD7808DC307c
-
-    //     ** Deploy: rinkeby@20210819.js **
-    // usdt: 0x2d750210c0b5343a0b79beff8F054C9add7d2411
-    // nestPriceFacade: 0x40C3EB032f27fDa7AdcF1B753c75B84e27f26838
-    // fortGovernance: 0xE1328C673620433e0c1847e5BfB698DbCED9688b
-    // dcu: 0x6747972f3Fc6f4A4fC9c8a1fF4C2899dc83c4DF7
-    // fortDAO: 0x55D6Fe1C851181F5C1779Bf04822675Ae144b38F
-    // fortOptions: 0x66bD0139b6216B740820a54a71a2CDFf2070e76B
-    // fortFutures: 0xc5086B5a9AC3A4036416690E382AbD7808DC307c
     // fortVaultForStaking: 0x4A0C01665c10a7635fB33BCC45198dfC2f31db0C
 
     //const usdt = await TestERC20.deploy('USDT', 'USDT', 6);
@@ -80,45 +71,6 @@ exports.deploy = async function() {
     //const fortVaultForStaking = await upgrades.deployProxy(FortVaultForStaking, [fortGovernance.address], { initializer: 'initialize' });
     const fortVaultForStaking = await FortVaultForStaking.attach('0x4A0C01665c10a7635fB33BCC45198dfC2f31db0C');
     console.log('fortVaultForStaking: ' + fortVaultForStaking.address);
-
-    // // await fortGovernance.initialize('0x0000000000000000000000000000000000000000');
-    // console.log('1. dcu.initialize(fortGovernance.address)');
-    // await dcu.initialize(fortGovernance.address);
-    // // await fortDAO.initialize(fortGovernance.address);
-    // // await fortOptions.initialize(fortGovernance.address);
-    // // await fortFutures.initialize(fortGovernance.address);
-    // // await fortVaultForStaking.initialize(fortGovernance.address);
-
-    // console.log('2. fortGovernance.setBuiltinAddress()');
-    // await fortGovernance.setBuiltinAddress(
-    //     dcu.address,
-    //     fortDAO.address,
-    //     fortOptions.address,
-    //     fortFutures.address,
-    //     fortVaultForStaking.address,
-    //     nestPriceFacade.address
-    // );
-
-    // console.log('3. dcu.update()');
-    // await dcu.update(fortGovernance.address);
-    // console.log('4. fortDAO.update()');
-    // await fortDAO.update(fortGovernance.address);
-    // console.log('5. fortOptions.update()');
-    // await fortOptions.update(fortGovernance.address);
-    // console.log('6. fortFutures.update()');
-    // await fortFutures.update(fortGovernance.address);
-    // console.log('7. fortVaultForStaking.update()');
-    // await fortVaultForStaking.update(fortGovernance.address);
-
-    // console.log('8. fortOptions.setConfig()');
-    // await fortOptions.setConfig('175482725206');
-
-    // console.log('9. dcu.setMinter(fortOptions.address, 1)');
-    // await dcu.setMinter(fortOptions.address, 1);
-    // console.log('10. dcu.setMinter(fortFutures.address, 1)');
-    // await dcu.setMinter(fortFutures.address, 1);
-    // console.log('11. dcu.setMinter(fortVaultForStaking.address, 1)');
-    // await dcu.setMinter(fortVaultForStaking.address, 1);
 
     console.log('---------- OK ----------');
     

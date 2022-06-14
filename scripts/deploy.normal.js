@@ -78,9 +78,6 @@ exports.deploy = async function() {
     await dcu.setMinter(fortFutures.address, 1);
     await dcu.setMinter(fortVaultForStaking.address, 1);
 
-    //await fortOptions.setUsdtTokenAddress(usdt.address);
-    //await fortFutures.setUsdtTokenAddress(usdt.address);
-
     console.log('---------- OK ----------');
 
     const contracts = {

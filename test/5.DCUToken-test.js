@@ -2,7 +2,7 @@ const { expect } = require('chai');
 const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, snd, tableSnd, d1, Vc, Vp } = require('./utils.js');
 
-describe('FortOptions', function() {
+describe('5.DCUToken-test', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
@@ -37,7 +37,7 @@ describe('FortOptions', function() {
         }
 
         if (true) {
-            console.log('1. Show balances');
+            console.log('1. Show balance');
             console.log(await getStatus());
         }
 
@@ -63,7 +63,7 @@ describe('FortOptions', function() {
         }
 
         if (true) {
-            console.log('5. burn 700dcu');
+            console.log('5. Burn 700dcu fron addr1');
             await dcu.burn(addr1.address, toBigInt(700));
             console.log(await getStatus());
         }

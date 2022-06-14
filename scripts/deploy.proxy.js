@@ -16,30 +16,14 @@ exports.deploy = async function() {
     const FortOptions = await ethers.getContractFactory('FortOptions');
     const FortFutures = await ethers.getContractFactory('FortFutures');
     const FortVaultForStaking = await ethers.getContractFactory('FortVaultForStaking');
-    const HedgeSwap = await ethers.getContractFactory('HedgeSwap');
+    const FortSwap = await ethers.getContractFactory('FortSwap');
+    const FortLPGuarantee = await ethers.getContractFactory('FortLPGuarantee');
+    const FortPRC44 = await ethers.getContractFactory('FortPRC44');
+    const FortPRCSwap = await ethers.getContractFactory('FortPRCSwap');
+    const CoFiXRouter = await ethers.getContractFactory('CoFiXRouter');
 
     console.log('** Deploy: deploy.proxy.js **');
     
-    // const nest = await TestERC20.deploy('NEST', 'NEST', 18);
-    // //const nest = await TestERC20.attach('0x0000000000000000000000000000000000000000');
-    // console.log('nest: ' + nest.address);
-
-    // const nhbtc = await TestERC20.deploy('NHBTC', 'NEST', 18);
-    // //const nhbtc = await TestERC20.attach('0x0000000000000000000000000000000000000000');
-    // console.log('nhbtc: ' + nhbtc.address);
-
-    // const cofi = await TestERC20.deploy('COFI', 'COFI', 18);
-    // //const cofi = await TestERC20.attach('0x0000000000000000000000000000000000000000');
-    // console.log('cofi: ' + cofi.address);
-
-    // const pusd = await TestERC20.deploy('PUSD', 'PUSD', 18);
-    // //const pusd = await TestERC20.attach('0x0000000000000000000000000000000000000000');
-    // console.log('pusd: ' + pusd.address);
-
-    // const fortube = await TestERC20.deploy('FORTUBE', 'FORTUBE', 18);
-    // //const fortube = await TestERC20.attach('0x0000000000000000000000000000000000000000');
-    // console.log('fortube: ' + fortube.address);
-
     const usdt = await TestERC20.deploy('USDT', 'USDT', 6);
     //const usdt = await TestERC20.attach('0x0000000000000000000000000000000000000000');
     console.log('usdt: ' + usdt.address);
@@ -76,17 +60,29 @@ exports.deploy = async function() {
     //const fortVaultForStaking = await FortVaultForStaking.attach('0x0000000000000000000000000000000000000000');
     console.log('fortVaultForStaking: ' + fortVaultForStaking.address);
 
-    const hedgeSwap = await upgrades.deployProxy(HedgeSwap, [fortGovernance.address], { initializer: 'initialize' });
-    //const hedgeSwap = await HedgeSwap.attach('0x0000000000000000000000000000000000000000');
-    console.log('hedgeSwap: ' + hedgeSwap.address);
+    const fortSwap = await upgrades.deployProxy(FortSwap, [fortGovernance.address], { initializer: 'initialize' });
+    //const fortSwap = await FortSwap.attach('0x0000000000000000000000000000000000000000');
+    console.log('fortSwap: ' + fortSwap.address);
+
+    const fortLPGuarantee = await upgrades.deployProxy(FortLPGuarantee, [fortGovernance.address], { initializer: 'initialize' });
+    //const fortLPGuarantee = await FortLPGuarantee.attach('0x0000000000000000000000000000000000000000');
+    console.log('fortLPGuarantee: ' + fortLPGuarantee.address);
+
+    const fortPRC44 = await upgrades.deployProxy(FortPRC44, [fortGovernance.address], { initializer: 'initialize' });
+    //const fortPRC44 = await FortPRC44.attach('0x0000000000000000000000000000000000000000');
+    console.log('fortPRC44: ' + fortPRC44.address);
+    
+    const fortPRCSwap = await upgrades.deployProxy(FortPRCSwap, [fortGovernance.address], { initializer: 'initialize' });
+    //const fortPRCSwap = await FortPRCSwap.attach('0x0000000000000000000000000000000000000000');
+    console.log('fortPRCSwap: ' + fortPRCSwap.address);
+
+    const cofixRouter = await upgrades.deployProxy(CoFiXRouter, [fortGovernance.address], { initializer: 'initialize' });
+    //const cofixRouter = await CoFiXRouter.attach('0x0000000000000000000000000000000000000000');
+    console.log('cofixRouter: ' + cofixRouter.address);
 
     // await fortGovernance.initialize('0x0000000000000000000000000000000000000000');
     console.log('1. dcu.initialize(fortGovernance.address)');
     await dcu.initialize(fortGovernance.address);
-    // await fortDAO.initialize(fortGovernance.address);
-    // await fortOptions.initialize(fortGovernance.address);
-    // await fortFutures.initialize(fortGovernance.address);
-    // await fortVaultForStaking.initialize(fortGovernance.address);
 
     console.log('2. fortGovernance.setBuiltinAddress()');
     await fortGovernance.setBuiltinAddress(
@@ -108,21 +104,64 @@ exports.deploy = async function() {
     await fortFutures.update(fortGovernance.address);
     console.log('7. fortVaultForStaking.update()');
     await fortVaultForStaking.update(fortGovernance.address);
-    console.log('8. fortVaultForStaking.update()');
-    await hedgeSwap.update(fortGovernance.address);
+    console.log('7.1. fortSwap.update()');
+    await fortSwap.update(fortGovernance.address);
+    console.log('7.2. fortLPGuarantee.update()');
+    await fortLPGuarantee.update(fortGovernance.address);
+    console.log('8. fortPRC44.update()');
+    await fortPRC44.update(fortGovernance.address);
+    console.log('9. fortPRCSwap.update()');
+    await fortPRCSwap.update(fortGovernance.address);
 
-    // console.log('8. fortOptions.setConfig()');
-    // await fortOptions.setConfig(eth.address, { 
-    //     sigmaSQ: '45659142400', 
-    //     miu: '467938556917', 
-    //     minPeriod: 6000 
-    // });
-    // console.log('8.1. fortOptions.setConfig()');
-    // await fortOptions.setConfig(hbtc.address, { 
-    //     sigmaSQ: '45659142400', 
-    //     miu: '467938556917', 
-    //     minPeriod: 6000 
-    // });
+    // 2.4. Register ETH ans HBTC
+    console.log('7. fortOptions.register(eth.address)');
+    await fortOptions.register(eth.address, {
+        channelId: 0,
+        pairIndex: 0,
+        
+        sigmaSQ: 45659142400n,
+        miuLong: 64051194700n,
+        miuShort: 0n
+    });
+
+    console.log('8. fortOptions.register(hbtc.address)');
+    await fortOptions.register(hbtc.address, {
+        channelId: 0,
+        pairIndex: 2,
+        
+        sigmaSQ: 31708924900n,
+        miuLong: 64051194700n,
+        miuShort: 0n
+    });
+    
+    // 3.4. Register ETH and HBTC
+    console.log('9. fortFutures.register(eth.address)');
+    await fortFutures.register(eth.address, {
+        channelId: 0,
+        pairIndex: 0,
+        
+        sigmaSQ: 45659142400n,
+        miuLong: 64051194700n,
+        miuShort: 0n
+    });
+    console.log('10. fortFutures.register(hbtc.address)');
+    await fortFutures.register(hbtc.address, {
+        channelId: 0,
+        pairIndex: 2,
+        
+        sigmaSQ: 31708924900n,
+        miuLong: 64051194700n,
+        miuShort: 0n
+    });
+
+    await fortLPGuarantee.register(eth.address, {
+        channelId: 0,
+        pairIndex: 0,
+        
+        sigmaSQ: 45659142400n,
+        miuLong: 64051194700n,
+        miuShort: 0n
+    });
 
     console.log('9. dcu.setMinter(fortOptions.address, 1)');
     await dcu.setMinter(fortOptions.address, 1);
@@ -130,24 +169,27 @@ exports.deploy = async function() {
     await dcu.setMinter(fortFutures.address, 1);
     console.log('11. dcu.setMinter(fortVaultForStaking.address, 1)');
     await dcu.setMinter(fortVaultForStaking.address, 1);
-
-    //await usdt.transfer(usdt.address, 0);
-    //await usdt.transfer(usdt.address, 0);
-    //await fortOptions.setUsdtTokenAddress(usdt.address);
-    //await fortFutures.setUsdtTokenAddress(usdt.address);
+    console.log('12. dcu.setMinter(fortPRC44.address, 1)');
+    await dcu.setMinter(fortPRC44.address, 1);
+    console.log('13. dcu.setMinter(fortLPGuarantee.address, 1)');
+    await dcu.setMinter(fortLPGuarantee.address, 1);
 
     console.log('8.2 create lever');
-    await fortFutures.create(eth.address, 1, true , 0, 0);
-    await fortFutures.create(eth.address, 2, true , 0, 0);
-    await fortFutures.create(eth.address, 3, true , 0, 0);
-    await fortFutures.create(eth.address, 4, true , 0, 0);
-    await fortFutures.create(eth.address, 5, true , 0, 0);
-    await fortFutures.create(eth.address, 1, false, 0, 0);
-    await fortFutures.create(eth.address, 2, false, 0, 0);
-    await fortFutures.create(eth.address, 3, false, 0, 0);
-    await fortFutures.create(eth.address, 4, false, 0, 0);
-    await fortFutures.create(eth.address, 5, false, 0, 0);
+    
+    // 3.5. Register levels for ETH
+    console.log('13. create eth long lever');
+    await fortFutures.create(eth.address, [1, 2, 3, 4, 5], true);
+    console.log('14. create eth short lever');
+    await fortFutures.create(eth.address, [1, 2, 3, 4, 5], false);
+    
+    // 3.5. Register levels for HBTC
+    console.log('13. create hbtc long lever');
+    await fortFutures.create(hbtc.address, [1, 2, 3, 4, 5], true);
+    console.log('14. create hbtc short lever');
+    await fortFutures.create(hbtc.address, [1, 2, 3, 4, 5], false);
 
+    await cofixRouter.registerPair(fortPRC44.address, dcu.address, fortPRCSwap.address);
+    await fortPRCSwap.setAddress(cofixRouter.address, fortPRC44.address);
     console.log('---------- OK ----------');
     
     const BLOCK_TIME = 3;
@@ -165,8 +207,12 @@ exports.deploy = async function() {
         fortOptions: fortOptions,
         fortFutures: fortFutures,
         fortVaultForStaking: fortVaultForStaking,
+        fortSwap: fortSwap,
+        fortLPGuarantee: fortLPGuarantee,
+        fortPRC44: fortPRC44,
+        fortPRCSwap: fortPRCSwap,
         nestPriceFacade: nestPriceFacade,
-        hedgeSwap: hedgeSwap,
+        cofixRouter: cofixRouter,
 
         BLOCK_TIME: BLOCK_TIME,
         USDT_DECIMALS: 18,

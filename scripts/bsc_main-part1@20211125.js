@@ -32,10 +32,6 @@ exports.deploy = async function() {
     const fortGovernance = await FortGovernance.attach('0x3e7D350BbAb71cAA2304e979aa6Af007EF5ECcB8');
     console.log('fortGovernance: ' + fortGovernance.address);
 
-    // // await fortGovernance.initialize('0x0000000000000000000000000000000000000000');
-    // console.log('1. dcu.initialize(fortGovernance.address)');
-    // await dcu.initialize(fortGovernance.address);
-
     console.log('---------- OK ----------');
     
     const contracts = {
