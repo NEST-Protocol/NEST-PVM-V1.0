@@ -12,7 +12,8 @@ task("accounts", "Prints the list of accounts", async () => {
     console.log(account.address);
   }
 });
-
+process.env.HTTP_PROXY = 'http://127.0.0.1:8580';
+process.env.HTTPS_PROXY = 'http://127.0.0.1:8580';
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
 
@@ -21,7 +22,7 @@ task("accounts", "Prints the list of accounts", async () => {
  */
 module.exports = {
   solidity: {
-    version: '0.8.13',
+    version: '0.8.14',
     settings: {
       optimizer: {
         enabled: true,
@@ -33,7 +34,7 @@ module.exports = {
     mainnet: {
       url: `${config.infura.mainnet.url}`,
       accounts: [config.account.mainnet.key, config.account.mainnet.userA, config.account.mainnet.userB],
-      initialBaseFeePerGas: 50e9,
+      gasPrice: 30e9,
       timeout: 2000000000
     },
     ropsten: {
@@ -57,7 +58,7 @@ module.exports = {
       timeout: 2000000000
     },
     bsc_test: {
-      url: "https://data-seed-prebsc-1-s1.binance.org:8545",
+      url: "https://bsc.getblock.io/testnet/?api_key=57d2baf4-a7a4-4d1b-af95-5c35653e05ea",
       chainId: 97,
       gasPrice: 10e9,
       gas: 6000000,

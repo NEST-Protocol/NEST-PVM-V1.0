@@ -1,4 +1,4 @@
-# IFortOptions
+# IFortFutures
 
 ## 1. Interface Description
     Defines methods for Futures
@@ -12,7 +12,7 @@
     /// @param offset Skip previous (offset) records
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
-    /// @return futureArray List of price sheets
+    /// @return futureArray List of futures
     function list(uint offset, uint count, uint order) external view returns (FutureView[] memory futureArray);
 ```
 
@@ -21,13 +21,9 @@
 ```javascript
     /// @dev Create future
     /// @param tokenAddress Target token address, 0 means eth
-    /// @param lever Lever of future
+    /// @param levers Levers of future
     /// @param orientation true: call, false: put
-    function create(
-        address tokenAddress, 
-        uint lever,
-        bool orientation
-    ) external;
+    function create(address tokenAddress, uint[] calldata levers, bool orientation) external;
 ```
 Note: This method will triggers the New event, See also 3.1.
 
@@ -69,10 +65,7 @@ Note: This method will triggers the Buy event, See also 3.2.
     /// @dev Buy future direct
     /// @param index Index of future
     /// @param dcuAmount Amount of paid DCU
-    function buyDirect(
-        uint index,
-        uint dcuAmount
-    ) external payable;
+    function buyDirect(uint index, uint dcuAmount) external payable;
 ```
 
 ### 2.6. Sell future
@@ -81,10 +74,7 @@ Note: This method will triggers the Buy event, See also 3.2.
     /// @dev Sell future
     /// @param index Index of future
     /// @param amount Amount to sell
-    function sell(
-        uint index,
-        uint amount
-    ) external payable;
+    function sell(uint index, uint amount) external payable;
 ```
 Note: This method will triggers the Sell event, See also 3.3.
 
@@ -94,19 +84,16 @@ Note: This method will triggers the Sell event, See also 3.3.
     /// @dev Settle future
     /// @param index Index of future
     /// @param addresses Target addresses
-    function settle(
-        uint index,
-        address[] calldata addresses
-    ) external payable;
+    function settle(uint index, address[] calldata addresses) external payable;
 ```
 Note: This method may triggers the Settle event, See also 3.4.
 
-### 2.8. Returns the current value of the specified future
+### 2.8. Returns the current value of target address in the specified future
 
 ```javascript
-    /// @dev Returns the current value of the specified future
+    /// @dev Returns the current value of target address in the specified future
     /// @param index Index of future
-    /// @param oraclePrice Current price from oracle
+    /// @param oraclePrice Current price from oracle, usd based, 18 decimals
     /// @param addr Target address
     function balanceOf(uint index, uint oraclePrice, address addr) external view returns (uint);
 ```
@@ -115,12 +102,12 @@ Note: This method may triggers the Settle event, See also 3.4.
 
 ```javascript
     /// @dev Find the futures of the target address (in reverse order)
-    /// @param start Find forward from the index corresponding to the given contract address 
+    /// @param start Find forward from the index corresponding to the given owner address 
     /// (excluding the record corresponding to start)
     /// @param count Maximum number of records returned
     /// @param maxFindCount Find records at most
     /// @param owner Target address
-    /// @return futureArray Matched future array
+    /// @return futureArray Matched futures
     function find(
         uint start, 
         uint count, 
@@ -133,7 +120,7 @@ Note: This method may triggers the Settle event, See also 3.4.
 
 ```javascript
     /// @dev Obtain the number of futures that have been opened
-    /// @return Number of futures opened
+    /// @return Number of futures created
     function getFutureCount() external view returns (uint);
 ```
 
@@ -141,11 +128,13 @@ Note: This method may triggers the Settle event, See also 3.4.
 
 ```javascript
     /// @dev K value is calculated by revised volatility
-    /// @param p0 Last price (number of tokens equivalent to 1 ETH)
-    /// @param bn0 Block number of the last price
-    /// @param p Latest price (number of tokens equivalent to 1 ETH)
-    /// @param bn The block number when (ETH, TOKEN) price takes into effective
-    function calcRevisedK(uint p0, uint bn0, uint p, uint bn) external view returns (uint k);
+    /// @param sigmaSQ sigmaSQ for token
+    /// @param p0 Last price (number of tokens equivalent to 2000 USD)
+    /// @param bn0 Block number of the price p0
+    /// @param p Latest price (number of tokens equivalent to 2000 USD)
+    /// @param bn The block number of the price p
+    function calcRevisedK(uint sigmaSQ, uint p0, uint bn0, uint p, uint bn) external view returns (uint k);
+
 ```
 
 ## 3. Event Description

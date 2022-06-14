@@ -4,7 +4,7 @@ pragma solidity ^0.8.6;
 
 import "./interfaces/IFortGovernance.sol";
 
-/// @dev Base contract of Hedge
+/// @dev Base contract of Fort
 contract FortBase {
 
     /// @dev Governance address changed event
@@ -18,7 +18,7 @@ contract FortBase {
     /// @dev To support open-zeppelin/upgrades
     /// @param governance IFortGovernance implementation contract address
     function initialize(address governance) public virtual {
-        require(_governance == address(0), "Hedge:!initialize");
+        require(_governance == address(0), "Fort:!initialize");
         emit GovernanceChanged(address(0), governance);
         _governance = governance;
     }
@@ -27,9 +27,8 @@ contract FortBase {
     ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
     /// @param newGovernance IFortGovernance implementation contract address
     function update(address newGovernance) public virtual {
-
         address governance = _governance;
-        require(governance == msg.sender || IFortGovernance(governance).checkGovernance(msg.sender, 0), "Hedge:!gov");
+        require(governance == msg.sender || IFortGovernance(governance).checkGovernance(msg.sender, 0), "Fort:!gov");
         emit GovernanceChanged(governance, newGovernance);
         _governance = newGovernance;
     }
@@ -37,7 +36,7 @@ contract FortBase {
     //---------modifier------------
 
     modifier onlyGovernance() {
-        require(IFortGovernance(_governance).checkGovernance(msg.sender, 0), "Hedge:!gov");
+        require(IFortGovernance(_governance).checkGovernance(msg.sender, 0), "Fort:!gov");
         _;
     }
 }

@@ -4,7 +4,7 @@ pragma solidity ^0.8.6;
 
 import "../FortBase.sol";
 
-// /// @dev Base contract of Hedge
+// /// @dev This contract include frequently used data
 // contract FortFrequentlyUsed is FortBase {
 
 //     // Address of DCU contract

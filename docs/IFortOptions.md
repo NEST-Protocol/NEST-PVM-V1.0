@@ -43,7 +43,7 @@
         uint dcuAmount
     ) external payable;
 ```
-Note: This method may triggers the Open event, See also 3.1.
+Note: This method will triggers the Open event, See also 3.1.
 
 ### 2.4. Exercise option
 
@@ -78,16 +78,16 @@ Note: This method will triggers the Exercise event, See also 3.2.
     ) external view returns (uint amount);
 ```
 
-### 2.6. Find the options of the target address (in reverse order)
+### 2.6. Find the options of the owner (in reverse order)
 
 ```javascript
-    /// @dev Find the options of the target address (in reverse order)
-    /// @param start Find forward from the index corresponding to the given contract address 
+    /// @dev Find the options of the owner (in reverse order)
+    /// @param start Find forward from the index corresponding to the given owner address 
     /// (excluding the record corresponding to start)
     /// @param count Maximum number of records returned
     /// @param maxFindCount Find records at most
     /// @param owner Target address
-    /// @return optionArray Matched option array
+    /// @return optionArray Matched options
     function find(
         uint start, 
         uint count, 

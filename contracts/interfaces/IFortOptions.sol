@@ -44,16 +44,16 @@ interface IFortOptions {
 
     /// @dev Returns the share of the specified option for target address
     /// @param index Index of the option
-    /// @param addr Target address
+    /// @param addr Target address (This argument is useless, consider to remove)
     function balanceOf(uint index, address addr) external view returns (uint);
 
-    /// @dev Find the options of the target address (in reverse order)
-    /// @param start Find forward from the index corresponding to the given contract address 
+    /// @dev Find the options of the owner (in reverse order)
+    /// @param start Find forward from the index corresponding to the given owner address 
     /// (excluding the record corresponding to start)
     /// @param count Maximum number of records returned
     /// @param maxFindCount Find records at most
     /// @param owner Target address
-    /// @return optionArray Matched option array
+    /// @return optionArray Matched options
     function find(
         uint start, 
         uint count, 

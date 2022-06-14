@@ -45,10 +45,10 @@ contract FortFutures is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
     // Mapping from composite key to future index
     mapping(uint=>uint) _futureMapping;
 
-    // Future array
+    // Future array, element of 0 is place holder
     FutureInfo[] _futures;
 
-    // token to index mapping
+    // token to index mapping, address=>tokenConfigIndex + 1
     mapping(address=>uint) _tokenMapping;
 
     // Token configs
@@ -68,8 +68,7 @@ contract FortFutures is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
     /// @param tokenAddress Target token address, 0 means eth
     /// @param tokenConfig token configuration
     function register(address tokenAddress, TokenConfig calldata tokenConfig) external onlyGovernance {
-
-        // Get index + 1 by tokenAddress
+        // Get registered tokenIndex by tokenAddress
         uint index = _tokenMapping[tokenAddress];
         
         // index == 0 means token not registered, add
@@ -81,13 +80,14 @@ contract FortFutures is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
             require(index < 0x10000, "FO:too much tokenConfigs");
             _tokenMapping[tokenAddress] = index;
         } else {
+            // Update tokenConfig
             _tokenConfigs[index - 1] = tokenConfig;
         }
     }
 
-    /// @dev Returns the current value of the specified future
+    /// @dev Returns the current value of target address in the specified future
     /// @param index Index of future
-    /// @param oraclePrice Current price from oracle
+    /// @param oraclePrice Current price from oracle, usd based, 18 decimals
     /// @param addr Target address
     function balanceOf(uint index, uint oraclePrice, address addr) external view override returns (uint) {
         FutureInfo storage fi = _futures[index];
@@ -104,37 +104,38 @@ contract FortFutures is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
     }
 
     /// @dev Find the futures of the target address (in reverse order)
-    /// @param start Find forward from the index corresponding to the given contract address 
+    /// @param start Find forward from the index corresponding to the given owner address 
     /// (excluding the record corresponding to start)
     /// @param count Maximum number of records returned
     /// @param maxFindCount Find records at most
     /// @param owner Target address
-    /// @return futureArray Matched future array
+    /// @return futureArray Matched futures
     function find(
         uint start, 
         uint count, 
         uint maxFindCount, 
         address owner
     ) external view override returns (FutureView[] memory futureArray) {
-        
         futureArray = new FutureView[](count);
-        
         // Calculate search region
         FutureInfo[] storage futures = _futures;
-        uint i = futures.length;
+
+        // Loop from start to end
         uint end = 0;
-        if (start > 0) {
-            i = start;
+        // start is 0 means Loop from the last item
+        if (start == 0) {
+            start = futures.length;
         }
-        if (i > maxFindCount) {
-            end = i - maxFindCount;
+        // start > maxFindCount, so end is not 0
+        if (start > maxFindCount) {
+            end = start - maxFindCount;
         }
         
         // Loop lookup to write qualified records to the buffer
-        for (uint index = 0; index < count && i > end;) {
-            FutureInfo storage fi = futures[--i];
+        for (uint index = 0; index < count && start > end;) {
+            FutureInfo storage fi = futures[--start];
             if (uint(fi.accounts[owner].balance) > 0) {
-                futureArray[index++] = _toFutureView(fi, i, owner);
+                futureArray[index++] = _toFutureView(fi, start, owner);
             }
         }
     }
@@ -143,13 +144,12 @@ contract FortFutures is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
     /// @param offset Skip previous (offset) records
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
-    /// @return futureArray List of price sheets
+    /// @return futureArray List of futures
     function list(
         uint offset, 
         uint count, 
         uint order
     ) external view override returns (FutureView[] memory futureArray) {
-
         // Load futures
         FutureInfo[] storage futures = _futures;
         // Create result array
@@ -186,7 +186,10 @@ contract FortFutures is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
     /// @param orientation true: call, false: put
     function create(address tokenAddress, uint[] calldata levers, bool orientation) external override onlyGovernance {
 
-        // Get index by tokenAddress
+        // Get registered tokenIndex by tokenAddress
+        // _tokenMapping[tokenAddress] is less than 0x10000, so it can convert to uint16
+        // If tokenAddress not registered, _tokenMapping[tokenAddress] is 0, subtract by 1 will failed
+        // This make sure tokenAddress must registered
         uint16 tokenIndex = uint16(_tokenMapping[tokenAddress] - 1);
 
         // Create futures
@@ -213,8 +216,8 @@ contract FortFutures is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
         }
     }
 
-    /// @dev Obtain the number of futures that have been opened
-    /// @return Number of futures opened
+    /// @dev Obtain the number of futures that have been created
+    /// @return Number of futures created
     function getFutureCount() external view override returns (uint) {
         return _futures.length;
     }
@@ -261,19 +264,18 @@ contract FortFutures is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
         FutureInfo storage fi = _futures[index];
         bool orientation = fi.orientation;
         
-        // 2. Update account
+        // 2. Query oracle price
         // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
         // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
         // When merger, s0 use recorded price, s1 use corrected by k
         TokenConfig memory tokenConfig = _tokenConfigs[uint(fi.tokenIndex)];
         uint oraclePrice = _queryPrice(dcuAmount, tokenConfig, orientation, msg.sender);
 
+        // 3. Merger price
         Account memory account = fi.accounts[msg.sender];
         uint basePrice = _decodeFloat(account.basePrice);
         uint balance = uint(account.balance);
         uint newPrice = oraclePrice;
-        
-        // Merger
         if (uint(account.baseBlock) > 0) {
             newPrice = (balance + dcuAmount) * oraclePrice * basePrice / (
                 basePrice * dcuAmount + (balance << 64) * oraclePrice / _expMiuT(
@@ -283,6 +285,7 @@ contract FortFutures is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
             );
         }
         
+        // 4. Update account
         account.balance = _toUInt128(balance + dcuAmount);
         account.basePrice = _encodeFloat(newPrice);
         account.baseBlock = uint32(block.number);
@@ -303,18 +306,19 @@ contract FortFutures is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
         FutureInfo storage fi = _futures[index];
         bool orientation = fi.orientation;
 
+        // 2. Query oracle price
         // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
         // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
         // When merger, s0 use recorded price, s1 use corrected by k
         TokenConfig memory tokenConfig = _tokenConfigs[uint(fi.tokenIndex)];
         uint oraclePrice = _queryPrice(0, tokenConfig, !orientation, msg.sender);
 
-        // Update account
+        // 3. Update account
         Account memory account = fi.accounts[msg.sender];
         account.balance -= _toUInt128(amount);
         fi.accounts[msg.sender] = account;
 
-        // 2. Mint DCU to user
+        // 4. Mint DCU to user
         uint value = _balanceOf(
             tokenConfig,
             amount, 
@@ -340,50 +344,48 @@ contract FortFutures is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
         // 1. Load the future
         FutureInfo storage fi = _futures[index];
         uint lever = uint(fi.lever);
+        require(lever > 1, "HF:lever must greater than 1");
 
-        if (lever > 1) {
+        bool orientation = fi.orientation;
+            
+        // 2. Query oracle price
+        // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
+        // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
+        // When merger, s0 use recorded price, s1 use corrected by k
+        TokenConfig memory tokenConfig = _tokenConfigs[uint(fi.tokenIndex)];
+        uint oraclePrice = _queryPrice(0, tokenConfig, !orientation, msg.sender);
 
-            bool orientation = fi.orientation;
-            // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
-            // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
-            // When merger, s0 use recorded price, s1 use corrected by k
-            TokenConfig memory tokenConfig = _tokenConfigs[uint(fi.tokenIndex)];
-            uint oraclePrice = _queryPrice(0, tokenConfig, !orientation, msg.sender);
+        // 3. Loop and settle
+        uint reward = 0;
+        for (uint i = addresses.length; i > 0;) {
+            address acc = addresses[--i];
 
-            uint reward = 0;
-            for (uint i = addresses.length; i > 0;) {
-                address acc = addresses[--i];
+            // 4. Update account
+            Account memory account = fi.accounts[acc];
+            uint balance = _balanceOf(
+                tokenConfig,
+                uint(account.balance), 
+                _decodeFloat(account.basePrice), 
+                uint(account.baseBlock),
+                oraclePrice, 
+                orientation, 
+                lever
+            );
 
-                // Update account
-                Account memory account = fi.accounts[acc];
-                uint balance = _balanceOf(
-                    tokenConfig,
-                    uint(account.balance), 
-                    _decodeFloat(account.basePrice), 
-                    uint(account.baseBlock),
-                    oraclePrice, 
-                    orientation, 
-                    lever
-                );
-
-                // lever is great than 1, and balance less than a regular value, can be liquidated
-                // the regular value is: Max(balance * lever * 2%, MIN_VALUE)
-                uint minValue = uint(account.balance) * lever / 50;
-                if (balance < (minValue < MIN_VALUE ? MIN_VALUE : minValue)) {
-                    fi.accounts[acc] = Account(uint128(0), uint64(0), uint32(0));
-                    reward += balance;
-                    emit Settle(index, acc, msg.sender, balance);
-                }
+            // 5. Settle logic
+            // lever is great than 1, and balance less than a regular value, can be liquidated
+            // the regular value is: Max(balance * lever * 2%, MIN_VALUE)
+            uint minValue = uint(account.balance) * lever / 50;
+            if (balance < (minValue < MIN_VALUE ? MIN_VALUE : minValue)) {
+                fi.accounts[acc] = Account(uint128(0), uint64(0), uint32(0));
+                reward += balance;
+                emit Settle(index, acc, msg.sender, balance);
             }
+        }
 
-            // 2. Mint DCU to user
-            if (reward > 0) {
-                DCU(DCU_TOKEN_ADDRESS).mint(msg.sender, reward);
-            }
-        } else {
-            if (msg.value > 0) {
-                payable(msg.sender).transfer(msg.value);
-            }
+        // 6. Mint DCU to user
+        if (reward > 0) {
+            DCU(DCU_TOKEN_ADDRESS).mint(msg.sender, reward);
         }
     }
 
@@ -428,6 +430,7 @@ contract FortFutures is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
     /// @return Impact cost
     function impactCost(uint vol) public pure override returns (uint) {
         //impactCost = vol / 10000 / 1000;
+
         // TODO:
         return 0;
         return vol / 10000000;
@@ -435,10 +438,10 @@ contract FortFutures is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
 
     /// @dev K value is calculated by revised volatility
     /// @param sigmaSQ sigmaSQ for token
-    /// @param p0 Last price (number of tokens equivalent to 1 ETH)
-    /// @param bn0 Block number of the last price
-    /// @param p Latest price (number of tokens equivalent to 1 ETH)
-    /// @param bn The block number when (ETH, TOKEN) price takes into effective
+    /// @param p0 Last price (number of tokens equivalent to 2000 USD)
+    /// @param bn0 Block number of the price p0
+    /// @param p Latest price (number of tokens equivalent to 2000 USD)
+    /// @param bn The block number of the price p
     function calcRevisedK(uint sigmaSQ, uint p0, uint bn0, uint p, uint bn) public view override returns (uint k) {
         uint sigmaISQ = p * 1 ether / p0;
         if (sigmaISQ > 1 ether) {

@@ -69,8 +69,7 @@ contract FortOptions is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
     /// @param tokenAddress Target token address, 0 means eth
     /// @param tokenConfig token configuration
     function register(address tokenAddress, TokenConfig calldata tokenConfig) external onlyGovernance {
-
-        // Get index + 1 by tokenAddress
+        // Get registered tokenIndex by tokenAddress
         uint index = _tokenMapping[tokenAddress];
         
         // index == 0 means token not registered, add
@@ -82,13 +81,14 @@ contract FortOptions is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
             require(index < 0x10000, "FO:too much tokenRegistrations");
             _tokenMapping[tokenAddress] = index;
         } else {
+            // Update tokenConfig
             _tokenRegistrations[index - 1].tokenConfig = tokenConfig;
         }
     }
 
     /// @dev Returns the share of the specified option for target address
     /// @param index Index of the option
-    /// @param addr Target address
+    /// @param addr Target address (This argument is useless, consider to remove)
     function balanceOf(uint index, address addr) external view override returns (uint) {
         Option memory option = _options[index];
         if (uint(option.owner) == getAccountIndex(addr)) {
@@ -97,39 +97,39 @@ contract FortOptions is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
         return 0;
     }
 
-    /// @dev Find the options of the target address (in reverse order)
-    /// @param start Find forward from the index corresponding to the given contract address 
+    /// @dev Find the options of the owner (in reverse order)
+    /// @param start Find forward from the index corresponding to the given owner address 
     /// (excluding the record corresponding to start)
     /// @param count Maximum number of records returned
     /// @param maxFindCount Find records at most
     /// @param owner Target address
-    /// @return optionArray Matched option array
+    /// @return optionArray Matched options
     function find(
         uint start, 
         uint count, 
         uint maxFindCount, 
         address owner
     ) external view override returns (OptionView[] memory optionArray) {
-        
         optionArray = new OptionView[](count);
-        
         // Calculate search region
         Option[] storage options = _options;
-        uint i = options.length;
+        // Loop from start to end
         uint end = 0;
-        if (start > 0) {
-            i = start;
+        // start is 0 means Loop from the last item
+        if (start == 0) {
+            start = options.length;
         }
-        if (i > maxFindCount) {
-            end = i - maxFindCount;
+        // start > maxFindCount, so end is not 0
+        if (start > maxFindCount) {
+            end = start - maxFindCount;
         }
-        
+
         uint ownerIndex = getAccountIndex(owner);
         // Loop lookup to write qualified records to the buffer
-        for (uint index = 0; index < count && i > end;) {
-            Option storage option = options[--i];
+        for (uint index = 0; index < count && start > end;) {
+            Option storage option = options[--start];
             if (uint(option.owner) == ownerIndex) {
-                optionArray[index++] = _toOptionView(option, i);
+                optionArray[index++] = _toOptionView(option, start);
             }
         }
     }
@@ -138,13 +138,12 @@ contract FortOptions is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
     /// @param offset Skip previous (offset) records
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
-    /// @return optionArray Matched option array
+    /// @return optionArray Matched options
     function list(
         uint offset, 
         uint count, 
         uint order
     ) external view override returns (OptionView[] memory optionArray) {
-
         // Load options
         Option[] storage options = _options;
         // Create result array
@@ -197,7 +196,10 @@ contract FortOptions is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
         uint dcuAmount
     ) external payable override {
 
-        // _tokenMapping[tokenAddress] > 0 means token registered
+        // Get registered tokenIndex by tokenAddress
+        // _tokenMapping[tokenAddress] is less than 0x10000, so it can convert to uint16
+        // If tokenAddress not registered, _tokenMapping[tokenAddress] is 0, subtract by 1 will failed
+        // This make sure tokenAddress must registered
         uint tokenIndex = _tokenMapping[tokenAddress] - 1;
         TokenConfig memory tokenConfig = _tokenRegistrations[tokenIndex].tokenConfig;
 
@@ -318,9 +320,6 @@ contract FortOptions is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
         Option storage option = _options[index];
         address owner = _accounts[uint(option.owner)];
         require(owner == msg.sender, "FO:not owner");
-        uint strikePrice = _decodeFloat(option.strikePrice);
-        bool orientation = option.orientation;
-        uint exerciseBlock = uint(option.exerciseBlock);
 
         TokenConfig memory tokenConfig = _tokenRegistrations[option.tokenIndex].tokenConfig;
 
@@ -330,15 +329,15 @@ contract FortOptions is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
         // 3. Query price from oracle
         uint oraclePrice = _latestPrice(tokenConfig, msg.value, msg.sender);
 
-        // 4. Calculate option price
+        // 4. Calculate option price and sell amount
         uint dcuAmount = amount * _calcV(
             tokenConfig, 
             oraclePrice,
-            strikePrice,
-            orientation,
-            exerciseBlock
+            _decodeFloat(option.strikePrice),
+            option.orientation,
+            uint(option.exerciseBlock)
         ) * SELL_RATE / (USDT_BASE * 0x27100000000000000000); 
-        //(USDT_BASE * 10000 << 64);
+        // 0x27100000000000000000 = 10000 << 64
 
         if (dcuAmount > 0) {
             DCU(DCU_TOKEN_ADDRESS).mint(msg.sender, dcuAmount);
@@ -512,7 +511,7 @@ contract FortOptions is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
         uint dcuAmount
     ) private view returns (uint amount) {
 
-        // TODO:
+		// TODO:
         //require(exerciseBlock > block.number + MIN_PERIOD, "FEO:exerciseBlock too small");
 
         // 1. Calculate option price
@@ -615,23 +614,20 @@ contract FortOptions is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
 
     // d1 in formula, Because didn't divide by σ, So it's named D1
     function _D1(uint S0, uint K, int128 sigmaSQ_T, int128 miu_T) private pure returns (int128) {
-
-        //require(K < 0x1000000000000000000000000000000000000000000000000, "FEO:K can't ROL 64bits");
         return
-            ABDKMath64x64.sub(
-                ABDKMath64x64.add(
-                    ABDKMath64x64.ln(_toInt128(K * 0x10000000000000000 / S0)),
-                    sigmaSQ_T >> 1
-                ),
-                miu_T
-            );
+        ABDKMath64x64.sub(
+            ABDKMath64x64.add(
+                ABDKMath64x64.ln(_toInt128(K * 0x10000000000000000 / S0)),
+                sigmaSQ_T >> 1
+            ),
+            miu_T
+        );
     }
     
     /// @dev Encode the uint value as a floating-point representation in the form of fraction * 16 ^ exponent
     /// @param value Destination uint value
     /// @return float format
     function _encodeFloat(uint value) private pure returns (uint56) {
-
         uint exponent = 0; 
         while (value > 0x3FFFFFFFFFFFF) {
             value >>= 4;

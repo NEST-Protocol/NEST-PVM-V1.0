@@ -2,8 +2,6 @@
 
 pragma solidity ^0.8.6;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
 import "./interfaces/ICoFiXMapping.sol";
 
 import "./CoFiXBase.sol";

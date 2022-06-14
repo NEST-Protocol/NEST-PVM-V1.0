@@ -29,9 +29,6 @@ contract FortPRC44 is FortPRC {
 
     // The span from current block to hash block
     uint constant OPEN_BLOCK_SPAN44 = 1;
-    // // Times base, 4 decimals
-    // uint constant TIMES_BASE = 10000;
-    // Max times, 100000.0000. [1.0000, 100000.0000]
 
     // 4 decimals for M
     uint constant M_BASE44 = 10000;

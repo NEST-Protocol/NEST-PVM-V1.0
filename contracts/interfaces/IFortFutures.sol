@@ -63,19 +63,19 @@ interface IFortFutures {
         uint reward
     );
     
-    /// @dev Returns the current value of the specified future
+    /// @dev Returns the current value of target address in the specified future
     /// @param index Index of future
-    /// @param oraclePrice Current price from oracle
+    /// @param oraclePrice Current price from oracle, usd based, 18 decimals
     /// @param addr Target address
     function balanceOf(uint index, uint oraclePrice, address addr) external view returns (uint);
 
     /// @dev Find the futures of the target address (in reverse order)
-    /// @param start Find forward from the index corresponding to the given contract address 
+    /// @param start Find forward from the index corresponding to the given owner address 
     /// (excluding the record corresponding to start)
     /// @param count Maximum number of records returned
     /// @param maxFindCount Find records at most
     /// @param owner Target address
-    /// @return futureArray Matched future array
+    /// @return futureArray Matched futures
     function find(
         uint start, 
         uint count, 
@@ -87,7 +87,7 @@ interface IFortFutures {
     /// @param offset Skip previous (offset) records
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
-    /// @return futureArray List of price sheets
+    /// @return futureArray List of futures
     function list(uint offset, uint count, uint order) external view returns (FutureView[] memory futureArray);
 
     /// @dev Create future
@@ -96,8 +96,8 @@ interface IFortFutures {
     /// @param orientation true: call, false: put
     function create(address tokenAddress, uint[] calldata levers, bool orientation) external;
 
-    /// @dev Obtain the number of futures that have been opened
-    /// @return Number of futures opened
+    /// @dev Obtain the number of futures that have been created
+    /// @return Number of futures created
     function getFutureCount() external view returns (uint);
 
     /// @dev Get information of future
@@ -140,10 +140,10 @@ interface IFortFutures {
 
     /// @dev K value is calculated by revised volatility
     /// @param sigmaSQ sigmaSQ for token
-    /// @param p0 Last price (number of tokens equivalent to 1 ETH)
-    /// @param bn0 Block number of the last price
-    /// @param p Latest price (number of tokens equivalent to 1 ETH)
-    /// @param bn The block number when (ETH, TOKEN) price takes into effective
+    /// @param p0 Last price (number of tokens equivalent to 2000 USD)
+    /// @param bn0 Block number of the price p0
+    /// @param p Latest price (number of tokens equivalent to 2000 USD)
+    /// @param bn The block number of the price p
     function calcRevisedK(uint sigmaSQ, uint p0, uint bn0, uint p, uint bn) external view returns (uint k);
 
     /// @dev Calculate the impact cost

@@ -2,14 +2,12 @@
 
 pragma solidity ^0.8.6;
 
-import "../interfaces/INestPriceFacade.sol";
-import "../interfaces/INestOpenPrice.sol";
 import "../interfaces/INestBatchPrice2.sol";
 import "../custom/FortFrequentlyUsed.sol";
 
 import "hardhat/console.sol";
 
-contract NestPriceFacade is FortFrequentlyUsed, INestPriceFacade, INestOpenPrice, INestBatchPrice2 {
+contract NestPriceFacade is FortFrequentlyUsed, INestBatchPrice2 {
     
     struct Price {
         uint price;
@@ -53,7 +51,7 @@ contract NestPriceFacade is FortFrequentlyUsed, INestPriceFacade, INestOpenPrice
         address tokenAddress, 
         uint height, 
         address payback
-    ) external payable override returns (uint blockNumber, uint price) {
+    ) external payable returns (uint blockNumber, uint price) {
 
         if (msg.value > 0.01 ether) {
             payable(payback).transfer(msg.value - 0.01 ether);
@@ -77,7 +75,7 @@ contract NestPriceFacade is FortFrequentlyUsed, INestPriceFacade, INestOpenPrice
     function triggeredPrice(
         address tokenAddress, 
         address payback
-    ) public payable override returns (uint blockNumber, uint price) {
+    ) public payable returns (uint blockNumber, uint price) {
 
         if (msg.value > 0.01 ether) {
             payable(payback).transfer(msg.value - 0.01 ether);
@@ -100,7 +98,7 @@ contract NestPriceFacade is FortFrequentlyUsed, INestPriceFacade, INestOpenPrice
     function latestPrice(
         address tokenAddress, 
         address payback
-    ) public payable override returns (uint blockNumber, uint price) {
+    ) public payable returns (uint blockNumber, uint price) {
 
         if (msg.value > 0.01 ether) {
             payable(payback).transfer(msg.value - 0.01 ether);
@@ -127,7 +125,7 @@ contract NestPriceFacade is FortFrequentlyUsed, INestPriceFacade, INestOpenPrice
     function triggeredPriceInfo(
         address tokenAddress, 
         address payback
-    ) public payable override returns (uint blockNumber, uint price, uint avgPrice, uint sigmaSQ) {
+    ) public payable returns (uint blockNumber, uint price, uint avgPrice, uint sigmaSQ) {
 
         if (msg.value > 0.01 ether) {
             payable(payback).transfer(msg.value - 0.01 ether);
@@ -160,7 +158,6 @@ contract NestPriceFacade is FortFrequentlyUsed, INestPriceFacade, INestOpenPrice
     ) 
     public 
     payable 
-    override
     returns (
         uint[] memory prices,
         uint triggeredPriceBlockNumber,
@@ -187,7 +184,7 @@ contract NestPriceFacade is FortFrequentlyUsed, INestPriceFacade, INestOpenPrice
         address tokenAddress, 
         uint count, 
         address paybackAddress
-    ) public payable override returns (uint[] memory prices) {
+    ) public payable returns (uint[] memory prices) {
         if (msg.value > 0.01 ether) {
             payable(paybackAddress).transfer(msg.value - 0.01 ether);
         } else {
@@ -244,7 +241,7 @@ contract NestPriceFacade is FortFrequentlyUsed, INestPriceFacade, INestOpenPrice
     /// @param payback Address to receive refund
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
-    function triggeredPrice(uint channelId, address payback) public payable override returns (uint blockNumber, uint price) {
+    function triggeredPrice(uint channelId, address payback) public payable returns (uint blockNumber, uint price) {
 
     }
 
@@ -257,7 +254,7 @@ contract NestPriceFacade is FortFrequentlyUsed, INestPriceFacade, INestOpenPrice
     /// @return sigmaSQ The square of the volatility (18 decimal places). The current implementation assumes that 
     ///         the volatility cannot exceed 1. Correspondingly, when the return value is equal to 999999999999996447,
     ///         it means that the volatility has exceeded the range that can be expressed
-    function triggeredPriceInfo(uint channelId, address payback) public payable override returns (
+    function triggeredPriceInfo(uint channelId, address payback) public payable returns (
         uint blockNumber,
         uint price,
         uint avgPrice,
@@ -276,7 +273,7 @@ contract NestPriceFacade is FortFrequentlyUsed, INestPriceFacade, INestOpenPrice
         uint channelId,
         uint height, 
         address payback
-    ) public payable override returns (uint blockNumber, uint price) {
+    ) public payable returns (uint blockNumber, uint price) {
         require(channelId >= 0);
         require(height >= 0);
 
@@ -304,7 +301,7 @@ contract NestPriceFacade is FortFrequentlyUsed, INestPriceFacade, INestOpenPrice
     /// @param payback Address to receive refund
     /// @return blockNumber The block number of price
     /// @return price The token price. (1eth equivalent to (price) token)
-    function latestPrice(uint channelId, address payback) public payable override returns (uint blockNumber, uint price) {
+    function latestPrice(uint channelId, address payback) public payable returns (uint blockNumber, uint price) {
         require(channelId >= 0);
 
         if (msg.value > 0.005 ether) {
@@ -325,7 +322,7 @@ contract NestPriceFacade is FortFrequentlyUsed, INestPriceFacade, INestOpenPrice
     /// @param count The number of prices that want to return
     /// @param payback Address to receive refund
     /// @return An array which length is num * 2, each two element expresses one price like blockNumber|price
-    function lastPriceList(uint channelId, uint count, address payback) public payable override returns (uint[] memory) {
+    function lastPriceList(uint channelId, uint count, address payback) public payable returns (uint[] memory) {
         require(channelId >= 0);
 
         if (msg.value > 0.005 ether) {
@@ -362,7 +359,7 @@ contract NestPriceFacade is FortFrequentlyUsed, INestPriceFacade, INestOpenPrice
     /// @return triggeredSigmaSQ The square of the volatility (18 decimal places). The current implementation 
     /// assumes that the volatility cannot exceed 1. Correspondingly, when the return value is equal to 
     /// 999999999999996447, it means that the volatility has exceeded the range that can be expressed
-    function lastPriceListAndTriggeredPriceInfo(uint channelId, uint count, address payback) public payable override
+    function lastPriceListAndTriggeredPriceInfo(uint channelId, uint count, address payback) public payable
     returns (
         uint[] memory prices,
         uint triggeredPriceBlockNumber,

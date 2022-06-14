@@ -2,14 +2,17 @@
 
 pragma solidity ^0.8.6;
 
-/// @dev Base contract of Hedge
+/// @dev Specific parameters for target chain
 contract ChainParameter {
 
-    // Block time. ethereum 14 seconds, BSC 3 seconds, polygon 2.2 seconds
+    // Block average time. ethereum 14 seconds, BSC 3 seconds, polygon 2.2 seconds
     uint constant BLOCK_TIME = 3;
-    
-    // Minimal exercise block period. 840000
-    uint constant MIN_PERIOD = 840000;
 
-    uint constant MIN_EXERCISE_BLOCK = 840000;
+    // Minimal exercise block period. 840000
+    // TODO: 840000
+    uint constant MIN_PERIOD = 10;
+
+    // Minimal exercise block period for FortLPGuarantee. 840000
+    // TODO: 840000
+    uint constant MIN_EXERCISE_BLOCK = 10;
 }

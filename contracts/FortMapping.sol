@@ -6,7 +6,7 @@ import "./interfaces/IFortMapping.sol";
 
 import "./FortBase.sol";
 
-/// @dev The contract is for Hedge builtin contract address mapping
+/// @dev The contract is for Fort builtin contract address mapping
 abstract contract FortMapping is FortBase, IFortMapping {
 
     /// @dev Address of dcu token contract
@@ -33,7 +33,7 @@ abstract contract FortMapping is FortBase, IFortMapping {
     /// @dev Set the built-in contract address of the system
     /// @param dcuToken Address of dcu token contract
     /// @param fortDAO IFortDAO implementation contract address
-    /// @param fortOptions IFortOptions implementation contract address for Hedge
+    /// @param fortOptions IFortOptions implementation contract address for FortOptions
     /// @param fortFutures IFortFutures implementation contract address
     /// @param fortVaultForStaking IFortVaultForStaking implementation contract address
     /// @param nestPriceFacade INestPriceFacade implementation contract address

@@ -2,8 +2,7 @@
 
 pragma solidity ^0.8.6;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./libs/TransferHelper.sol";
+import "../libs/TransferHelper.sol";
 
 import "./interfaces/ICoFiXRouter.sol";
 import "./interfaces/ICoFiXPool.sol";
@@ -246,7 +245,7 @@ contract CoFiXRouter is CoFiXBase, ICoFiXRouter {
         address pool = _pairFor(token0, token1);
         // Transfer token to first pool
         if (token0 != address(0)) {
-            TransferHelper.safeTransferFrom(token0, to, pool, amountIn);
+            TransferHelper.safeTransferFrom(token0, msg.sender, pool, amountIn);
         }
 
         uint mined;

@@ -63,7 +63,7 @@ describe('FortOptions', function() {
         }
 
         let addrs = [eth.address/*, hbtc.address*/];
-        let futures = [1, 2, 5];
+        let futures = [2, 3, 5];
         let oriens = [true, false];
         if (true) {
             console.log('2. getFutureCount');

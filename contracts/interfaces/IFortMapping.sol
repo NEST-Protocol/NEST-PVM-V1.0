@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.6;
 
-/// @dev The interface defines methods for Hedge builtin contract address mapping
+/// @dev The interface defines methods for Fort builtin contract address mapping
 interface IFortMapping {
 
     /// @dev Address updated event
@@ -67,7 +67,7 @@ interface IFortMapping {
     /// @return INestPriceFacade implementation contract address
     function getNestPriceFacade() external view returns (address);
 
-    /// @dev Registered address. The address registered here is the address accepted by Hedge system
+    /// @dev Registered address. The address registered here is the address accepted by Fort system
     /// @param key The key
     /// @param addr Destination address. 0 means to delete the registration information
     function registerAddress(string calldata key, address addr) external;

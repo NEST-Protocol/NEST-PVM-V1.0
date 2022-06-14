@@ -46,7 +46,7 @@ Run `npx hardhat compile`, get build results in `artifacts/contracts` folder, in
 | nestOpenPrice | INestOpenPrice | 0x09CE0e021195BA2c1CDE62A8B187abf810951540 |
 | fortOptions | IFortOptions | 0x284935F8C571d054Df98eDA8503ea13cde5fd8Cc |
 | fortFutures | IFortFutures | 0x8c5052f7747D8Ebc2F069286416b6aE8Ad3Cc149 |
-| hedgeSwap | IHedgeSwap | 0x2Cd1Bf9345E969b5DFc6D88000475aD6d487363A |
+| fortSwap | IFortSwap | 0x2Cd1Bf9345E969b5DFc6D88000475aD6d487363A |
 
 ### 2021-10-20@mainnet
 | Name | Interfaces | mainnet |
@@ -63,7 +63,7 @@ Run `npx hardhat compile`, get build results in `artifacts/contracts` folder, in
 | fortVaultForStaking | IFortVaultForStaking | 0xE3940A3E94bca34B9175d156a5E9C5728dFE922F |
 | fortOptions | IFortOptions | 0x6C844d364c2836f2111891111F25C7a24da976A9 |
 | fortFutures | IFortFutures | 0x622f1CB39AdE2131061C68E61334D41321033ab4 |
-| hedgeSwap | IHedgeSwap | 0x6e7fd4BA02A5a7a75Ea3CcE37e221dC144D606Dd |
+| fortSwap | IFortSwap | 0x6e7fd4BA02A5a7a75Ea3CcE37e221dC144D606Dd |
 
 ### 2021-10-04@rinkeby
 | Name | Interfaces | rinkeby |

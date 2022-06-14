@@ -6,7 +6,7 @@ import "./interfaces/IFortGovernance.sol";
 
 import "./FortMapping.sol";
 
-/// @dev Hedge governance contract
+/// @dev Fort governance contract
 contract FortGovernance is FortMapping, IFortGovernance {
 
     /// @dev Structure of governance address information
@@ -39,9 +39,7 @@ contract FortGovernance is FortMapping, IFortGovernance {
     ///        implemented in the current system, only the difference between authorized and unauthorized. 
     ///        Here, a uint96 is used to represent the weight, which is only reserved for expansion
     function setGovernance(address addr, uint flag) external override onlyGovernance {
-        
         emit FlagChanged(addr, _governanceMapping[addr].flag, flag);
-
         if (flag > 0) {
             _governanceMapping[addr] = GovernanceInfo(addr, uint96(flag));
         } else {

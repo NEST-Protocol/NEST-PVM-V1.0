@@ -2,8 +2,6 @@
 
 pragma solidity ^0.8.6;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
 import "./libs/TransferHelper.sol";
 
 import "./interfaces/IFortVaultForStaking.sol";
@@ -47,7 +45,7 @@ contract FortVaultForStaking is FortFrequentlyUsed, IFortVaultForStaking {
         // Total staked amount
         uint192 totalStaked;
 
-        // Unlock block number
+        // Unlock block
         uint64 unlockBlock;
 
         // Mining amount weight

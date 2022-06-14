@@ -30,7 +30,6 @@ contract DCU is FortBase, ERC20("Decentralized Currency Unit", "DCU") {
     /// @param account Target address
     /// @param flag Mining permission flag
     function setMinter(address account, uint flag) external onlyGovernance {
-
         emit MinterChanged(account, _minters[account], flag);
         _minters[account] = flag;
     }

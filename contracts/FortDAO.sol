@@ -8,7 +8,7 @@ import "./interfaces/IFortDAO.sol";
 
 import "./FortBase.sol";
 
-/// @dev Management of hedge public funds
+/// @dev Management of Fort public funds
 contract FortDAO is FortBase, IFortDAO {
 
     // DAO applications
