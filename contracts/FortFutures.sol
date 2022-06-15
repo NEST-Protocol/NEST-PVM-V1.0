@@ -457,10 +457,10 @@ contract FortFutures is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
             k = 0.002 ether;
         }
 
-        sigmaISQ = sigmaISQ * sigmaISQ / (bn - bn0) / BLOCK_TIME / 1 ether;
+        sigmaISQ = sigmaISQ * sigmaISQ / (bn - bn0);
 
-        if (sigmaISQ > sigmaSQ) {
-            k += _sqrt(1 ether * BLOCK_TIME * sigmaISQ * (block.number - bn));
+        if (sigmaISQ > sigmaSQ * BLOCK_TIME * 1 ether) {
+            k += _sqrt(sigmaISQ * (block.number - bn));
         } else {
             k += _sqrt(1 ether * BLOCK_TIME * sigmaSQ * (block.number - bn));
         }
