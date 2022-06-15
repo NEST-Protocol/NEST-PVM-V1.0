@@ -119,53 +119,6 @@ contract FortPRC is FortPRCToken {
         return _dices.length;
     }
 
-    /*
-    /// @dev start a roll dice
-    /// @param n count of PRC
-    /// @param m times, 4 decimals
-    function roll(uint n, uint m) external {
-        require(n == 1 && m >= TIMES_BASE && m <= MAX_M, "PRC:n or m not valid");
-        _burn(msg.sender, n * 1 ether);
-        _dices.push(Dice(msg.sender, uint32(n), uint32(m), uint32(block.number)));
-    }
-
-    /// @dev Claim gained DCU
-    /// @param index index of bet
-    function claim(uint index) external {
-        Dice memory dice = _dices[index];
-        uint gain = _gained(dice, index);
-        if (gain > 0) {
-            DCU(DCU_TOKEN_ADDRESS).mint(dice.owner, gain);
-        }
-
-        _dices[index].n = uint32(0);
-    }
-
-    /// @dev Batch claim gained DCU
-    /// @param indices Indices of bets
-    function batchClaim(uint[] calldata indices) external {
-        
-        address owner = address(0);
-        uint gain = 0;
-
-        for (uint i = indices.length; i > 0;) {
-            uint index = indices[--i];
-            Dice memory dice = _dices[index];
-            if (owner == address(0)) {
-                owner = dice.owner;
-            } else {
-                require(owner == dice.owner, "PRC:different owner");
-            }
-            gain += _gained(dice, index);
-            _dices[index].n = uint32(0);
-        }
-
-        if (owner > address(0)) {
-            DCU(DCU_TOKEN_ADDRESS).mint(owner, gain);
-        }
-    }
-    */
-    
     // Calculate gained number of DCU
     function _gained(Dice memory dice, uint index) private view returns (uint gain) {
         uint hashBlock = uint(dice.openBlock) + OPEN_BLOCK_SPAN;
