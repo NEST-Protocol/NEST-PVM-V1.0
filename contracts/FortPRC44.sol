@@ -132,7 +132,7 @@ contract FortPRC44 is FortPRC {
     /// @param n count of PRC
     /// @param m times, 4 decimals
     function roll44(uint n, uint m) external {
-        require(n > 0 && n < MAX_N44  && m >= M_BASE44 && m <= MAX_M44, "PRC:n or m not valid");
+        require(n > 0 && n <= MAX_N44  && m >= M_BASE44 && m <= MAX_M44, "PRC:n or m not valid");
         _burn(msg.sender, n * 1 ether / N_BASE44);
         _dices44.push(Dice44(msg.sender, uint32(n), uint32(m), uint32(block.number)));
     }
