@@ -50,25 +50,24 @@ contract FortPRC is FortPRCToken {
         uint maxFindCount, 
         address owner
     ) external view returns (DiceView[] memory diceArray) {
-        
         diceArray = new DiceView[](count);
-        
         // Calculate search region
         Dice[] storage dices = _dices;
-        uint i = dices.length;
+        // Loop from start to end
         uint end = 0;
-        if (start > 0) {
-            i = start;
+        // start is 0 means Loop from the last item
+        if (start == 0) {
+            start = dices.length;
         }
-        if (i > maxFindCount) {
-            end = i - maxFindCount;
+        if (start > maxFindCount) {
+            end = start - maxFindCount;
         }
         
         // Loop lookup to write qualified records to the buffer
-        for (uint index = 0; index < count && i > end;) {
-            Dice memory dice = dices[--i];
+        for (uint index = 0; index < count && start > end;) {
+            Dice memory dice = dices[--start];
             if (dice.owner == owner) {
-                diceArray[index++] = _toDiceView(dice, i);
+                diceArray[index++] = _toDiceView(dice, start);
             }
         }
     }
