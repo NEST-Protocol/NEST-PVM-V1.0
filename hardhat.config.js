@@ -22,7 +22,7 @@ process.env.HTTPS_PROXY = 'http://127.0.0.1:8580';
  */
 module.exports = {
   solidity: {
-    version: '0.8.14',
+    version: '0.8.15',
     settings: {
       optimizer: {
         enabled: true,

@@ -5,8 +5,8 @@ const { toBigInt, toDecimal, showReceipt, snd, tableSnd, d1, Vc, Vp } = require(
 describe('deploy', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
-        const FortOptions = await ethers.getContractFactory('FortOptions');
-        const FortFutures = await ethers.getContractFactory('FortFutures');
+        const FortPRC44 = await ethers.getContractFactory('FortPRC44');
+        const FortPRCSwap = await ethers.getContractFactory('FortPRCSwap');
 
         const { 
             eth, usdt, dcu, 
@@ -20,5 +20,11 @@ describe('deploy', function() {
         } = await deploy();
 
         console.log('ok');
+
+        const newFortPRC44 = await FortPRC44.deploy();
+        console.log('newFortPRC44: ' + newFortPRC44.address);
+
+        const newFortPRCSwap = await FortPRCSwap.deploy();
+        console.log('newFortPRCSwap: ' + newFortPRCSwap.address);
     });
 });

@@ -46,8 +46,6 @@ exports.deploy = async function() {
     // console.log('9. dcu.setMinter(fortPRC.address, 1)');
     // await dcu.setMinter(fortPRC.address, 1);
 
-    // TODO: Modify FortPRCSwap.PRC_TOKEN_ADDRESS and FortPRCSwap.COFIX_ROUTER_ADDRESS before execute
-    
     // //const fortPRCSwap = await upgrades.deployProxy(FortPRCSwap, [fortGovernance.address], { initializer: 'initialize' });
     // const fortPRCSwap = await FortPRCSwap.attach('0x0000000000000000000000000000000000000000');
     // console.log('fortPRCSwap: ' + fortPRCSwap.address);
