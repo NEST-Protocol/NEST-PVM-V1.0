@@ -1,6 +1,6 @@
 const { expect } = require('chai');
 const { deploy } = require('../scripts/deploy.js');
-const { toBigInt, toDecimal, showReceipt, snd, tableSnd, d1, Vc, Vp } = require('./utils.js');
+const { toBigInt, toDecimal, showReceipt, snd, tableSnd, d1, Vc, Vp, UI } = require('./utils.js');
 
 describe('deploy', function() {
     it('First', async function() {
@@ -13,6 +13,8 @@ describe('deploy', function() {
             cofi,
             pusd,
             peth,
+            fortPRC,
+            fortPRCSwap,
 
             fortGovernance,
             fortOptions, fortFutures,
@@ -21,10 +23,18 @@ describe('deploy', function() {
 
         console.log('ok');
 
-        const newFortPRC44 = await FortPRC44.deploy();
-        console.log('newFortPRC44: ' + newFortPRC44.address);
+        console.log('fortPRC: ' + fortPRC.address);
+        console.log('fortPRCSwap: ' + fortPRCSwap.address);
 
-        const newFortPRCSwap = await FortPRCSwap.deploy();
-        console.log('newFortPRCSwap: ' + newFortPRCSwap.address);
+        {
+            let list = await fortPRC.list44(0, 5, 0);
+            console.log(UI(list));
+        }
+        {
+            console.log('fortPRC.totalSupply: ' + toDecimal(await fortPRC.totalSupply()));
+            console.log('dcu.totalSupply: ' + toDecimal(await dcu.totalSupply()));
+            console.log('fortPRCSwap.dcu: ' + toDecimal(await dcu.balanceOf(fortPRCSwap.address)));
+            console.log('fortPRCSwap.fortPRC: ' + toDecimal(await fortPRC.balanceOf(fortPRCSwap.address)));
+        }
     });
 });

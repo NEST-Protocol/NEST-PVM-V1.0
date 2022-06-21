@@ -52,7 +52,7 @@ contract FortPRCSwap is FortFrequentlyUsed {
             revert("PRCSwap:pair not allowed");
         }
 
-        TransferHelper.safeTransfer(dest, to, amountOut);
+        TransferHelper.safeTransfer(PRC_TOKEN_ADDRESS, to, amountOut);
         mined = 0;
     }
 }

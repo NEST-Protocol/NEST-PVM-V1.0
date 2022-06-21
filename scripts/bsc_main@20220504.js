@@ -12,7 +12,7 @@ exports.deploy = async function() {
     const NestPriceFacade = await ethers.getContractFactory('NestPriceFacade');
     const FortGovernance = await ethers.getContractFactory('FortGovernance');
     const DCU = await ethers.getContractFactory('DCU');
-    const FortPRC = await ethers.getContractFactory('FortPRC');
+    const FortPRC = await ethers.getContractFactory('FortPRC44');
     const FortPRCSwap = await ethers.getContractFactory('FortPRCSwap');
 
     console.log('** Deploy: bsc_main@20220504.js **');
