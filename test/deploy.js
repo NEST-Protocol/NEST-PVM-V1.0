@@ -22,19 +22,5 @@ describe('deploy', function() {
         } = await deploy();
 
         console.log('ok');
-
-        console.log('fortPRC: ' + fortPRC.address);
-        console.log('fortPRCSwap: ' + fortPRCSwap.address);
-
-        {
-            let list = await fortPRC.list44(0, 5, 0);
-            console.log(UI(list));
-        }
-        {
-            console.log('fortPRC.totalSupply: ' + toDecimal(await fortPRC.totalSupply()));
-            console.log('dcu.totalSupply: ' + toDecimal(await dcu.totalSupply()));
-            console.log('fortPRCSwap.dcu: ' + toDecimal(await dcu.balanceOf(fortPRCSwap.address)));
-            console.log('fortPRCSwap.fortPRC: ' + toDecimal(await fortPRC.balanceOf(fortPRCSwap.address)));
-        }
     });
 });
