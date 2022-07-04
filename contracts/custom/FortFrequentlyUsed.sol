@@ -28,6 +28,10 @@ contract FortFrequentlyUsed is FortBase {
     
     address USDT_TOKEN_ADDRESS;
 
+    address NEST_TOKEN_ADDRESS;
+
+    address FORT_VAULT_ADDRESS;
+
     // USDT base
     uint constant USDT_BASE = 1 ether;
 
@@ -40,11 +44,12 @@ contract FortFrequentlyUsed is FortBase {
         super.update(newGovernance);
         (
             DCU_TOKEN_ADDRESS,//address dcuToken,
-            ,//address fortDAO,
+            FORT_VAULT_ADDRESS,//address fortDAO,
             ,//address fortOptions,
             ,//address fortFutures,
             ,//address fortVaultForStaking,
             NEST_OPEN_PRICE //address nestPriceFacade
         ) = IFortGovernance(newGovernance).getBuiltinAddress();
+        NEST_TOKEN_ADDRESS = DCU_TOKEN_ADDRESS;
     }
 }

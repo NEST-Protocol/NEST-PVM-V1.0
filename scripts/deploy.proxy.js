@@ -12,13 +12,13 @@ exports.deploy = async function() {
     const NestPriceFacade = await ethers.getContractFactory('NestPriceFacade');
     const FortGovernance = await ethers.getContractFactory('FortGovernance');
     const DCU = await ethers.getContractFactory('DCU');
-    const FortDAO = await ethers.getContractFactory('FortDAO');
-    const FortOptions = await ethers.getContractFactory('FortOptions');
-    const FortFutures = await ethers.getContractFactory('FortFutures');
+    const FortDAO = await ethers.getContractFactory('FortVault');
+    const FortOptions = await ethers.getContractFactory('NestOptions');
+    const FortFutures = await ethers.getContractFactory('NestFutures');
     const FortVaultForStaking = await ethers.getContractFactory('FortVaultForStaking');
     const FortSwap = await ethers.getContractFactory('FortSwap');
     const FortLPGuarantee = await ethers.getContractFactory('FortLPGuarantee');
-    const FortPRC44 = await ethers.getContractFactory('FortPRC44');
+    const FortPRC44 = await ethers.getContractFactory('NestPRC44');
     const FortPRCSwap = await ethers.getContractFactory('FortPRCSwap');
     const CoFiXRouter = await ethers.getContractFactory('CoFiXRouter');
 
@@ -188,8 +188,21 @@ exports.deploy = async function() {
     console.log('14. create hbtc short lever');
     await fortFutures.create(hbtc.address, [1, 2, 3, 4, 5], false);
 
+
     await cofixRouter.registerPair(fortPRC44.address, dcu.address, fortPRCSwap.address);
     await fortPRCSwap.setAddress(cofixRouter.address, fortPRC44.address);
+    await fortDAO.setAddress(dcu.address);
+
+    await dcu.approve(fortOptions.address, 100000000000000000000000000n);
+    await dcu.approve(fortFutures.address, 100000000000000000000000000n);
+    await fortDAO.approve(fortOptions.address, 100000000000000000000000000n);
+    await fortDAO.approve(fortFutures.address, 100000000000000000000000000n);
+    await dcu.approve(fortFutures.address, 100000000000000000000000000n);
+
+    var [owner, addr1, addr2] = await ethers.getSigners();
+    await dcu.setMinter(owner.address, 1);
+    await dcu.mint(fortDAO.address, 100000000000000000000000000n);
+
     console.log('---------- OK ----------');
     
     const BLOCK_TIME = 3;
