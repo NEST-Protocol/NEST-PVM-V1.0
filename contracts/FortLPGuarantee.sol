@@ -237,8 +237,7 @@ contract FortLPGuarantee is ChainParameter, FortFrequentlyUsed, FortPriceAdapter
 
         // 1. Load the guarantee
         Guarantee storage guarantee = _guarantees[index];
-        // TODO:
-        //require(block.number >= uint(guarantee.openBlock) + MIN_EXERCISE_BLOCK, "LPG:too early");
+        require(block.number >= uint(guarantee.openBlock) + MIN_EXERCISE_BLOCK, "LPG:too early");
         address owner = _accounts[uint(guarantee.owner)];
         uint exerciseBlock = uint(guarantee.exerciseBlock);
         uint x0 = _decodeFloat(guarantee.x0);
@@ -325,8 +324,7 @@ contract FortLPGuarantee is ChainParameter, FortFrequentlyUsed, FortPriceAdapter
         uint exerciseBlock
     ) private view returns (uint dcuAmount) {
 
-        // TODO:
-        //require(exerciseBlock > block.number + MIN_PERIOD, "FEO:exerciseBlock too small");
+        require(exerciseBlock > block.number + MIN_PERIOD, "FEO:exerciseBlock too small");
         uint T = (exerciseBlock - block.number) * BLOCK_TIME;
 
         // formula:

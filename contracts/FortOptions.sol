@@ -273,8 +273,7 @@ contract FortOptions is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
 
         TokenConfig memory tokenConfig = _tokenRegistrations[option.tokenIndex].tokenConfig;
 
-        // TODO:
-        //require(block.number >= exerciseBlock, "FEO:at maturity");
+        require(block.number >= exerciseBlock, "FEO:at maturity");
 
         // 2. Deduct the specified amount
         option.balance = _toUInt112(uint(option.balance) - amount);
@@ -511,8 +510,7 @@ contract FortOptions is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
         uint dcuAmount
     ) private view returns (uint amount) {
 
-        // TODO:
-        //require(exerciseBlock > block.number + MIN_PERIOD, "FEO:exerciseBlock too small");
+        require(exerciseBlock > block.number + MIN_PERIOD, "FEO:exerciseBlock too small");
 
         // 1. Calculate option price
         uint v = _calcV(

@@ -9,22 +9,12 @@ import "./custom/FortFrequentlyUsed.sol";
 /// @dev Swap dcu with token
 contract FortPRCSwap is FortFrequentlyUsed {
 
-    // // CoFiXRouter address
-    // address constant COFIX_ROUTER_ADDRESS = 0xb29A8d980E1408E487B9968f5E4f7fD7a9B0CaC5;
-
-    // // Target token address
-    // address constant PRC_TOKEN_ADDRESS = 0xf43A71e4Da398e5731c9580D11014dE5e8fD0530;
-
-    // TODO:
     // CoFiXRouter address
-    address COFIX_ROUTER_ADDRESS;
+    address constant COFIX_ROUTER_ADDRESS = 0xb29A8d980E1408E487B9968f5E4f7fD7a9B0CaC5;
+
     // Target token address
-    address PRC_TOKEN_ADDRESS;
-    function setAddress(address cofixRouter, address prcTokenAddress) external onlyGovernance{
-        COFIX_ROUTER_ADDRESS = cofixRouter;
-        PRC_TOKEN_ADDRESS = prcTokenAddress;
-    }
-    
+    address constant PRC_TOKEN_ADDRESS = 0xf43A71e4Da398e5731c9580D11014dE5e8fD0530;
+
     constructor() {
     }
 
