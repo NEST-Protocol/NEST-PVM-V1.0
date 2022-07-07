@@ -69,21 +69,7 @@ contract FortOptions is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
     /// @param tokenAddress Target token address, 0 means eth
     /// @param tokenConfig token configuration
     function register(address tokenAddress, TokenConfig calldata tokenConfig) external onlyGovernance {
-        // Get registered tokenIndex by tokenAddress
-        uint index = _tokenMapping[tokenAddress];
-        
-        // index == 0 means token not registered, add
-        if (index == 0) {
-            // Add TokenRegistration to array
-            _tokenRegistrations.push(TokenRegistration(tokenConfig, tokenAddress));
-            // Record index + 1
-            index = _tokenRegistrations.length;
-            require(index < 0x10000, "FO:too much tokenRegistrations");
-            _tokenMapping[tokenAddress] = index;
-        } else {
-            // Update tokenConfig
-            _tokenRegistrations[index - 1].tokenConfig = tokenConfig;
-        }
+        disable();
     }
 
     /// @dev Returns the share of the specified option for target address
@@ -195,40 +181,7 @@ contract FortOptions is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
         uint exerciseBlock,
         uint dcuAmount
     ) external payable override {
-
-        // Get registered tokenIndex by tokenAddress
-        // _tokenMapping[tokenAddress] is less than 0x10000, so it can convert to uint16
-        // If tokenAddress not registered, _tokenMapping[tokenAddress] is 0, subtract by 1 will failed
-        // This make sure tokenAddress must registered
-        uint tokenIndex = _tokenMapping[tokenAddress] - 1;
-        TokenConfig memory tokenConfig = _tokenRegistrations[tokenIndex].tokenConfig;
-
-        // 1. Query price from oracle
-        uint oraclePrice = _latestPrice(tokenConfig, msg.value, msg.sender);
-
-        // 2. Calculate the amount of option
-        uint amount = _estimate(tokenConfig, oraclePrice, strikePrice, orientation, exerciseBlock, dcuAmount);
-
-        // 3. Open
-        // Emit open event
-        emit Open(_options.length, dcuAmount, msg.sender, amount);
-        // Add option to array
-        _options.push(Option(
-            //uint32 owner;
-            uint32(_addressIndex(msg.sender)),
-            //uint112 balance;
-            _toUInt112(amount),
-            uint16(tokenIndex),
-            //uint56 strikePrice;
-            _encodeFloat(strikePrice),
-            //bool orientation;
-            orientation,
-            //uint32 exerciseBlock;
-            uint32(exerciseBlock)
-        ));
-
-        // 4. Burn DCU
-        DCU(DCU_TOKEN_ADDRESS).burn(msg.sender, dcuAmount);
+        disable();
     }
 
     /// @dev Estimate the amount of option

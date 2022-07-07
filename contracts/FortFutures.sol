@@ -68,21 +68,7 @@ contract FortFutures is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
     /// @param tokenAddress Target token address, 0 means eth
     /// @param tokenConfig token configuration
     function register(address tokenAddress, TokenConfig calldata tokenConfig) external onlyGovernance {
-        // Get registered tokenIndex by tokenAddress
-        uint index = _tokenMapping[tokenAddress];
-        
-        // index == 0 means token not registered, add
-        if (index == 0) {
-            // Add tokenConfig to array
-            _tokenConfigs.push(tokenConfig);
-            // Record index + 1
-            index = _tokenConfigs.length;
-            require(index < 0x10000, "FO:too much tokenConfigs");
-            _tokenMapping[tokenAddress] = index;
-        } else {
-            // Update tokenConfig
-            _tokenConfigs[index - 1] = tokenConfig;
-        }
+        disable();
     }
 
     /// @dev Returns the current value of target address in the specified future
@@ -185,35 +171,7 @@ contract FortFutures is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
     /// @param levers Levers of future
     /// @param orientation true: call, false: put
     function create(address tokenAddress, uint[] calldata levers, bool orientation) external override onlyGovernance {
-
-        // Get registered tokenIndex by tokenAddress
-        // _tokenMapping[tokenAddress] is less than 0x10000, so it can convert to uint16
-        // If tokenAddress not registered, _tokenMapping[tokenAddress] is 0, subtract by 1 will failed
-        // This make sure tokenAddress must registered
-        uint16 tokenIndex = uint16(_tokenMapping[tokenAddress] - 1);
-
-        // Create futures
-        for (uint i = 0; i < levers.length; ++i) {
-            uint lever = levers[i];
-
-            // Check if the future exists
-            uint key = _getKey(tokenAddress, lever, orientation);
-            uint index = _futureMapping[key];
-            require(index == 0, "HF:exists");
-
-            // Create future
-            index = _futures.length;
-            FutureInfo storage fi = _futures.push();
-            fi.tokenAddress = tokenAddress;
-            fi.lever = uint32(lever);
-            fi.orientation = orientation;
-            fi.tokenIndex = tokenIndex;
-
-            _futureMapping[key] = index;
-
-            // emit New event
-            emit New(tokenAddress, lever, orientation, index);
-        }
+        disable();
     }
 
     /// @dev Obtain the number of futures that have been created
@@ -247,52 +205,14 @@ contract FortFutures is ChainParameter, FortFrequentlyUsed, FortPriceAdapter, IF
         bool orientation,
         uint dcuAmount
     ) external payable override {
-        return buyDirect(_futureMapping[_getKey(tokenAddress, lever, orientation)], dcuAmount);
+        disable();
     }
 
     /// @dev Buy future direct
     /// @param index Index of future
     /// @param dcuAmount Amount of paid DCU
     function buyDirect(uint index, uint dcuAmount) public payable override {
-
-        require(index != 0, "HF:not exist");
-        require(dcuAmount >= 50 ether, "HF:at least 50 dcu");
-
-        // 1. Burn dcu from user
-        DCU(DCU_TOKEN_ADDRESS).burn(msg.sender, dcuAmount);
-
-        FutureInfo storage fi = _futures[index];
-        bool orientation = fi.orientation;
-        
-        // 2. Query oracle price
-        // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
-        // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
-        // When merger, s0 use recorded price, s1 use corrected by k
-        TokenConfig memory tokenConfig = _tokenConfigs[uint(fi.tokenIndex)];
-        uint oraclePrice = _queryPrice(dcuAmount, tokenConfig, orientation, msg.sender);
-
-        // 3. Merger price
-        Account memory account = fi.accounts[msg.sender];
-        uint basePrice = _decodeFloat(account.basePrice);
-        uint balance = uint(account.balance);
-        uint newPrice = oraclePrice;
-        if (uint(account.baseBlock) > 0) {
-            newPrice = (balance + dcuAmount) * oraclePrice * basePrice / (
-                basePrice * dcuAmount + (balance << 64) * oraclePrice / _expMiuT(
-                    uint(orientation ? tokenConfig.miuLong : tokenConfig.miuShort), 
-                    uint(account.baseBlock)
-                )
-            );
-        }
-        
-        // 4. Update account
-        account.balance = _toUInt128(balance + dcuAmount);
-        account.basePrice = _encodeFloat(newPrice);
-        account.baseBlock = uint32(block.number);
-        fi.accounts[msg.sender] = account;
-
-        // emit Buy event
-        emit Buy(index, dcuAmount, msg.sender);
+        disable();
     }
 
     /// @dev Sell future

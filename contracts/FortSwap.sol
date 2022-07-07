@@ -57,7 +57,7 @@ contract FortSwap is FortFrequentlyUsed, IFortSwap {
 
         // The value of K is a fixed constant. Forging amountIn is useless.
         if (src == TOKEN_ADDRESS && dest == DCU_TOKEN_ADDRESS) {
-            amountOut = _swap(TOKEN_ADDRESS, DCU_TOKEN_ADDRESS, to);
+            disable();
         } else if (src == DCU_TOKEN_ADDRESS && dest == TOKEN_ADDRESS) {
             amountOut = _swap(DCU_TOKEN_ADDRESS, TOKEN_ADDRESS, to);
         } else {
@@ -71,8 +71,7 @@ contract FortSwap is FortFrequentlyUsed, IFortSwap {
     /// @param tokenAmount Amount of token
     /// @return dcuAmount Amount of dcu acquired
     function swapForDCU(uint tokenAmount) external override returns (uint dcuAmount) {
-        TransferHelper.safeTransferFrom(TOKEN_ADDRESS, msg.sender, address(this), tokenAmount);
-        dcuAmount = _swap(TOKEN_ADDRESS, DCU_TOKEN_ADDRESS, msg.sender);
+        disable();
     }
 
     /// @dev Swap for token with exact dcu amount
@@ -87,7 +86,7 @@ contract FortSwap is FortFrequentlyUsed, IFortSwap {
     /// @param dcuAmount Amount of dcu expected
     /// @return tokenAmount Amount of token paid
     function swapExactDCU(uint dcuAmount) external override returns (uint tokenAmount) {
-        tokenAmount = _swapExact(TOKEN_ADDRESS, DCU_TOKEN_ADDRESS, dcuAmount, msg.sender);
+        disable();
     }
 
     /// @dev Swap for exact amount of token

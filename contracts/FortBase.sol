@@ -33,6 +33,11 @@ contract FortBase {
         _governance = newGovernance;
     }
 
+    // Fort will merger with NEST, One NEST, One COIN!
+    function disable() internal pure {
+        revert("Fort:One NEST, One COIN!");
+    }
+
     //---------modifier------------
 
     modifier onlyGovernance() {
