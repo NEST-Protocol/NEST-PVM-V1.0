@@ -17,6 +17,7 @@ exports.deploy = async function() {
     const NestLPGuarantee = await ethers.getContractFactory('NestLPGuarantee');
     const NestPRC44 = await ethers.getContractFactory('NestPRC44');
     const NestPRCSwap = await ethers.getContractFactory('NestPRCSwap');
+    const NestBuyBackPool = await ethers.getContractFactory('NestBuyBackPool');
     const CoFiXRouter = await ethers.getContractFactory('CoFiXRouter');
 
     console.log('** Deploy: deploy.proxy.js **');
@@ -69,6 +70,10 @@ exports.deploy = async function() {
     //const nestPRCSwap = await NestPRCSwap.attach('0x0000000000000000000000000000000000000000');
     console.log('nestPRCSwap: ' + nestPRCSwap.address);
 
+    const nestBuyBackPool = await upgrades.deployProxy(NestBuyBackPool, [nestGovernance.address], { initializer: 'initialize' });
+    // const nestBuyBackPool = await NestBuyBackPool.attach('0x0000000000000000000000000000000000000000');
+    console.log('nestBuyBackPool: ' + nestBuyBackPool.address);
+
     const cofixRouter = await upgrades.deployProxy(CoFiXRouter, [nestGovernance.address], { initializer: 'initialize' });
     //const cofixRouter = await CoFiXRouter.attach('0x0000000000000000000000000000000000000000');
     console.log('cofixRouter: ' + cofixRouter.address);
@@ -102,6 +107,8 @@ exports.deploy = async function() {
     await nestLPGuarantee.update(nestGovernance.address);
     console.log('8. nestPRC44.update()');
     await nestPRC44.update(nestGovernance.address);
+    console.log('8. nestBuyBackPool.update()');
+    await nestBuyBackPool.update(nestGovernance.address);
     console.log('9. nestPRCSwap.update()');
     await nestPRCSwap.update(nestGovernance.address);
 
@@ -170,6 +177,7 @@ exports.deploy = async function() {
     await nestFutures.create(hbtc.address, [1, 2, 3, 4, 5], false);
 
     await cofixRouter.registerPair(nestPRC44.address, nest.address, nestPRCSwap.address);
+    await cofixRouter.registerPair(dcu.address, nest.address, nestBuyBackPool.address);
 
     await nest.transfer(nestVault.address, 100000000000000000000000000n);
     await nest.approve(nestOptions.address, 100000000000000000000000000n);
@@ -200,6 +208,7 @@ exports.deploy = async function() {
         nestPRC44: nestPRC44,
         nestPRCSwap: nestPRCSwap,
         nestPriceFacade: nestPriceFacade,
+        nestBuyBackPool: nestBuyBackPool,
         cofixRouter: cofixRouter,
 
         BLOCK_TIME: BLOCK_TIME,
