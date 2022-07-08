@@ -1,54 +1,63 @@
 const { expect } = require('chai');
 const { deploy } = require('../scripts/deploy.js');
-const { toBigInt, toDecimal, showReceipt } = require('./utils.js');
+const { toBigInt, toDecimal, showReceipt, listBalances } = require('./utils.js');
 
 describe('sample-test', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
-        const { eth, usdt, dcu, fortOptions, fortFutures, nestPriceFacade, USDT_DECIMALS } = await deploy();
+        const { eth, usdt, nest, nestOptions, nestFutures, nestPriceFacade, USDT_DECIMALS } = await deploy();
 
-        await dcu.setMinter(owner.address, 1);
-        await dcu.mint(owner.address, '10000000000000000000000000');
+        await nest.transfer(owner.address, 10000000000000000000000000n);
         
-        console.log('owner: ' + toDecimal(await dcu.balanceOf(owner.address) )+ 'dcu');
-        console.log('owner: ' + owner.address);
+        const tokens = [eth, nest];
+        const listAccounts = async function() {
+            let accounts = {
+                height: await ethers.provider.getBlockNumber(),
+                owner: await listBalances(owner, tokens),
+                addr1: await listBalances(addr1, tokens),
+            };
+            console.log(accounts);
+            return accounts;
+        }
+
+        await listAccounts();
 
         const BLOCK = 100000;
-        await fortOptions.open(eth.address, toBigInt(2450, USDT_DECIMALS), true, BLOCK, toBigInt(1000), {
+        await nestOptions.open(eth.address, toBigInt(2450, USDT_DECIMALS), true, BLOCK, toBigInt(1000), {
             value: toBigInt(0.01)
         });
         console.log('block: ' + await ethers.provider.getBlockNumber()); 
-        //const bot = await fortOptions.getOptionInfo(eth.address, '2450000000', true, BLOCK);
+        //const bot = await nestOptions.getOptionInfo(eth.address, '2450000000', true, BLOCK);
         const bot = { index: 0 };
         console.log('bot: ' + bot.index);
-        console.log('owner: ' + toDecimal(await dcu.balanceOf(owner.address)) + 'dcu');
-        console.log('owner: ' + toDecimal(await fortOptions.balanceOf(bot.index, owner.address)) + 'bot');
+        console.log('owner: ' + toDecimal(await nest.balanceOf(owner.address)) + 'nest');
+        console.log('owner: ' + toDecimal(await nestOptions.balanceOf(bot.index, owner.address)) + 'bot');
 
-        await fortOptions.open(eth.address, toBigInt(2750, USDT_DECIMALS), false, BLOCK, toBigInt(1000), {
+        await nestOptions.open(eth.address, toBigInt(2750, USDT_DECIMALS), false, BLOCK, toBigInt(1000), {
             value: toBigInt(0.01)
         });
-        // const bot2 = await fortOptions.getOptionInfo(eth.address, '2750000000', false, BLOCK);
+        // const bot2 = await nestOptions.getOptionInfo(eth.address, '2750000000', false, BLOCK);
         const bot2 = { index: 1 };
         console.log('bot2: ' + bot2.index);
-        console.log('owner: ' + toDecimal(await dcu.balanceOf(owner.address)) + 'dcu');
-        console.log('owner: ' + toDecimal(await fortOptions.balanceOf(bot2.index, owner.address)) + '[bot2]');
+        console.log('owner: ' + toDecimal(await nest.balanceOf(owner.address)) + 'nest');
+        console.log('owner: ' + toDecimal(await nestOptions.balanceOf(bot2.index, owner.address)) + '[bot2]');
 
         // for(var i = 0; i < 100; ++i) {
         //     //await ethers.provider.sendTransaction({ from: owner.address, to: owner.address, value: 0});
-        //     await dcu.transfer(owner.address, 0);
+        //     await nest.transfer(owner.address, 0);
         // }
-        await fortOptions.exercise(bot.index, await fortOptions.balanceOf(bot.index, owner.address), {
+        await nestOptions.exercise(bot.index, await nestOptions.balanceOf(bot.index, owner.address), {
             value: toBigInt(0.01)
         });
 
-        console.log('owner: ' + toDecimal(await dcu.balanceOf(owner.address)) + 'dcu');
-        console.log('owner: ' + toDecimal(await fortOptions.balanceOf(bot.index, owner.address)) + 'bot');
+        console.log('owner: ' + toDecimal(await nest.balanceOf(owner.address)) + 'nest');
+        console.log('owner: ' + toDecimal(await nestOptions.balanceOf(bot.index, owner.address)) + 'bot');
 
         console.log('------------------------------');
 
-        //await fortFutures.create(eth.address, 2, true);
-        await fortFutures.buy(eth.address, 2, true, toBigInt(100), {
+        //await nestFutures.create(eth.address, 2, true);
+        await nestFutures.buy(eth.address, 2, true, toBigInt(100), {
             value: toBigInt(0.01)
         });
 
@@ -64,22 +73,22 @@ describe('sample-test', function() {
         //     return Math.floor(usdtAmount * 10 ** decimals / tokenAmount);
         // };
 
-        // const lot = await fortFutures.getFutureInfo(eth.address, 2, true);
+        // const lot = await nestFutures.getFutureInfo(eth.address, 2, true);
 
-        // console.log('owner: ' + toDecimal(await dcu.balanceOf(owner.address)) + 'dcu');
+        // console.log('owner: ' + toDecimal(await nest.balanceOf(owner.address)) + 'nest');
         // let oraclePrice = await queryPrice(eth.address);
-        // console.log('owner: ' + toDecimal(await fortFutures.balanceOf(lot.index, oraclePrice, owner.address)) + 'lot');
+        // console.log('owner: ' + toDecimal(await nestFutures.balanceOf(lot.index, oraclePrice, owner.address)) + 'lot');
         // for(var i = 0; i < 100; ++i) {
         //     //await ethers.provider.sendTransaction({ from: owner.address, to: owner.address, value: 0});
-        //     await dcu.transfer(owner.address, 0);
+        //     await nest.transfer(owner.address, 0);
         // }
-        // await fortFutures.sell(lot.index, toBigInt(1), {
+        // await nestFutures.sell(lot.index, toBigInt(1), {
         //     value: toBigInt(0.01)
         // });
-        // console.log('owner: ' + toDecimal(await dcu.balanceOf(owner.address)) + 'dcu');
-        // console.log('owner: ' + toDecimal(await fortFutures.balanceOf(lot.index, oraclePrice, owner.address)) + 'lot');
+        // console.log('owner: ' + toDecimal(await nest.balanceOf(owner.address)) + 'nest');
+        // console.log('owner: ' + toDecimal(await nestFutures.balanceOf(lot.index, oraclePrice, owner.address)) + 'lot');
 
-        // // await fortOptions.open(usdt.address, '2450000000', true, 500, toBigInt(1), {
+        // // await nestOptions.open(usdt.address, '2450000000', true, 500, toBigInt(1), {
         // //     value: toBigInt(0.01)
         // // });
 

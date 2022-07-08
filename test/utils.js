@@ -202,3 +202,25 @@ exports.UI = function(obj) {
 
     return obj;
 };
+
+exports.tokenInfo = async function(token) {
+    if (token.address == '0x0000000000000000000000000000000000000000') {
+        return { name: 'ETH', decimals: 18 };
+    }
+    return { name: await token.name(), decimals: await token.decimals() };
+}
+
+exports.listBalances = async function(account, tokens) {
+    account = account.address || account;
+
+    let balances = { };
+    for (var i in tokens) {
+        let ti = await exports.tokenInfo(tokens[i]);
+        let balance = tokens[i].address == '0x0000000000000000000000000000000000000000'
+                        ? await ethers.provider.getBalance(account)
+                        : await tokens[i].balanceOf(account);
+        balances[ti.name] = exports.toDecimal(balance, ti.decimals);
+    }
+
+    return balances;
+};

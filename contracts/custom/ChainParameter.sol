@@ -11,6 +11,6 @@ contract ChainParameter {
     // Minimal exercise block period. 840000
     uint constant MIN_PERIOD = 840000;
 
-    // Minimal exercise block period for FortLPGuarantee. 840000
+    // Minimal exercise block period for NestLPGuarantee. 840000
     uint constant MIN_EXERCISE_BLOCK = 840000;
 }

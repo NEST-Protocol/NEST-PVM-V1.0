@@ -1,24 +1,23 @@
 const { expect } = require('chai');
 const { deploy } = require('../scripts/deploy.js');
-const { toBigInt, toDecimal, showReceipt, snd, tableSnd, d1, Vc, Vp, UI } = require('./utils.js');
+const { toBigInt, toDecimal, showReceipt, listBalances, snd, tableSnd, d1, Vc, Vp, UI } = require('./utils.js');
 
 describe('deploy', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
-        const FortPRC44 = await ethers.getContractFactory('FortPRC44');
-        const FortPRCSwap = await ethers.getContractFactory('FortPRCSwap');
+        const NestPRC44 = await ethers.getContractFactory('NestPRC44');
+        const NestPRCSwap = await ethers.getContractFactory('NestPRCSwap');
 
         const { 
-            eth, usdt, dcu, 
+            eth, usdt, nest, 
             cofi,
             pusd,
             peth,
-            fortPRC,
-            fortPRCSwap,
+            nestPRCSwap,
 
-            fortGovernance,
-            fortOptions, fortFutures,
-            nestPriceFacade, fortSwap
+            nestGovernance,
+            nestOptions, nestFutures,
+            nestPriceFacade
         } = await deploy();
 
         console.log('ok');

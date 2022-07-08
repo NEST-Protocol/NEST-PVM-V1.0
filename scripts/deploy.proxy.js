@@ -10,16 +10,13 @@ exports.deploy = async function() {
     const eth = { address: '0x0000000000000000000000000000000000000000' };
     const TestERC20 = await ethers.getContractFactory('TestERC20');
     const NestPriceFacade = await ethers.getContractFactory('NestPriceFacade');
-    const FortGovernance = await ethers.getContractFactory('FortGovernance');
-    const DCU = await ethers.getContractFactory('DCU');
-    const FortDAO = await ethers.getContractFactory('FortVault');
-    const FortOptions = await ethers.getContractFactory('NestOptions');
-    const FortFutures = await ethers.getContractFactory('NestFutures');
-    const FortVaultForStaking = await ethers.getContractFactory('FortVaultForStaking');
-    const FortSwap = await ethers.getContractFactory('FortSwap');
-    const FortLPGuarantee = await ethers.getContractFactory('FortLPGuarantee');
-    const FortPRC44 = await ethers.getContractFactory('NestPRC44');
-    const FortPRCSwap = await ethers.getContractFactory('FortPRCSwap');
+    const NestGovernance = await ethers.getContractFactory('NestGovernance');
+    const NestVault = await ethers.getContractFactory('NestVault');
+    const NestOptions = await ethers.getContractFactory('NestOptions');
+    const NestFutures = await ethers.getContractFactory('NestFutures');
+    const NestLPGuarantee = await ethers.getContractFactory('NestLPGuarantee');
+    const NestPRC44 = await ethers.getContractFactory('NestPRC44');
+    const NestPRCSwap = await ethers.getContractFactory('NestPRCSwap');
     const CoFiXRouter = await ethers.getContractFactory('CoFiXRouter');
 
     console.log('** Deploy: deploy.proxy.js **');
@@ -32,90 +29,85 @@ exports.deploy = async function() {
     //const hbtc = await TestERC20.attach('0x0000000000000000000000000000000000000000');
     console.log('hbtc: ' + hbtc.address);
 
-    const dcu = await DCU.deploy();
-    //const dcu = await DCU.attach('0x0000000000000000000000000000000000000000');
+    const dcu = await TestERC20.deploy('DCU', 'DCU', 18);
+    //const dcu = await TestERC20.attach('0x0000000000000000000000000000000000000000');
     console.log('dcu: ' + dcu.address);
+
+    const nest = await TestERC20.deploy('NEST', 'NEST', 18);
+    //const nest = await TestERC20.attach('0x0000000000000000000000000000000000000000');
+    console.log('nest: ' + nest.address);
 
     const nestPriceFacade = await NestPriceFacade.deploy(usdt.address);
     //const nestPriceFacade = await NestPriceFacade.attach('0x0000000000000000000000000000000000000000');
     console.log('nestPriceFacade: ' + nestPriceFacade.address);
 
-    const fortGovernance = await upgrades.deployProxy(FortGovernance, ['0x0000000000000000000000000000000000000000'], { initializer: 'initialize' });
-    //const fortGovernance = await FortGovernance.attach('0x0000000000000000000000000000000000000000');
-    console.log('fortGovernance: ' + fortGovernance.address);
+    const nestGovernance = await upgrades.deployProxy(NestGovernance, ['0x0000000000000000000000000000000000000000'], { initializer: 'initialize' });
+    //const nestGovernance = await NestGovernance.attach('0x0000000000000000000000000000000000000000');
+    console.log('nestGovernance: ' + nestGovernance.address);
 
-    const fortDAO = await upgrades.deployProxy(FortDAO, [fortGovernance.address], { initializer: 'initialize' });
-    //const fortDAO = await FortDAO.attach('0x0000000000000000000000000000000000000000');
-    console.log('fortDAO: ' + fortDAO.address);
+    const nestVault = await upgrades.deployProxy(NestVault, [nestGovernance.address], { initializer: 'initialize' });
+    //const nestVault = await NestVault.attach('0x0000000000000000000000000000000000000000');
+    console.log('nestVault: ' + nestVault.address);
 
-    const fortOptions = await upgrades.deployProxy(FortOptions, [fortGovernance.address], { initializer: 'initialize' });
-    //const fortOptions = await FortOptions.attach('0x0000000000000000000000000000000000000000');
-    console.log('fortOptions: ' + fortOptions.address);
+    const nestOptions = await upgrades.deployProxy(NestOptions, [nestGovernance.address], { initializer: 'initialize' });
+    //const nestOptions = await NestOptions.attach('0x0000000000000000000000000000000000000000');
+    console.log('nestOptions: ' + nestOptions.address);
 
-    const fortFutures = await upgrades.deployProxy(FortFutures, [fortGovernance.address], { initializer: 'initialize' });
-    //const fortFutures = await FortFutures.attach('0x0000000000000000000000000000000000000000');
-    console.log('fortFutures: ' + fortFutures.address);
+    const nestFutures = await upgrades.deployProxy(NestFutures, [nestGovernance.address], { initializer: 'initialize' });
+    //const nestFutures = await NestFutures.attach('0x0000000000000000000000000000000000000000');
+    console.log('nestFutures: ' + nestFutures.address);
 
-    const fortVaultForStaking = await upgrades.deployProxy(FortVaultForStaking, [fortGovernance.address], { initializer: 'initialize' });
-    //const fortVaultForStaking = await FortVaultForStaking.attach('0x0000000000000000000000000000000000000000');
-    console.log('fortVaultForStaking: ' + fortVaultForStaking.address);
+    const nestLPGuarantee = await upgrades.deployProxy(NestLPGuarantee, [nestGovernance.address], { initializer: 'initialize' });
+    //const nestLPGuarantee = await NestLPGuarantee.attach('0x0000000000000000000000000000000000000000');
+    console.log('nestLPGuarantee: ' + nestLPGuarantee.address);
 
-    const fortSwap = await upgrades.deployProxy(FortSwap, [fortGovernance.address], { initializer: 'initialize' });
-    //const fortSwap = await FortSwap.attach('0x0000000000000000000000000000000000000000');
-    console.log('fortSwap: ' + fortSwap.address);
-
-    const fortLPGuarantee = await upgrades.deployProxy(FortLPGuarantee, [fortGovernance.address], { initializer: 'initialize' });
-    //const fortLPGuarantee = await FortLPGuarantee.attach('0x0000000000000000000000000000000000000000');
-    console.log('fortLPGuarantee: ' + fortLPGuarantee.address);
-
-    const fortPRC44 = await upgrades.deployProxy(FortPRC44, [fortGovernance.address], { initializer: 'initialize' });
-    //const fortPRC44 = await FortPRC44.attach('0x0000000000000000000000000000000000000000');
-    console.log('fortPRC44: ' + fortPRC44.address);
+    const nestPRC44 = await upgrades.deployProxy(NestPRC44, [nestGovernance.address], { initializer: 'initialize' });
+    //const nestPRC44 = await NestPRC44.attach('0x0000000000000000000000000000000000000000');
+    console.log('nestPRC44: ' + nestPRC44.address);
     
-    const fortPRCSwap = await upgrades.deployProxy(FortPRCSwap, [fortGovernance.address], { initializer: 'initialize' });
-    //const fortPRCSwap = await FortPRCSwap.attach('0x0000000000000000000000000000000000000000');
-    console.log('fortPRCSwap: ' + fortPRCSwap.address);
+    const nestPRCSwap = await upgrades.deployProxy(NestPRCSwap, [nestGovernance.address], { initializer: 'initialize' });
+    //const nestPRCSwap = await NestPRCSwap.attach('0x0000000000000000000000000000000000000000');
+    console.log('nestPRCSwap: ' + nestPRCSwap.address);
 
-    const cofixRouter = await upgrades.deployProxy(CoFiXRouter, [fortGovernance.address], { initializer: 'initialize' });
+    const cofixRouter = await upgrades.deployProxy(CoFiXRouter, [nestGovernance.address], { initializer: 'initialize' });
     //const cofixRouter = await CoFiXRouter.attach('0x0000000000000000000000000000000000000000');
     console.log('cofixRouter: ' + cofixRouter.address);
 
-    // await fortGovernance.initialize('0x0000000000000000000000000000000000000000');
-    console.log('1. dcu.initialize(fortGovernance.address)');
-    await dcu.initialize(fortGovernance.address);
-
-    console.log('2. fortGovernance.setBuiltinAddress()');
-    await fortGovernance.setBuiltinAddress(
-        dcu.address,
-        fortDAO.address,
-        fortOptions.address,
-        fortFutures.address,
-        fortVaultForStaking.address,
-        nestPriceFacade.address
+    console.log('2. nestGovernance.setBuiltinAddress()');
+    await nestGovernance.setBuiltinAddress(
+        nest.address,
+        '0x0000000000000000000000000000000000000000',
+        '0x0000000000000000000000000000000000000000',
+        '0x0000000000000000000000000000000000000000',
+        '0x0000000000000000000000000000000000000000',
+        '0x0000000000000000000000000000000000000000',
+        '0x0000000000000000000000000000000000000000',
+        '0x0000000000000000000000000000000000000000',
+        '0x0000000000000000000000000000000000000000',
+        '0x0000000000000000000000000000000000000000'
     );
+    await nestGovernance.registerAddress('nest.v4.openPrice', nestPriceFacade.address);
+    await nestGovernance.registerAddress('nest.app.vault', nestVault.address);
+    await nestGovernance.registerAddress('nest.app.dcu', dcu.address);
+    await nestGovernance.registerAddress('nest.app.prc', nestPRC44.address);
+    await nestGovernance.registerAddress('cofix.cofixRouter', cofixRouter.address);
 
-    console.log('3. dcu.update()');
-    await dcu.update(fortGovernance.address);
-    console.log('4. fortDAO.update()');
-    await fortDAO.update(fortGovernance.address);
-    console.log('5. fortOptions.update()');
-    await fortOptions.update(fortGovernance.address);
-    console.log('6. fortFutures.update()');
-    await fortFutures.update(fortGovernance.address);
-    console.log('7. fortVaultForStaking.update()');
-    await fortVaultForStaking.update(fortGovernance.address);
-    console.log('7.1. fortSwap.update()');
-    await fortSwap.update(fortGovernance.address);
-    console.log('7.2. fortLPGuarantee.update()');
-    await fortLPGuarantee.update(fortGovernance.address);
-    console.log('8. fortPRC44.update()');
-    await fortPRC44.update(fortGovernance.address);
-    console.log('9. fortPRCSwap.update()');
-    await fortPRCSwap.update(fortGovernance.address);
+    console.log('4. nestVault.update()');
+    await nestVault.update(nestGovernance.address);
+    console.log('5. nestOptions.update()');
+    await nestOptions.update(nestGovernance.address);
+    console.log('6. nestFutures.update()');
+    await nestFutures.update(nestGovernance.address);
+    console.log('7.2. nestLPGuarantee.update()');
+    await nestLPGuarantee.update(nestGovernance.address);
+    console.log('8. nestPRC44.update()');
+    await nestPRC44.update(nestGovernance.address);
+    console.log('9. nestPRCSwap.update()');
+    await nestPRCSwap.update(nestGovernance.address);
 
     // 2.4. Register ETH ans HBTC
-    console.log('7. fortOptions.register(eth.address)');
-    await fortOptions.register(eth.address, {
+    console.log('7. nestOptions.register(eth.address)');
+    await nestOptions.register(eth.address, {
         channelId: 0,
         pairIndex: 0,
         
@@ -124,8 +116,8 @@ exports.deploy = async function() {
         miuShort: 0n
     });
 
-    console.log('8. fortOptions.register(hbtc.address)');
-    await fortOptions.register(hbtc.address, {
+    console.log('8. nestOptions.register(hbtc.address)');
+    await nestOptions.register(hbtc.address, {
         channelId: 0,
         pairIndex: 2,
         
@@ -135,8 +127,8 @@ exports.deploy = async function() {
     });
     
     // 3.4. Register ETH and HBTC
-    console.log('9. fortFutures.register(eth.address)');
-    await fortFutures.register(eth.address, {
+    console.log('9. nestFutures.register(eth.address)');
+    await nestFutures.register(eth.address, {
         channelId: 0,
         pairIndex: 0,
         
@@ -144,8 +136,8 @@ exports.deploy = async function() {
         miuLong: 64051194700n,
         miuShort: 0n
     });
-    console.log('10. fortFutures.register(hbtc.address)');
-    await fortFutures.register(hbtc.address, {
+    console.log('10. nestFutures.register(hbtc.address)');
+    await nestFutures.register(hbtc.address, {
         channelId: 0,
         pairIndex: 2,
         
@@ -154,7 +146,7 @@ exports.deploy = async function() {
         miuShort: 0n
     });
 
-    await fortLPGuarantee.register(eth.address, {
+    await nestLPGuarantee.register(eth.address, {
         channelId: 0,
         pairIndex: 0,
         
@@ -163,45 +155,30 @@ exports.deploy = async function() {
         miuShort: 0n
     });
 
-    console.log('9. dcu.setMinter(fortOptions.address, 1)');
-    await dcu.setMinter(fortOptions.address, 1);
-    console.log('10. dcu.setMinter(fortFutures.address, 1)');
-    await dcu.setMinter(fortFutures.address, 1);
-    console.log('11. dcu.setMinter(fortVaultForStaking.address, 1)');
-    await dcu.setMinter(fortVaultForStaking.address, 1);
-    console.log('12. dcu.setMinter(fortPRC44.address, 1)');
-    await dcu.setMinter(fortPRC44.address, 1);
-    console.log('13. dcu.setMinter(fortLPGuarantee.address, 1)');
-    await dcu.setMinter(fortLPGuarantee.address, 1);
-
     console.log('8.2 create lever');
     
     // 3.5. Register levels for ETH
     console.log('13. create eth long lever');
-    await fortFutures.create(eth.address, [1, 2, 3, 4, 5], true);
+    await nestFutures.create(eth.address, [1, 2, 3, 4, 5], true);
     console.log('14. create eth short lever');
-    await fortFutures.create(eth.address, [1, 2, 3, 4, 5], false);
+    await nestFutures.create(eth.address, [1, 2, 3, 4, 5], false);
     
     // 3.5. Register levels for HBTC
     console.log('13. create hbtc long lever');
-    await fortFutures.create(hbtc.address, [1, 2, 3, 4, 5], true);
+    await nestFutures.create(hbtc.address, [1, 2, 3, 4, 5], true);
     console.log('14. create hbtc short lever');
-    await fortFutures.create(hbtc.address, [1, 2, 3, 4, 5], false);
+    await nestFutures.create(hbtc.address, [1, 2, 3, 4, 5], false);
 
+    await cofixRouter.registerPair(nestPRC44.address, nest.address, nestPRCSwap.address);
 
-    await cofixRouter.registerPair(fortPRC44.address, dcu.address, fortPRCSwap.address);
-    await fortPRCSwap.setAddress(cofixRouter.address, fortPRC44.address);
-    await fortDAO.setAddress(dcu.address);
-
-    await dcu.approve(fortOptions.address, 100000000000000000000000000n);
-    await dcu.approve(fortFutures.address, 100000000000000000000000000n);
-    await fortDAO.approve(fortOptions.address, 100000000000000000000000000n);
-    await fortDAO.approve(fortFutures.address, 100000000000000000000000000n);
-    await dcu.approve(fortFutures.address, 100000000000000000000000000n);
-
-    var [owner, addr1, addr2] = await ethers.getSigners();
-    await dcu.setMinter(owner.address, 1);
-    await dcu.mint(fortDAO.address, 100000000000000000000000000n);
+    await nest.transfer(nestVault.address, 100000000000000000000000000n);
+    await nest.approve(nestOptions.address, 100000000000000000000000000n);
+    await nest.approve(nestFutures.address, 100000000000000000000000000n);
+    await nest.approve(nestLPGuarantee.address, 100000000000000000000000000n);
+    await nestVault.approve(nestOptions.address, 100000000000000000000000000n);
+    await nestVault.approve(nestFutures.address, 100000000000000000000000000n);
+    await nestVault.approve(nestLPGuarantee.address, 100000000000000000000000000n);
+    await nestVault.approve(nestPRC44.address, 100000000000000000000000000n);
 
     console.log('---------- OK ----------');
     
@@ -213,17 +190,15 @@ exports.deploy = async function() {
         eth: eth,
         usdt: usdt,
         hbtc: hbtc,
-
-        fortGovernance: fortGovernance,
         dcu: dcu,
-        fortDAO: fortDAO,
-        fortOptions: fortOptions,
-        fortFutures: fortFutures,
-        fortVaultForStaking: fortVaultForStaking,
-        fortSwap: fortSwap,
-        fortLPGuarantee: fortLPGuarantee,
-        fortPRC44: fortPRC44,
-        fortPRCSwap: fortPRCSwap,
+        nest: nest,
+
+        nestGovernance: nestGovernance,
+        nestOptions: nestOptions,
+        nestFutures: nestFutures,
+        nestLPGuarantee: nestLPGuarantee,
+        nestPRC44: nestPRC44,
+        nestPRCSwap: nestPRCSwap,
         nestPriceFacade: nestPriceFacade,
         cofixRouter: cofixRouter,
 
