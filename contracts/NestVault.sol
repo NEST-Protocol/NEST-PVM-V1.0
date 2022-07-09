@@ -18,7 +18,7 @@ contract NestVault is NestFrequentlyUsed, INestVault {
     }
 
     function transferTo(address to, uint amount) external override {
-        require(_allowances[msg.sender] >= amount, "FV:exceeded allowance");
+        require(_allowances[msg.sender] >= amount, "NV:exceeded allowance");
         TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, to, amount);
     }
 }

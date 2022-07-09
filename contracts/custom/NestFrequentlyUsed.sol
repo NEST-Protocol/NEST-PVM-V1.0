@@ -7,12 +7,15 @@ import "../NestBase.sol";
 // /// @dev This contract include frequently used data
 // contract NestFrequentlyUsed is NestBase {
 
-//     // Address of DCU contract
-//     address constant DCU_TOKEN_ADDRESS = 0xf56c6eCE0C0d6Fbb9A53282C0DF71dBFaFA933eF;
+//     // Address of nest token
+//     address NEST_TOKEN_ADDRESS;
 
 //     // Address of NestOpenPrice contract
 //     address constant NEST_OPEN_PRICE = 0x09CE0e021195BA2c1CDE62A8B187abf810951540;
-    
+
+//     // Address of nest vault
+//     address NEST_VAULT_ADDRESS;
+
 //     // USDT base
 //     uint constant USDT_BASE = 1 ether;
 // }
@@ -22,11 +25,13 @@ import "../interfaces/INestGovernance.sol";
 /// @dev This contract include frequently used data
 contract NestFrequentlyUsed is NestBase {
 
+    // Address of nest token
+    address NEST_TOKEN_ADDRESS;
+
     // Address of NestOpenPrice contract
     address NEST_OPEN_PRICE;
     
-    address NEST_TOKEN_ADDRESS;
-
+    // Address of nest vault
     address NEST_VAULT_ADDRESS;
 
     // USDT base
