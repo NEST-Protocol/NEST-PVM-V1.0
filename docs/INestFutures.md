@@ -1,4 +1,4 @@
-# IFortFutures
+# INestFutures
 
 ## 1. Interface Description
     Defines methods for Futures
