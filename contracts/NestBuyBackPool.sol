@@ -12,12 +12,12 @@ contract NestBuyBackPool is NestFrequentlyUsed {
     uint constant EXCHANGE_RATIO = 3.3 ether;
 
     // // TODO: use real DCU token address
-    // address constant DCU_TOKEN_ADDRESS = address(0);
+    // address constant DCU_TOKEN_ADDRESS = 0xf56c6eCE0C0d6Fbb9A53282C0DF71dBFaFA933eF;
 
     // // CoFiXRouter address
     // address constant COFIX_ROUTER_ADDRESS = 0xb29A8d980E1408E487B9968f5E4f7fD7a9B0CaC5;
 
-    // TODO:
+    // TODO: Use constant version
     address DCU_TOKEN_ADDRESS;
     // CoFiXRouter address
     address COFIX_ROUTER_ADDRESS;
@@ -27,8 +27,8 @@ contract NestBuyBackPool is NestFrequentlyUsed {
     function update(address newGovernance) public virtual override {
         super.update(newGovernance);
 
-        COFIX_ROUTER_ADDRESS = INestGovernance(newGovernance).checkAddress("cofix.cofixRouter");
         DCU_TOKEN_ADDRESS = INestGovernance(newGovernance).checkAddress("nest.app.dcu");
+        COFIX_ROUTER_ADDRESS = INestGovernance(newGovernance).checkAddress("cofix.cofixRouter");
     }
 
     constructor() {

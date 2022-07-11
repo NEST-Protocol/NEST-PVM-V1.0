@@ -9,30 +9,26 @@ import "./custom/NestFrequentlyUsed.sol";
 /// @dev Swap dcu with token
 contract NestPRCSwap is NestFrequentlyUsed {
 
-    // // TODO: use real DCU token address
-    // address constant DCU_TOKEN_ADDRESS = address(0);
+    // // Target token address
+    // address constant PRC_TOKEN_ADDRESS = 0xf43A71e4Da398e5731c9580D11014dE5e8fD0530;
 
     // // CoFiXRouter address
     // address constant COFIX_ROUTER_ADDRESS = 0xb29A8d980E1408E487B9968f5E4f7fD7a9B0CaC5;
 
-    // // Target token address
-    // address constant PRC_TOKEN_ADDRESS = 0xf43A71e4Da398e5731c9580D11014dE5e8fD0530;
-
-    // TODO:
-    //address DCU_TOKEN_ADDRESS;
-    // CoFiXRouter address
-    address COFIX_ROUTER_ADDRESS;
+    // TODO: Use constant version
     // Target token address
     address PRC_TOKEN_ADDRESS;
+    // CoFiXRouter address
+    address COFIX_ROUTER_ADDRESS;
     /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
     ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
     /// @param newGovernance INestGovernance implementation contract address
     function update(address newGovernance) public virtual override {
         super.update(newGovernance);
 
-        COFIX_ROUTER_ADDRESS = INestGovernance(newGovernance).checkAddress("cofix.cofixRouter");
         //DCU_TOKEN_ADDRESS = INestGovernance(newGovernance).checkAddress("nest.app.dcu");
         PRC_TOKEN_ADDRESS = INestGovernance(newGovernance).checkAddress("nest.app.prc");
+        COFIX_ROUTER_ADDRESS = INestGovernance(newGovernance).checkAddress("cofix.cofixRouter");
     }
 
     constructor() {

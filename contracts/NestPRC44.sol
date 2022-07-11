@@ -179,6 +179,11 @@ contract NestPRC44 is NestPRCToken {
     function _gained44(Dice44 memory dice44, uint index) private view returns (uint gain) {
         uint hashBlock = uint(dice44.openBlock) + OPEN_BLOCK_SPAN44;
         require(block.number > hashBlock, "PRC:!hashBlock");
+
+        // Ethereum miners may affect the blockhash value, thus changing the random results and submitting only blocks 
+        // of blockhash that are beneficial to them. Considering this, by limiting the number and magnification of each
+        // lottery, users' profits after winning the lottery are limited to a maximum value, so it is considered that
+        // the rewards obtained by Ethereum miners after cheating are not enough to cover their costs
         uint hashValue = uint(blockhash(hashBlock));
         if (hashValue > 0) {
             hashValue = uint(keccak256(abi.encodePacked(hashValue, index)));

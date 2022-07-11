@@ -32,28 +32,28 @@ module.exports = {
   },
   networks: {
     mainnet: {
-      url: `${config.infura.mainnet.url}`,
+      url: `https://mainnet.infura.io/v3/${config.infura.key}`,
       accounts: [config.account.mainnet.key, config.account.mainnet.userA, config.account.mainnet.userB],
       gasPrice: 30e9,
       timeout: 2000000000
     },
     ropsten: {
-      url: `${config.infura.ropsten.url}`,
-      accounts: [config.account.ropsten.key, config.account.ropsten.userA, config.account.ropsten.userB],
+      url: `https://ropsten.infura.io/v3/${config.infura.key}`,
+      accounts: [config.account.test.key, config.account.test.userA, config.account.test.userB],
       gas: 6e6,
       initialBaseFeePerGas: 1e9,
       timeout: 2000000000
     },
     rinkeby: {
-      url: `${config.infura.rinkeby.url}`,
-      accounts: [config.account.rinkeby.key, config.account.rinkeby.userA, config.account.rinkeby.userB],
+      url: `https://rinkeby.infura.io/v3/${config.infura.key}`,
+      accounts: [config.account.test.key, config.account.test.userA, config.account.test.userB],
       gas: 6e6,
       gasPrice: 1e9,
       timeout: 2000000000
     },
     kovan: {
-      url: `${config.infura.kovan.url}`,
-      accounts: [config.account.kovan.key, config.account.kovan.userA, config.account.kovan.userB],
+      url: `https://kovan.infura.io/v3/${config.infura.key}`,
+      accounts: [config.account.test.key, config.account.test.userA, config.account.test.userB],
       gasPrice:1e9,
       timeout: 2000000000
     },
@@ -62,7 +62,7 @@ module.exports = {
       chainId: 97,
       gasPrice: 10e9,
       gas: 6000000,
-      accounts: [config.account.bsc_test.key, config.account.bsc_test.userA, config.account.bsc_test.userB],
+      accounts: [config.account.test.key, config.account.test.userA, config.account.test.userB],
       timeout: 2000000000
     },
     bsc_main: {

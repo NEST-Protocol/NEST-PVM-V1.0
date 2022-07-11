@@ -14,7 +14,6 @@ exports.deploy = async function() {
     const NestVault = await ethers.getContractFactory('NestVault');
     const NestOptions = await ethers.getContractFactory('NestOptions');
     const NestFutures = await ethers.getContractFactory('NestFutures');
-    const NestLPGuarantee = await ethers.getContractFactory('NestLPGuarantee');
     const NestPRC44 = await ethers.getContractFactory('NestPRC44');
     const NestPRCSwap = await ethers.getContractFactory('NestPRCSwap');
     const NestBuyBackPool = await ethers.getContractFactory('NestBuyBackPool');
@@ -58,10 +57,6 @@ exports.deploy = async function() {
     //const nestFutures = await NestFutures.attach('0x0000000000000000000000000000000000000000');
     console.log('nestFutures: ' + nestFutures.address);
 
-    const nestLPGuarantee = await upgrades.deployProxy(NestLPGuarantee, [nestGovernance.address], { initializer: 'initialize' });
-    //const nestLPGuarantee = await NestLPGuarantee.attach('0x0000000000000000000000000000000000000000');
-    console.log('nestLPGuarantee: ' + nestLPGuarantee.address);
-
     const nestPRC44 = await upgrades.deployProxy(NestPRC44, [nestGovernance.address], { initializer: 'initialize' });
     //const nestPRC44 = await NestPRC44.attach('0x0000000000000000000000000000000000000000');
     console.log('nestPRC44: ' + nestPRC44.address);
@@ -103,8 +98,6 @@ exports.deploy = async function() {
     await nestOptions.update(nestGovernance.address);
     console.log('6. nestFutures.update()');
     await nestFutures.update(nestGovernance.address);
-    console.log('7.2. nestLPGuarantee.update()');
-    await nestLPGuarantee.update(nestGovernance.address);
     console.log('8. nestPRC44.update()');
     await nestPRC44.update(nestGovernance.address);
     console.log('8. nestBuyBackPool.update()');
@@ -153,15 +146,6 @@ exports.deploy = async function() {
         miuShort: 0n
     });
 
-    await nestLPGuarantee.register(eth.address, {
-        channelId: 0,
-        pairIndex: 0,
-        
-        sigmaSQ: 45659142400n,
-        miuLong: 64051194700n,
-        miuShort: 0n
-    });
-
     console.log('8.2 create lever');
     
     // 3.5. Register levels for ETH
@@ -182,10 +166,8 @@ exports.deploy = async function() {
     await nest.transfer(nestVault.address, 100000000000000000000000000n);
     await nest.approve(nestOptions.address, 100000000000000000000000000n);
     await nest.approve(nestFutures.address, 100000000000000000000000000n);
-    await nest.approve(nestLPGuarantee.address, 100000000000000000000000000n);
     await nestVault.approve(nestOptions.address, 100000000000000000000000000n);
     await nestVault.approve(nestFutures.address, 100000000000000000000000000n);
-    await nestVault.approve(nestLPGuarantee.address, 100000000000000000000000000n);
     await nestVault.approve(nestPRC44.address, 100000000000000000000000000n);
 
     console.log('---------- OK ----------');
@@ -204,7 +186,6 @@ exports.deploy = async function() {
         nestGovernance: nestGovernance,
         nestOptions: nestOptions,
         nestFutures: nestFutures,
-        nestLPGuarantee: nestLPGuarantee,
         nestPRC44: nestPRC44,
         nestPRCSwap: nestPRCSwap,
         nestPriceFacade: nestPriceFacade,
