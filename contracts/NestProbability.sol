@@ -125,10 +125,10 @@ contract NestProbability is NestFrequentlyUsed, INestProbability {
     }
 
     /// @dev start a roll dice44
-    /// @param n count of PRC
+    /// @param n shares to roll, 4 decimals, it will pay 1.01n NEST
     /// @param m times, 4 decimals
     function roll44(uint n, uint m) external override {
-        require(n > 0 && n <= MAX_N44  && m >= M_BASE44 && m <= MAX_M44, "PRC:n or m not valid");
+        require(n > 0 && n <= MAX_N44  && m >= M_BASE44 && m <= MAX_M44, "NP:n or m not valid");
 
         //_burn(msg.sender, n * 1 ether / N_BASE44);
         TransferHelper.safeTransferFrom(
@@ -167,7 +167,7 @@ contract NestProbability is NestFrequentlyUsed, INestProbability {
             if (owner == address(0)) {
                 owner = dice44.owner;
             } else {
-                require(owner == dice44.owner, "PRC:different owner");
+                require(owner == dice44.owner, "NP:different owner");
             }
             gain += _gained44(dice44, index);
             _dices44[index].n = uint32(0);
@@ -182,7 +182,7 @@ contract NestProbability is NestFrequentlyUsed, INestProbability {
     // Calculate gained number of NEST
     function _gained44(Dice44 memory dice44, uint index) private view returns (uint gain) {
         uint hashBlock = uint(dice44.openBlock) + OPEN_BLOCK_SPAN44;
-        require(block.number > hashBlock, "PRC:!hashBlock");
+        require(block.number > hashBlock, "NP:!hashBlock");
 
         // Ethereum miners may affect the blockhash value, thus changing the random results and submitting only blocks 
         // of blockhash that are beneficial to them. Considering this, by limiting the number and magnification of each

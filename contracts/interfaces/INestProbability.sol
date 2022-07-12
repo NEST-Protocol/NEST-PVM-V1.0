@@ -45,7 +45,7 @@ interface INestProbability {
     function getDiceCount44() external view returns (uint);
 
     /// @dev start a roll dice44
-    /// @param n count of PRC
+    /// @param n shares to roll, 4 decimals, it will pay 1.01n NEST
     /// @param m times, 4 decimals
     function roll44(uint n, uint m) external;
 
