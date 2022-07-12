@@ -14,7 +14,7 @@ exports.deploy = async function() {
     const NestVault = await ethers.getContractFactory('NestVault');
     const NestOptions = await ethers.getContractFactory('NestOptions');
     const NestFutures = await ethers.getContractFactory('NestFutures');
-    const NestPRC44 = await ethers.getContractFactory('NestPRC44');
+    const NestProbability = await ethers.getContractFactory('NestProbability');
 
     console.log('** Deploy: bsc_test@20220704.js **');
     
@@ -27,7 +27,7 @@ exports.deploy = async function() {
     // nestVault: 0xceF3e2A8fa02790b8A63370354cB386520a04fb8
     // nestOptions: 0xf8559f269E8de4619C7FAd37Cc118DEe5f551f21
     // nestFutures: 0x3FB118a6Bd159815cD088332B047A01CE9624046
-    // nestPRC44: 0x9567F7b70a2da3802Cf02ee66C8DAFb9cCEe5571
+    // nestProbability: 0x9567F7b70a2da3802Cf02ee66C8DAFb9cCEe5571
 
     const hbtc = await TestERC20.attach('0xaE73d363Cb4aC97734E07e48B01D0a1FF5D1190B');
     console.log('hbtc: ' + hbtc.address);
@@ -59,9 +59,9 @@ exports.deploy = async function() {
     const nestFutures = await NestFutures.attach('0x3FB118a6Bd159815cD088332B047A01CE9624046');
     console.log('nestFutures: ' + nestFutures.address);
 
-    //const nestPRC44 = await upgrades.deployProxy(NestPRC44, [nestGovernance.address], { initializer: 'initialize' });
-    const nestPRC44 = await NestPRC44.attach('0x9567F7b70a2da3802Cf02ee66C8DAFb9cCEe5571');
-    console.log('nestPRC44: ' + nestPRC44.address);
+    //const nestProbability = await upgrades.deployProxy(NestProbability, [nestGovernance.address], { initializer: 'initialize' });
+    const nestProbability = await NestProbability.attach('0x9567F7b70a2da3802Cf02ee66C8DAFb9cCEe5571');
+    console.log('nestProbability: ' + nestProbability.address);
 
     // console.log('2. nestGovernance.setBuiltinAddress()');
     // await nestGovernance.setBuiltinAddress(
@@ -80,8 +80,8 @@ exports.deploy = async function() {
     // console.log('6. nestFutures.update()');
     // await nestFutures.update(nestGovernance.address);
 
-    // console.log('8. nestPRC44.update()');
-    // await nestPRC44.update(nestGovernance.address);
+    // console.log('8. nestProbability.update()');
+    // await nestProbability.update(nestGovernance.address);
 
     // // 2.4. Register ETH ans HBTC
     // console.log('7. nestOptions.register(eth.address)');
@@ -143,7 +143,7 @@ exports.deploy = async function() {
     // //await dcu.approve(nestOptions.address, 100000000000000000000000000n);
     // //await dcu.approve(nestFutures.address, 100000000000000000000000000n);
     // await nestVault.approve(nestOptions.address, 100000000000000000000000000n);
-    // await nestVault.approve(nestPRC44.address, 100000000000000000000000000n);
+    // await nestVault.approve(nestProbability.address, 100000000000000000000000000n);
     
     // await nest.approve(nestOptions.address, 100000000000000000000000000n);
     // await nest.approve(nestFutures.address, 100000000000000000000000000n);
@@ -164,7 +164,7 @@ exports.deploy = async function() {
         nestVault: nestVault,
         nestOptions: nestOptions,
         nestFutures: nestFutures,
-        nestPRC44: nestPRC44,
+        nestProbability: nestProbability,
         nestPriceFacade: nestPriceFacade,
 
         BLOCK_TIME: BLOCK_TIME,

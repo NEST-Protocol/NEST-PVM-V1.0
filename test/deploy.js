@@ -5,8 +5,7 @@ const { toBigInt, toDecimal, showReceipt, listBalances, snd, tableSnd, d1, Vc, V
 describe('deploy', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
-        const NestPRC44 = await ethers.getContractFactory('NestPRC44');
-        const NestPRCSwap = await ethers.getContractFactory('NestPRCSwap');
+        const NestProbability = await ethers.getContractFactory('NestProbability');
 
         const { 
             eth, usdt, nest, 

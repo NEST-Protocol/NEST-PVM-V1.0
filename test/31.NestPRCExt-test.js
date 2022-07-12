@@ -8,7 +8,7 @@ describe('31.NestPRCExt-test', function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
         const { 
-            eth, usdt, hbtc, nest, nestOptions, nestFutures, nestLPGuarantee, nestPRC44,
+            eth, usdt, hbtc, nest, nestOptions, nestFutures, nestLPGuarantee, nestProbability,
             nestPriceFacade, nestGovernance, BLOCK_TIME, USDT_DECIMALS 
         } = await deploy();
 
@@ -36,7 +36,7 @@ describe('31.NestPRCExt-test', function() {
 
         await nest.transfer(owner.address, 10000000000000000000000000n);
         
-        const tokens = [eth, nest, nestPRC44];
+        const tokens = [eth, nest];
         const listAccounts = async function() {
             let accounts = {
                 height: await ethers.provider.getBlockNumber(),
@@ -47,45 +47,41 @@ describe('31.NestPRCExt-test', function() {
         }
 
         await listAccounts();
-        await nestPRC44.setMinter(owner.address, 1);
-        await nestPRC44.mint(owner.address, toBigInt(10000));
-
-        await listAccounts();
         
         // if (true) {
         //     console.log('1. roll');
-        //     await nestPRC44.roll(1, 15000);
+        //     await nestProbability.roll(1, 15000);
         //     await listAccounts();
         // }
         // if (false) {
         //     console.log('2. claim');
         //     for (var i = 0; i < 256; ++i) {
-        //         console.log('gained: ' + (await nestPRC44.list(0, 1, 0))[0].gained.toString());
+        //         console.log('gained: ' + (await nestProbability.list(0, 1, 0))[0].gained.toString());
         //         await nest.transfer(owner.address, 0);
         //     }
-        //     await nestPRC44.claim(0);
+        //     await nestProbability.claim(0);
         //     await listAccounts();
         // }
         // if (true) {
         //     console.log('3. batchClaim');
         //     for (var i = 0; i < 1; ++i) {
-        //         console.log('gained: ' + (await nestPRC44.list(0, 1, 0))[0].gained.toString());
+        //         console.log('gained: ' + (await nestProbability.list(0, 1, 0))[0].gained.toString());
         //         await nest.transfer(owner.address, 0);
         //     }
-        //     await nestPRC44.batchClaim([0]);
+        //     await nestProbability.batchClaim([0]);
         //     await listAccounts();
         // }
         if (true) {
             console.log('1. big data');
             const N = 100;
             for (var i = 0; i < N; ++i) {
-                await nestPRC44.roll44(10000, 11000);
+                await nestProbability.roll44(10000, 11000);
                 if (i > 1) {
-                    await nestPRC44.claim44(i - 2);
+                    await nestProbability.claim44(i - 2);
                 }
             }
             for (var i = N - 2; i < N; ++i) {
-                await nestPRC44.claim44(i);
+                await nestProbability.claim44(i);
             }
 
             await listAccounts();

@@ -2,12 +2,14 @@
 
 pragma solidity ^0.8.6;
 
+import "./libs/TransferHelper.sol";
+
 import "./interfaces/INestVault.sol";
 
-import "./NestPRCToken.sol";
+import "./custom/NestFrequentlyUsed.sol";
 
-/// @dev NestPRC
-contract NestPRC44 is NestPRCToken {
+/// @dev NestProbability
+contract NestProbability is NestFrequentlyUsed {
 
     // Roll dice44 structure
     struct Dice44 {
@@ -26,6 +28,9 @@ contract NestPRC44 is NestPRCToken {
         uint32 openBlock;
         uint gained;
     }
+
+    // Roll cost rate
+    uint constant ROLL_COST_RATE = 1.01 ether;
 
     // The span from current block to hash block
     uint constant OPEN_BLOCK_SPAN44 = 1;
@@ -133,7 +138,15 @@ contract NestPRC44 is NestPRCToken {
     /// @param m times, 4 decimals
     function roll44(uint n, uint m) external {
         require(n > 0 && n <= MAX_N44  && m >= M_BASE44 && m <= MAX_M44, "PRC:n or m not valid");
-        _burn(msg.sender, n * 1 ether / N_BASE44);
+
+        //_burn(msg.sender, n * 1 ether / N_BASE44);
+        TransferHelper.safeTransferFrom(
+            NEST_TOKEN_ADDRESS, 
+            msg.sender, 
+            NEST_VAULT_ADDRESS,
+            n * ROLL_COST_RATE / N_BASE44
+        );
+
         _dices44.push(Dice44(msg.sender, uint32(n), uint32(m), uint32(block.number)));
     }
 

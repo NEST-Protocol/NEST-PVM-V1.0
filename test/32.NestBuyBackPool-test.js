@@ -8,7 +8,7 @@ describe('32.NestBuyBackPool-test', function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
         const { 
-            eth, usdt, hbtc, nest, dcu, nestOptions, nestFutures, nestLPGuarantee, nestPRC44,
+            eth, usdt, hbtc, nest, dcu, nestOptions, nestFutures, nestLPGuarantee, nestProbability,
             nestPriceFacade, nestBuyBackPool, BLOCK_TIME, USDT_DECIMALS, cofixRouter
         } = await deploy();
 

@@ -14,8 +14,7 @@ exports.deploy = async function() {
     const NestVault = await ethers.getContractFactory('NestVault');
     const NestOptions = await ethers.getContractFactory('NestOptions');
     const NestFutures = await ethers.getContractFactory('NestFutures');
-    const NestPRC44 = await ethers.getContractFactory('NestPRC44');
-    const NestPRCSwap = await ethers.getContractFactory('NestPRCSwap');
+    const NestProbability = await ethers.getContractFactory('NestProbability');
     const NestBuyBackPool = await ethers.getContractFactory('NestBuyBackPool');
     const CoFiXRouter = await ethers.getContractFactory('CoFiXRouter');
 
@@ -57,14 +56,10 @@ exports.deploy = async function() {
     //const nestFutures = await NestFutures.attach('0x0000000000000000000000000000000000000000');
     console.log('nestFutures: ' + nestFutures.address);
 
-    const nestPRC44 = await upgrades.deployProxy(NestPRC44, [nestGovernance.address], { initializer: 'initialize' });
-    //const nestPRC44 = await NestPRC44.attach('0x0000000000000000000000000000000000000000');
-    console.log('nestPRC44: ' + nestPRC44.address);
+    const nestProbability = await upgrades.deployProxy(NestProbability, [nestGovernance.address], { initializer: 'initialize' });
+    //const nestProbability = await NestProbability.attach('0x0000000000000000000000000000000000000000');
+    console.log('nestProbability: ' + nestProbability.address);
     
-    const nestPRCSwap = await upgrades.deployProxy(NestPRCSwap, [nestGovernance.address], { initializer: 'initialize' });
-    //const nestPRCSwap = await NestPRCSwap.attach('0x0000000000000000000000000000000000000000');
-    console.log('nestPRCSwap: ' + nestPRCSwap.address);
-
     const nestBuyBackPool = await upgrades.deployProxy(NestBuyBackPool, [nestGovernance.address], { initializer: 'initialize' });
     // const nestBuyBackPool = await NestBuyBackPool.attach('0x0000000000000000000000000000000000000000');
     console.log('nestBuyBackPool: ' + nestBuyBackPool.address);
@@ -89,7 +84,7 @@ exports.deploy = async function() {
     await nestGovernance.registerAddress('nest.v4.openPrice', nestPriceFacade.address);
     await nestGovernance.registerAddress('nest.app.vault', nestVault.address);
     await nestGovernance.registerAddress('nest.app.dcu', dcu.address);
-    await nestGovernance.registerAddress('nest.app.prc', nestPRC44.address);
+    await nestGovernance.registerAddress('nest.app.prc', nestProbability.address);
     await nestGovernance.registerAddress('cofix.cofixRouter', cofixRouter.address);
 
     console.log('4. nestVault.update()');
@@ -98,12 +93,10 @@ exports.deploy = async function() {
     await nestOptions.update(nestGovernance.address);
     console.log('6. nestFutures.update()');
     await nestFutures.update(nestGovernance.address);
-    console.log('8. nestPRC44.update()');
-    await nestPRC44.update(nestGovernance.address);
+    console.log('8. nestProbability.update()');
+    await nestProbability.update(nestGovernance.address);
     console.log('8. nestBuyBackPool.update()');
     await nestBuyBackPool.update(nestGovernance.address);
-    console.log('9. nestPRCSwap.update()');
-    await nestPRCSwap.update(nestGovernance.address);
 
     // 2.4. Register ETH ans HBTC
     console.log('7. nestOptions.register(eth.address)');
@@ -160,15 +153,15 @@ exports.deploy = async function() {
     console.log('14. create hbtc short lever');
     await nestFutures.create(hbtc.address, [1, 2, 3, 4, 5], false);
 
-    await cofixRouter.registerPair(nestPRC44.address, nest.address, nestPRCSwap.address);
     await cofixRouter.registerPair(dcu.address, nest.address, nestBuyBackPool.address);
 
     await nest.transfer(nestVault.address, 100000000000000000000000000n);
     await nest.approve(nestOptions.address, 100000000000000000000000000n);
     await nest.approve(nestFutures.address, 100000000000000000000000000n);
+    await nest.approve(nestProbability.address, 100000000000000000000000000n);
     await nestVault.approve(nestOptions.address, 100000000000000000000000000n);
     await nestVault.approve(nestFutures.address, 100000000000000000000000000n);
-    await nestVault.approve(nestPRC44.address, 100000000000000000000000000n);
+    await nestVault.approve(nestProbability.address, 100000000000000000000000000n);
 
     console.log('---------- OK ----------');
     
@@ -186,8 +179,7 @@ exports.deploy = async function() {
         nestGovernance: nestGovernance,
         nestOptions: nestOptions,
         nestFutures: nestFutures,
-        nestPRC44: nestPRC44,
-        nestPRCSwap: nestPRCSwap,
+        nestProbability: nestProbability,
         nestPriceFacade: nestPriceFacade,
         nestBuyBackPool: nestBuyBackPool,
         cofixRouter: cofixRouter,
