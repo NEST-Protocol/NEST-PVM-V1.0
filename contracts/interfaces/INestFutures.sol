@@ -32,10 +32,10 @@ interface INestFutures {
 
     /// @dev Buy future event
     /// @param index Index of future
-    /// @param dcuAmount Amount of paid DCU
+    /// @param nestAmount Amount of paid NEST
     event Buy(
         uint index,
-        uint dcuAmount,
+        uint nestAmount,
         address owner
     );
 
@@ -43,7 +43,7 @@ interface INestFutures {
     /// @param index Index of future
     /// @param amount Amount to sell
     /// @param owner The owner of future
-    /// @param value Amount of dcu obtained
+    /// @param value Amount of NEST obtained
     event Sell(
         uint index,
         uint amount,
@@ -115,18 +115,18 @@ interface INestFutures {
     /// @param tokenAddress Target token address, 0 means eth
     /// @param lever Lever of future
     /// @param orientation true: call, false: put
-    /// @param dcuAmount Amount of paid DCU
+    /// @param nestAmount Amount of paid NEST
     function buy(
         address tokenAddress,
         uint lever,
         bool orientation,
-        uint dcuAmount
+        uint nestAmount
     ) external payable;
 
     /// @dev Buy future direct
     /// @param index Index of future
-    /// @param dcuAmount Amount of paid DCU
-    function buyDirect(uint index, uint dcuAmount) external payable;
+    /// @param nestAmount Amount of paid NEST
+    function buyDirect(uint index, uint nestAmount) external payable;
 
     /// @dev Sell future
     /// @param index Index of future
@@ -147,7 +147,7 @@ interface INestFutures {
     function calcRevisedK(uint sigmaSQ, uint p0, uint bn0, uint p, uint bn) external view returns (uint k);
 
     /// @dev Calculate the impact cost
-    /// @param vol Trade amount in dcu
+    /// @param vol Trade amount in NEST
     /// @return Impact cost
     function impactCost(uint vol) external pure returns (uint);
 }

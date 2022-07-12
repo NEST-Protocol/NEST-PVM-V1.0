@@ -49,11 +49,11 @@ interface INestProbability {
     /// @param m times, 4 decimals
     function roll44(uint n, uint m) external;
 
-    /// @dev Claim gained DCU
+    /// @dev Claim gained NEST
     /// @param index index of bet
     function claim44(uint index) external;
 
-    /// @dev Batch claim gained DCU
+    /// @dev Batch claim gained NEST
     /// @param indices Indices of bets
     function batchClaim44(uint[] calldata indices) external;
 }

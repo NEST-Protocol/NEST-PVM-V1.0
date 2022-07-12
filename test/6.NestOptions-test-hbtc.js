@@ -80,21 +80,6 @@ describe('6.NestOptions-test-hbtc', function() {
             await nestOptions.open(hbtc.address, toBigInt(2450000000000, USDT_DECIMALS), true, 100000, toBigInt(1000), {
                 value: toBigInt(0.01)
             });
-            // /// @dev Open option
-            // /// @param tokenAddress Target token address, 0 means eth
-            // /// @param strikePrice The exercise price set by the user. During settlement, the system will compare the 
-            // /// current price of the subject matter with the exercise price to calculate the user's profit and loss
-            // /// @param orientation true: call, false: put
-            // /// @param exerciseBlock After reaching this block, the user will exercise manually, and the block will be
-            // /// recorded in the system using the block number
-            // /// @param dcuAmount Amount of paid DCU
-            // function open(
-            //     address tokenAddress,
-            //     uint strikePrice,
-            //     bool orientation,
-            //     uint exerciseBlock,
-            //     uint dcuAmount
-            // )
 
             // await nestOptions.open(hbtc.address, 52450000000, false, 100000, toBigInt(100000), {
             //     value: toBigInt(0.02)

@@ -241,27 +241,27 @@ contract NestFutures is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
     /// @param tokenAddress Target token address, 0 means eth
     /// @param lever Lever of future
     /// @param orientation true: call, false: put
-    /// @param dcuAmount Amount of paid DCU
+    /// @param nestAmount Amount of paid NEST
     function buy(
         address tokenAddress,
         uint lever,
         bool orientation,
-        uint dcuAmount
+        uint nestAmount
     ) external payable override {
-        return buyDirect(_futureMapping[_getKey(tokenAddress, lever, orientation)], dcuAmount);
+        return buyDirect(_futureMapping[_getKey(tokenAddress, lever, orientation)], nestAmount);
     }
 
     /// @dev Buy future direct
     /// @param index Index of future
-    /// @param dcuAmount Amount of paid DCU
-    function buyDirect(uint index, uint dcuAmount) public payable override {
+    /// @param nestAmount Amount of paid NEST
+    function buyDirect(uint index, uint nestAmount) public payable override {
 
         require(index != 0, "HF:not exist");
-        require(dcuAmount >= 50 ether, "HF:at least 50 nest");
+        require(nestAmount >= 50 ether, "HF:at least 50 NEST");
 
-        // 1. Burn dcu from user
-        //DCU(DCU_TOKEN_ADDRESS).burn(msg.sender, dcuAmount);
-        TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, NEST_VAULT_ADDRESS, dcuAmount);
+        // 1. Transfer NEST from user
+        //DCU(DCU_TOKEN_ADDRESS).burn(msg.sender, nestAmount);
+        TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, NEST_VAULT_ADDRESS, nestAmount);
 
         FutureInfo storage fi = _futures[index];
         bool orientation = fi.orientation;
@@ -271,7 +271,7 @@ contract NestFutures is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
         // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
         // When merger, s0 use recorded price, s1 use corrected by k
         TokenConfig memory tokenConfig = _tokenConfigs[uint(fi.tokenIndex)];
-        uint oraclePrice = _queryPrice(dcuAmount, tokenConfig, orientation, msg.sender);
+        uint oraclePrice = _queryPrice(nestAmount, tokenConfig, orientation, msg.sender);
 
         // 3. Merger price
         Account memory account = fi.accounts[msg.sender];
@@ -279,8 +279,8 @@ contract NestFutures is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
         uint balance = uint(account.balance);
         uint newPrice = oraclePrice;
         if (uint(account.baseBlock) > 0) {
-            newPrice = (balance + dcuAmount) * oraclePrice * basePrice / (
-                basePrice * dcuAmount + (balance << 64) * oraclePrice / _expMiuT(
+            newPrice = (balance + nestAmount) * oraclePrice * basePrice / (
+                basePrice * nestAmount + (balance << 64) * oraclePrice / _expMiuT(
                     uint(orientation ? tokenConfig.miuLong : tokenConfig.miuShort), 
                     uint(account.baseBlock)
                 )
@@ -288,13 +288,13 @@ contract NestFutures is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
         }
         
         // 4. Update account
-        account.balance = _toUInt128(balance + dcuAmount);
+        account.balance = _toUInt128(balance + nestAmount);
         account.basePrice = _encodeFloat(newPrice);
         account.baseBlock = uint32(block.number);
         fi.accounts[msg.sender] = account;
 
         // emit Buy event
-        emit Buy(index, dcuAmount, msg.sender);
+        emit Buy(index, nestAmount, msg.sender);
     }
 
     /// @dev Sell future
@@ -320,7 +320,7 @@ contract NestFutures is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
         account.balance -= _toUInt128(amount);
         fi.accounts[msg.sender] = account;
 
-        // 4. Mint DCU to user
+        // 4. Transfer NEST to user
         uint value = _balanceOf(
             tokenConfig,
             amount, 
@@ -386,7 +386,7 @@ contract NestFutures is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
             }
         }
 
-        // 6. Mint DCU to user
+        // 6. Transfer NEST to user
         if (reward > 0) {
             //DCU(DCU_TOKEN_ADDRESS).mint(msg.sender, reward);
             INestVault(NEST_VAULT_ADDRESS).transferTo(msg.sender, reward);
@@ -406,7 +406,7 @@ contract NestFutures is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
 
     // Query price
     function _queryPrice(
-        uint dcuAmount, 
+        uint nestAmount, 
         TokenConfig memory tokenConfig, 
         bool enlarge, 
         address payback
@@ -423,14 +423,14 @@ contract NestFutures is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
         // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
         // When merger, s0 use recorded price, s1 use corrected by k
         if (enlarge) {
-            oraclePrice = oraclePrice * (1 ether + k + impactCost(dcuAmount)) / 1 ether;
+            oraclePrice = oraclePrice * (1 ether + k + impactCost(nestAmount)) / 1 ether;
         } else {
-            oraclePrice = oraclePrice * 1 ether / (1 ether + k + impactCost(dcuAmount));
+            oraclePrice = oraclePrice * 1 ether / (1 ether + k + impactCost(nestAmount));
         }
     }
 
     /// @dev Calculate the impact cost
-    /// @param vol Trade amount in dcu
+    /// @param vol Trade amount in NEST
     /// @return Impact cost
     function impactCost(uint vol) public pure override returns (uint) {
         //impactCost = vol / 10000 / 1000;

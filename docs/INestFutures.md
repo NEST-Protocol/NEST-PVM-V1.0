@@ -49,12 +49,12 @@ Note: This method will triggers the New event, See also 3.1.
     /// @param tokenAddress Target token address, 0 means eth
     /// @param lever Lever of future
     /// @param orientation true: call, false: put
-    /// @param dcuAmount Amount of paid DCU
+    /// @param nestAmount Amount of paid NEST
     function buy(
         address tokenAddress,
         uint lever,
         bool orientation,
-        uint dcuAmount
+        uint nestAmount
     ) external payable;
 ```
 Note: This method will triggers the Buy event, See also 3.2.
@@ -64,8 +64,8 @@ Note: This method will triggers the Buy event, See also 3.2.
 ```javascript
     /// @dev Buy future direct
     /// @param index Index of future
-    /// @param dcuAmount Amount of paid DCU
-    function buyDirect(uint index, uint dcuAmount) external payable;
+    /// @param nestAmount Amount of paid NEST
+    function buyDirect(uint index, uint nestAmount) external payable;
 ```
 
 ### 2.6. Sell future
@@ -160,10 +160,10 @@ Note: This method may triggers the Settle event, See also 3.4.
 ```javascript
     /// @dev Buy future event
     /// @param index Index of future
-    /// @param dcuAmount Amount of paid DCU
+    /// @param nestAmount Amount of paid NEST
     event Buy(
         uint index,
-        uint dcuAmount,
+        uint nestAmount,
         address owner
     );
 ```
@@ -175,7 +175,7 @@ Note: This method may triggers the Settle event, See also 3.4.
     /// @param index Index of future
     /// @param amount Amount to sell
     /// @param owner The owner of future
-    /// @param value Amount of dcu obtained
+    /// @param value Amount of NEST obtained
     event Sell(
         uint index,
         uint amount,

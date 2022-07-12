@@ -141,7 +141,7 @@ contract NestProbability is NestFrequentlyUsed, INestProbability {
         _dices44.push(Dice44(msg.sender, uint32(n), uint32(m), uint32(block.number)));
     }
 
-    /// @dev Claim gained DCU
+    /// @dev Claim gained NEST
     /// @param index index of bet
     function claim44(uint index) external override {
         Dice44 memory dice44 = _dices44[index];
@@ -154,7 +154,7 @@ contract NestProbability is NestFrequentlyUsed, INestProbability {
         _dices44[index].n = uint32(0);
     }
 
-    /// @dev Batch claim gained DCU
+    /// @dev Batch claim gained NEST
     /// @param indices Indices of bets
     function batchClaim44(uint[] calldata indices) external override {
         
@@ -179,7 +179,7 @@ contract NestProbability is NestFrequentlyUsed, INestProbability {
         }
     }
 
-    // Calculate gained number of DCU
+    // Calculate gained number of NEST
     function _gained44(Dice44 memory dice44, uint index) private view returns (uint gain) {
         uint hashBlock = uint(dice44.openBlock) + OPEN_BLOCK_SPAN44;
         require(block.number > hashBlock, "PRC:!hashBlock");

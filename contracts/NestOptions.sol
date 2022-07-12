@@ -187,13 +187,13 @@ contract NestOptions is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
     /// @param orientation true: call, false: put
     /// @param exerciseBlock After reaching this block, the user will exercise manually, and the block will be
     /// recorded in the system using the block number
-    /// @param dcuAmount Amount of paid DCU
+    /// @param nestAmount Amount of paid NEST
     function open(
         address tokenAddress,
         uint strikePrice,
         bool orientation,
         uint exerciseBlock,
-        uint dcuAmount
+        uint nestAmount
     ) external payable override {
 
         // Get registered tokenIndex by tokenAddress
@@ -207,11 +207,11 @@ contract NestOptions is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
         uint oraclePrice = _latestPrice(tokenConfig, msg.value, msg.sender);
 
         // 2. Calculate the amount of option
-        uint amount = _estimate(tokenConfig, oraclePrice, strikePrice, orientation, exerciseBlock, dcuAmount);
+        uint amount = _estimate(tokenConfig, oraclePrice, strikePrice, orientation, exerciseBlock, nestAmount);
 
         // 3. Open
         // Emit open event
-        emit Open(_options.length, dcuAmount, msg.sender, amount);
+        emit Open(_options.length, nestAmount, msg.sender, amount);
         // Add option to array
         _options.push(Option(
             //uint32 owner;
@@ -227,9 +227,9 @@ contract NestOptions is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
             uint32(exerciseBlock)
         ));
 
-        // 4. Burn DCU
+        // 4. Transfer NEST from user
         //DCU(DCU_TOKEN_ADDRESS).burn(msg.sender, dcuAmount);
-        TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, NEST_VAULT_ADDRESS, dcuAmount);
+        TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, NEST_VAULT_ADDRESS, nestAmount);
     }
 
     /// @dev Estimate the amount of option
@@ -240,7 +240,7 @@ contract NestOptions is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
     /// @param orientation true: call, false: put
     /// @param exerciseBlock After reaching this block, the user will exercise manually, and the block will be
     /// recorded in the system using the block number
-    /// @param dcuAmount Amount of paid DCU
+    /// @param nestAmount Amount of paid NEST
     /// @return amount Amount of option
     function estimate(
         address tokenAddress,
@@ -248,7 +248,7 @@ contract NestOptions is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
         uint strikePrice,
         bool orientation,
         uint exerciseBlock,
-        uint dcuAmount
+        uint nestAmount
     ) external view override returns (uint amount) {
         return _estimate(
             _tokenRegistrations[_tokenMapping[tokenAddress] - 1].tokenConfig,
@@ -256,7 +256,7 @@ contract NestOptions is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
             strikePrice,
             orientation,
             exerciseBlock,
-            dcuAmount
+            nestAmount
         );
     }
     
@@ -282,7 +282,7 @@ contract NestOptions is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
         // 3. Find the price by specified block from oracle
         uint oraclePrice = _findPrice(tokenConfig, exerciseBlock, msg.value, msg.sender);
 
-        // 4. Calculate the number of DCU that can be obtained
+        // 4. Calculate the number of NEST that can be obtained
         uint gain = 0;
         // Call option
         if (orientation) {
@@ -299,7 +299,7 @@ contract NestOptions is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
             }
         }
 
-        // 5. If win, mint DCU to user
+        // 5. If win, Transfer NEST to user
         if (gain > 0) {
             //DCU(DCU_TOKEN_ADDRESS).mint(owner, gain);
             INestVault(NEST_VAULT_ADDRESS).transferTo(owner, gain);
@@ -331,7 +331,7 @@ contract NestOptions is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
         uint oraclePrice = _latestPrice(tokenConfig, msg.value, msg.sender);
 
         // 4. Calculate option price and sell amount
-        uint dcuAmount = amount * _calcV(
+        uint nestAmount = amount * _calcV(
             tokenConfig, 
             oraclePrice,
             _decodeFloat(option.strikePrice),
@@ -340,13 +340,13 @@ contract NestOptions is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
         ) * SELL_RATE / (USDT_BASE * 0x27100000000000000000); 
         // 0x27100000000000000000 = 10000 << 64
 
-        if (dcuAmount > 0) {
-            //DCU(DCU_TOKEN_ADDRESS).mint(msg.sender, dcuAmount);
-            INestVault(NEST_VAULT_ADDRESS).transferTo(msg.sender, dcuAmount);
+        if (nestAmount > 0) {
+            //DCU(DCU_TOKEN_ADDRESS).mint(msg.sender, nestAmount);
+            INestVault(NEST_VAULT_ADDRESS).transferTo(msg.sender, nestAmount);
         }
 
         // emit Sell event
-        emit Sell(index, amount, msg.sender, dcuAmount);
+        emit Sell(index, amount, msg.sender, nestAmount);
     }
 
     /// @dev Calculate option price
@@ -502,7 +502,7 @@ contract NestOptions is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
     /// @param orientation true: call, false: put
     /// @param exerciseBlock After reaching this block, the user will exercise manually, and the block will be
     /// recorded in the system using the block number
-    /// @param dcuAmount Amount of paid DCU
+    /// @param nestAmount Amount of paid NEST
     /// @return amount Amount of option
     function _estimate(
         TokenConfig memory tokenConfig,
@@ -510,7 +510,7 @@ contract NestOptions is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
         uint strikePrice,
         bool orientation,
         uint exerciseBlock,
-        uint dcuAmount
+        uint nestAmount
     ) private view returns (uint amount) {
 
         require(exerciseBlock > block.number + MIN_PERIOD, "FEO:exerciseBlock too small");
@@ -542,7 +542,7 @@ contract NestOptions is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
         }
 
         // 3. Calculate the amount of option
-        amount = (USDT_BASE << 64) * dcuAmount / v;
+        amount = (USDT_BASE << 64) * nestAmount / v;
     }
 
     /// @dev Calculate option price

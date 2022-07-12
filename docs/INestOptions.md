@@ -34,13 +34,13 @@
     /// @param orientation true: call, false: put
     /// @param exerciseBlock After reaching this block, the user will exercise manually, and the block will be
     /// recorded in the system using the block number
-    /// @param dcuAmount Amount of paid DCU
+    /// @param nestAmount Amount of paid NEST
     function open(
         address tokenAddress,
         uint strikePrice,
         bool orientation,
         uint exerciseBlock,
-        uint dcuAmount
+        uint nestAmount
     ) external payable;
 ```
 Note: This method will triggers the Open event, See also 3.1.
@@ -66,7 +66,7 @@ Note: This method will triggers the Exercise event, See also 3.2.
     /// @param orientation true: call, false: put
     /// @param exerciseBlock After reaching this block, the user will exercise manually, and the block will be
     /// recorded in the system using the block number
-    /// @param dcuAmount Amount of paid DCU
+    /// @param nestAmount Amount of paid NEST
     /// @return amount Amount of option
     function estimate(
         address tokenAddress,
@@ -74,7 +74,7 @@ Note: This method will triggers the Exercise event, See also 3.2.
         uint strikePrice,
         bool orientation,
         uint exerciseBlock,
-        uint dcuAmount
+        uint nestAmount
     ) external view returns (uint amount);
 ```
 
@@ -133,12 +133,12 @@ Note: This method will triggers the Sell event, See also 3.3.
 ```javascript
     /// @dev Option open event
     /// @param index Index of option
-    /// @param dcuAmount Amount of paid DCU
+    /// @param nestAmount Amount of paid NEST
     /// @param owner Owner of this option
     /// @param amount Amount of option
     event Open(
         uint index,
-        uint dcuAmount,
+        uint nestAmount,
         address owner,
         uint amount
     );
@@ -151,7 +151,7 @@ Note: This method will triggers the Sell event, See also 3.3.
     /// @param index Index of option
     /// @param amount Amount of option to exercise
     /// @param owner Owner of this option
-    /// @param gain Amount of dcu gained
+    /// @param gain Amount of NEST gained
     event Exercise(uint index, uint amount, address owner, uint gain);
 ```
 
@@ -162,6 +162,6 @@ Note: This method will triggers the Sell event, See also 3.3.
     /// @param index Index of option
     /// @param amount Amount of option to sell
     /// @param owner Owner of this option
-    /// @param dcuAmount Amount of dcu acquired
-    event Sell(uint index, uint amount, address owner, uint dcuAmount);
+    /// @param nestAmount Amount of NEST acquired
+    event Sell(uint index, uint amount, address owner, uint nestAmount);
 ```
