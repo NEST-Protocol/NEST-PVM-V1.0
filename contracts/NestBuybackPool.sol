@@ -14,13 +14,14 @@ contract NestBuybackPool is NestFrequentlyUsed {
     // The specific value will be determined before deployment
     uint constant EXCHANGE_RATIO = 3.3 ether;
 
-    // // TODO: use real DCU token address
+    // Address of DCU token
     // address constant DCU_TOKEN_ADDRESS = 0xf56c6eCE0C0d6Fbb9A53282C0DF71dBFaFA933eF;
 
     // // CoFiXRouter address
     // address constant COFIX_ROUTER_ADDRESS = 0xb29A8d980E1408E487B9968f5E4f7fD7a9B0CaC5;
 
     // TODO: Use constant version
+    // Address of DCU token
     address DCU_TOKEN_ADDRESS;
     // CoFiXRouter address
     address COFIX_ROUTER_ADDRESS;
