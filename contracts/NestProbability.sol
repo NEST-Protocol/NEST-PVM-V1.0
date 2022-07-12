@@ -5,11 +5,12 @@ pragma solidity ^0.8.6;
 import "./libs/TransferHelper.sol";
 
 import "./interfaces/INestVault.sol";
+import "./interfaces/INestProbability.sol";
 
 import "./custom/NestFrequentlyUsed.sol";
 
 /// @dev NestProbability
-contract NestProbability is NestFrequentlyUsed {
+contract NestProbability is NestFrequentlyUsed, INestProbability {
 
     // Roll dice44 structure
     struct Dice44 {
@@ -17,16 +18,6 @@ contract NestProbability is NestFrequentlyUsed {
         uint32 n;
         uint32 m;
         uint32 openBlock;
-    }
-
-    // Roll dice44 information view
-    struct DiceView44 {
-        uint index;
-        address owner;
-        uint32 n;
-        uint32 m;
-        uint32 openBlock;
-        uint gained;
     }
 
     // Roll cost rate
@@ -62,7 +53,7 @@ contract NestProbability is NestFrequentlyUsed {
         uint count, 
         uint maxFindCount, 
         address owner
-    ) external view returns (DiceView44[] memory diceArray44) {
+    ) external view override returns (DiceView44[] memory diceArray44) {
         diceArray44 = new DiceView44[](count);
         // Calculate search region
         Dice44[] storage dices44 = _dices44;
@@ -95,7 +86,7 @@ contract NestProbability is NestFrequentlyUsed {
         uint offset, 
         uint count, 
         uint order
-    ) external view returns (DiceView44[] memory diceArray44) {
+    ) external view override returns (DiceView44[] memory diceArray44) {
 
         // Load dices44
         Dice44[] storage dices44 = _dices44;
@@ -129,14 +120,14 @@ contract NestProbability is NestFrequentlyUsed {
 
     /// @dev Obtain the number of dices44 that have been opened
     /// @return Number of dices44 opened
-    function getDiceCount44() external view returns (uint) {
+    function getDiceCount44() external view override returns (uint) {
         return _dices44.length;
     }
 
     /// @dev start a roll dice44
     /// @param n count of PRC
     /// @param m times, 4 decimals
-    function roll44(uint n, uint m) external {
+    function roll44(uint n, uint m) external override {
         require(n > 0 && n <= MAX_N44  && m >= M_BASE44 && m <= MAX_M44, "PRC:n or m not valid");
 
         //_burn(msg.sender, n * 1 ether / N_BASE44);
@@ -152,7 +143,7 @@ contract NestProbability is NestFrequentlyUsed {
 
     /// @dev Claim gained DCU
     /// @param index index of bet
-    function claim44(uint index) external {
+    function claim44(uint index) external override {
         Dice44 memory dice44 = _dices44[index];
         uint gain = _gained44(dice44, index);
         if (gain > 0) {
@@ -165,7 +156,7 @@ contract NestProbability is NestFrequentlyUsed {
 
     /// @dev Batch claim gained DCU
     /// @param indices Indices of bets
-    function batchClaim44(uint[] calldata indices) external {
+    function batchClaim44(uint[] calldata indices) external override {
         
         address owner = address(0);
         uint gain = 0;

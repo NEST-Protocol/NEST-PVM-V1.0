@@ -434,9 +434,6 @@ contract NestFutures is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
     /// @return Impact cost
     function impactCost(uint vol) public pure override returns (uint) {
         //impactCost = vol / 10000 / 1000;
-
-        // TODO:
-        return 0;
         return vol / 10000000;
     }
 
@@ -468,9 +465,6 @@ contract NestFutures is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
         } else {
             k += _sqrt(1 ether * BLOCK_TIME * sigmaSQ * (block.number - bn));
         }
-
-        // TODO:
-        k = 0;
     }
 
     function _sqrt(uint256 x) private pure returns (uint256) {

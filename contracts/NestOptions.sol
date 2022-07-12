@@ -12,7 +12,7 @@ import "./custom/ChainParameter.sol";
 import "./custom/NestFrequentlyUsed.sol";
 import "./custom/NestPriceAdapter.sol";
 
-/// @dev European option
+/// @dev Options
 contract NestOptions is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestOptions {
 
     /// @dev Option structure
@@ -274,8 +274,7 @@ contract NestOptions is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
 
         TokenConfig memory tokenConfig = _tokenRegistrations[option.tokenIndex].tokenConfig;
 
-        // TODO:
-        //require(block.number >= exerciseBlock, "FEO:at maturity");
+        require(block.number >= exerciseBlock, "FEO:at maturity");
 
         // 2. Deduct the specified amount
         option.balance = _toUInt112(uint(option.balance) - amount);
@@ -514,8 +513,7 @@ contract NestOptions is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
         uint dcuAmount
     ) private view returns (uint amount) {
 
-        // TODO:
-        //require(exerciseBlock > block.number + MIN_PERIOD, "FEO:exerciseBlock too small");
+        require(exerciseBlock > block.number + MIN_PERIOD, "FEO:exerciseBlock too small");
 
         // 1. Calculate option price
         uint v = _calcV(

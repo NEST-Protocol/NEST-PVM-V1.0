@@ -15,7 +15,7 @@ exports.deploy = async function() {
     const NestOptions = await ethers.getContractFactory('NestOptions');
     const NestFutures = await ethers.getContractFactory('NestFutures');
     const NestProbability = await ethers.getContractFactory('NestProbability');
-    const NestBuyBackPool = await ethers.getContractFactory('NestBuyBackPool');
+    const NestBuybackPool = await ethers.getContractFactory('NestBuybackPool');
     const CoFiXRouter = await ethers.getContractFactory('CoFiXRouter');
 
     console.log('** Deploy: bsc_test@20220711.js **');
@@ -31,7 +31,7 @@ exports.deploy = async function() {
     // nestOptions: 0x8bBd5db40F61C628a8F62ba75752227b1BFbF6a8
     // nestFutures: 0xb8B5b3CDdC5DA7F4B75Bd4B408389b923962ee98
     // nestProbability: 0x9AeE80A1df3cA0c5B859d94bCCf16d0440f1691d
-    // nestBuyBackPool: 0xB82c97436C3ae453cd21Ef68Ec6900D2e0380Bcd
+    // nestBuybackPool: 0xB82c97436C3ae453cd21Ef68Ec6900D2e0380Bcd
     // cofixRouter: 0x4A448cBb12e449D7031f36C8122eCE6dDdf9cc84
 
     const dcu = await TestERC20.attach('0x5Df87aE415206707fd52aDa20a5Eac2Ec70e8dbb');
@@ -71,9 +71,9 @@ exports.deploy = async function() {
     const nestProbability = await NestProbability.attach('0x9AeE80A1df3cA0c5B859d94bCCf16d0440f1691d');
     console.log('nestProbability: ' + nestProbability.address);
 
-    //const nestBuyBackPool = await upgrades.deployProxy(NestBuyBackPool, [nestGovernance.address], { initializer: 'initialize' });
-    const nestBuyBackPool = await NestBuyBackPool.attach('0xB82c97436C3ae453cd21Ef68Ec6900D2e0380Bcd');
-    console.log('nestBuyBackPool: ' + nestBuyBackPool.address);
+    //const nestBuybackPool = await upgrades.deployProxy(NestBuybackPool, [nestGovernance.address], { initializer: 'initialize' });
+    const nestBuybackPool = await NestBuybackPool.attach('0xB82c97436C3ae453cd21Ef68Ec6900D2e0380Bcd');
+    console.log('nestBuybackPool: ' + nestBuybackPool.address);
 
     //const cofixRouter = await upgrades.deployProxy(CoFiXRouter, [nestGovernance.address], { initializer: 'initialize' });
     const cofixRouter = await CoFiXRouter.attach('0x4A448cBb12e449D7031f36C8122eCE6dDdf9cc84');
@@ -104,7 +104,7 @@ exports.deploy = async function() {
         nestFutures: nestFutures,
         nestProbability: nestProbability,
         nestPriceFacade: nestPriceFacade,
-        nestBuyBackPool: nestBuyBackPool,
+        nestBuybackPool: nestBuybackPool,
         cofixRouter: cofixRouter,
 
         BLOCK_TIME: BLOCK_TIME,

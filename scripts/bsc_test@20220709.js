@@ -17,7 +17,7 @@ exports.deploy = async function() {
     const NestLPGuarantee = await ethers.getContractFactory('NestLPGuarantee');
     const NestProbability = await ethers.getContractFactory('NestProbability');
     const NestPRCSwap = await ethers.getContractFactory('NestPRCSwap');
-    const NestBuyBackPool = await ethers.getContractFactory('NestBuyBackPool');
+    const NestBuybackPool = await ethers.getContractFactory('NestBuybackPool');
     const CoFiXRouter = await ethers.getContractFactory('CoFiXRouter');
 
     console.log('** Deploy: bsc_test@20220709.js **');
@@ -35,7 +35,7 @@ exports.deploy = async function() {
     // nestLPGuarantee: 0x2a3f6b9E3e4259807b6c98ca7A87da19444cd76E
     // nestProbability: 0xb32e10a774428d47c016eeAc680793a79F1CFD7e
     // nestPRCSwap: 0xd65B764cA768B524753435DC0D30C2D0dCA12C5c
-    // nestBuyBackPool: 0xB82c97436C3ae453cd21Ef68Ec6900D2e0380Bcd
+    // nestBuybackPool: 0xB82c97436C3ae453cd21Ef68Ec6900D2e0380Bcd
     // cofixRouter: 0x4A448cBb12e449D7031f36C8122eCE6dDdf9cc84
 
     const dcu = await TestERC20.attach('0x5Df87aE415206707fd52aDa20a5Eac2Ec70e8dbb');
@@ -83,9 +83,9 @@ exports.deploy = async function() {
     const nestPRCSwap = await NestPRCSwap.attach('0xd65B764cA768B524753435DC0D30C2D0dCA12C5c');
     console.log('nestPRCSwap: ' + nestPRCSwap.address);
 
-    //const nestBuyBackPool = await upgrades.deployProxy(NestBuyBackPool, [nestGovernance.address], { initializer: 'initialize' });
-    const nestBuyBackPool = await NestBuyBackPool.attach('0xB82c97436C3ae453cd21Ef68Ec6900D2e0380Bcd');
-    console.log('nestBuyBackPool: ' + nestBuyBackPool.address);
+    //const nestBuybackPool = await upgrades.deployProxy(NestBuybackPool, [nestGovernance.address], { initializer: 'initialize' });
+    const nestBuybackPool = await NestBuybackPool.attach('0xB82c97436C3ae453cd21Ef68Ec6900D2e0380Bcd');
+    console.log('nestBuybackPool: ' + nestBuybackPool.address);
 
     //const cofixRouter = await upgrades.deployProxy(CoFiXRouter, [nestGovernance.address], { initializer: 'initialize' });
     const cofixRouter = await CoFiXRouter.attach('0x4A448cBb12e449D7031f36C8122eCE6dDdf9cc84');
@@ -107,8 +107,8 @@ exports.deploy = async function() {
     // await nestLPGuarantee.update(nestGovernance.address);
     // console.log('8. nestProbability.update()');
     // await nestProbability.update(nestGovernance.address);
-    // console.log('8. nestBuyBackPool.update()');
-    // await nestBuyBackPool.update(nestGovernance.address);
+    // console.log('8. nestBuybackPool.update()');
+    // await nestBuybackPool.update(nestGovernance.address);
     // console.log('9. nestPRCSwap.update()');
     // await nestPRCSwap.update(nestGovernance.address);
 
@@ -177,14 +177,14 @@ exports.deploy = async function() {
     // await nestFutures.create(hbtc.address, [1, 2, 3, 4, 5], false);
 
     // await cofixRouter.registerPair(nestProbability.address, nest.address, nestPRCSwap.address);
-    // await cofixRouter.registerPair(dcu.address, nest.address, nestBuyBackPool.address);
+    // await cofixRouter.registerPair(dcu.address, nest.address, nestBuybackPool.address);
 
     // await nestVault.approve(nestOptions.address, 100000000000000000000000000n);
     // await nestVault.approve(nestFutures.address, 100000000000000000000000000n);
     // await nestVault.approve(nestLPGuarantee.address, 100000000000000000000000000n);
     // await nestVault.approve(nestProbability.address, 100000000000000000000000000n);
 
-    //await nest.transfer(nestBuyBackPool.address, 10000000000000000000000n);
+    //await nest.transfer(nestBuybackPool.address, 10000000000000000000000n);
     // await nest.transfer(nestVault.address, 100000000000000000000000000n);
     // await nest.approve(nestOptions.address, 100000000000000000000000000n);
     // await nest.approve(nestFutures.address, 100000000000000000000000000n);
@@ -212,7 +212,7 @@ exports.deploy = async function() {
         nestProbability: nestProbability,
         nestPRCSwap: nestPRCSwap,
         nestPriceFacade: nestPriceFacade,
-        nestBuyBackPool: nestBuyBackPool,
+        nestBuybackPool: nestBuybackPool,
         cofixRouter: cofixRouter,
 
         BLOCK_TIME: BLOCK_TIME,

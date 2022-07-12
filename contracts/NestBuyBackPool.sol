@@ -6,9 +6,12 @@ import "./libs/TransferHelper.sol";
 
 import "./custom/NestFrequentlyUsed.sol";
 
-/// @dev Swap DCU to NEST
-contract NestBuyBackPool is NestFrequentlyUsed {
+/// @dev After the merger, DCU will no longer be used, and the circulated DCU can be swap to NEST through this contract
+/// This pool will be registered to cofixRouter, which provided an interface to swap tokens by tokens
+contract NestBuybackPool is NestFrequentlyUsed {
 
+    // Indicates how many NEST can be exchanged for one DCU
+    // The specific value will be determined before deployment
     uint constant EXCHANGE_RATIO = 3.3 ether;
 
     // // TODO: use real DCU token address
@@ -53,17 +56,18 @@ contract NestBuyBackPool is NestFrequentlyUsed {
         uint amountOut, 
         uint mined
     ) {
-        require(msg.sender == COFIX_ROUTER_ADDRESS, "PRCSwap:not router");
+        require(msg.sender == COFIX_ROUTER_ADDRESS, "NBP:not router");
         if (msg.value > 0) {
             // payable(payback).transfer(msg.value);
             TransferHelper.safeTransferETH(payback, msg.value);
         }
 
+        // Only allow swap DCU to NEST
         if (src == DCU_TOKEN_ADDRESS && dest == NEST_TOKEN_ADDRESS) {
             amountOut = amountIn * EXCHANGE_RATIO / 1 ether;
             TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, to, amountOut);
         } else {
-            revert("PRCSwap:pair not allowed");
+            revert("NBP:pair not allowed");
         }
 
         mined = 0;
