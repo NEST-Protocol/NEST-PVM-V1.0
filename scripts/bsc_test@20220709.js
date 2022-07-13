@@ -37,6 +37,7 @@ exports.deploy = async function() {
     // nestPRCSwap: 0xd65B764cA768B524753435DC0D30C2D0dCA12C5c
     // nestBuybackPool: 0xB82c97436C3ae453cd21Ef68Ec6900D2e0380Bcd
     // cofixRouter: 0x4A448cBb12e449D7031f36C8122eCE6dDdf9cc84
+    // proxyAdmin: 0xB5604C3C3AE902513731037B9c7368842582642e
 
     const dcu = await TestERC20.attach('0x5Df87aE415206707fd52aDa20a5Eac2Ec70e8dbb');
     console.log('dcu: ' + dcu.address);

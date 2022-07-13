@@ -28,6 +28,7 @@ exports.deploy = async function() {
     // nestOptions: 0xf8559f269E8de4619C7FAd37Cc118DEe5f551f21
     // nestFutures: 0x3FB118a6Bd159815cD088332B047A01CE9624046
     // nestProbability: 0x9567F7b70a2da3802Cf02ee66C8DAFb9cCEe5571
+    // proxyAdmin: 0xB5604C3C3AE902513731037B9c7368842582642e
 
     const hbtc = await TestERC20.attach('0xaE73d363Cb4aC97734E07e48B01D0a1FF5D1190B');
     console.log('hbtc: ' + hbtc.address);

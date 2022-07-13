@@ -33,7 +33,8 @@ exports.deploy = async function() {
     // nestProbability: 0x9AeE80A1df3cA0c5B859d94bCCf16d0440f1691d
     // nestBuybackPool: 0xB82c97436C3ae453cd21Ef68Ec6900D2e0380Bcd
     // cofixRouter: 0x4A448cBb12e449D7031f36C8122eCE6dDdf9cc84
-
+    // proxyAdmin: 0xB5604C3C3AE902513731037B9c7368842582642e
+    
     const dcu = await TestERC20.attach('0x5Df87aE415206707fd52aDa20a5Eac2Ec70e8dbb');
     console.log('dcu: ' + dcu.address);
 
@@ -78,13 +79,6 @@ exports.deploy = async function() {
     //const cofixRouter = await upgrades.deployProxy(CoFiXRouter, [nestGovernance.address], { initializer: 'initialize' });
     const cofixRouter = await CoFiXRouter.attach('0x4A448cBb12e449D7031f36C8122eCE6dDdf9cc84');
     console.log('cofixRouter: ' + cofixRouter.address);
-
-    // console.log('8. nestProbability.update()');
-    // await nestProbability.update(nestGovernance.address);
-
-    //await nestVault.approve(nestProbability.address, 100000000000000000000000000n);
-
-    await nest.approve(nestProbability.address, 100000000000000000000000000n);
 
     console.log('---------- OK ----------');
     

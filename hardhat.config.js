@@ -60,7 +60,7 @@ module.exports = {
     bsc_test: {
       url: "https://bsc.getblock.io/testnet/?api_key=57d2baf4-a7a4-4d1b-af95-5c35653e05ea",
       chainId: 97,
-      gasPrice: 20e9,
+      gasPrice: 10e9,
       gas: 6000000,
       accounts: [config.account.test.key, config.account.test.userA, config.account.test.userB],
       timeout: 2000000000
