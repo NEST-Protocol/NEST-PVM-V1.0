@@ -562,7 +562,7 @@ contract NestOptions is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
     ) private view returns (uint v) {
 
         // Convert the total time according to the average block out time
-        uint T = (exerciseBlock - block.number) * BLOCK_TIME;
+        uint T = (exerciseBlock - block.number) * BLOCK_TIME / 1000;
         v = orientation 
             ? _calcVc(tokenConfig, oraclePrice, T, strikePrice) 
             : _calcVp(tokenConfig, oraclePrice, T, strikePrice);

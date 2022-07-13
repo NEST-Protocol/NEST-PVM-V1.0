@@ -459,12 +459,9 @@ contract NestFutures is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
         }
 
         sigmaISQ = sigmaISQ * sigmaISQ / (bn - bn0);
-
-        if (sigmaISQ > sigmaSQ * BLOCK_TIME * 1 ether) {
-            k += _sqrt(sigmaISQ * (block.number - bn));
-        } else {
-            k += _sqrt(1 ether * BLOCK_TIME * sigmaSQ * (block.number - bn));
-        }
+        // sigmaSQ = sigmaSQ * BLOCK_TIME * 1e18 / 1000;
+        sigmaSQ = sigmaSQ * BLOCK_TIME * 1e15;
+        k += _sqrt((sigmaSQ > sigmaISQ ? sigmaSQ : sigmaISQ) * (block.number - bn));
     }
 
     function _sqrt(uint256 x) private pure returns (uint256) {
@@ -575,7 +572,7 @@ contract NestFutures is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
         // ));
 
         // Using approximate algorithm: x*(1+rt)
-        return miu * (block.number - baseBlock) * BLOCK_TIME + 0x10000000000000000;
+        return miu * (block.number - baseBlock) * BLOCK_TIME / 1000 + 0x10000000000000000;
     }
 
     // Convert FutureInfo to FutureView
