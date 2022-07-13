@@ -45,10 +45,10 @@ module.exports = {
       timeout: 2000000000
     },
     rinkeby: {
-      url: `https://rinkeby.infura.io/v3/${config.infura.keyl}`,
+      url: `https://rinkeby.infura.io/v3/${config.infura.key}`,
       accounts: [config.account.test.key, config.account.test.userA, config.account.test.userB],
-      gas: 6e6,
-      gasPrice: 1e9,
+      gas: 5e6,
+      gasPrice: 20e9,
       timeout: 2000000000
     },
     kovan: {
