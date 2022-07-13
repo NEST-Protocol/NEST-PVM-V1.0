@@ -78,7 +78,7 @@ contract NestOptions is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
             _tokenRegistrations.push(TokenRegistration(tokenConfig, tokenAddress));
             // Record index + 1
             index = _tokenRegistrations.length;
-            require(index < 0x10000, "FO:too much tokenRegistrations");
+            require(index < 0x10000, "NO:too much tokenRegistrations");
             _tokenMapping[tokenAddress] = index;
         } else {
             // Update tokenConfig
@@ -274,7 +274,7 @@ contract NestOptions is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
 
         TokenConfig memory tokenConfig = _tokenRegistrations[option.tokenIndex].tokenConfig;
 
-        require(block.number >= exerciseBlock, "FEO:at maturity");
+        require(block.number >= exerciseBlock, "NO:at maturity");
 
         // 2. Deduct the specified amount
         option.balance = _toUInt112(uint(option.balance) - amount);
@@ -320,7 +320,7 @@ contract NestOptions is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
         // 1. Load the option
         Option storage option = _options[index];
         address owner = _accounts[uint(option.owner)];
-        require(owner == msg.sender, "FO:not owner");
+        require(owner == msg.sender, "NO:not owner");
 
         TokenConfig memory tokenConfig = _tokenRegistrations[option.tokenIndex].tokenConfig;
 
@@ -411,25 +411,25 @@ contract NestOptions is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
 
     // Convert 18 decimal points to 64 binary points
     function _d18TOb64(uint v) private pure returns (int128) {
-        require(v < 0x6F05B59D3B200000000000000000000, "FEO:can't convert to 64bits");
+        require(v < 0x6F05B59D3B200000000000000000000, "NO:can't convert to 64bits");
         return int128(int((v << 64) / 1 ether));
     }
 
     // Convert uint to int128
     function _toInt128(uint v) private pure returns (int128) {
-        require(v < 0x80000000000000000000000000000000, "FEO:can't convert to int128");
+        require(v < 0x80000000000000000000000000000000, "NO:can't convert to int128");
         return int128(int(v));
     }
 
     // Convert int128 to uint
     function _toUInt(int128 v) private pure returns (uint) {
-        require(v >= 0, "FEO:can't convert to uint");
+        require(v >= 0, "NO:can't convert to uint");
         return uint(int(v));
     }
 
     // Convert uint to uint112
     function _toUInt112(uint v) private pure returns (uint112) {
-        require(v <= 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFF,"HO:can't convert to uint112");
+        require(v <= 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFF,"NO:can't convert to uint112");
         return uint112(v);
     }
 
@@ -513,7 +513,7 @@ contract NestOptions is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
         uint nestAmount
     ) private view returns (uint amount) {
 
-        require(exerciseBlock > block.number + MIN_PERIOD, "FEO:exerciseBlock too small");
+        require(exerciseBlock > block.number + MIN_PERIOD, "NO:exerciseBlock too small");
 
         // 1. Calculate option price
         uint v = _calcV(
@@ -528,14 +528,14 @@ contract NestOptions is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
         if (orientation) {
             //v = _calcVc(config, oraclePrice, T, strikePrice);
             // Vc>=S0*1%; Vp>=K*1%
-            // require(v * 100 >> 64 >= oraclePrice, "FEO:vc must greater than S0*1%");
+            // require(v * 100 >> 64 >= oraclePrice, "NO:vc must greater than S0*1%");
             if (v * 100 >> 64 < oraclePrice) {
                 v = oraclePrice * 0x10000000000000000 / 100;
             }
         } else {
             //v = _calcVp(config, oraclePrice, T, strikePrice);
             // Vc>=S0*1%; Vp>=K*1%
-            // require(v * 100 >> 64 >= strikePrice, "FEO:vp must greater than K*1%");
+            // require(v * 100 >> 64 >= strikePrice, "NO:vp must greater than K*1%");
             if (v * 100 >> 64 < strikePrice) {
                 v = strikePrice * 0x10000000000000000 / 100;
             }
@@ -653,7 +653,7 @@ contract NestOptions is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
         if (index == 0) {
             // If it exceeds the maximum number that 32 bits can store, you can't continue to register a new account.
             // If you need to support a new account, you need to update the contract
-            require((_accountMapping[addr] = index = _accounts.length) < 0x100000000, "HO:!accounts");
+            require((_accountMapping[addr] = index = _accounts.length) < 0x100000000, "NO:!accounts");
             _accounts.push(addr);
         }
 

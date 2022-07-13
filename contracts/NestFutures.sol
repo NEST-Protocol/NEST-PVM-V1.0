@@ -78,7 +78,7 @@ contract NestFutures is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
             _tokenConfigs.push(tokenConfig);
             // Record index + 1
             index = _tokenConfigs.length;
-            require(index < 0x10000, "FO:too much tokenConfigs");
+            require(index < 0x10000, "NF:too much tokenConfigs");
             _tokenMapping[tokenAddress] = index;
         } else {
             // Update tokenConfig
@@ -200,7 +200,7 @@ contract NestFutures is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
             // Check if the future exists
             uint key = _getKey(tokenAddress, lever, orientation);
             uint index = _futureMapping[key];
-            require(index == 0, "HF:exists");
+            require(index == 0, "NF:exists");
 
             // Create future
             index = _futures.length;
@@ -256,8 +256,8 @@ contract NestFutures is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
     /// @param nestAmount Amount of paid NEST
     function buyDirect(uint index, uint nestAmount) public payable override {
 
-        require(index != 0, "HF:not exist");
-        require(nestAmount >= 50 ether, "HF:at least 50 NEST");
+        require(index != 0, "NF:not exist");
+        require(nestAmount >= 50 ether, "NF:at least 50 NEST");
 
         // 1. Transfer NEST from user
         //DCU(DCU_TOKEN_ADDRESS).burn(msg.sender, nestAmount);
@@ -302,7 +302,7 @@ contract NestFutures is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
     /// @param amount Amount to sell
     function sell(uint index, uint amount) external payable override {
 
-        require(index != 0, "HF:not exist");
+        require(index != 0, "NF:not exist");
         
         // 1. Load the future
         FutureInfo storage fi = _futures[index];
@@ -342,12 +342,12 @@ contract NestFutures is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
     /// @param addresses Target addresses
     function settle(uint index, address[] calldata addresses) external payable override {
 
-        require(index != 0, "HF:not exist");
+        require(index != 0, "NF:not exist");
 
         // 1. Load the future
         FutureInfo storage fi = _futures[index];
         uint lever = uint(fi.lever);
-        require(lever > 1, "HF:lever must greater than 1");
+        require(lever > 1, "NF:lever must greater than 1");
 
         bool orientation = fi.orientation;
             
@@ -400,7 +400,7 @@ contract NestFutures is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
         bool orientation
     ) private pure returns (uint) {
         //return keccak256(abi.encodePacked(tokenAddress, lever, orientation));
-        require(lever < 0x100000000, "HF:lever too large");
+        require(lever < 0x100000000, "NF:lever too large");
         return (uint(uint160(tokenAddress)) << 96) | (lever << 8) | (orientation ? 1 : 0);
     }
 
@@ -515,19 +515,19 @@ contract NestFutures is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
 
     // Convert uint to uint128
     function _toUInt128(uint value) private pure returns (uint128) {
-        require(value < 0x100000000000000000000000000000000, "FEO:can't convert to uint128");
+        require(value < 0x100000000000000000000000000000000, "NF:can't convert to uint128");
         return uint128(value);
     }
 
     // Convert uint to int128
     function _toInt128(uint v) private pure returns (int128) {
-        require(v < 0x80000000000000000000000000000000, "FEO:can't convert to int128");
+        require(v < 0x80000000000000000000000000000000, "NF:can't convert to int128");
         return int128(int(v));
     }
 
     // Convert int128 to uint
     function _toUInt(int128 v) private pure returns (uint) {
-        require(v >= 0, "FEO:can't convert to uint");
+        require(v >= 0, "NF:can't convert to uint");
         return uint(int(v));
     }
     
