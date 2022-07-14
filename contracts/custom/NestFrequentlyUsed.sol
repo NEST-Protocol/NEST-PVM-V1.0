@@ -42,6 +42,7 @@ contract NestFrequentlyUsed is NestBase {
     ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
     /// @param newGovernance INestGovernance implementation contract address
     function update(address newGovernance) public virtual override {
+        super.update(newGovernance);
         NEST_TOKEN_ADDRESS = INestGovernance(newGovernance).getNestTokenAddress();
         NEST_OPEN_PRICE = INestGovernance(newGovernance).checkAddress("nest.v4.openPrice");
         NEST_VAULT_ADDRESS = INestGovernance(newGovernance).checkAddress("nest.app.vault");
