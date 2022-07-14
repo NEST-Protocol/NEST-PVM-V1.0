@@ -6,7 +6,7 @@ describe('27.NestProbability-test', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
-        const { eth, usdt, hbtc, nest, cofixRouter, nestPRCSwap, nestProbability, BLOCK_TIME, USDT_DECIMALS } = await deploy();
+        const { eth, usdt, hbtc, nest, nestPRCSwap, nestProbability, BLOCK_TIME, USDT_DECIMALS } = await deploy();
         const TestERC20 = await ethers.getContractFactory('TestERC20');
         await nest.transfer(owner.address, 10000000000000000000000000n);
         

@@ -9,7 +9,7 @@ describe('32.NestBuybackPool-test', function() {
         
         const { 
             eth, usdt, hbtc, nest, dcu, nestOptions, nestFutures, nestLPGuarantee, nestProbability,
-            nestPriceFacade, nestBuybackPool, BLOCK_TIME, USDT_DECIMALS, cofixRouter
+            nestPriceFacade, nestBuybackPool, BLOCK_TIME, USDT_DECIMALS
         } = await deploy();
 
         await nest.transfer(nestBuybackPool.address, 10000000000000000000000000n);
@@ -31,21 +31,8 @@ describe('32.NestBuybackPool-test', function() {
         
         if (true) {
             console.log('1. buy back');
-            await dcu.approve(cofixRouter.address, toBigInt(100000000));
-            await cofixRouter.swapExactTokensForTokens(
-                // address[] calldata path,
-                [dcu.address, nest.address],
-                // uint amountIn,
-                toBigInt(10),
-                // uint amountOutMin,
-                0,
-                // address to,
-                owner.address,
-                // address rewardTo,
-                owner.address,
-                // uint deadline
-                9999999999
-            );
+            await dcu.approve(nestBuybackPool.address, toBigInt(100000000));
+            await nestBuybackPool.swap(toBigInt(10));
             await listAccounts();
         }
     });

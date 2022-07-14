@@ -16,7 +16,6 @@ exports.deploy = async function() {
     const NestFutures = await ethers.getContractFactory('NestFutures');
     const NestProbability = await ethers.getContractFactory('NestProbability');
     const NestBuybackPool = await ethers.getContractFactory('NestBuybackPool');
-    const CoFiXRouter = await ethers.getContractFactory('CoFiXRouter');
 
     console.log('** Deploy: deploy.proxy.js **');
     
@@ -64,10 +63,6 @@ exports.deploy = async function() {
     // const nestBuybackPool = await NestBuybackPool.attach('0x0000000000000000000000000000000000000000');
     console.log('nestBuybackPool: ' + nestBuybackPool.address);
 
-    const cofixRouter = await upgrades.deployProxy(CoFiXRouter, [nestGovernance.address], { initializer: 'initialize' });
-    //const cofixRouter = await CoFiXRouter.attach('0x0000000000000000000000000000000000000000');
-    console.log('cofixRouter: ' + cofixRouter.address);
-
     console.log('2. nestGovernance.setBuiltinAddress()');
     await nestGovernance.setBuiltinAddress(
         nest.address,
@@ -85,7 +80,6 @@ exports.deploy = async function() {
     await nestGovernance.registerAddress('nest.app.vault', nestVault.address);
     await nestGovernance.registerAddress('nest.app.dcu', dcu.address);
     await nestGovernance.registerAddress('nest.app.prc', nestProbability.address);
-    await nestGovernance.registerAddress('cofix.cofixRouter', cofixRouter.address);
 
     console.log('4. nestVault.update()');
     await nestVault.update(nestGovernance.address);
@@ -153,8 +147,6 @@ exports.deploy = async function() {
     console.log('14. create hbtc short lever');
     await nestFutures.create(hbtc.address, [1, 2, 3, 4, 5], false);
 
-    await cofixRouter.registerPair(dcu.address, nest.address, nestBuybackPool.address);
-
     await nest.transfer(nestVault.address, 100000000000000000000000000n);
     await nest.approve(nestOptions.address, 100000000000000000000000000n);
     await nest.approve(nestFutures.address, 100000000000000000000000000n);
@@ -182,7 +174,6 @@ exports.deploy = async function() {
         nestProbability: nestProbability,
         nestPriceFacade: nestPriceFacade,
         nestBuybackPool: nestBuybackPool,
-        cofixRouter: cofixRouter,
 
         BLOCK_TIME: BLOCK_TIME,
         USDT_DECIMALS: 18,
