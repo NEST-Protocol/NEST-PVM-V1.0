@@ -22,6 +22,7 @@ exports.deploy = async function() {
     // console.log('先在ChainParameter中将参数设置为ETH的');
     // return;
     // console.log('先在NestVault中将常用地址设置为ETH的');
+    // console.log('先在NestBuybackPool中将常用地址设置为ETH的');
     // console.log('先在NestFrequentlyUsed中将常用地址设置为ETH的');
     // return;
 
