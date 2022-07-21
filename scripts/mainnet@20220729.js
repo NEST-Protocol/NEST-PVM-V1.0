@@ -41,10 +41,6 @@ exports.deploy = async function() {
     const hbtc = await TestERC20.attach('0x0316EB71485b0Ab14103307bf65a021042c6d380');
     console.log('hbtc: ' + hbtc.address);
 
-    //const hbtc = await TestERC20.deploy('HBTC', 'HBTC', 18);
-    const hbtc = await TestERC20.attach('0x0316EB71485b0Ab14103307bf65a021042c6d380');
-    console.log('hbtc: ' + hbtc.address);
-
     //const dcu = await TestERC20.deploy('DCU', 'DCU', 18);
     const dcu = await TestERC20.attach('0xf56c6eCE0C0d6Fbb9A53282C0DF71dBFaFA933eF');
     console.log('dcu: ' + dcu.address);
