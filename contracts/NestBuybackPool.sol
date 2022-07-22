@@ -38,18 +38,7 @@ contract NestBuybackPool is NestFrequentlyUsed {
     uint constant EXCHANGE_RATIO = 7.768161615 ether;
 
     // Address of DCU token, it is the same on ETH, BSC, Polygon and KCC
-    // address constant DCU_TOKEN_ADDRESS = 0xf56c6eCE0C0d6Fbb9A53282C0DF71dBFaFA933eF;
-
-    // TODO: Use constant version
-    // Address of DCU token
-    address DCU_TOKEN_ADDRESS;
-    /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
-    ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
-    /// @param newGovernance INestGovernance implementation contract address
-    function update(address newGovernance) public virtual override {
-        super.update(newGovernance);
-        DCU_TOKEN_ADDRESS = INestGovernance(newGovernance).checkAddress("nest.app.dcu");
-    }
+    address constant DCU_TOKEN_ADDRESS = 0xf56c6eCE0C0d6Fbb9A53282C0DF71dBFaFA933eF;
 
     constructor() {
     }
