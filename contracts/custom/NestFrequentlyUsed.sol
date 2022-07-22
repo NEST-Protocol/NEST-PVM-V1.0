@@ -21,8 +21,7 @@ contract NestFrequentlyUsed is NestBase {
     // Address of NestOpenPrice contract
     address constant NEST_OPEN_PRICE = 0x09CE0e021195BA2c1CDE62A8B187abf810951540;
     // Address of nest vault
-    // TODO:
-    address constant NEST_VAULT_ADDRESS = address(0);
+    address constant NEST_VAULT_ADDRESS = 0x65e7506244CDdeFc56cD43dC711470F8B0C43beE;
 
     // // Polygon:
     // // Address of nest token
