@@ -19,19 +19,16 @@ exports.deploy = async function() {
 
     console.log('** Deploy: mainnet@20220729.js **');
     
-    // console.log('先在ChainParameter中将参数设置为ETH的');
-    // return;
-    // console.log('先在NestVault中将常用地址设置为ETH的');
-    // console.log('先在NestBuybackPool中将常用地址设置为ETH的');
-    // console.log('先在NestFrequentlyUsed中将常用地址设置为ETH的');
-    // return;
+    // ** Deploy: mainnet@20220729.js **
+    // nestVault: 0x12858F7f24AA830EeAdab2437480277E92B0723a
 
     // 先部署NestVault,然后更新到常量地址
-    const nestVault = NestVault.deploy(); //await upgrades.deployProxy(NestVault, [nestGovernance.address], { initializer: 'initialize' });
-    //const nestVault = await NestVault.attach('0x0000000000000000000000000000000000000000');
+    //const nestVault = await NestVault.deploy(); //await upgrades.deployProxy(NestVault, [nestGovernance.address], { initializer: 'initialize' });
+    const nestVault = await NestVault.attach('0x12858F7f24AA830EeAdab2437480277E92B0723a');
     console.log('nestVault: ' + nestVault.address);
     return;
-
+    // console.log('先在NestFrequentlyUsed中将常用地址设置为ETH的');
+    return;
     // HBTC&ETH&NEST|PUSD
 
     const pusd = await TestERC20.attach('0xCCEcC702Ec67309Bc3DDAF6a42E9e5a6b8Da58f0');
