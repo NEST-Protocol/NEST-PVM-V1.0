@@ -132,9 +132,9 @@ exports.deploy = async function() {
     // console.log('14. create hbtc short lever');
     // await nestFutures.create(hbtc.address, [1, 2, 3, 4, 5], false);
 
-    // await nestVault.approve(nestOptions.address, 100000000000000000000000000n);
-    // await nestVault.approve(nestFutures.address, 100000000000000000000000000n);
-    // await nestVault.approve(nestProbability.address, 100000000000000000000000000n);
+    // await nestVault.approve(nestOptions.address, 10000000000000000000000000n);
+    // await nestVault.approve(nestFutures.address, 10000000000000000000000000n);
+    // await nestVault.approve(nestProbability.address, 100000000000000000000000n);
 
     console.log('---------- OK ----------');
     
