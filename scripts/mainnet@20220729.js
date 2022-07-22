@@ -21,14 +21,21 @@ exports.deploy = async function() {
     
     // ** Deploy: mainnet@20220729.js **
     // nestVault: 0x12858F7f24AA830EeAdab2437480277E92B0723a
+    // pusd: 0xCCEcC702Ec67309Bc3DDAF6a42E9e5a6b8Da58f0
+    // hbtc: 0x0316EB71485b0Ab14103307bf65a021042c6d380
+    // dcu: 0xf56c6eCE0C0d6Fbb9A53282C0DF71dBFaFA933eF
+    // nest: 0x04abEdA201850aC0124161F037Efd70c74ddC74C
+    // nestPriceFacade: 0xE544cF993C7d477C7ef8E91D28aCA250D135aa03
+    // nestGovernance: 0xA2eFe217eD1E56C743aeEe1257914104Cf523cf5
+    // nestOptions: 0x10F7f08A278e495CBCa66388A2400fF0deFe3122
+    // nestFutures: 0x0E48e068958b3E683a664FB81697F7046f83C3A8
+    // nestProbability: 0x0ef5A21Aa062BA49c9c429b256d618d68FD2e008
+    // nestBuybackPool: 0x7b65629A811eBB0d6CC99bDc4d1d606f8F707125
 
-    // 先部署NestVault,然后更新到常量地址
     //const nestVault = await NestVault.deploy(); //await upgrades.deployProxy(NestVault, [nestGovernance.address], { initializer: 'initialize' });
     const nestVault = await NestVault.attach('0x12858F7f24AA830EeAdab2437480277E92B0723a');
     console.log('nestVault: ' + nestVault.address);
-    return;
-    // console.log('先在NestFrequentlyUsed中将常用地址设置为ETH的');
-    return;
+
     // HBTC&ETH&NEST|PUSD
 
     const pusd = await TestERC20.attach('0xCCEcC702Ec67309Bc3DDAF6a42E9e5a6b8Da58f0');
@@ -54,76 +61,76 @@ exports.deploy = async function() {
     const nestGovernance = await NestGovernance.attach('0xA2eFe217eD1E56C743aeEe1257914104Cf523cf5');
     console.log('nestGovernance: ' + nestGovernance.address);
 
-    const nestOptions = await upgrades.deployProxy(NestOptions, [nestGovernance.address], { initializer: 'initialize' });
-    //const nestOptions = await NestOptions.attach('0x0000000000000000000000000000000000000000');
+    //const nestOptions = await upgrades.deployProxy(NestOptions, [nestGovernance.address], { initializer: 'initialize' });
+    const nestOptions = await NestOptions.attach('0x10F7f08A278e495CBCa66388A2400fF0deFe3122');
     console.log('nestOptions: ' + nestOptions.address);
 
-    const nestFutures = await upgrades.deployProxy(NestFutures, [nestGovernance.address], { initializer: 'initialize' });
-    //const nestFutures = await NestFutures.attach('0x0000000000000000000000000000000000000000');
+    //const nestFutures = await upgrades.deployProxy(NestFutures, [nestGovernance.address], { initializer: 'initialize' });
+    const nestFutures = await NestFutures.attach('0x0E48e068958b3E683a664FB81697F7046f83C3A8');
     console.log('nestFutures: ' + nestFutures.address);
 
-    const nestProbability = await upgrades.deployProxy(NestProbability, [nestGovernance.address], { initializer: 'initialize' });
-    //const nestProbability = await NestProbability.attach('0x0000000000000000000000000000000000000000');
+    //const nestProbability = await upgrades.deployProxy(NestProbability, [nestGovernance.address], { initializer: 'initialize' });
+    const nestProbability = await NestProbability.attach('0x0ef5A21Aa062BA49c9c429b256d618d68FD2e008');
     console.log('nestProbability: ' + nestProbability.address);
     
-    const nestBuybackPool = await upgrades.deployProxy(NestBuybackPool, [nestGovernance.address], { initializer: 'initialize' });
-    // const nestBuybackPool = await NestBuybackPool.attach('0x0000000000000000000000000000000000000000');
+    //const nestBuybackPool = await upgrades.deployProxy(NestBuybackPool, [nestGovernance.address], { initializer: 'initialize' });
+    const nestBuybackPool = await NestBuybackPool.attach('0x7b65629A811eBB0d6CC99bDc4d1d606f8F707125');
     console.log('nestBuybackPool: ' + nestBuybackPool.address);
 
-    // 2.4. Register ETH ans HBTC
-    console.log('7. nestOptions.register(eth.address)');
-    await nestOptions.register(eth.address, {
-        channelId: 0,
-        pairIndex: 1,
+    // // 2.4. Register ETH ans HBTC
+    // console.log('7. nestOptions.register(eth.address)');
+    // await nestOptions.register(eth.address, {
+    //     channelId: 0,
+    //     pairIndex: 1,
         
-        sigmaSQ: 45659142400n,
-        miuLong: 64051194700n,
-        miuShort: 0n
-    });
+    //     sigmaSQ: 45659142400n,
+    //     miuLong: 64051194700n,
+    //     miuShort: 0n
+    // });
 
-    console.log('8. nestOptions.register(hbtc.address)');
-    await nestOptions.register(hbtc.address, {
-        channelId: 0,
-        pairIndex: 0,
+    // console.log('8. nestOptions.register(hbtc.address)');
+    // await nestOptions.register(hbtc.address, {
+    //     channelId: 0,
+    //     pairIndex: 0,
         
-        sigmaSQ: 31708924900n,
-        miuLong: 64051194700n,
-        miuShort: 0n
-    });
+    //     sigmaSQ: 31708924900n,
+    //     miuLong: 64051194700n,
+    //     miuShort: 0n
+    // });
     
-    // 3.4. Register ETH and HBTC
-    console.log('9. nestFutures.register(eth.address)');
-    await nestFutures.register(eth.address, {
-        channelId: 0,
-        pairIndex: 1,
+    // // 3.4. Register ETH and HBTC
+    // console.log('9. nestFutures.register(eth.address)');
+    // await nestFutures.register(eth.address, {
+    //     channelId: 0,
+    //     pairIndex: 1,
         
-        sigmaSQ: 45659142400n,
-        miuLong: 64051194700n,
-        miuShort: 0n
-    });
-    console.log('10. nestFutures.register(hbtc.address)');
-    await nestFutures.register(hbtc.address, {
-        channelId: 0,
-        pairIndex: 0,
+    //     sigmaSQ: 45659142400n,
+    //     miuLong: 64051194700n,
+    //     miuShort: 0n
+    // });
+    // console.log('10. nestFutures.register(hbtc.address)');
+    // await nestFutures.register(hbtc.address, {
+    //     channelId: 0,
+    //     pairIndex: 0,
         
-        sigmaSQ: 31708924900n,
-        miuLong: 64051194700n,
-        miuShort: 0n
-    });
+    //     sigmaSQ: 31708924900n,
+    //     miuLong: 64051194700n,
+    //     miuShort: 0n
+    // });
 
-    console.log('8.2 create lever');
+    // console.log('8.2 create lever');
     
-    // 3.5. Register levels for ETH
-    console.log('13. create eth long lever');
-    await nestFutures.create(eth.address, [1, 2, 3, 4, 5], true);
-    console.log('14. create eth short lever');
-    await nestFutures.create(eth.address, [1, 2, 3, 4, 5], false);
+    // // 3.5. Register levels for ETH
+    // console.log('13. create eth long lever');
+    // await nestFutures.create(eth.address, [1, 2, 3, 4, 5], true);
+    // console.log('14. create eth short lever');
+    // await nestFutures.create(eth.address, [1, 2, 3, 4, 5], false);
     
-    // 3.5. Register levels for HBTC
-    console.log('13. create hbtc long lever');
-    await nestFutures.create(hbtc.address, [1, 2, 3, 4, 5], true);
-    console.log('14. create hbtc short lever');
-    await nestFutures.create(hbtc.address, [1, 2, 3, 4, 5], false);
+    // // 3.5. Register levels for HBTC
+    // console.log('13. create hbtc long lever');
+    // await nestFutures.create(hbtc.address, [1, 2, 3, 4, 5], true);
+    // console.log('14. create hbtc short lever');
+    // await nestFutures.create(hbtc.address, [1, 2, 3, 4, 5], false);
 
     // await nestVault.approve(nestOptions.address, 100000000000000000000000000n);
     // await nestVault.approve(nestFutures.address, 100000000000000000000000000n);

@@ -34,7 +34,7 @@ module.exports = {
     mainnet: {
       url: `https://mainnet.infura.io/v3/${config.infura.key}`,
       accounts: [config.account.mainnet.key, config.account.mainnet.userA, config.account.mainnet.userB],
-      gasPrice: 12e9,
+      gasPrice: 10e9,
       timeout: 2000000000
     },
     ropsten: {
