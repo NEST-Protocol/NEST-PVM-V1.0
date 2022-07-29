@@ -8,6 +8,11 @@ interface INestVault {
     /// @dev Approve allowance amount to target contract address
     /// @dev target Target contract address
     /// @dev limit Amount limit can transferred once
+    event Approved(address target, uint limit);
+
+    /// @dev Approve allowance amount to target contract address
+    /// @dev target Target contract address
+    /// @dev limit Amount limit can transferred once
     function approve(address target, uint limit) external;
 
     /// @dev Transfer to by allowance

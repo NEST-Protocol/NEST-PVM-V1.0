@@ -27,6 +27,7 @@ contract NestVault is NestBase, INestVault {
     /// @dev limit Amount limit can transferred once
     function approve(address target, uint limit) external override onlyGovernance {
         _allowances[target] = limit;
+        emit Approved(target, limit);
     }
 
     /// @dev Transfer to by allowance
