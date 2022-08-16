@@ -31,6 +31,7 @@ exports.deploy = async function() {
     // nestFutures: 0x0E48e068958b3E683a664FB81697F7046f83C3A8
     // nestProbability: 0x0ef5A21Aa062BA49c9c429b256d618d68FD2e008
     // nestBuybackPool: 0x7b65629A811eBB0d6CC99bDc4d1d606f8F707125
+    // proxyAdmin: 0xCA52f25f37d213CeD3dDE81a539e64464dEa8f3C
 
     //const nestVault = await NestVault.deploy(); //await upgrades.deployProxy(NestVault, [nestGovernance.address], { initializer: 'initialize' });
     const nestVault = await NestVault.attach('0x12858F7f24AA830EeAdab2437480277E92B0723a');

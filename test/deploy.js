@@ -20,5 +20,8 @@ describe('deploy', function() {
         } = await deploy();
 
         console.log('ok');
+
+        const newNestProbability = await NestProbability.deploy();
+        console.log('newNestProbability: ' + newNestProbability.address);
     });
 });

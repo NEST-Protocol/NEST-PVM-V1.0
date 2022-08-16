@@ -22,7 +22,7 @@ process.env.HTTPS_PROXY = 'http://127.0.0.1:8580';
  */
 module.exports = {
   solidity: {
-    version: '0.8.15',
+    version: '0.8.16',
     settings: {
       optimizer: {
         enabled: true,
@@ -32,9 +32,9 @@ module.exports = {
   },
   networks: {
     mainnet: {
-      url: `https://mainnet.infura.io/v3/${config.infura.key}`,
+      url: `${config.alchemy.mainnet.url}`,
       accounts: [config.account.mainnet.key, config.account.mainnet.userA, config.account.mainnet.userB],
-      gasPrice: 10e9,
+      gasPrice: 8e9,
       timeout: 2000000000
     },
     ropsten: {
