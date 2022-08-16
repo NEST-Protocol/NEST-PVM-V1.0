@@ -21,7 +21,7 @@ describe('deploy', function() {
 
         console.log('ok');
 
-        const newNestProbability = await NestProbability.deploy();
-        console.log('newNestProbability: ' + newNestProbability.address);
+        // const newNestProbability = await NestProbability.deploy();
+        // console.log('newNestProbability: ' + newNestProbability.address);
     });
 });
