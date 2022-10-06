@@ -157,7 +157,7 @@ exports.deploy = async function() {
 
     console.log('---------- OK ----------');
     
-    const BLOCK_TIME = 3;
+    const BLOCK_TIME = 12;
     const MIU_LONG = 3 / 10000 / 86400;
     const MIU_SHORT = 0;
 
