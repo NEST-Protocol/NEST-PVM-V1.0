@@ -16,6 +16,9 @@ exports.deploy = async function() {
     const NestFutures = await ethers.getContractFactory('NestFutures');
     const NestProbability = await ethers.getContractFactory('NestProbability');
     const NestBuybackPool = await ethers.getContractFactory('NestBuybackPool');
+    const NestBlindBox = await ethers.getContractFactory('NestBlindBox');
+    const NestNFTAuction = await ethers.getContractFactory('NestNFTAuction');
+    const NestFuturesWithPrice = await ethers.getContractFactory('NestFuturesWithPrice');
 
     console.log('** Deploy: deploy.proxy.js **');
     
@@ -55,6 +58,10 @@ exports.deploy = async function() {
     //const nestFutures = await NestFutures.attach('0x0000000000000000000000000000000000000000');
     console.log('nestFutures: ' + nestFutures.address);
 
+    const nestFuturesWithPrice = await upgrades.deployProxy(NestFuturesWithPrice, [nestGovernance.address], { initializer: 'initialize' });
+    //const nestFuturesWithPrice = await NestFuturesWithPrice.attach('0x0000000000000000000000000000000000000000');
+    console.log('nestFuturesWithPrice: ' + nestFuturesWithPrice.address);
+
     const nestProbability = await upgrades.deployProxy(NestProbability, [nestGovernance.address], { initializer: 'initialize' });
     //const nestProbability = await NestProbability.attach('0x0000000000000000000000000000000000000000');
     console.log('nestProbability: ' + nestProbability.address);
@@ -62,6 +69,15 @@ exports.deploy = async function() {
     const nestBuybackPool = await upgrades.deployProxy(NestBuybackPool, [nestGovernance.address], { initializer: 'initialize' });
     // const nestBuybackPool = await NestBuybackPool.attach('0x0000000000000000000000000000000000000000');
     console.log('nestBuybackPool: ' + nestBuybackPool.address);
+
+    const nestBlindBox = await NestBlindBox.deploy();
+    console.log('nestBlindBox: ' + nestBlindBox.address);
+
+    const nestNFTAuction = await NestNFTAuction.deploy();
+    console.log('nestNFTAuction: ' + nestNFTAuction.address);
+
+    await nestBlindBox.initialize(nestGovernance.address);
+    await nestNFTAuction.initialize(nestGovernance.address);
 
     console.log('2. nestGovernance.setBuiltinAddress()');
     await nestGovernance.setBuiltinAddress(
@@ -87,10 +103,17 @@ exports.deploy = async function() {
     await nestOptions.update(nestGovernance.address);
     console.log('6. nestFutures.update()');
     await nestFutures.update(nestGovernance.address);
+    console.log('7. nestFuturesWithPrice.update()');
+    await nestFuturesWithPrice.update(nestGovernance.address);
     console.log('8. nestProbability.update()');
     await nestProbability.update(nestGovernance.address);
     console.log('8. nestBuybackPool.update()');
     await nestBuybackPool.update(nestGovernance.address);
+    console.log('9. nestBlindBox.update()');
+    await nestBlindBox.update(nestGovernance.address);
+
+    console.log('10. nestNFTAuction.update()');
+    await nestNFTAuction.update(nestGovernance.address);
 
     // 2.4. Register ETH ans HBTC
     console.log('7. nestOptions.register(eth.address)');
@@ -133,6 +156,26 @@ exports.deploy = async function() {
         miuShort: 0n
     });
 
+    // 3.4. Register ETH and HBTC
+    console.log('9. nestFuturesWithPrice.register(eth.address)');
+    await nestFuturesWithPrice.register(eth.address, {
+        channelId: 0,
+        pairIndex: 0,
+        
+        sigmaSQ: 45659142400n,
+        miuLong: 64051194700n,
+        miuShort: 0n
+    });
+    console.log('10. nestFuturesWithPrice.register(hbtc.address)');
+    await nestFuturesWithPrice.register(hbtc.address, {
+        channelId: 0,
+        pairIndex: 2,
+        
+        sigmaSQ: 31708924900n,
+        miuLong: 64051194700n,
+        miuShort: 0n
+    });
+
     console.log('8.2 create lever');
     
     // 3.5. Register levels for ETH
@@ -147,13 +190,28 @@ exports.deploy = async function() {
     console.log('14. create hbtc short lever');
     await nestFutures.create(hbtc.address, [1, 2, 3, 4, 5], false);
 
+    // 3.5. Register levels for ETH
+    console.log('13. create eth long lever');
+    await nestFuturesWithPrice.create(eth.address, [1, 2, 3, 4, 5], true);
+    console.log('14. create eth short lever');
+    await nestFuturesWithPrice.create(eth.address, [1, 2, 3, 4, 5], false);
+    
+    // 3.5. Register levels for HBTC
+    console.log('13. create hbtc long lever');
+    await nestFuturesWithPrice.create(hbtc.address, [1, 2, 3, 4, 5], true);
+    console.log('14. create hbtc short lever');
+    await nestFuturesWithPrice.create(hbtc.address, [1, 2, 3, 4, 5], false);
+
+    await nestVault.approve(nestOptions.address, 100000000000000000000000000n);
+    await nestVault.approve(nestFutures.address, 100000000000000000000000000n);
+    await nestVault.approve(nestFuturesWithPrice.address, 100000000000000000000000000n);
+    await nestVault.approve(nestProbability.address, 100000000000000000000000000n);
+    
     await nest.transfer(nestVault.address, 100000000000000000000000000n);
     await nest.approve(nestOptions.address, 100000000000000000000000000n);
     await nest.approve(nestFutures.address, 100000000000000000000000000n);
+    await nest.approve(nestFuturesWithPrice.address, 100000000000000000000000000n);
     await nest.approve(nestProbability.address, 100000000000000000000000000n);
-    await nestVault.approve(nestOptions.address, 100000000000000000000000000n);
-    await nestVault.approve(nestFutures.address, 100000000000000000000000000n);
-    await nestVault.approve(nestProbability.address, 100000000000000000000000000n);
 
     console.log('---------- OK ----------');
     
@@ -174,6 +232,9 @@ exports.deploy = async function() {
         nestProbability: nestProbability,
         nestPriceFacade: nestPriceFacade,
         nestBuybackPool: nestBuybackPool,
+        nestBlindBox: nestBlindBox,
+        nestNFTAuction: nestNFTAuction,
+        nestFuturesWithPrice: nestFuturesWithPrice,
 
         BLOCK_TIME: BLOCK_TIME,
         USDT_DECIMALS: 18,

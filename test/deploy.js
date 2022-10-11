@@ -14,6 +14,9 @@ describe('deploy', function() {
             peth,
             nestPRCSwap,
 
+            nestBlindBox, nestNFTAuction,
+            nestFuturesWithPrice,
+
             nestGovernance,
             nestOptions, nestFutures,
             nestPriceFacade
@@ -21,7 +24,6 @@ describe('deploy', function() {
 
         console.log('ok');
 
-        // const newNestProbability = await NestProbability.deploy();
-        // console.log('newNestProbability: ' + newNestProbability.address);
+        console.log('count: ' + await nestFuturesWithPrice.getFutureCount());
     });
 });
