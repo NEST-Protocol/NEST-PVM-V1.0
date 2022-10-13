@@ -62,7 +62,20 @@ interface INestFuturesWithPrice {
         address sender,
         uint reward
     );
-    
+
+    /// @dev List prices
+    /// @param pairIndex index of token in channel 0 on NEST Oracle
+    /// @param offset Skip previous (offset) records
+    /// @param count Return (count) records
+    /// @param order Order. 0 reverse order, non-0 positive order
+    /// @return priceArray List of prices, i * 2 + 0 means height, i * 2 + 1 means price
+    function listPrice(
+        uint pairIndex,
+        uint offset, 
+        uint count, 
+        uint order
+    ) external view returns (uint[] memory priceArray);
+
     /// @dev Returns the current value of target address in the specified future
     /// @param index Index of future
     /// @param oraclePrice Current price from oracle, usd based, 18 decimals

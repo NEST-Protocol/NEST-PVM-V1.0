@@ -84,6 +84,13 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
     constructor() {
     }
 
+    /// @dev To support open-zeppelin/upgrades
+    /// @param governance INestGovernance implementation contract address
+    function initialize(address governance) public override {
+        super.initialize(governance);
+        _futures.push();
+    }
+
     function setDirectPoster(address directPoster) external onlyGovernance {
         _directPoster = directPoster;
     }
@@ -101,51 +108,35 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
         );
     }
 
-    // Query latest 2 price
-    function _lastPriceList(TokenConfig memory tokenConfig) internal returns (uint[] memory prices) {
-        uint index = _prices.length;
-        uint offset = (uint(tokenConfig.pairIndex) << 6);
-        uint v = _prices[--index];
-        console.log("index=%d, v=%d, offset=%d", index, v, offset);
-        prices = new uint[](4);
-        prices[0] = uint(v >> 192);
-        prices[1] = _toUSDTPrice(_decodeFloat(uint64(v >> offset)));
-
-        v = _prices[--index];
-        prices[2] = uint(v >> 192);
-        prices[3] = _toUSDTPrice(_decodeFloat(uint64(v >> offset)));
-
-        console.log("price[1]=%d, price[3]=%d", prices[1], prices[3]);
-    }
-
-    // Convert to usdt based price
-    function _toUSDTPrice(uint rawPrice) internal pure returns (uint) {
-        return POST_UNIT * 1 ether / rawPrice;
-    }
-
+    // TODO: 价格解码
     /// @dev List prices
+    /// @param pairIndex index of token in channel 0 on NEST Oracle
     /// @param offset Skip previous (offset) records
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
-    /// @return priceArray List of prices
+    /// @return priceArray List of prices, i * 2 + 0 means height, i * 2 + 1 means price
     function listPrice(
+        uint pairIndex,
         uint offset, 
         uint count, 
         uint order
-    ) external view returns (uint[] memory priceArray) {
+    ) external view override returns (uint[] memory priceArray) {
         // Load futures
         uint[] storage prices = _prices;
         // Create result array
-        priceArray = new uint[](count);
+        priceArray = new uint[](count << 1);
         uint length = prices.length;
         uint i = 0;
+        uint offset = pairIndex << 6;
 
         // Reverse order
         if (order == 0) {
             uint index = length - offset;
             uint end = index > count ? index - count : 0;
             while (index > end) {
-                priceArray[i++] = prices[--index];
+                uint p = prices[--index];
+                priceArray[i++] = p >> 192;
+                priceArray[i++] = _decodeFloat(uint64(p >> offset));
             }
         } 
         // Positive order
@@ -156,16 +147,11 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
                 end = length;
             }
             while (index < end) {
-                priceArray[i++] = prices[index++];
+                uint p = prices[index++];
+                priceArray[i++] = p >> 192;
+                priceArray[i++] = _decodeFloat(uint64(p >> offset));
             }
         }
-    }
-
-    /// @dev To support open-zeppelin/upgrades
-    /// @param governance INestGovernance implementation contract address
-    function initialize(address governance) public override {
-        super.initialize(governance);
-        _futures.push();
     }
 
     /// @dev Register token configuration
@@ -507,6 +493,17 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
         return (uint(uint160(tokenAddress)) << 96) | (lever << 8) | (orientation ? 1 : 0);
     }
 
+
+    // TODO: 不需要多个价格
+    // Query latest price
+    function _lastPrice(TokenConfig memory tokenConfig) internal returns (uint height, uint price) {
+        uint offset = (uint(tokenConfig.pairIndex) << 6);
+        uint v = _prices[_prices.length - 1];
+        height = uint(v >> 192);
+        price = _toUSDTPrice(_decodeFloat(uint64(v >> offset)));
+        console.log("height=%d, price=%d", height, price);
+    }
+
     // Query price
     function _queryPrice(
         uint nestAmount, 
@@ -515,10 +512,11 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
     ) private returns (uint oraclePrice) {
 
         // Query price from oracle
-        uint[] memory prices = _lastPriceList(tokenConfig);
+        //uint[] memory prices = _lastPriceList(tokenConfig);
+        (uint height, uint price) = _lastPrice(tokenConfig);
         
         // Convert to usdt based price
-        oraclePrice = prices[1];
+        oraclePrice = price;
         uint k = 0.003 ether; //calcRevisedK(uint(tokenConfig.sigmaSQ), prices[3], prices[2], oraclePrice, prices[0]);
 
         // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
@@ -636,5 +634,10 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
             _decodeFloat(account.basePrice),
             uint(account.baseBlock)
         );
+    }
+    
+    // Convert to usdt based price
+    function _toUSDTPrice(uint rawPrice) internal pure returns (uint) {
+        return POST_UNIT * 1 ether / rawPrice;
     }
 }

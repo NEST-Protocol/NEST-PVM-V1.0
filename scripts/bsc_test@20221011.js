@@ -39,7 +39,8 @@ exports.deploy = async function() {
     // nestBlindBox: 0xEED27D6CBf6F013dd861F4D7C08fce84a7ae08F5
     // nestNFTAuction: 0x48aDA25925ee3FC6961A3bFFe197E568bAf5f703
     // nestFuturesWithPrice: 0xA2D58989ef9981065f749C217984DB21970fF0b7
-
+    // proxyAdmin: 0x43D2c8141E792D391A64F7140E708Ba05962C71A
+    
     const dcu = await TestERC20.attach('0x5Df87aE415206707fd52aDa20a5Eac2Ec70e8dbb');
     console.log('dcu: ' + dcu.address);
 
@@ -130,6 +131,9 @@ exports.deploy = async function() {
 
     // await nestVault.approve(nestFuturesWithPrice.address, 100000000000000000000000000n);
     // await nest.approve(nestFuturesWithPrice.address, 100000000000000000000000000n);
+
+    // const newNestFuturesWithPrice = await NestFuturesWithPrice.deploy();
+    // console.log('newNestFuturesWithPrice: ' + newNestFuturesWithPrice.address);
 
     console.log('---------- OK ----------');
     
