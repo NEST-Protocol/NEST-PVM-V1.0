@@ -121,13 +121,13 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
         uint count, 
         uint order
     ) external view override returns (uint[] memory priceArray) {
-        // Load futures
+        // Load prices
         uint[] storage prices = _prices;
         // Create result array
         priceArray = new uint[](count << 1);
         uint length = prices.length;
         uint i = 0;
-        uint offset = pairIndex << 6;
+        uint span = pairIndex << 6;
 
         // Reverse order
         if (order == 0) {
@@ -136,7 +136,7 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
             while (index > end) {
                 uint p = prices[--index];
                 priceArray[i++] = p >> 192;
-                priceArray[i++] = _decodeFloat(uint64(p >> offset));
+                priceArray[i++] = _decodeFloat(uint64(p >> span));
             }
         } 
         // Positive order
@@ -149,7 +149,7 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
             while (index < end) {
                 uint p = prices[index++];
                 priceArray[i++] = p >> 192;
-                priceArray[i++] = _decodeFloat(uint64(p >> offset));
+                priceArray[i++] = _decodeFloat(uint64(p >> span));
             }
         }
     }

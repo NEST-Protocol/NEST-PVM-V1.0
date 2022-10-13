@@ -4,7 +4,6 @@ pragma solidity ^0.8.6;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-import "./libs/ABDKMath64x64.sol";
 import "./libs/TransferHelper.sol";
 
 import "./custom/NestFrequentlyUsed.sol";
@@ -14,6 +13,7 @@ import "hardhat/console.sol";
 /// @dev Options
 contract NestBlindBox is NestFrequentlyUsed, ERC721 {
 
+    // NEST amount need to be paid each mint
     uint constant NEST_AMOUNT = 99.9 ether;
 
     constructor() ERC721("NestBlindBox", "NestBlindBox") {
@@ -35,9 +35,10 @@ contract NestBlindBox is NestFrequentlyUsed, ERC721 {
     uint constant P_990 = P_4950 - 100000;
     uint constant P_495 = P_990 - 200000;
 
-    // Roll dice44 array
+    // Mint request array
     MintRequest[] _mintRequests;
 
+    // Test method
     function directMint(address to, uint tokenId) external onlyGovernance {
         _mint(to, tokenId);
     }
