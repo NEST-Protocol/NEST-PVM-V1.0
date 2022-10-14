@@ -11,8 +11,6 @@ import "./custom/ChainParameter.sol";
 import "./custom/NestFrequentlyUsed.sol";
 import "./custom/NestPriceAdapter.sol";
 
-import "hardhat/console.sol";
-
 /// @dev Futures
 contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuturesWithPrice {
 
@@ -91,30 +89,33 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
         _futures.push();
     }
 
+    /// @dev Set address of direct poster
+    /// @param directPoster Address of direct poster
     function setDirectPoster(address directPoster) external onlyGovernance {
         _directPoster = directPoster;
     }
 
     /// @dev Direct post price
+    /// @param period Term of validity
     /// @param equivalents Price array, one to one with pairs
-    function directPost(uint[] calldata equivalents) external {
+    function directPost(uint period, uint[] calldata equivalents) external {
         require(msg.sender == _directPoster, "NFWP:not directPoster");
         require(equivalents.length == 3, "NFWP:must 3 prices");
         _prices.push(
-            (block.number << 192) 
+            (period << 240)
+            | (block.number << 192) 
             | uint(_encodeFloat(equivalents[2])) << 128
             | uint(_encodeFloat(equivalents[1])) << 64
             | uint(_encodeFloat(equivalents[0]))
         );
     }
 
-    // TODO: 价格解码
     /// @dev List prices
     /// @param pairIndex index of token in channel 0 on NEST Oracle
     /// @param offset Skip previous (offset) records
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
-    /// @return priceArray List of prices, i * 2 + 0 means height, i * 2 + 1 means price
+    /// @return priceArray List of prices, i * 3 + 0 means period, i * 3 + 1 means height, i * 3 + 2 means price
     function listPrice(
         uint pairIndex,
         uint offset, 
@@ -124,19 +125,17 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
         // Load prices
         uint[] storage prices = _prices;
         // Create result array
-        priceArray = new uint[](count << 1);
+        priceArray = new uint[](count * 3);
         uint length = prices.length;
         uint i = 0;
-        uint span = pairIndex << 6;
 
         // Reverse order
         if (order == 0) {
             uint index = length - offset;
             uint end = index > count ? index - count : 0;
             while (index > end) {
-                uint p = prices[--index];
-                priceArray[i++] = p >> 192;
-                priceArray[i++] = _decodeFloat(uint64(p >> span));
+                (priceArray[i], priceArray[i + 1], priceArray[i + 2]) = _decodePrice(prices[--index], pairIndex);
+                i += 3;
             }
         } 
         // Positive order
@@ -147,9 +146,8 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
                 end = length;
             }
             while (index < end) {
-                uint p = prices[index++];
-                priceArray[i++] = p >> 192;
-                priceArray[i++] = _decodeFloat(uint64(p >> span));
+                (priceArray[i], priceArray[i + 1], priceArray[i + 2]) = _decodePrice(prices[index++], pairIndex);
+                i += 3;
             }
         }
     }
@@ -492,18 +490,7 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
         require(lever < 0x100000000, "NF:lever too large");
         return (uint(uint160(tokenAddress)) << 96) | (lever << 8) | (orientation ? 1 : 0);
     }
-
-
-    // TODO: 不需要多个价格
-    // Query latest price
-    function _lastPrice(TokenConfig memory tokenConfig) internal returns (uint height, uint price) {
-        uint offset = (uint(tokenConfig.pairIndex) << 6);
-        uint v = _prices[_prices.length - 1];
-        height = uint(v >> 192);
-        price = _toUSDTPrice(_decodeFloat(uint64(v >> offset)));
-        console.log("height=%d, price=%d", height, price);
-    }
-
+    
     // Query price
     function _queryPrice(
         uint nestAmount, 
@@ -512,20 +499,21 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
     ) private returns (uint oraclePrice) {
 
         // Query price from oracle
-        //uint[] memory prices = _lastPriceList(tokenConfig);
-        (uint height, uint price) = _lastPrice(tokenConfig);
+        (uint period, uint height, uint price) = _decodePrice(_prices[_prices.length - 1], uint(tokenConfig.pairIndex));
+        require(block.number < height + period, "NFWP:price expired");
         
+        price = _toUSDTPrice(price);
+
         // Convert to usdt based price
-        oraclePrice = price;
-        uint k = 0.003 ether; //calcRevisedK(uint(tokenConfig.sigmaSQ), prices[3], prices[2], oraclePrice, prices[0]);
+        uint k = 0.003 ether;
 
         // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
         // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
         // When merger, s0 use recorded price, s1 use corrected by k
         if (enlarge) {
-            oraclePrice = oraclePrice * (1 ether + k + impactCost(nestAmount)) / 1 ether;
+            oraclePrice = price * (1 ether + k + impactCost(nestAmount)) / 1 ether;
         } else {
-            oraclePrice = oraclePrice * 1 ether / (1 ether + k + impactCost(nestAmount));
+            oraclePrice = price * 1 ether / (1 ether + k + impactCost(nestAmount));
         }
     }
 
@@ -639,5 +627,14 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
     // Convert to usdt based price
     function _toUSDTPrice(uint rawPrice) internal pure returns (uint) {
         return POST_UNIT * 1 ether / rawPrice;
+    }
+    
+    // Decode composed price
+    function _decodePrice(uint rawPrice, uint pairIndex) pure internal returns (uint period, uint height, uint price) {
+        return (
+            rawPrice >> 240,
+            (rawPrice >> 192) & 0xFFFFFFFFFFFF,
+            _decodeFloat(uint64(rawPrice >> (pairIndex << 6)))
+        );
     }
 }

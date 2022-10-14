@@ -6,12 +6,12 @@ pragma solidity ^0.8.6;
 contract ChainParameter {
     
     // // ETH:
-    // // Block average time in milliseconds. ethereum 12 seconds, BSC 3 seconds, polygon 2.2 seconds, KCC 3 seconds
-    // uint constant BLOCK_TIME = 12000;
-    // // Minimal exercise block period. 180000
-    // uint constant MIN_PERIOD = 180000;
-    // // Minimal exercise block period for NestLPGuarantee. 180000
-    // uint constant MIN_EXERCISE_BLOCK = 180000;
+    // // Block average time in milliseconds. ethereum 12.09 seconds, BSC 3 seconds, polygon 2.2 seconds, KCC 3 seconds
+    // uint constant BLOCK_TIME = 12090;
+    // // Minimal exercise block period. 200000
+    // uint constant MIN_PERIOD = 200000;
+    // // Minimal exercise block period for NestLPGuarantee. 200000
+    // uint constant MIN_EXERCISE_BLOCK = 200000;
 
     // BSC:
     // Block average time in milliseconds. ethereum 14 seconds, BSC 3 seconds, polygon 2.2 seconds, KCC 3 seconds

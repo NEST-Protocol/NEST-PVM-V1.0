@@ -68,7 +68,7 @@ interface INestFuturesWithPrice {
     /// @param offset Skip previous (offset) records
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
-    /// @return priceArray List of prices, i * 2 + 0 means height, i * 2 + 1 means price
+    /// @return priceArray List of prices, i * 3 + 0 means period, i * 3 + 1 means height, i * 3 + 2 means price
     function listPrice(
         uint pairIndex,
         uint offset, 

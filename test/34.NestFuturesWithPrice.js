@@ -30,12 +30,12 @@ describe('34.NestFuturesWithPrice', function() {
         if (true) {
             console.log('1. directPost');
             await nestFuturesWithPrice.setDirectPoster(owner.address);
-            await nestFuturesWithPrice.directPost([
+            await nestFuturesWithPrice.directPost(200, [
                 toBigInt(1.538461),
                 toBigInt(66666666666),
                 toBigInt(2000 / 20000)
             ]);
-            await nestFuturesWithPrice.directPost([
+            await nestFuturesWithPrice.directPost(200, [
                 toBigInt(1.538461),
                 toBigInt(66666666666),
                 toBigInt(2000 / 20000)
@@ -52,7 +52,7 @@ describe('34.NestFuturesWithPrice', function() {
 
         if (true) {
             console.log('2. sell');
-            let receipt = await nestFuturesWithPrice.directPost([
+            let receipt = await nestFuturesWithPrice.directPost(2, [
                 toBigInt(1.508461),
                 toBigInt(66666666666),
                 toBigInt(2000 / 20000)
@@ -60,6 +60,19 @@ describe('34.NestFuturesWithPrice', function() {
             await showReceipt(receipt);
             await nestFuturesWithPrice.sell(5, toBigInt(1000));
             await listAccounts();
+        }
+
+        if (true) {
+            console.log('3. listPrice');
+
+            let prices = await nestFuturesWithPrice.listPrice(0, 0, 4, 1);
+            for (var i = 0; i < prices.length; i += 3) {
+                console.log({ 
+                    period: prices[i].toString(),
+                    height: prices[i + 1].toString(),
+                    price: toDecimal(prices[i + 2].toString())
+                });
+            }
         }
     });
 });
