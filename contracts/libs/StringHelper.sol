@@ -430,6 +430,19 @@ library StringHelper {
     /// @return Format result
     function sprintf(string memory format, bytes memory abiArgs) internal pure returns (string memory) {
         bytes memory buffer = new bytes(127);
+        return sprintf(buffer, format, abiArgs);
+    }
+
+    /// @dev Format to memory buffer
+    /// @param buffer Target buffer
+    /// @param format Format string
+    /// @param abiArgs byte array of arguments encoded by abi.encode()
+    /// @return Format result
+    function sprintf(
+        bytes memory buffer,
+        string memory format, 
+        bytes memory abiArgs
+    ) internal pure returns (string memory) {
         uint index = sprintf(buffer, 0, bytes(format), abiArgs);
         return string(segment(buffer, 0, index));
     }

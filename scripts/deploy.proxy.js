@@ -70,14 +70,13 @@ exports.deploy = async function() {
     // const nestBuybackPool = await NestBuybackPool.attach('0x0000000000000000000000000000000000000000');
     console.log('nestBuybackPool: ' + nestBuybackPool.address);
 
-    const nestBlindBox = await NestBlindBox.deploy();
+    const nestBlindBox = await upgrades.deployProxy(NestBlindBox, [nestGovernance.address], { initializer: 'initialize' });
+    // const nestBlindBox = await NestBlindBox.attach('0x0000000000000000000000000000000000000000');
     console.log('nestBlindBox: ' + nestBlindBox.address);
 
-    const nestNFTAuction = await NestNFTAuction.deploy();
+    const nestNFTAuction = await upgrades.deployProxy(NestNFTAuction, [nestGovernance.address], { initializer: 'initialize' });
+    // const nestNFTAuction = await NestNFTAuction.attach('0x0000000000000000000000000000000000000000');
     console.log('nestNFTAuction: ' + nestNFTAuction.address);
-
-    await nestBlindBox.initialize(nestGovernance.address);
-    await nestNFTAuction.initialize(nestGovernance.address);
 
     console.log('2. nestGovernance.setBuiltinAddress()');
     await nestGovernance.setBuiltinAddress(
