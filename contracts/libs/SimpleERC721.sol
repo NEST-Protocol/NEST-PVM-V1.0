@@ -93,7 +93,7 @@ abstract contract SimpleERC721 is Context, ERC165, IERC721, IERC721Metadata {
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
         _requireMinted(tokenId);
 
-        string memory baseURI = _baseURI();
+        //string memory baseURI = _baseURI();
         //return bytes(baseURI).length > 0 ? string(abi.encodePacked(baseURI, tokenId.toString())) : "";
         return "";
     }
@@ -417,22 +417,22 @@ abstract contract SimpleERC721 is Context, ERC165, IERC721, IERC721Metadata {
         require(_exists(tokenId), "ERC721: invalid token ID");
     }
 
-    /**
-     * @dev Internal function to invoke {IERC721Receiver-onERC721Received} on a target address.
-     * The call is not executed if the target address is not a contract.
-     *
-     * @param from address representing the previous owner of the given token ID
-     * @param to target address that will receive the tokens
-     * @param tokenId uint256 ID of the token to be transferred
-     * @param data bytes optional data to send along with the call
-     * @return bool whether the call correctly returned the expected magic value
-     */
+    // /**
+    //  * @dev Internal function to invoke {IERC721Receiver-onERC721Received} on a target address.
+    //  * The call is not executed if the target address is not a contract.
+    //  *
+    //  * @param from address representing the previous owner of the given token ID
+    //  * @param to target address that will receive the tokens
+    //  * @param tokenId uint256 ID of the token to be transferred
+    //  * @param data bytes optional data to send along with the call
+    //  * @return bool whether the call correctly returned the expected magic value
+    //  */
     function _checkOnERC721Received(
-        address from,
-        address to,
-        uint256 tokenId,
-        bytes memory data
-    ) private returns (bool) {
+        address,// from,
+        address,// to,
+        uint256,// tokenId,
+        bytes memory// data
+    ) private pure returns (bool) {
         // if (to.isContract()) {
         //     try IERC721Receiver(to).onERC721Received(_msgSender(), from, tokenId, data) returns (bytes4 retval) {
         //         return retval == IERC721Receiver.onERC721Received.selector;

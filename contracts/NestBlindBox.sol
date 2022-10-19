@@ -134,7 +134,7 @@ contract NestBlindBox is NestFrequentlyUsed, SimpleERC721 {
     // Release NFT
     function release(address to, uint[] calldata tokenIdArray) external onlyGovernance {
         for (uint i = tokenIdArray.length; i > 0;) {
-            _mint(to, tokenIdArray(--i));
+            _mint(to, tokenIdArray[--i]);
         }
     }
 

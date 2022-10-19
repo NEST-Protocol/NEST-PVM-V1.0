@@ -73,11 +73,8 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
     // Token configs
     TokenConfig[] _tokenConfigs;
 
-    // price array, height(32)|price3(64)|price2(64)|price1(64)
+    // price array, period(16)|height(48)|price3(64)|price2(64)|price1(64)
     uint[] _prices;
-
-    // Direct poster
-    address _directPoster;
 
     constructor() {
     }
@@ -89,17 +86,11 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
         _futures.push();
     }
 
-    /// @dev Set address of direct poster
-    /// @param directPoster Address of direct poster
-    function setDirectPoster(address directPoster) external onlyGovernance {
-        _directPoster = directPoster;
-    }
-
     /// @dev Direct post price
     /// @param period Term of validity
     /// @param equivalents Price array, one to one with pairs
     function directPost(uint period, uint[] calldata equivalents) external {
-        require(msg.sender == _directPoster, "NFWP:not directPoster");
+        require(msg.sender == DIRECT_POSTER, "NFWP:not directPoster");
         require(equivalents.length == 3, "NFWP:must 3 prices");
         _prices.push(
             (period << 240)
@@ -496,7 +487,7 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
         uint nestAmount, 
         TokenConfig memory tokenConfig, 
         bool enlarge
-    ) private returns (uint oraclePrice) {
+    ) private view returns (uint oraclePrice) {
 
         // Query price from oracle
         (uint period, uint height, uint price) = _decodePrice(_prices[_prices.length - 1], uint(tokenConfig.pairIndex));
@@ -625,12 +616,12 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
     }
     
     // Convert to usdt based price
-    function _toUSDTPrice(uint rawPrice) internal pure returns (uint) {
+    function _toUSDTPrice(uint rawPrice) private pure returns (uint) {
         return POST_UNIT * 1 ether / rawPrice;
     }
     
     // Decode composed price
-    function _decodePrice(uint rawPrice, uint pairIndex) pure internal returns (uint period, uint height, uint price) {
+    function _decodePrice(uint rawPrice, uint pairIndex) private pure returns (uint period, uint height, uint price) {
         return (
             rawPrice >> 240,
             (rawPrice >> 192) & 0xFFFFFFFFFFFF,
