@@ -28,7 +28,7 @@ describe('33.NFT', function() {
         await nest.transfer(owner.address, 100000000000000000000000000n);
         await nest.approve(nestBlindBox.address, 100000000000000000000000000n);
         await nest.approve(nestNFTAuction.address, 100000000000000000000000000n);
-        if (false) {
+        if (true) {
             console.log('1. mint');
 
             for (var i = 0; i < 100; ++i) {
@@ -39,9 +39,9 @@ describe('33.NFT', function() {
             }
         }
 
-        if (false) {
+        if (true) {
             console.log('2. auction');
-            await nestBlindBox.directMint(owner.address, 9527);
+            await nestBlindBox.release(owner.address, [9527]);
             //await nestBlindBox.approve();
             
             await nestBlindBox.setApprovalForAll(nestNFTAuction.address, true);
@@ -57,7 +57,7 @@ describe('33.NFT', function() {
 
         if (true) {
             console.log('3. tokenURI');
-            await nestBlindBox.directMint(owner.address, (3n << 64n) | 9527n);
+            await nestBlindBox.release(owner.address, [(3n << 64n) | 9527n]);
             await nestBlindBox.setUriFormat('{ "image": "ipfs://bafybeicb6n7ycknloyap4xwlfn6a75pp7u6j7e7skkc5aboo2whybmylsu/%u.jpg", "external_url": "https://nestprotocol.org/", "description": "NEST NFT", "name": "NEST NFT #%u" }');
             console.log('tokenURI: ' + await nestBlindBox.tokenURI((3n << 64n) | 9527n));
         }
