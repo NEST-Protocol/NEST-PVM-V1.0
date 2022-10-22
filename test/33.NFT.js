@@ -31,12 +31,20 @@ describe('33.NFT', function() {
         if (true) {
             console.log('1. mint');
 
-            for (var i = 0; i < 100; ++i) {
+            for (var i = 0; i < 1000; ++i) {
                 await nestBlindBox.mint();
                 if (i > 0) {
                     await nestBlindBox.claim(i - 1);
+                    console.log({
+                        total: (await nestBlindBox.totalSupply(0)).toString(),
+                        nft1: (await nestBlindBox.totalSupply(1)).toString(),
+                        nft2: (await nestBlindBox.totalSupply(2)).toString(),
+                        nft3: (await nestBlindBox.totalSupply(3)).toString(),
+                    });
                 }
             }
+
+            return;
         }
 
         if (true) {

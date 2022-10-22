@@ -18,6 +18,9 @@ contract NestBlindBox is NestFrequentlyUsed, SimpleERC721 {
     // NEST amount need to be paid each mint
     uint constant NEST_AMOUNT = 99.9 ether;
 
+    // Max circulation of nft
+    uint constant MAX_CIRCULATION = 200;
+
     constructor() {
     }
 
@@ -39,7 +42,8 @@ contract NestBlindBox is NestFrequentlyUsed, SimpleERC721 {
     struct MintRequest {
         address owner;
         uint32 openBlock;
-        uint64 index;
+        uint32 claimBlock;
+        uint32 index;
     }
 
     // The span from current block to hash block
@@ -48,13 +52,13 @@ contract NestBlindBox is NestFrequentlyUsed, SimpleERC721 {
     uint constant P_SPACE = 1000000;
     // 10% 5% 1%
     uint constant P_1 = 10000;
-    uint constant P_2 = P_1 + 50000;
-    uint constant P_3 = P_2 + 100000;
+    uint constant P_5 = P_1 + 50000;
+    uint constant P_10 = P_5 + 100000;
 
     // Mint request array
     MintRequest[] _mintRequests;
 
-    // Counter for each nft. total(64)|nft1(64)|nft2(64)|nft3(64)
+    // Counter for each nft. total(24)|nft1(24)|nft2(24)|nft3(24)|ext(160)
     uint _counter;
 
     // Format string to generate tokenURI
@@ -73,13 +77,19 @@ contract NestBlindBox is NestFrequentlyUsed, SimpleERC721 {
     /// @param governance INestGovernance implementation contract address
     function initialize(address governance) public virtual override {
         super.initialize(governance);
-        _uriFormat = "ipfs://nft.nest/%04u.json?uid=%u";
+        _uriFormat = "https://bafybeib5tgmuvprsebmopiwnteklaxz6apvpubtgfakxa2zrsp7yiyx7ou.ipfs.w3s.link/%u/%u.json";
     }
 
     /// @dev Set format string to generate tokenURI
     /// @param uriFormat New format string
     function setUriFormat(string memory uriFormat) external onlyGovernance {
         _uriFormat = uriFormat;
+    }
+
+    /// @dev Return total supply for target level nft
+    /// @param level 0 means total, 1  means level1, 2 means level2, 3 means level3
+    function totalSupply(uint level) external view returns (uint) {
+        return (_counter >> (232 - level * 24)) & 0xFFFFFF;
     }
 
     /// @dev Find the mint requests of the target address (in reverse order)
@@ -113,7 +123,7 @@ contract NestBlindBox is NestFrequentlyUsed, SimpleERC721 {
         for (uint index = 0; index < count && start > end;) {
             MintRequest memory mintRequest = mintRequests[--start];
             if (mintRequest.owner == owner) {
-                (requestArray[index++] = mintRequest).index = uint64(start);
+                (requestArray[index++] = mintRequest).index = uint32(start);
             }
         }
     }
@@ -141,7 +151,7 @@ contract NestBlindBox is NestFrequentlyUsed, SimpleERC721 {
             uint end = index > count ? index - count : 0;
             while (index > end) {
                 --index;
-                (requestArray[i++] = mintRequests[index]).index = uint64(index);
+                (requestArray[i++] = mintRequests[index]).index = uint32(index);
             }
         } 
         // Positive order
@@ -152,7 +162,7 @@ contract NestBlindBox is NestFrequentlyUsed, SimpleERC721 {
                 end = length;
             }
             while (index < end) {
-                (requestArray[i++] = mintRequests[index]).index = uint64(index);
+                (requestArray[i++] = mintRequests[index]).index = uint32(index);
                 index++;
             }
         }
@@ -164,7 +174,7 @@ contract NestBlindBox is NestFrequentlyUsed, SimpleERC721 {
         return StringHelper.sprintf(
             new bytes(4096), 
             _uriFormat, 
-            abi.encode(tokenId >> 64, tokenId & 0xFFFFFFFFFFFFFFFF, tokenId)
+            abi.encode(tokenId >> 24, tokenId & 0xFFFFFF, tokenId)
         );
     }
 
@@ -184,40 +194,48 @@ contract NestBlindBox is NestFrequentlyUsed, SimpleERC721 {
             NEST_AMOUNT
         );
 
-        require((_counter >> 192) < 1999, "NNFT:mint over");
-        _mintRequests.push(MintRequest(msg.sender, uint32(block.number), 0));
+        require((_counter >> 232) + 1 < MAX_CIRCULATION, "NNFT:mint over");
+        _mintRequests.push(MintRequest(msg.sender, uint32(block.number), 0, 0));
     }
 
     /// @dev If won, create corresponding NFT to owner
     /// @param index Index of target MintRequest
     function claim(uint index) external {
         MintRequest memory mintRequest = _mintRequests[index];
+        require(mintRequest.claimBlock == 0, "NNFT:claimed");
+        _mintRequests[index].claimBlock = uint32(block.number);
         uint hashBlock = uint(mintRequest.openBlock) + OPEN_BLOCK_SPAN;
         require(block.number > hashBlock, "NNFT:!hashBlock");
         uint hashValue = uint(blockhash(hashBlock));
 
-        uint p = 0;
-        uint cnt = 0;
         if (hashValue > 0) {
             uint v = uint(keccak256(abi.encodePacked(hashValue, index))) % P_SPACE;
             uint counter = _counter;
+            uint p = 0;
+            uint cnt = 0;
             if (v < P_1) {
                 p = 1;
-                cnt = 0x0000000000000001000000000000000000000000000000000000000000000001;
-                index = counter & 0xFFFFFFFFFFFFFFFF;
-            } else if (v < P_2) {
-                p = 2;
-                cnt = 0x0000000000000001000000000000000000000000000000010000000000000000;
-                index = (counter >> 64) & 0xFFFFFFFFFFFFFFFF;
-            } else if (v < P_3) {
-                p = 3;
-                cnt = 0x0000000000000001000000000000000100000000000000000000000000000000;
-                index = (counter >> 128) & 0xFFFFFFFFFFFFFFFF;
+                cnt = 0x0000010000010000000000000000000000000000000000000000000000000000;
+                //cnt = 0x0100000000000000000000000000000100000000000000000000000000000000;
+                index = (counter >> 208) & 0xFFFFFF;
+            } else if (v < P_5) {
+                p = 5;
+                cnt = 0x0000010000000000010000000000000000000000000000000000000000000000;
+                //cnt = 0x0100000000000000000000000000000000000000000000010000000000000000;
+                index = (counter >> 184) & 0xFFFFFF;
+            } else if (v < P_10) {
+                p = 10;
+                cnt = 0x0000010000000000000000010000000000000000000000000000000000000000;
+                //cnt = 0x0100000000000000000000000000000000000000000000000000000000000001;
+                index = (counter >> 160) & 0xFFFFFF;
             } else return;
 
+            // Each 24-bits is a number for nft, the highest 24 bits are used to record the total number, which is
+            // always no less than the other counts. Therefore, when adding the whole uint, only the total number
+            // may overflow, and the addition will fail, so we can directly use uint addition to achieve four counts
             // The overflow problem has been solved automatically
             _counter += cnt;
-            _mint(mintRequest.owner, (p << 64) | index);
+            _mint(mintRequest.owner, (p << 24) | index);
             console.log("mint: lev=%d, index=%d", p, index);
         }
     }

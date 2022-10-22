@@ -37,6 +37,7 @@ exports.deploy = async function() {
     // cofixRouter: 0x4A448cBb12e449D7031f36C8122eCE6dDdf9cc84
     // proxyAdmin: 0xB5604C3C3AE902513731037B9c7368842582642e
     // nestBlindBox: 0xc926b1dc291507A96c2919a3662Cc8EAC1141700
+    // newNestBlindBox: 0xb631a22cddbc9d33a927a61387efe9c2ef5990dd
     // nestNFTAuction: 0xFe864063e10e5f7D99803765f28d2676A582A816
     // nestFuturesWithPrice: 0xA2D58989ef9981065f749C217984DB21970fF0b7
     // proxyAdmin: 0x43D2c8141E792D391A64F7140E708Ba05962C71A
@@ -87,7 +88,7 @@ exports.deploy = async function() {
     console.log('nestBuybackPool: ' + nestBuybackPool.address);
 
     //const nestBlindBox = await upgrades.deployProxy(NestBlindBox, [nestGovernance.address], { initializer: 'initialize' });
-    const nestBlindBox = await NestBlindBox.attach('0xc926b1dc291507A96c2919a3662Cc8EAC1141700');
+    const nestBlindBox = await NestBlindBox.attach('0xb631a22cddbc9d33a927a61387efe9c2ef5990dd');
     console.log('nestBlindBox: ' + nestBlindBox.address);
 
     //const nestNFTAuction = await upgrades.deployProxy(NestNFTAuction, [nestGovernance.address], { initializer: 'initialize' });
