@@ -12,8 +12,8 @@ task("accounts", "Prints the list of accounts", async () => {
     console.log(account.address);
   }
 });
-process.env.HTTP_PROXY = 'http://127.0.0.1:8580';
-process.env.HTTPS_PROXY = 'http://127.0.0.1:8580';
+// process.env.HTTP_PROXY = 'http://127.0.0.1:8580';
+// process.env.HTTPS_PROXY = 'http://127.0.0.1:8580';
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
 
@@ -65,7 +65,7 @@ module.exports = {
       timeout: 2000000000
     },
     bsc_test: {
-      url: "https://bsc.getblock.io/testnet/?api_key=57d2baf4-a7a4-4d1b-af95-5c35653e05ea",
+      url: "http://localhost:50000/bsc_test_getblock/",// "https://bsc.getblock.io/testnet/?api_key=57d2baf4-a7a4-4d1b-af95-5c35653e05ea",
       chainId: 97,
       gasPrice: 10e9,
       gas: 6000000,

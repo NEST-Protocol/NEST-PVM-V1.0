@@ -24,14 +24,13 @@ describe('33.NFT', function() {
             return accounts;
         }
 
-        await listAccounts();
-        await nest.transfer(owner.address, 100000000000000000000000000n);
+        //await listAccounts();
+        // await nest.transfer(owner.address, 100000000000000000000000000n);
         await nest.approve(nestBlindBox.address, 100000000000000000000000000n);
         await nest.approve(nestNFTAuction.address, 100000000000000000000000000n);
         if (true) {
             console.log('1. mint');
-
-            for (var i = 0; i < 1000; ++i) {
+            for (var i = 0; i < 100; ++i) {
                 await nestBlindBox.mint();
                 if (i > 0) {
                     await nestBlindBox.claim(i - 1);
