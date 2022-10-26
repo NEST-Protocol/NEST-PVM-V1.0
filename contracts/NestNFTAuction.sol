@@ -32,6 +32,17 @@ contract NestNFTAuction is NestFrequentlyUsed {
     /// @param sender Address of sender
     event EndAuction(uint index, address sender);
 
+    // Bid information structure
+    struct BidInfo {
+        // TODO: Separate the changed parts into a structure, for saving gas
+        // Address of last bidder
+        address bidder;
+        // Price of last bidder, by nest, 4 decimals
+        uint48 price;
+        // Price of total reward, by nest, 4 decimals
+        uint48 reward;
+    }
+
     // Auction information structure
     struct Auction {
         // Owner of this auction
@@ -45,13 +56,7 @@ contract NestNFTAuction is NestFrequentlyUsed {
         // Token id of target nft
         uint96 tokenId;
         
-        // TODO: Separate the changed parts into a structure, for saving gas
-        // Address of last bidder
-        address bidder;
-        // Price of last bidder, by nest, 4 decimals
-        uint48 price;
-        // Price of total reward, by nest, 4 decimals
-        uint48 reward;
+        BidInfo bidInfo;
     }
 
     // Price unit
@@ -115,9 +120,11 @@ contract NestNFTAuction is NestFrequentlyUsed {
             uint64(block.timestamp + cycle),
             nftAddress,
             uint96(tokenId),
-            address(0),
-            price,
-            uint48(0)
+            BidInfo(
+                address(0),
+                price,
+                uint48(0)
+            )
         ));
     }
 
@@ -126,14 +133,16 @@ contract NestNFTAuction is NestFrequentlyUsed {
     /// @param price Bid price, 4 decimals
     function bid(uint index, uint48 price) external {
         // Load target auction
-        Auction memory auction = _auctions[index];
+        Auction storage auction = _auctions[index];
+        BidInfo memory bidInfo = auction.bidInfo;
+
         // Must auctioning
         require(block.timestamp <= uint(auction.endTime), "AUCTION:ended");
         // Price must gt last price
-        require(price > auction.price, "AUCTION:price too low");
+        require(price > bidInfo.price, "AUCTION:price too low");
         
-        uint48 lastPrice = auction.price;
-        address bidder = auction.bidder;
+        uint48 lastPrice = bidInfo.price;
+        address bidder = bidInfo.bidder;
 
         // Calculate reward
         uint48 reward = 0;
@@ -142,44 +151,47 @@ contract NestNFTAuction is NestFrequentlyUsed {
             reward = (price - lastPrice) >> 1;
         }
 
-        // Update bid information: new bidder, new price, total reward
-        auction.bidder = msg.sender;
-        auction.price = price;
-        auction.reward += reward;
-        _auctions[index] = auction;
+        // // Update bid information: new bidder, new price, total reward
+        // auction.bidder = msg.sender;
+        // auction.price = price;
+        // auction.reward += reward;
+        // _auctions[index] = auction;
+
+        auction.bidInfo = BidInfo(msg.sender, price, bidInfo.reward + reward);
 
         emit Bid(index, msg.sender, uint(price));
 
         // TODO: 是否需要限制最小差价?
         TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), uint(price) * PRICE_UNIT);
         if (bidder != address(0)) {
-            TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, auction.bidder, (uint(lastPrice) + reward) * PRICE_UNIT);
+            TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, bidInfo.bidder, (uint(lastPrice) + reward) * PRICE_UNIT);
         }
     }
 
     /// @dev End the auction and get NFT
     /// @param index Index of target auction
     function endAuction(uint index) external {
-        Auction memory auction = _auctions[index];
+        Auction storage auction = _auctions[index];
+        BidInfo memory bidInfo = auction.bidInfo;
         //require(block.timestamp > uint(auction.endTime), "AUCTION:not end");
-        require(auction.owner != address(0), "AUCTION:ended");
+        address owner = auction.owner;
+        require(owner != address(0), "AUCTION:ended");
 
-        address bidder = auction.bidder;
+        address bidder = bidInfo.bidder;
         // No bidder, auction failed, transfer nft to owner
         if (bidder == address(0)) {
-            bidder = auction.owner;
+            bidder = owner;
         } 
         // Auction success, transfer nft to bidder and transfer nest to owner
         else {
             TransferHelper.safeTransfer(
                 NEST_TOKEN_ADDRESS, 
-                auction.owner, 
-                uint(auction.price - auction.reward) * PRICE_UNIT
+                owner, 
+                uint(bidInfo.price - bidInfo.reward) * PRICE_UNIT
             );
         }
 
         auction.owner = address(0);
-        _auctions[index] = auction;
 
         IERC721(auction.nftAddress).transferFrom(address(this), bidder, auction.tokenId);
         emit EndAuction(index, msg.sender);
