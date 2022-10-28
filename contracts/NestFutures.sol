@@ -365,24 +365,26 @@ contract NestFutures is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
 
             // 4. Update account
             Account memory account = fi.accounts[acc];
-            uint balance = _balanceOf(
-                tokenConfig,
-                uint(account.balance), 
-                _decodeFloat(account.basePrice), 
-                uint(account.baseBlock),
-                oraclePrice, 
-                orientation, 
-                lever
-            );
+            if (uint(account.balance) > 0) {
+                uint balance = _balanceOf(
+                    tokenConfig,
+                    uint(account.balance), 
+                    _decodeFloat(account.basePrice), 
+                    uint(account.baseBlock),
+                    oraclePrice, 
+                    orientation, 
+                    lever
+                );
 
-            // 5. Settle logic
-            // lever is great than 1, and balance less than a regular value, can be liquidated
-            // the regular value is: Max(balance * lever * 2%, MIN_VALUE)
-            uint minValue = uint(account.balance) * lever / 50;
-            if (balance < (minValue < MIN_VALUE ? MIN_VALUE : minValue)) {
-                fi.accounts[acc] = Account(uint128(0), uint64(0), uint32(0));
-                reward += balance;
-                emit Settle(index, acc, msg.sender, balance);
+                // 5. Settle logic
+                // lever is great than 1, and balance less than a regular value, can be liquidated
+                // the regular value is: Max(balance * lever * 2%, MIN_VALUE)
+                uint minValue = uint(account.balance) * lever / 50;
+                if (balance < (minValue < MIN_VALUE ? MIN_VALUE : minValue)) {
+                    fi.accounts[acc] = Account(uint128(0), uint64(0), uint32(0));
+                    reward += balance;
+                    emit Settle(index, acc, msg.sender, balance);
+                }
             }
         }
 

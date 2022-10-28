@@ -164,7 +164,7 @@ contract NestNFTAuction is NestFrequentlyUsed {
         // TODO: 是否需要限制最小差价?
         TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), uint(price) * PRICE_UNIT);
         if (bidder != address(0)) {
-            TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, bidInfo.bidder, (uint(lastPrice) + reward) * PRICE_UNIT);
+            TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, bidder, (uint(lastPrice) + reward) * PRICE_UNIT);
         }
     }
 
