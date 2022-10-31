@@ -78,12 +78,12 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
     constructor() {
     }
 
-    // /// @dev To support open-zeppelin/upgrades
-    // /// @param governance INestGovernance implementation contract address
-    // function initialize(address governance) public override {
-    //     super.initialize(governance);
-    //     _futures.push();
-    // }
+    /// @dev To support open-zeppelin/upgrades
+    /// @param governance INestGovernance implementation contract address
+    function initialize(address governance) public override {
+        super.initialize(governance);
+        _futures.push();
+    }
 
     /// @dev Direct post price
     /// @param period Term of validity
