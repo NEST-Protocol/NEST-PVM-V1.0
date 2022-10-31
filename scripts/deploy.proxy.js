@@ -16,7 +16,7 @@ exports.deploy = async function() {
     const NestFutures = await ethers.getContractFactory('NestFutures');
     const NestProbability = await ethers.getContractFactory('NestProbability');
     const NestBuybackPool = await ethers.getContractFactory('NestBuybackPool');
-    const NestBlindBox = await ethers.getContractFactory('NestBlindBox');
+    const NestCyberInk = await ethers.getContractFactory('NestCyberInk');
     const NestNFTAuction = await ethers.getContractFactory('NestNFTAuction');
     const NestFuturesWithPrice = await ethers.getContractFactory('NestFuturesWithPrice');
 
@@ -70,9 +70,9 @@ exports.deploy = async function() {
     // const nestBuybackPool = await NestBuybackPool.attach('0x0000000000000000000000000000000000000000');
     console.log('nestBuybackPool: ' + nestBuybackPool.address);
 
-    const nestBlindBox = await upgrades.deployProxy(NestBlindBox, [nestGovernance.address], { initializer: 'initialize' });
-    // const nestBlindBox = await NestBlindBox.attach('0x0000000000000000000000000000000000000000');
-    console.log('nestBlindBox: ' + nestBlindBox.address);
+    const nestCyberInk = await upgrades.deployProxy(NestCyberInk, [nestGovernance.address], { initializer: 'initialize' });
+    // const nestCyberInk = await NestCyberInk.attach('0x0000000000000000000000000000000000000000');
+    console.log('nestCyberInk: ' + nestCyberInk.address);
 
     const nestNFTAuction = await upgrades.deployProxy(NestNFTAuction, [nestGovernance.address], { initializer: 'initialize' });
     // const nestNFTAuction = await NestNFTAuction.attach('0x0000000000000000000000000000000000000000');
@@ -95,6 +95,7 @@ exports.deploy = async function() {
     await nestGovernance.registerAddress('nest.app.vault', nestVault.address);
     await nestGovernance.registerAddress('nest.app.dcu', dcu.address);
     await nestGovernance.registerAddress('nest.app.prc', nestProbability.address);
+    await nestGovernance.registerAddress('nest.app.cyberink', nestCyberInk.address);
     await nestGovernance.registerAddress('nest.app.directPoster', (await ethers.getSigners())[0].address)
 
     console.log('4. nestVault.update()');
@@ -109,8 +110,8 @@ exports.deploy = async function() {
     await nestProbability.update(nestGovernance.address);
     console.log('8. nestBuybackPool.update()');
     await nestBuybackPool.update(nestGovernance.address);
-    console.log('9. nestBlindBox.update()');
-    await nestBlindBox.update(nestGovernance.address);
+    console.log('9. nestCyberInk.update()');
+    await nestCyberInk.update(nestGovernance.address);
 
     console.log('10. nestNFTAuction.update()');
     await nestNFTAuction.update(nestGovernance.address);
@@ -232,7 +233,7 @@ exports.deploy = async function() {
         nestProbability: nestProbability,
         nestPriceFacade: nestPriceFacade,
         nestBuybackPool: nestBuybackPool,
-        nestBlindBox: nestBlindBox,
+        nestCyberInk: nestCyberInk,
         nestNFTAuction: nestNFTAuction,
         nestFuturesWithPrice: nestFuturesWithPrice,
 

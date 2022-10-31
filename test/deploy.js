@@ -14,7 +14,7 @@ describe('deploy', function() {
             peth,
             nestPRCSwap,
 
-            nestBlindBox, nestNFTAuction,
+            nestCyberInk, nestNFTAuction,
             nestFuturesWithPrice,
 
             nestGovernance,

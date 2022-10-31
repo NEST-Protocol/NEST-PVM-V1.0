@@ -8,7 +8,7 @@ describe('35.NestNFTAuction', function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
         const { 
-            eth, usdt, hbtc, nest, dcu, nestOptions, nestFutures, nestLPGuarantee, nestProbability, nestBlindBox,
+            eth, usdt, hbtc, nest, dcu, nestOptions, nestFutures, nestLPGuarantee, nestProbability, nestCyberInk,
             nestNFTAuction,
             nestPriceFacade, nestBuybackPool, BLOCK_TIME, USDT_DECIMALS
         } = await deploy();
@@ -25,24 +25,24 @@ describe('35.NestNFTAuction', function() {
         }
 
         await listAccounts();
-        await nest.transfer(owner.address, 100000000000000000000000000n);
-        await nest.approve(nestBlindBox.address, 100000000000000000000000000n);
-        await nest.approve(nestNFTAuction.address, 100000000000000000000000000n);
+        // await nest.transfer(owner.address, 100000000000000000000000000n);
+        // await nest.approve(nestCyberInk.address, 100000000000000000000000000n);
+        // await nest.approve(nestNFTAuction.address, 100000000000000000000000000n);
         
         const TOKEN_ID = (1<<24) | 9527;
-        if (true) {
+        if (false) {
             console.log('1. mint');
-            await nestBlindBox.release(owner.address, [TOKEN_ID]);
+            await nestCyberInk.release(owner.address, [TOKEN_ID]);
             await listAccounts();
         }
 
         if (true) {
             console.log('2. auction');
-            //await nestBlindBox.release(owner.address, [9527]);
-            //await nestBlindBox.approve();
+            //await nestCyberInk.release(owner.address, [9527]);
+            //await nestCyberInk.approve();
             
-            await nestBlindBox.setApprovalForAll(nestNFTAuction.address, true);
-            await nestNFTAuction.startAuction(nestBlindBox.address, TOKEN_ID, 10000000, 3601);
+            await nestCyberInk.setApprovalForAll(nestNFTAuction.address, true);
+            await nestNFTAuction.startAuction(TOKEN_ID, 10000000, 3601);
             await listAccounts();
         }
 
@@ -78,6 +78,5 @@ describe('35.NestNFTAuction', function() {
             await nestNFTAuction.endAuction(0);
             await listAccounts();
         }
-
     });
 });

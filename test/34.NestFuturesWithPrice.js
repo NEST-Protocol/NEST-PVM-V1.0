@@ -8,7 +8,7 @@ describe('34.NestFuturesWithPrice', function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
         const { 
-            eth, usdt, hbtc, nest, dcu, nestOptions, nestFutures, nestLPGuarantee, nestProbability, nestBlindBox,
+            eth, usdt, hbtc, nest, dcu, nestOptions, nestFutures, nestLPGuarantee, nestProbability, nestCyberInk,
             nestNFTAuction, nestFuturesWithPrice,
             nestPriceFacade, nestBuybackPool, BLOCK_TIME, USDT_DECIMALS
         } = await deploy();

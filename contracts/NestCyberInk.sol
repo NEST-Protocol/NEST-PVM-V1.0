@@ -10,8 +10,8 @@ import "./custom/NestFrequentlyUsed.sol";
 
 import "hardhat/console.sol";
 
-/// @dev NEST NFT
-contract NestBlindBox is NestFrequentlyUsed, SimpleERC721 {
+/// @dev NestCyberInk NFT
+contract NestCyberInk is NestFrequentlyUsed, SimpleERC721 {
 
     // Mint request information
     struct MintRequest {
@@ -59,7 +59,7 @@ contract NestBlindBox is NestFrequentlyUsed, SimpleERC721 {
     /// @param governance INestGovernance implementation contract address
     function initialize(address governance) public virtual override {
         super.initialize(governance);
-        _uriFormat = "https://bafybeib5tgmuvprsebmopiwnteklaxz6apvpubtgfakxa2zrsp7yiyx7ou.ipfs.w3s.link/%u/%u.json";
+        _uriFormat = "https://ipfs.io/ipfs/bafybeiemtuxqwzdpiakdrp5n3xurxmykso5maamosdwhu7fscyehbtf36q/%u/%u.json";
     }
 
     /**

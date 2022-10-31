@@ -57,6 +57,8 @@ contract NestFrequentlyUsed is NestBase {
     address NEST_OPEN_PRICE;
     // Address of nest vault
     address NEST_VAULT_ADDRESS;
+    // Address of CyberInk
+    address CYBER_INK_ADDRESS;
     // Address of direct poster
     address DIRECT_POSTER;  // 0x06Ca5C8eFf273009C94D963e0AB8A8B9b09082eF;
 
@@ -72,5 +74,6 @@ contract NestFrequentlyUsed is NestBase {
         NEST_OPEN_PRICE = INestGovernance(newGovernance).checkAddress("nest.v4.openPrice");
         NEST_VAULT_ADDRESS = INestGovernance(newGovernance).checkAddress("nest.app.vault");
         DIRECT_POSTER = INestGovernance(newGovernance).checkAddress("nest.app.directPoster");
+        CYBER_INK_ADDRESS = INestGovernance(newGovernance).checkAddress("nest.app.cyberink");
     }
 }

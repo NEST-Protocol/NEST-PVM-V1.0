@@ -8,7 +8,7 @@ describe('33.NFT', function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
         const { 
-            eth, usdt, hbtc, nest, dcu, nestOptions, nestFutures, nestLPGuarantee, nestProbability, nestBlindBox,
+            eth, usdt, hbtc, nest, dcu, nestOptions, nestFutures, nestLPGuarantee, nestProbability, nestCyberInk,
             nestNFTAuction,
             nestPriceFacade, nestBuybackPool, BLOCK_TIME, USDT_DECIMALS
         } = await deploy();
@@ -25,20 +25,20 @@ describe('33.NFT', function() {
         }
 
         //await listAccounts();
-        await nest.transfer(owner.address, 100000000000000000000000000n);
-        await nest.approve(nestBlindBox.address, 100000000000000000000000000n);
-        await nest.approve(nestNFTAuction.address, 100000000000000000000000000n);
+        //await nest.transfer(owner.address, 100000000000000000000000000n);
+        // await nest.approve(nestCyberInk.address, 100000000000000000000000000n);
+        // await nest.approve(nestNFTAuction.address, 100000000000000000000000000n);
         if (true) {
             console.log('1. mint');
             for (var i = 0; i < 100; ++i) {
-                await nestBlindBox.mint();
+                await nestCyberInk.mint();
                 if (i > 0) {
-                    await nestBlindBox.claim(i - 1);
+                    await nestCyberInk.claim(i - 1);
                     console.log({
-                        total: (await nestBlindBox.totalSupply(0)).toString(),
-                        nft1: (await nestBlindBox.totalSupply(1)).toString(),
-                        nft2: (await nestBlindBox.totalSupply(2)).toString(),
-                        nft3: (await nestBlindBox.totalSupply(3)).toString(),
+                        total: (await nestCyberInk.totalSupply(0)).toString(),
+                        nft1: (await nestCyberInk.totalSupply(1)).toString(),
+                        nft2: (await nestCyberInk.totalSupply(2)).toString(),
+                        nft3: (await nestCyberInk.totalSupply(3)).toString(),
                     });
                 }
             }
@@ -46,11 +46,11 @@ describe('33.NFT', function() {
 
         if (true) {
             console.log('2. auction');
-            await nestBlindBox.release(owner.address, [9527]);
-            //await nestBlindBox.approve();
+            await nestCyberInk.release(owner.address, [9527]);
+            //await nestCyberInk.approve();
             
-            await nestBlindBox.setApprovalForAll(nestNFTAuction.address, true);
-            await nestNFTAuction.startAuction(nestBlindBox.address, 9527, 100000000n, 3601);
+            await nestCyberInk.setApprovalForAll(nestNFTAuction.address, true);
+            await nestNFTAuction.startAuction(9527, 100000000n, 3601);
 
             await nestNFTAuction.bid(0, 150000000n);
 
@@ -62,9 +62,9 @@ describe('33.NFT', function() {
 
         if (true) {
             console.log('3. tokenURI');
-            await nestBlindBox.release(owner.address, [(3n << 64n) | 9527n]);
-            await nestBlindBox.setUriFormat('{ "image": "ipfs://bafybeicb6n7ycknloyap4xwlfn6a75pp7u6j7e7skkc5aboo2whybmylsu/%u.jpg", "external_url": "https://nestprotocol.org/", "description": "NEST NFT", "name": "NEST NFT #%u" }');
-            console.log('tokenURI: ' + await nestBlindBox.tokenURI((3n << 64n) | 9527n));
+            await nestCyberInk.release(owner.address, [(3n << 64n) | 9527n]);
+            await nestCyberInk.setUriFormat('{ "image": "ipfs://bafybeicb6n7ycknloyap4xwlfn6a75pp7u6j7e7skkc5aboo2whybmylsu/%u.jpg", "external_url": "https://nestprotocol.org/", "description": "NEST NFT", "name": "NEST NFT #%u" }');
+            console.log('tokenURI: ' + await nestCyberInk.tokenURI((3n << 64n) | 9527n));
         }
     });
 });
