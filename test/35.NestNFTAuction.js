@@ -68,15 +68,16 @@ describe('35.NestNFTAuction', function() {
         }
 
         if (true) {
-            console.log('5. end auction');
+            console.log('7. end auction');
             await nestNFTAuction.endAuction(0);
             await listAccounts();
         }
 
         if (false) {
-            console.log('6. end auction');
+            console.log('8. end auction');
             await nestNFTAuction.endAuction(0);
             await listAccounts();
         }
+
     });
 });

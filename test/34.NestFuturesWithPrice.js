@@ -29,7 +29,6 @@ describe('34.NestFuturesWithPrice', function() {
 
         if (true) {
             console.log('1. directPost');
-            await nestFuturesWithPrice.setDirectPoster(owner.address);
             await nestFuturesWithPrice.directPost(200, [
                 toBigInt(1.538461),
                 toBigInt(66666666666),
@@ -52,7 +51,7 @@ describe('34.NestFuturesWithPrice', function() {
 
         if (true) {
             console.log('2. sell');
-            let receipt = await nestFuturesWithPrice.directPost(2, [
+            let receipt = await nestFuturesWithPrice.directPost(200, [
                 toBigInt(1.508461),
                 toBigInt(66666666666),
                 toBigInt(2000 / 20000)

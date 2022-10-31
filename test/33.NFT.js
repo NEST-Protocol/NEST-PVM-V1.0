@@ -25,7 +25,7 @@ describe('33.NFT', function() {
         }
 
         //await listAccounts();
-        // await nest.transfer(owner.address, 100000000000000000000000000n);
+        await nest.transfer(owner.address, 100000000000000000000000000n);
         await nest.approve(nestBlindBox.address, 100000000000000000000000000n);
         await nest.approve(nestNFTAuction.address, 100000000000000000000000000n);
         if (true) {
@@ -42,8 +42,6 @@ describe('33.NFT', function() {
                     });
                 }
             }
-
-            return;
         }
 
         if (true) {
@@ -52,9 +50,9 @@ describe('33.NFT', function() {
             //await nestBlindBox.approve();
             
             await nestBlindBox.setApprovalForAll(nestNFTAuction.address, true);
-            await nestNFTAuction.startAuction(nestBlindBox.address, 9527, 10000000000000000000000n, 100);
+            await nestNFTAuction.startAuction(nestBlindBox.address, 9527, 100000000n, 3601);
 
-            await nestNFTAuction.bid(0, 15000000000000000000000n);
+            await nestNFTAuction.bid(0, 150000000n);
 
             for (var i = 0; i < 101; ++i) {
                 await nest.transfer(owner.address, 0);
