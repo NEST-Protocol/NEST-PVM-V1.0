@@ -6,41 +6,17 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 import "./libs/TransferHelper.sol";
 
+import "./interfaces/INestNFTAuction.sol";
+
 import "./custom/NestFrequentlyUsed.sol";
 
-import "hardhat/console.sol";
-
 /// @dev Auction for NFT
-contract NestNFTAuction is NestFrequentlyUsed {
-
-    /// @dev Start an auction event
-    /// @param owner Owner of auction
-    /// @param tokenId tokenId of target NFT
-    /// @param price Starting price, 4 decimals
-    /// @param index Index of auction
-    event StartAuction(address owner, uint tokenId, uint price, uint index);
-
-    /// @dev Bid for the auction event
-    /// @param index Index of target auction
-    /// @param bidder Address of bidder
-    /// @param price Bid price, 4 decimals
-    event Bid(uint index, address bidder, uint price);
-
-    /// @dev End the auction and get NFT event
-    /// @param index Index of target auction
-    /// @param sender Address of sender
-    event EndAuction(uint index, address sender);
+contract NestNFTAuction is NestFrequentlyUsed, INestNFTAuction {
 
     // Auction information structure
     struct Auction {
-        // Address index of bidder
-        address bidder;
-        // Price of last bidder, by nest, 0 decimal
-        uint32 price;
-        // Total bidder reward, by nest, 0 decimal
-        uint32 reward;
-        // The timestamp of uint32 can be expressed to 2106
-        uint32 endTime;
+        // Bid information: bidder(160)|price(32)|reward(32)|endTime(32)
+        uint bade;
 
         // Address index of owner
         address owner;
@@ -64,11 +40,12 @@ contract NestNFTAuction is NestFrequentlyUsed {
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
     /// @return auctionArray List of auctions
-    function list(uint offset, uint count, uint order) external view returns (Auction[] memory auctionArray) {
+    function list(uint offset, uint count, uint order) 
+        external view override returns (AuctionView[] memory auctionArray) {
         // Load auctions
         Auction[] storage auctions = _auctions;
         // Create result array
-        auctionArray = new Auction[](count);
+        auctionArray = new AuctionView[](count);
         uint length = auctions.length;
         uint i = 0;
 
@@ -77,7 +54,8 @@ contract NestNFTAuction is NestFrequentlyUsed {
             uint index = length - offset;
             uint end = index > count ? index - count : 0;
             while (index > end) {
-                auctionArray[i++] = auctions[--index];
+                --index;
+                auctionArray[i++] = _toAuctionView(auctions[index], index);
             }
         } 
         // Positive order
@@ -88,7 +66,8 @@ contract NestNFTAuction is NestFrequentlyUsed {
                 end = length;
             }
             while (index < end) {
-                auctionArray[i++] = auctions[index++];
+                auctionArray[i++] = _toAuctionView(auctions[index], index);
+                ++index;
             }
         }
     }
@@ -97,9 +76,9 @@ contract NestNFTAuction is NestFrequentlyUsed {
     /// @param tokenId tokenId of target NFT
     /// @param price Starting price, 0 decimals
     /// @param cycle Cycle of auction, by seconds
-    function startAuction(uint tokenId, uint32 price, uint cycle) external {
+    function startAuction(uint tokenId, uint price, uint cycle) external override {
         require(tokenId < 0x100000000, "AUCTION:tokenId to large");
-        require(price >= 990, "AUCTION:price too low");
+        require(price >= 990 && price < 0x100000000, "AUCTION:price too low");
         require(cycle >= 1 hours && cycle < 1 weeks, "AUCTION:cycle not valid");
         
         // Transfer the target NFT to this contract
@@ -109,14 +88,10 @@ contract NestNFTAuction is NestFrequentlyUsed {
 
         // Push auction information to the array
         _auctions.push(Auction(
-            // bidder
-            address(0),
-            // price
-            price,
-            // reward
-            uint32(0),
-            // endTime
-            uint32(block.timestamp + cycle),
+            // Bid information: bidder(160)|price(32)|reward(32)|endTime(32)
+            // After 2106, block.timestamp + cycle will > 0xFFFFFFFF, 
+            // This is very far away, and there will be other alternatives
+            (price << 64) | (block.timestamp + cycle),
 
             // owner
             msg.sender,
@@ -130,45 +105,53 @@ contract NestNFTAuction is NestFrequentlyUsed {
     /// @dev Bid for the auction
     /// @param index Index of target auction
     /// @param price Bid price, 0 decimals
-    function bid(uint index, uint32 price) external {
+    function bid(uint index, uint price) external override {
         // Load target auction
         Auction storage auction = _auctions[index];
 
-        uint32 lastPrice = auction.price;
-        address bidder = auction.bidder;
+        // Bid information: bidder(160)|price(32)|reward(32)|endTime(32)
+        uint bade = auction.bade;
+        uint endTime = bade & 0xFFFFFFFF;
+        uint reward = (bade >> 32) & 0xFFFFFFFF;
+        uint lastPrice = (bade >> 64) & 0xFFFFFFFF;
+        address bidder = address(uint160(bade >> 96));
 
         // Must auctioning
-        require(block.timestamp <= uint(auction.endTime), "AUCTION:ended");
+        require(block.timestamp <= endTime, "AUCTION:ended");
         // Price must gt last price
-        require(price >= lastPrice + 1 ether / PRICE_UNIT, "AUCTION:price too low");
+        require(price >= lastPrice + 1 ether / PRICE_UNIT && price < 0x100000000, "AUCTION:price too low");
         
         // Only transfer NEST, no Reentry problem
-        TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), uint(price) * PRICE_UNIT);
+        TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), price * PRICE_UNIT);
         // Owner has no reward, bidder is 0 means no bidder
         if (bidder != address(0)) {
-            TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, bidder, (uint(price + lastPrice) >> 1) * PRICE_UNIT);
+            TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, bidder, ((price + lastPrice) >> 1) * PRICE_UNIT);
             // price + lastPrice and price - lastPrice is always the same parity, 
             // So it's no need to consider the problem of dividing losses
-            auction.reward += ((price - lastPrice) >> 1);
+            reward += ((price - lastPrice) >> 1);
         }
 
         // Update bid information: new bidder, new price, total reward
-        auction.bidder = msg.sender;
-        auction.price = price;
+        // Bid information: bidder(160)|price(32)|reward(32)|endTime(32)
+        // reward is impossible > 0xFFFFFFFF
+        auction.bade = (uint(uint160(msg.sender)) << 96) | (price << 64) | (reward << 32) | endTime;
 
         emit Bid(index, msg.sender, uint(price));
     }
 
     /// @dev End the auction and get NFT
     /// @param index Index of target auction
-    function endAuction(uint index) external {
+    function endAuction(uint index) external override {
         Auction memory auction = _auctions[index];
-        //require(block.timestamp > uint(auction.endTime), "AUCTION:not end");
         address owner = auction.owner;
         // owner is 0 means ended
         require(owner != address(0), "AUCTION:ended");
 
-        address bidder = auction.bidder;
+        // Bid information: bidder(160)|price(32)|reward(32)|endTime(32)
+        uint bade = auction.bade;
+        // TODO: Restore this code
+        //require(block.timestamp > (bade & 0xFFFFFFFF), "AUCTION:not end");
+        address bidder = address(uint160(bade >> 96));
         // No bidder, auction failed, transfer nft to owner
         if (bidder == address(0)) {
             bidder = owner;
@@ -178,14 +161,31 @@ contract NestNFTAuction is NestFrequentlyUsed {
             TransferHelper.safeTransfer(
                 NEST_TOKEN_ADDRESS, 
                 owner, 
-                uint(auction.price - auction.reward) * PRICE_UNIT
+                (((bade >> 64) & 0xFFFFFFFF) - ((bade >> 32) & 0xFFFFFFFF)) * PRICE_UNIT
             );
         }
 
         // Mark as ended
-        auction.owner = address(0);
+        _auctions[index].owner = address(0);
 
         IERC721(CYBER_INK_ADDRESS).transferFrom(address(this), bidder, uint(auction.tokenId));
         emit EndAuction(index, msg.sender);
+    }
+
+    // Convert Auction to AuctionView
+    function _toAuctionView(Auction memory auction, uint index) private pure returns (AuctionView memory auctionView) {
+        // Bid information: bidder(160)|price(32)|reward(32)|endTime(32)
+        uint bade = auction.bade;
+        auctionView = AuctionView(
+            address(uint160(bade >> 96)),
+            uint32(bade >> 64),
+            uint32(bade >> 32),
+            uint32(bade),
+
+            auction.owner,
+            auction.tokenId,
+            auction.startBlock,
+            uint32(index)
+        );
     }
 }

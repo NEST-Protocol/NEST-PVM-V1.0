@@ -25,12 +25,12 @@ describe('35.NestNFTAuction', function() {
         }
 
         await listAccounts();
-        // await nest.transfer(owner.address, 100000000000000000000000000n);
-        // await nest.approve(nestCyberInk.address, 100000000000000000000000000n);
-        // await nest.approve(nestNFTAuction.address, 100000000000000000000000000n);
+        await nest.transfer(owner.address, 100000000000000000000000000n);
+        await nest.approve(nestCyberInk.address, 100000000000000000000000000n);
+        await nest.approve(nestNFTAuction.address, 100000000000000000000000000n);
         
-        const TOKEN_ID = (1<<24) | 9527;
-        if (false) {
+        const TOKEN_ID = (1 << 24) | 9527;
+        if (true) {
             console.log('1. mint');
             await nestCyberInk.release(owner.address, [TOKEN_ID]);
             await listAccounts();
