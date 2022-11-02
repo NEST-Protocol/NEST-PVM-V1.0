@@ -66,14 +66,14 @@ contract NestCyberInk is NestFrequentlyUsed, SimpleERC721 {
      * @dev See {IERC721Metadata-name}.
      */
     function name() public view virtual override returns (string memory) {
-        return "NEST-NFT";
+        return "Nest Cyber Ink";
     }
 
     /**
      * @dev See {IERC721Metadata-symbol}.
      */
     function symbol() public view virtual override returns (string memory) {
-        return "N-NFT";
+        return "NCI";
     }
 
     /// @dev Set format string to generate tokenURI

@@ -19,6 +19,7 @@ exports.deploy = async function() {
     const NestCyberInk = await ethers.getContractFactory('NestCyberInk');
     const NestNFTAuction = await ethers.getContractFactory('NestNFTAuction');
     const NestFuturesWithPrice = await ethers.getContractFactory('NestFuturesWithPrice');
+    const NestMarket = await ethers.getContractFactory('NestMarket');
 
     console.log('** Deploy: deploy.proxy.js **');
     
@@ -78,6 +79,10 @@ exports.deploy = async function() {
     // const nestNFTAuction = await NestNFTAuction.attach('0x0000000000000000000000000000000000000000');
     console.log('nestNFTAuction: ' + nestNFTAuction.address);
 
+    const nestMarket = await upgrades.deployProxy(NestMarket, [nestGovernance.address], { initializer: 'initialize' });
+    //const nestMarket = await NestMarket.attach('0x0000000000000000000000000000000000000000');
+    console.log('nestMarket: ' + nestMarket.address);
+
     console.log('2. nestGovernance.setBuiltinAddress()');
     await nestGovernance.setBuiltinAddress(
         nest.address,
@@ -115,6 +120,8 @@ exports.deploy = async function() {
 
     console.log('10. nestNFTAuction.update()');
     await nestNFTAuction.update(nestGovernance.address);
+    console.log('11. nestMarket.update()');
+    await nestMarket.update(nestGovernance.address);
 
     // 2.4. Register ETH ans HBTC
     console.log('7. nestOptions.register(eth.address)');
@@ -236,6 +243,7 @@ exports.deploy = async function() {
         nestCyberInk: nestCyberInk,
         nestNFTAuction: nestNFTAuction,
         nestFuturesWithPrice: nestFuturesWithPrice,
+        nestMarket: nestMarket,
 
         BLOCK_TIME: BLOCK_TIME,
         USDT_DECIMALS: 18,
