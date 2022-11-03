@@ -37,7 +37,7 @@ contract NestMarket is NestFrequentlyUsed {
     /// @param merkleProof Merkle proof for the address
     function whiteListBuy(uint tokenId, bytes32[] calldata merkleProof) external {
         uint cnt = _whiteListCounter[msg.sender];
-        require(cnt < 10, "NWL:address can only buy 10");
+        require(cnt < 5, "NWL:address can only buy 10");
         require(MerkleProof.verify(
             merkleProof, 
             _merkleRoot, 
@@ -47,7 +47,7 @@ contract NestMarket is NestFrequentlyUsed {
         _whiteListCounter[msg.sender] = cnt + 1;
         
         // White list address pay 70% of the price
-        uint price = 1000 / (tokenId >> 24) * 70 / 100 * 1 ether;
+        uint price = 1000 / (tokenId & 0xFF) * 70 / 100 * 1 ether;
         TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), price);
         IERC721(CYBER_INK_ADDRESS).transferFrom(address(this), msg.sender, tokenId);
     }
@@ -55,7 +55,7 @@ contract NestMarket is NestFrequentlyUsed {
     /// @dev Normal address buy
     /// @param tokenId Target tokenId
     function buy(uint tokenId) external {
-        uint price = 1000 / (tokenId >> 24) * 1 ether;
+        uint price = 1000 / (tokenId & 0xFF) * 1 ether;
         TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), price);
         IERC721(CYBER_INK_ADDRESS).transferFrom(address(this), msg.sender, tokenId);
     }

@@ -29,7 +29,8 @@ contract NestCyberInk is NestFrequentlyUsed, SimpleERC721 {
     uint constant NEST_AMOUNT = 99.9 ether;
 
     // Max circulation of nft
-    uint constant MAX_CIRCULATION = 200;
+    // TODO: Change to 1920
+    uint constant MAX_CIRCULATION = 192;
 
     // The span from current block to hash block
     uint constant OPEN_BLOCK_SPAN = 1;
@@ -59,7 +60,7 @@ contract NestCyberInk is NestFrequentlyUsed, SimpleERC721 {
     /// @param governance INestGovernance implementation contract address
     function initialize(address governance) public virtual override {
         super.initialize(governance);
-        _uriFormat = "https://ipfs.io/ipfs/bafybeiemtuxqwzdpiakdrp5n3xurxmykso5maamosdwhu7fscyehbtf36q/%u/%u.json";
+        _uriFormat = "https://ipfs.io/ipfs/bafybeihb6o6vtlkla7bvqmro4ksgo7kxoo627wi65mo3qxmqaw3yoxrree/%u/%u.json";
     }
 
     /**
@@ -82,9 +83,9 @@ contract NestCyberInk is NestFrequentlyUsed, SimpleERC721 {
         _uriFormat = uriFormat;
     }
 
-    /// @dev Return total supply for target level nft
+    /// @dev Return total claimed for target level nft
     /// @param level 0 means total, 1  means level1, 2 means level2, 3 means level3, Other values are meaningless
-    function totalSupply(uint level) external view returns (uint) {
+    function totalClaimed(uint level) external view returns (uint) {
         //return (_counter >> (232 - level * 24)) & 0xFFFFFF;
         return (_counter >> (160 + (3 - level) * 24)) & 0xFFFFFF;
     }
@@ -177,9 +178,9 @@ contract NestCyberInk is NestFrequentlyUsed, SimpleERC721 {
             _uriFormat, 
             abi.encode(
                 // level of nft
-                tokenId >> 24, 
+                tokenId & 0xFF, 
                 // index of nft
-                tokenId & 0xFFFFFF, 
+                tokenId >> 8, 
                 // tokenId
                 tokenId
             )
@@ -263,8 +264,8 @@ contract NestCyberInk is NestFrequentlyUsed, SimpleERC721 {
                 _counter = counter + 0x0000010000000000000000010000000000000000000000000000000000000000;
             } else return;
 
-            // Mint to owner, tokenId: level(232)|index(24)
-            _mint(mintRequest.owner, (level << 24) | (index & 0xFFFFFF));
+            // Mint to owner, tokenId: index(24)|level(8)
+            _mint(mintRequest.owner, ((index & 0xFFFFFF) << 8) | level);
         }
     }
 }

@@ -25,9 +25,9 @@ describe('33.NFT', function() {
         }
 
         //await listAccounts();
-        //await nest.transfer(owner.address, 100000000000000000000000000n);
-        // await nest.approve(nestCyberInk.address, 100000000000000000000000000n);
-        // await nest.approve(nestNFTAuction.address, 100000000000000000000000000n);
+        await nest.transfer(owner.address, 100000000000000000000000000n);
+        await nest.approve(nestCyberInk.address, 100000000000000000000000000n);
+        await nest.approve(nestNFTAuction.address, 100000000000000000000000000n);
         if (true) {
             console.log('1. mint');
             for (var i = 0; i < 100; ++i) {
@@ -46,7 +46,7 @@ describe('33.NFT', function() {
 
         if (true) {
             console.log('2. auction');
-            await nestCyberInk.release(owner.address, [9527]);
+            await nestCyberInk.release(owner.address, 9527, 1, 1);
             //await nestCyberInk.approve();
             
             await nestCyberInk.setApprovalForAll(nestNFTAuction.address, true);
@@ -62,9 +62,9 @@ describe('33.NFT', function() {
 
         if (true) {
             console.log('3. tokenURI');
-            await nestCyberInk.release(owner.address, [(3n << 64n) | 9527n]);
-            await nestCyberInk.setUriFormat('{ "image": "ipfs://bafybeicb6n7ycknloyap4xwlfn6a75pp7u6j7e7skkc5aboo2whybmylsu/%u.jpg", "external_url": "https://nestprotocol.org/", "description": "NEST NFT", "name": "NEST NFT #%u" }');
-            console.log('tokenURI: ' + await nestCyberInk.tokenURI((3n << 64n) | 9527n));
+            await nestCyberInk.release(owner.address, (9527n << 8n) | 3n, 1, 1);
+            await nestCyberInk.setUriFormat('{ "image": "ipfs://bafybeicb6n7ycknloyap4xwlfn6a75pp7u6j7e7skkc5aboo2whybmylsu/%u/%u.json", "external_url": "https://nestprotocol.org/", "description": "NEST NFT", "name": "NEST NFT #%u" }');
+            console.log('tokenURI: ' + await nestCyberInk.tokenURI((9527n << 8n) | 3n));
         }
     });
 });

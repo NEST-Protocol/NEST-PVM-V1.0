@@ -310,8 +310,8 @@ abstract contract SimpleERC721 is Context, ERC165, IERC721, IERC721Metadata {
 
     /// @dev Batch mint NFT
     /// @param to Address to receive target nft
-    /// @param step Step between two id
     /// @param firstTokenId First tokenId
+    /// @param step Step between two id
     /// @param count Number of ntf to release
     function _batchMint(address to, uint firstTokenId, uint step, uint count) internal virtual {
         require(to != address(0), "ERC721: mint to the zero address");
