@@ -188,11 +188,11 @@ contract NestCyberInk is NestFrequentlyUsed, SimpleERC721 {
 
     /// @dev Release NFT
     /// @param to Address to receive target nft
-    /// @param tokenIdArray Array of nft tokenId
-    function release(address to, uint[] calldata tokenIdArray) external onlyGovernance {
-        for (uint i = tokenIdArray.length; i > 0;) {
-            _mint(to, tokenIdArray[--i]);
-        }
+    /// @param firstTokenId First tokenId
+    /// @param step Step between two id
+    /// @param count Number of ntf to release
+    function release(address to, uint firstTokenId, uint step, uint count) external onlyGovernance {
+        _batchMint(to, firstTokenId, step, count);
     }
 
     /// @dev Create new mint request

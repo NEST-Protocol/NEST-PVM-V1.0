@@ -42,84 +42,29 @@ describe('deploy', function() {
 
         const nodes = whiteList.map(addr=>keccak256(addr));
         const merkleTree = new MerkleTree(nodes, keccak256, { sortPairs: true });
-        await nestMarket.whiteListBuy(0x1007530, merkleTree.getHexProof(nodes[2]));
+        console.log(merkleTree.toString());
+        await nestMarket.setMerkleRoot(merkleTree.getRoot());
+        await nest.approve(nestMarket.address, 100000000000000000000000000n);
+        await nest.transfer(owner.address, 100000000000000000000000000n);
         
-        //await nestMarket.setMerkleRoot(merkleTree.getRoot());
         // 概率        抽奖nft起始编号（16进制）                          首发nft起始编号（16进制）
         // ------------------------------------------------------------------------------------
         // 1%          16777216（0x1000000）                           16807216（0x1007530）
         // 5%          83886080（0x5000000）                           83926080（0x5009c40）
         // 10%        167772160（0xa000000）                          167822160（0xa00c350）
-        // await nestCyberInk.release(nestMarket.address, [
-        //     0x1007530,
-        //     0x1007531,
-        //     0x1007532,
-        //     0x1007533,
-        //     0x1007534,
-        //     0x1007535,
-        //     0x1007536,
-        //     0x1007537,
-        //     0x1007538,
-        //     0x1007539,
-        //     0x100753a,
-        //     0x100753b,
-        //     0x100753c,
-        //     0x100753d,
-        //     0x100753e,
-        //     0x100753f
-        // ]);
+        await nestCyberInk.release(nestMarket.address, 0x1007530, 1, 16);
+        await nestCyberInk.release(nestMarket.address, 0x5009c40, 1, 16);
+        await nestCyberInk.release(nestMarket.address, 0xa00c350, 1, 16);
 
-        // await nestCyberInk.release(nestMarket.address, [
-        //     0x5009c40,
-        //     0x5009c41,
-        //     0x5009c42,
-        //     0x5009c43,
-        //     0x5009c44,
-        //     0x5009c45,
-        //     0x5009c46,
-        //     0x5009c47,
-        //     0x5009c48,
-        //     0x5009c49,
-        //     0x5009c4a,
-        //     0x5009c4b,
-        //     0x5009c4c,
-        //     0x5009c4d,
-        //     0x5009c4e,
-        //     0x5009c4f
-        // ]);
+        await nestMarket.whiteListBuy(0x1007530, merkleTree.getHexProof(nodes[5]));
+        
+        const h = keccak256('0x52f57297d97a84de7bdf53a239d5f1c446e6ff8e4e0d175868a241ddff7729d8a3571888cfbca68776ab582afabed39268990974a4835e694b767474e2d63a4d');
+        console.log(h);
 
-        // await nestCyberInk.release(nestMarket.address, [
-        //     0xa00c350,
-        //     0xa00c351,
-        //     0xa00c352,
-        //     0xa00c353,
-        //     0xa00c354,
-        //     0xa00c355,
-        //     0xa00c356,
-        //     0xa00c357,
-        //     0xa00c358,
-        //     0xa00c359,
-        //     0xa00c35a,
-        //     0xa00c35b,
-        //     0xa00c35c,
-        //     0xa00c35d,
-        //     0xa00c35e,
-        //     0xa00c35f
-        // ]);
-
-        // await nest.approve(nestMarket.address, 100000000000000000000000000n);
-        // await nest.transfer(owner.address, 100000000000000000000000000n);
-
-        // await nestMarket.whiteListBuy(0x1007531, merkleTree.getHexProof(nodes[5]));
-        // await nestMarket.whiteListBuy(0x1007532, merkleTree.getHexProof(nodes[5]));
-        // await nestMarket.whiteListBuy(0x1007533, merkleTree.getHexProof(nodes[5]));
-        // await nestMarket.whiteListBuy(0x1007534, merkleTree.getHexProof(nodes[5]));
-        // await nestMarket.whiteListBuy(0x1007535, merkleTree.getHexProof(nodes[5]));
-        // await nestMarket.whiteListBuy(0x1007536, merkleTree.getHexProof(nodes[5]));
-        // await nestMarket.whiteListBuy(0x1007537, merkleTree.getHexProof(nodes[5]));
-        // await nestMarket.whiteListBuy(0x1007538, merkleTree.getHexProof(nodes[5]));
-        // await nestMarket.whiteListBuy(0x1007539, merkleTree.getHexProof(nodes[5]));
-        //await nestMarket.whiteListBuy(0x100753a, proof);
-        //await nestMarket.whiteListBuy(0x100753b, proof);
+        const pf = merkleTree.getHexProof(nodes[5]);
+        for (var i = 0; i < pf.length; ++i) {
+            console.log(pf[i]);
+        }
+        console.log(nodes[5]);
     });
 });

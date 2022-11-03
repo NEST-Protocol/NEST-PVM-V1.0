@@ -308,6 +308,29 @@ abstract contract SimpleERC721 is Context, ERC165, IERC721, IERC721Metadata {
         _afterTokenTransfer(address(0), to, tokenId);
     }
 
+    /// @dev Batch mint NFT
+    /// @param to Address to receive target nft
+    /// @param step Step between two id
+    /// @param firstTokenId First tokenId
+    /// @param count Number of ntf to release
+    function _batchMint(address to, uint firstTokenId, uint step, uint count) internal virtual {
+        require(to != address(0), "ERC721: mint to the zero address");
+        uint tokenId = firstTokenId + step * count;
+        while (firstTokenId < tokenId) {
+            tokenId -= step;
+            require(!_exists(tokenId), "ERC721: token already minted");
+            _owners[tokenId] = to;
+            emit Transfer(address(0), to, tokenId);
+        }
+        unchecked {
+            // Will not overflow unless all 2**256 token ids are minted to the same owner.
+            // Given that tokens are minted one by one, it is impossible in practice that
+            // this ever happens. Might change if we allow batch minting.
+            // The ERC fails to describe this case.
+            _balances[to] += count;
+        }
+    }
+
     /**
      * @dev Destroys `tokenId`.
      * The approval is cleared when the token is burned.
