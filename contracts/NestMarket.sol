@@ -9,10 +9,15 @@ import "./libs/TransferHelper.sol";
 
 import "./custom/NestFrequentlyUsed.sol";
 
-import "hardhat/console.sol";
-
 /// @dev Nest market
 contract NestMarket is NestFrequentlyUsed {
+
+    // Standard price of NFT
+    uint constant STANDARD_PRICE = 3000 ether;
+    // How many NFT can white list address buy
+    // TODO: Change to 1
+    uint constant WHITELIST_BUY_LIMIT = 5;
+
     // Merkle root for white list
     bytes32 _merkleRoot;
 
@@ -20,14 +25,13 @@ contract NestMarket is NestFrequentlyUsed {
     mapping(address=>uint) _whiteListCounter;
 
     /// @dev Set merkle root for white list
-    /// @param merkleRoot Merkle Root for white list
+    /// @param merkleRoot Merkle root for white list
     function setMerkleRoot(bytes32 merkleRoot) external onlyGovernance {
-        console.log("merkleRoot: %s", uint(merkleRoot));
         _merkleRoot = merkleRoot;
     }
 
     /// @dev Get merkle root for white list
-    /// @return Merkle Root for white list
+    /// @return Merkle root for white list
     function getMerkleRoot() external view returns (bytes32) {
         return _merkleRoot;
     }
@@ -37,7 +41,7 @@ contract NestMarket is NestFrequentlyUsed {
     /// @param merkleProof Merkle proof for the address
     function whiteListBuy(uint tokenId, bytes32[] calldata merkleProof) external {
         uint cnt = _whiteListCounter[msg.sender];
-        require(cnt < 5, "NWL:address can only buy 10");
+        require(cnt < WHITELIST_BUY_LIMIT, "NWL:address can only buy 10");
         require(MerkleProof.verify(
             merkleProof, 
             _merkleRoot, 
@@ -47,15 +51,7 @@ contract NestMarket is NestFrequentlyUsed {
         _whiteListCounter[msg.sender] = cnt + 1;
         
         // White list address pay 70% of the price
-        uint price = 1000 / (tokenId & 0xFF) * 70 / 100 * 1 ether;
-        TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), price);
-        IERC721(CYBER_INK_ADDRESS).transferFrom(address(this), msg.sender, tokenId);
-    }
-
-    /// @dev Normal address buy
-    /// @param tokenId Target tokenId
-    function buy(uint tokenId) external {
-        uint price = 1000 / (tokenId & 0xFF) * 1 ether;
+        uint price = STANDARD_PRICE / (tokenId & 0xFF) * 70 / 100;
         TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), price);
         IERC721(CYBER_INK_ADDRESS).transferFrom(address(this), msg.sender, tokenId);
     }

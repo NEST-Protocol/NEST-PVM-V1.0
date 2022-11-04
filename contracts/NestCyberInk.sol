@@ -56,13 +56,6 @@ contract NestCyberInk is NestFrequentlyUsed, SimpleERC721 {
     // Format string to generate tokenURI
     string _uriFormat;
 
-    /// @dev To support open-zeppelin/upgrades
-    /// @param governance INestGovernance implementation contract address
-    function initialize(address governance) public virtual override {
-        super.initialize(governance);
-        _uriFormat = "https://ipfs.io/ipfs/bafybeihb6o6vtlkla7bvqmro4ksgo7kxoo627wi65mo3qxmqaw3yoxrree/%u/%u.json";
-    }
-
     /**
      * @dev See {IERC721Metadata-name}.
      */
@@ -170,12 +163,17 @@ contract NestCyberInk is NestFrequentlyUsed, SimpleERC721 {
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
         // Must exists
         _requireMinted(tokenId);
+        string memory uriFormat = _uriFormat;
+        if (bytes(uriFormat).length == 0) {
+            // TODO: Update to the correct uri format string
+            uriFormat = "https://ipfs.io/ipfs/bafybeihb6o6vtlkla7bvqmro4ksgo7kxoo627wi65mo3qxmqaw3yoxrree/%u/%u.json";
+        }
         // Generate token uri
         return StringHelper.sprintf(
             // buffer
             new bytes(4096), 
             // format
-            _uriFormat, 
+            uriFormat, 
             abi.encode(
                 // level of nft
                 tokenId & 0xFF, 
@@ -237,35 +235,35 @@ contract NestCyberInk is NestFrequentlyUsed, SimpleERC721 {
             uint v = uint(keccak256(abi.encodePacked(hashValue, index))) % P_SPACE;
             // Counter for each nft. total(24)|nft1(24)|nft2(24)|nft3(24)|ext(160)
             uint counter = _counter;
-            // nft level: 0 means no nft 84%, 1 means nft1 1%, 2 means nft2 5%, 3 means nft3 10%
-            uint level = 0;
+            // nft rarity: 0 means no nft 84%, 1 means nft1 1%, 2 means nft2 5%, 3 means nft3 10%
+            uint rarity = 0;
 
             // Each 24-bits is a number for nft, the highest 24 bits are used to record the total number, which is
             // always no less than the other counts. Therefore, when adding the whole uint, only the total number
             // may overflow, and the addition will fail, so we can directly use uint addition to achieve four counts
             // The overflow problem has been solved automatically
             if (v < P_1) {
-                level = 1;
+                rarity = 1;
                 // index now means nft index
                 index = (counter >> 208);
                 // total(+1)|nft1(+1)
                 _counter = counter + 0x0000010000010000000000000000000000000000000000000000000000000000;
             } else if (v < P_5) {
-                level = 5;
+                rarity = 5;
                 // index now means nft index
                 index = (counter >> 184);
                 // total(+1)|nft2(+1)
                 _counter = counter + 0x0000010000000000010000000000000000000000000000000000000000000000;
             } else if (v < P_10) {
-                level = 10;
+                rarity = 10;
                 // index now means nft index
                 index = (counter >> 160);
                 // total(+1)|nft3(+1)
                 _counter = counter + 0x0000010000000000000000010000000000000000000000000000000000000000;
             } else return;
 
-            // Mint to owner, tokenId: index(24)|level(8)
-            _mint(mintRequest.owner, ((index & 0xFFFFFF) << 8) | level);
+            // Mint to owner, tokenId: index(24)|rarity(8)
+            _mint(mintRequest.owner, ((index & 0xFFFFFF) << 8) | rarity);
         }
     }
 }
