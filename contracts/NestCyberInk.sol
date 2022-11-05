@@ -60,7 +60,7 @@ contract NestCyberInk is NestFrequentlyUsed, SimpleERC721 {
      * @dev See {IERC721Metadata-name}.
      */
     function name() public view virtual override returns (string memory) {
-        return "Nest Cyber Ink";
+        return "NEST Cyber Ink";
     }
 
     /**
@@ -191,6 +191,11 @@ contract NestCyberInk is NestFrequentlyUsed, SimpleERC721 {
     /// @param step Step between two id
     /// @param count Number of ntf to release
     function release(address to, uint firstTokenId, uint step, uint count) external onlyGovernance {
+        console.log("mint start: %d#%d-%d", 
+            firstTokenId & 0xFF, 
+            firstTokenId >> 8,
+            (firstTokenId + step * (count - 1)) >> 8
+        );
         _batchMint(to, firstTokenId, step, count);
     }
 

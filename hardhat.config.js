@@ -81,7 +81,7 @@ module.exports = {
       timeout: 2000000000
     },
     hardhat: {
-      gas: 6000000,
+      gas: 12450000,
       gasPrice: 1e9
     }
   },

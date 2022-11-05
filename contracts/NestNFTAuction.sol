@@ -79,7 +79,7 @@ contract NestNFTAuction is NestFrequentlyUsed, INestNFTAuction {
     function startAuction(uint tokenId, uint price, uint cycle) external override {
         require(tokenId < 0x100000000, "AUCTION:tokenId to large");
         require(price >= 990 && price < 0x100000000, "AUCTION:price too low");
-        require(cycle >= 1 hours && cycle < 1 weeks, "AUCTION:cycle not valid");
+        require(cycle >= 1 hours && cycle <= 1 weeks, "AUCTION:cycle not valid");
         
         // Transfer the target NFT to this contract
         IERC721(CYBER_INK_ADDRESS).transferFrom(msg.sender, address(this), tokenId);

@@ -52,6 +52,7 @@ contract NestMarket is NestFrequentlyUsed {
         
         // White list address pay 70% of the price
         uint price = STANDARD_PRICE / (tokenId & 0xFF) * 70 / 100;
+        // TODO: Transfer to PVM vault?
         TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), price);
         IERC721(CYBER_INK_ADDRESS).transferFrom(address(this), msg.sender, tokenId);
     }
