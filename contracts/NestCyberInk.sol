@@ -175,10 +175,12 @@ contract NestCyberInk is NestFrequentlyUsed, SimpleERC721 {
             // format
             uriFormat, 
             abi.encode(
-                // level of nft
+                // rarity of nft
                 tokenId & 0xFF, 
                 // index of nft
                 tokenId >> 8, 
+                // rarity of nft
+                tokenId & 0xFF, 
                 // tokenId
                 tokenId
             )

@@ -30,7 +30,7 @@ describe('33.NFT', function() {
         await nest.approve(nestNFTAuction.address, 100000000000000000000000000n);
         if (true) {
             console.log('1. mint');
-            for (var i = 0; i < 100; ++i) {
+            for (var i = 0; i < 10; ++i) {
                 await nestCyberInk.mint();
                 if (i > 0) {
                     await nestCyberInk.claim(i - 1);
@@ -68,6 +68,7 @@ describe('33.NFT', function() {
             //     + '"external_url": "https://nestprotocol.org/", '
             //     + '"description": "NEST NFT", "name": "NEST NFT #%u"'
             // + '}');
+            await nestCyberInk.setUriFormat('ipfs://bafybeicb6n7ycknloyap4xwlfn6a75pp7u6j7e7skkc5aboo2whybmylsu/%#%u/%u.json');
             console.log('tokenURI: ' + await nestCyberInk.tokenURI((9527n << 8n) | 3n));
         }
     });
