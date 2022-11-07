@@ -87,10 +87,10 @@ library StringHelper {
     {
         uint i = index;
         minLength += index;
-        while (iv > 0 || index < minLength) {
+        do {
             buffer[index++] = bytes1(uint8(iv % 10 + 48));
             iv /= 10;
-        }
+        } while (iv > 0 || index < minLength);
 
         for (uint j = index; j > i;) {
             bytes1 tmp = buffer[i];
@@ -135,7 +135,7 @@ library StringHelper {
         uint i = index;
         uint B = upper ? 55 : 87;
         minLength += index;
-        while (iv > 0 || index < minLength) {
+        do {
             uint c = iv & 0xF;
             if (c > 9) {
                 buffer[index++] = bytes1(uint8(c + B));
@@ -143,7 +143,7 @@ library StringHelper {
                 buffer[index++] = bytes1(uint8(c + 48));
             }
             iv >>= 4;
-        }
+        } while (iv > 0 || index < minLength);
 
         for (uint j = index; j > i;) {
             bytes1 tmp = buffer[i];
@@ -325,15 +325,15 @@ library StringHelper {
                 }
                 // u
                 if (c == 117) {
-                    index = writeUIntDec(buffer, index, arg, w == 0 ? 1 : w);
+                    index = writeUIntDec(buffer, index, arg, w);
                 }
                 // x/X
                 else if (c == 120 || c == 88) {
-                    index = writeUIntHex(buffer, index, arg, w == 0 ? 1 : w, c == 88);
+                    index = writeUIntHex(buffer, index, arg, w, c == 88);
                 }
                 // s/S
                 else if (c == 115 || c == 83) {
-                    index = writeEncString(buffer, index, arg, 0, w == 0 ? 31 : w, c == 83 ? 1 : 0);
+                    index = writeEncString(buffer, index, arg, 0, w, c == 83 ? 1 : 0);
                 }
                 // f
                 else if (c == 102) {
@@ -403,7 +403,7 @@ library StringHelper {
     ) public pure returns (uint) {
 
         uint length = (v & 0xFF) - start;
-        if (length > count) {
+        if (count > 0 && length > count) {
             length = count;
         }
         v >>= (start + 1) << 3;
@@ -412,7 +412,7 @@ library StringHelper {
             if (charCase == 1 && c >= 97 && c <= 122) {
                 c -= 32;
             } else if (charCase == 2 && c >= 65 && c <= 90) {
-                c -= 32;
+                c += 32;
             }
             buffer[index++] = bytes1(uint8(c));
             v >>= 8;
@@ -513,15 +513,15 @@ library StringHelper {
                 }
                 // u
                 if (c == 117) {
-                    index = writeUIntDec(buffer, index, arg, w == 0 ? 1 : w);
+                    index = writeUIntDec(buffer, index, arg, w);
                 }
                 // x/X
                 else if (c == 120 || c == 88) {
-                    index = writeUIntHex(buffer, index, arg, w == 0 ? 1 : w, c == 88);
+                    index = writeUIntHex(buffer, index, arg, w, c == 88);
                 }
                 // s/S
                 else if (c == 115 || c == 83) {
-                    index = writeAbiString(buffer, index, abiArgs, arg, w == 0 ? 31 : w, c == 83 ? 1 : 0);
+                    index = writeAbiString(buffer, index, abiArgs, arg, w, c == 83 ? 1 : 0);
                 }
                 // f
                 else if (c == 102) {
@@ -586,7 +586,7 @@ library StringHelper {
     ) internal pure returns (uint) 
     {
         uint length = readAbiUInt(data, start);
-        if (count > length) {
+        if (count == 0 || count > length) {
             count = length;
         }
         uint i = 0;
@@ -596,7 +596,7 @@ library StringHelper {
             if (charCase == 1 && c >= 97 && c <= 122) {
                 c -= 32;
             } else if (charCase == 2 && c >= 65 && c <= 90) {
-                c -= 32;
+                c += 32;
             }
             buffer[index + i] = bytes1(uint8(c));
             ++i;

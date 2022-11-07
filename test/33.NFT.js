@@ -68,7 +68,7 @@ describe('33.NFT', function() {
             //     + '"external_url": "https://nestprotocol.org/", '
             //     + '"description": "NEST NFT", "name": "NEST NFT #%u"'
             // + '}');
-            await nestCyberInk.setUriFormat('ipfs://bafybeicb6n7ycknloyap4xwlfn6a75pp7u6j7e7skkc5aboo2whybmylsu/%#%u/%u.json');
+            await nestCyberInk.setUriFormat('ipfs://bafybeicb6n7ycknloyap4xwlfn6a75pp7u6j7e7skkc5aboo2whybmylsu/%u/%u.json');
             console.log('tokenURI: ' + await nestCyberInk.tokenURI((9527n << 8n) | 3n));
         }
     });
