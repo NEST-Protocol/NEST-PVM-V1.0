@@ -451,28 +451,62 @@ abstract contract SimpleERC721 is Context, ERC165, IERC721, IERC721Metadata {
     //  * @return bool whether the call correctly returned the expected magic value
     //  */
     function _checkOnERC721Received(
-        address,// from,
-        address,// to,
-        uint256,// tokenId,
-        bytes memory// data
-    ) private pure returns (bool) {
-        // if (to.isContract()) {
-        //     try IERC721Receiver(to).onERC721Received(_msgSender(), from, tokenId, data) returns (bytes4 retval) {
-        //         return retval == IERC721Receiver.onERC721Received.selector;
-        //     } catch (bytes memory reason) {
-        //         if (reason.length == 0) {
-        //             revert("ERC721: transfer to non ERC721Receiver implementer");
-        //         } else {
-        //             /// @solidity memory-safe-assembly
-        //             assembly {
-        //                 revert(add(32, reason), mload(reason))
-        //             }
-        //         }
-        //     }
-        // } else {
-        //     return true;
-        // }
+        address from,
+        address to,
+        uint256 tokenId,
+        bytes memory data
+    ) private returns (bool) {
+        if (isContract(to)) {
+            try IERC721Receiver(to).onERC721Received(_msgSender(), from, tokenId, data) returns (bytes4 retval) {
+                return retval == IERC721Receiver.onERC721Received.selector;
+            } catch (bytes memory reason) {
+                if (reason.length == 0) {
+                    revert("ERC721: transfer to non ERC721Receiver implementer");
+                } else {
+                    /// @solidity memory-safe-assembly
+                    assembly {
+                        revert(add(32, reason), mload(reason))
+                    }
+                }
+            }
+        } else {
+            return true;
+        }
         return true;
+    }
+
+    /**
+     * @dev Returns true if `account` is a contract.
+     *
+     * [IMPORTANT]
+     * ====
+     * It is unsafe to assume that an address for which this function returns
+     * false is an externally-owned account (EOA) and not a contract.
+     *
+     * Among others, `isContract` will return false for the following
+     * types of addresses:
+     *
+     *  - an externally-owned account
+     *  - a contract in construction
+     *  - an address where a contract will be created
+     *  - an address where a contract lived, but was destroyed
+     * ====
+     *
+     * [IMPORTANT]
+     * ====
+     * You shouldn't rely on `isContract` to protect against flash loan attacks!
+     *
+     * Preventing calls from contracts is highly discouraged. It breaks composability, breaks support for smart wallets
+     * like Gnosis Safe, and does not provide security since it can be circumvented by calling from a contract
+     * constructor.
+     * ====
+     */
+    function isContract(address account) internal view returns (bool) {
+        // This method relies on extcodesize/address.code.length, which returns 0
+        // for contracts in construction, since the code is only stored at the end
+        // of the constructor execution.
+
+        return account.code.length > 0;
     }
 
     /**
