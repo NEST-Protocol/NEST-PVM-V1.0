@@ -8,8 +8,6 @@ import "./libs/StringHelper.sol";
 
 import "./custom/NestFrequentlyUsed.sol";
 
-import "hardhat/console.sol";
-
 /// @dev NestCyberInk NFT
 contract NestCyberInk is NestFrequentlyUsed, SimpleERC721 {
 
@@ -192,12 +190,21 @@ contract NestCyberInk is NestFrequentlyUsed, SimpleERC721 {
     /// @param step Step between two id
     /// @param count Number of ntf to release
     function release(address to, uint firstTokenId, uint step, uint count) external onlyGovernance {
-        console.log("mint start: %d#%d-%d", 
-            firstTokenId & 0xFF, 
-            firstTokenId >> 8,
-            (firstTokenId + step * (count - 1)) >> 8
-        );
         _batchMint(to, firstTokenId, step, count);
+    }
+
+    /// @dev Safe release NFT
+    /// @param to Address to receive target nft
+    /// @param firstTokenId First tokenId
+    /// @param step Step between two id
+    /// @param count Number of ntf to release
+    function safeRelease(address to, uint firstTokenId, uint step, uint count) external onlyGovernance {
+        _batchMint(address(this), firstTokenId, step, count);
+        uint tokenId = firstTokenId + step * count;
+        while (firstTokenId < tokenId) {
+            tokenId -= step;
+            _safeTransfer(address(this), to, tokenId, "");
+        }
     }
 
     /// @dev Create new mint request
