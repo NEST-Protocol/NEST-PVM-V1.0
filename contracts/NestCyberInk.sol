@@ -29,8 +29,7 @@ contract NestCyberInk is NestFrequentlyUsed, SimpleERC721 {
     uint constant NEST_AMOUNT = 99.9 ether;
 
     // Max circulation of nft
-    // TODO: Change to 1920
-    uint constant MAX_CIRCULATION = 192;
+    uint constant MAX_CIRCULATION = 1920;
 
     // The span from current block to hash block
     uint constant OPEN_BLOCK_SPAN = 1;
@@ -209,7 +208,6 @@ contract NestCyberInk is NestFrequentlyUsed, SimpleERC721 {
         require((_counter >> 232) < MAX_CIRCULATION, "NNFT:mint over");
 
         // Pay NEST
-        // TODO: pay to NestVault?
         TransferHelper.safeTransferFrom(
             NEST_TOKEN_ADDRESS, 
             msg.sender, 

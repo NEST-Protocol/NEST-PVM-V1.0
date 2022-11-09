@@ -97,19 +97,19 @@ exports.deploy = async function() {
     // //const nestMarket = await NestMarket.attach('0x0000000000000000000000000000000000000000');
     // console.log('nestMarket: ' + nestMarket.address);
 
-    // // Release to element address
-    // console.log('Release to element, 150|75|15');
+    // Release to element address
+    console.log('Release to element, 150|75|15');
     // TODO: Address of element
-    // await nestCyberInk.release('0x0000000000000000000000000000000000000001', ((10000 + 0  ) << 8) | 0x0a, 256, 150);
-    // await nestCyberInk.release('0x0000000000000000000000000000000000000001', ((10000 + 0  ) << 8) | 0x05, 256, 75);
-    // await nestCyberInk.release('0x0000000000000000000000000000000000000001', ((10000 + 0  ) << 8) | 0x01, 256, 15);
+    await nestCyberInk.release('0x0000000000000000000000000000000000000001', ((10000 + 0  ) << 8) | 0x0a, 256, 150);
+    await nestCyberInk.release('0x0000000000000000000000000000000000000001', ((10000 + 0  ) << 8) | 0x05, 256, 75);
+    await nestCyberInk.release('0x0000000000000000000000000000000000000001', ((10000 + 0  ) << 8) | 0x01, 256, 15);
 
-    // // Release to pearDAO address
-    // console.log('Release to pearDAO, 150|75|15');
+    // Release to pearDAO address
+    console.log('Release to pearDAO, 150|75|15');
     // TODO: Address of pearDAO
-    // await nestCyberInk.release('0x0000000000000000000000000000000000000001', ((10000 + 150) << 8) | 0x0a, 256, 150);
-    // await nestCyberInk.release('0x0000000000000000000000000000000000000001', ((10000 + 75 ) << 8) | 0x05, 256, 75);
-    // await nestCyberInk.release('0x0000000000000000000000000000000000000001', ((10000 + 15 ) << 8) | 0x01, 256, 15);
+    await nestCyberInk.release('0x0000000000000000000000000000000000000001', ((10000 + 150) << 8) | 0x0a, 256, 150);
+    await nestCyberInk.release('0x0000000000000000000000000000000000000001', ((10000 + 75 ) << 8) | 0x05, 256, 75);
+    await nestCyberInk.release('0x0000000000000000000000000000000000000001', ((10000 + 15 ) << 8) | 0x01, 256, 15);
 
     // // Release to nestMarket address
     // console.log('Release to nestMarket, 500|250|50');
