@@ -81,8 +81,6 @@ contract NestNFTAuction is NestFrequentlyUsed, INestNFTAuction {
         require(price >= 990 && price < 0x100000000, "AUCTION:price too low");
         require(cycle >= 1 hours && cycle <= 1 weeks, "AUCTION:cycle not valid");
         
-        // Transfer the target NFT to this contract
-        IERC721(CYBER_INK_ADDRESS).transferFrom(msg.sender, address(this), tokenId);
         //TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), uint(price));
         emit StartAuction(msg.sender, tokenId, uint(price), _auctions.length);
 
@@ -100,6 +98,9 @@ contract NestNFTAuction is NestFrequentlyUsed, INestNFTAuction {
             // startBlock
             uint32(block.number)
         ));
+
+        // Transfer the target NFT to this contract
+        IERC721(CYBER_INK_ADDRESS).transferFrom(msg.sender, address(this), tokenId);
     }
 
     /// @dev Bid for the auction
@@ -149,8 +150,7 @@ contract NestNFTAuction is NestFrequentlyUsed, INestNFTAuction {
 
         // Bid information: bidder(160)|price(32)|reward(32)|endTime(32)
         uint bade = auction.bade;
-        // TODO: Restore this code
-        //require(block.timestamp > (bade & 0xFFFFFFFF), "AUCTION:not end");
+        require(block.timestamp > (bade & 0xFFFFFFFF), "AUCTION:not end");
         address bidder = address(uint160(bade >> 96));
         // No bidder, auction failed, transfer nft to owner
         if (bidder == address(0)) {

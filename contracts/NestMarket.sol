@@ -15,8 +15,7 @@ contract NestMarket is NestFrequentlyUsed {
     // Standard price of NFT
     uint constant STANDARD_PRICE = 3000 ether;
     // How many NFT can white list address buy
-    // TODO: Change to 1
-    uint constant WHITELIST_BUY_LIMIT = 5;
+    uint constant WHITELIST_BUY_LIMIT = 1;
 
     // Merkle root for white list
     bytes32 _merkleRoot;
@@ -52,7 +51,6 @@ contract NestMarket is NestFrequentlyUsed {
         
         // White list address pay 70% of the price
         uint price = STANDARD_PRICE / (tokenId & 0xFF) * 70 / 100;
-        // TODO: Transfer to PVM vault?
         TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), price);
         IERC721(CYBER_INK_ADDRESS).transferFrom(address(this), msg.sender, tokenId);
     }
