@@ -162,8 +162,7 @@ contract NestCyberInk is NestFrequentlyUsed, SimpleERC721 {
         _requireMinted(tokenId);
         string memory uriFormat = _uriFormat;
         if (bytes(uriFormat).length == 0) {
-            // TODO: Update to the correct uri format string
-            uriFormat = "https://ipfs.io/ipfs/bafybeihb6o6vtlkla7bvqmro4ksgo7kxoo627wi65mo3qxmqaw3yoxrree/%u/%u.json";
+            uriFormat = "https://ipfs.io/ipfs/bafybeihi3mkgz2zoq6vg6ustlchvierbdy4hq3mdh3nh6vybnxyc4efq3m/%u/%u.json";
         }
         // Generate token uri
         return StringHelper.sprintf(

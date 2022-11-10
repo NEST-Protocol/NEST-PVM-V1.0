@@ -24,25 +24,6 @@ describe('deploy', function() {
         } = await deploy();
 
         console.log('ok');
-        // Release to element address
-        console.log('Release to element, 150|75|15');
-        await nestCyberInk.release('0x0000000000000000000000000000000000000001', ((10000 + 0  ) << 8) | 0x0a, 256, 150);
-        await nestCyberInk.release('0x0000000000000000000000000000000000000001', ((10000 + 0  ) << 8) | 0x05, 256, 75);
-        await nestCyberInk.release('0x0000000000000000000000000000000000000001', ((10000 + 0  ) << 8) | 0x01, 256, 15);
-
-        // Release to pearDAO address
-        console.log('Release to pearDAO, 150|75|15');
-        await nestCyberInk.release('0x0000000000000000000000000000000000000001', ((10000 + 150) << 8) | 0x0a, 256, 150);
-        await nestCyberInk.release('0x0000000000000000000000000000000000000001', ((10000 + 75 ) << 8) | 0x05, 256, 75);
-        await nestCyberInk.release('0x0000000000000000000000000000000000000001', ((10000 + 15 ) << 8) | 0x01, 256, 15);
-
-        // Release to nestMarket address
-        console.log('Release to nestMarket, 500|250|50');
-        await nestCyberInk.release('0x0000000000000000000000000000000000000001', ((10000 + 300) << 8) | 0x0a, 256, 250);
-        await nestCyberInk.release('0x0000000000000000000000000000000000000001', ((10000 + 550) << 8) | 0x0a, 256, 250);
-        await nestCyberInk.release('0x0000000000000000000000000000000000000001', ((10000 + 150) << 8) | 0x05, 256, 250);
-        await nestCyberInk.release('0x0000000000000000000000000000000000000001', ((10000 + 30 ) << 8) | 0x01, 256, 50);
-        
 		return;
         //await nestCyberInk.release(nestMarket.address, 2560001, 256, 16);
         //await nestCyberInk.release(nestMarket.address, 2560005, 256, 16);
