@@ -25,8 +25,7 @@ contract NestFrequentlyUsed is NestBase {
     // Address of direct poster
     address constant DIRECT_POSTER = 0x06Ca5C8eFf273009C94D963e0AB8A8B9b09082eF;
     // Address of CyberInk
-    // TODO: Update to correct address
-    address constant CYBER_INK_ADDRESS = address(0);
+    address constant CYBER_INK_ADDRESS = 0xCBB79049675F06AFF618CFEB74c2B0Bf411E064a;
 
     // // Polygon:
     // // Address of nest token

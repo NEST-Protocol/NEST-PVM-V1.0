@@ -41,6 +41,7 @@ exports.deploy = async function() {
     // nestFutures: 0x8e32C33814271bD64D5138bE9d47Cd55025074CD
     // nestProbability: 0xCA52f25f37d213CeD3dDE81a539e64464dEa8f3C
     // nestBuybackPool: 0x8AA36CF9CD7e88b63F32c53C66BFaDd409367B2f
+    // nestCyberInk: 0xCBB79049675F06AFF618CFEB74c2B0Bf411E064a
     // proxyAdmin: 0x42557CAc22ED9933b5E91c8a285167586153A0EB
 
     //const nestVault = await NestVault.deploy(); //await upgrades.deployProxy(NestVault, [nestGovernance.address], { initializer: 'initialize' });
@@ -85,8 +86,8 @@ exports.deploy = async function() {
     const nestBuybackPool = await NestBuybackPool.attach('0x8AA36CF9CD7e88b63F32c53C66BFaDd409367B2f');
     console.log('nestBuybackPool: ' + nestBuybackPool.address);
 
-    const nestCyberInk = await upgrades.deployProxy(NestCyberInk, [nestGovernance.address], { initializer: 'initialize' });
-    // const nestCyberInk = await NestCyberInk.attach('0x0000000000000000000000000000000000000000');
+    //const nestCyberInk = await upgrades.deployProxy(NestCyberInk, [nestGovernance.address], { initializer: 'initialize' });
+    const nestCyberInk = await NestCyberInk.attach('0xCBB79049675F06AFF618CFEB74c2B0Bf411E064a');
     console.log('nestCyberInk: ' + nestCyberInk.address);
     return;
     // const nestNFTAuction = await upgrades.deployProxy(NestNFTAuction, [nestGovernance.address], { initializer: 'initialize' });
