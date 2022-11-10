@@ -40,12 +40,12 @@ contract NestMarket is NestFrequentlyUsed {
     /// @param merkleProof Merkle proof for the address
     function whiteListBuy(uint tokenId, bytes32[] calldata merkleProof) external {
         uint cnt = _whiteListCounter[msg.sender];
-        require(cnt < WHITELIST_BUY_LIMIT, "NWL:address can only buy 10");
+        require(cnt < WHITELIST_BUY_LIMIT, "NM:can only buy 1");
         require(MerkleProof.verify(
             merkleProof, 
             _merkleRoot, 
             keccak256(abi.encodePacked(msg.sender))
-        ), "NWL:address is not in whiteList");
+        ), "NM:address not in whitelist");
 
         _whiteListCounter[msg.sender] = cnt + 1;
         
