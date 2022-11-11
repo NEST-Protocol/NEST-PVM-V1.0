@@ -43,6 +43,8 @@ exports.deploy = async function() {
     // nestBuybackPool: 0x8AA36CF9CD7e88b63F32c53C66BFaDd409367B2f
     // nestCyberInk: 0xCBB79049675F06AFF618CFEB74c2B0Bf411E064a
     // proxyAdmin: 0x42557CAc22ED9933b5E91c8a285167586153A0EB
+    // nestNFTAuction: 0x84DC9B49b09d2eB07Cb2D78D2F11bA5b04CeaDf3
+    // nestMarket: 0x8b2bc5A2B20acd6a2A71E1dc8D78F6964C65a472
 
     //const nestVault = await NestVault.deploy(); //await upgrades.deployProxy(NestVault, [nestGovernance.address], { initializer: 'initialize' });
     const nestVault = await NestVault.attach('0x65e7506244CDdeFc56cD43dC711470F8B0C43beE');
@@ -89,36 +91,32 @@ exports.deploy = async function() {
     //const nestCyberInk = await upgrades.deployProxy(NestCyberInk, [nestGovernance.address], { initializer: 'initialize' });
     const nestCyberInk = await NestCyberInk.attach('0xCBB79049675F06AFF618CFEB74c2B0Bf411E064a');
     console.log('nestCyberInk: ' + nestCyberInk.address);
-    return;
-    // const nestNFTAuction = await upgrades.deployProxy(NestNFTAuction, [nestGovernance.address], { initializer: 'initialize' });
-    // // const nestNFTAuction = await NestNFTAuction.attach('0x0000000000000000000000000000000000000000');
-    // console.log('nestNFTAuction: ' + nestNFTAuction.address);
 
-    // const nestMarket = await upgrades.deployProxy(NestMarket, [nestGovernance.address], { initializer: 'initialize' });
-    // //const nestMarket = await NestMarket.attach('0x0000000000000000000000000000000000000000');
-    // console.log('nestMarket: ' + nestMarket.address);
+    //const nestNFTAuction = await upgrades.deployProxy(NestNFTAuction, [nestGovernance.address], { initializer: 'initialize' });
+    const nestNFTAuction = await NestNFTAuction.attach('0x84DC9B49b09d2eB07Cb2D78D2F11bA5b04CeaDf3');
+    console.log('nestNFTAuction: ' + nestNFTAuction.address);
 
-    // Release to element address
-    console.log('Release to element, 150|75|15');
-    // TODO: Address of element
-    await nestCyberInk.release('0x0000000000000000000000000000000000000000', ((10000 + 0  ) << 8) | 0x0a, 256, 150);
-    await nestCyberInk.release('0x0000000000000000000000000000000000000000', ((10000 + 0  ) << 8) | 0x05, 256, 75);
-    await nestCyberInk.release('0x0000000000000000000000000000000000000000', ((10000 + 0  ) << 8) | 0x01, 256, 15);
+    //const nestMarket = await upgrades.deployProxy(NestMarket, [nestGovernance.address], { initializer: 'initialize' });
+    const nestMarket = await NestMarket.attach('0x8b2bc5A2B20acd6a2A71E1dc8D78F6964C65a472');
+    console.log('nestMarket: ' + nestMarket.address);
 
-    // Release to pearDAO address
-    console.log('Release to pearDAO, 150|75|15');
-    // TODO: Address of pearDAO
-    await nestCyberInk.release('0x0000000000000000000000000000000000000000', ((10000 + 150) << 8) | 0x0a, 256, 150);
-    await nestCyberInk.release('0x0000000000000000000000000000000000000000', ((10000 + 75 ) << 8) | 0x05, 256, 75);
-    await nestCyberInk.release('0x0000000000000000000000000000000000000000', ((10000 + 15 ) << 8) | 0x01, 256, 15);
+    // // Release to element address
+    // console.log('Release to element, 150|75|15');
+    // await nestCyberInk.safeRelease('0x573b88376e044603e0876E446d63d9047441A446', ((10000 + 0  ) << 8) | 0x0a, 256, 150);
+    // await nestCyberInk.safeRelease('0x94A5CE1B502Adc36b8A44B8d6Cd6fC6fDd30Ac6F', ((10000 + 0  ) << 8) | 0x05, 256, 75);
+    // await nestCyberInk.safeRelease('0x13C31CA2D073C5E46FF3dc585A2ca944C6772Cc0', ((10000 + 0  ) << 8) | 0x01, 256, 15);
 
-    // // Release to nestMarket address
-    // console.log('Release to nestMarket, 500|250|50');
-    // TODO: Address of nestMarket
-    // await nestCyberInk.release('0x0000000000000000000000000000000000000000', ((10000 + 300) << 8) | 0x0a, 256, 250);
-    // await nestCyberInk.release('0x0000000000000000000000000000000000000000', ((10000 + 550) << 8) | 0x0a, 256, 250);
-    // await nestCyberInk.release('0x0000000000000000000000000000000000000000', ((10000 + 150) << 8) | 0x05, 256, 250);
-    // await nestCyberInk.release('0x0000000000000000000000000000000000000000', ((10000 + 30 ) << 8) | 0x01, 256, 50);
+    // // Release to pearDAO address
+    // console.log('Release to pearDAO, 150|75|15');
+    // await nestCyberInk.safeRelease('0x3b267A908E7DeC6F2e637054Fa1623BCe473E6f6', ((10000 + 150) << 8) | 0x0a, 256, 150);
+    // await nestCyberInk.safeRelease('0xCFa2F81885F15F1Ea6EE0aa4CE03c9D630Aecb29', ((10000 + 75 ) << 8) | 0x05, 256, 75);
+    // await nestCyberInk.safeRelease('0x51Cc035Dd1B00131eebd142DA9f734eE88183F1c', ((10000 + 15 ) << 8) | 0x01, 256, 15);
+
+    // Release to nestMarket address
+    //console.log('Release to nestMarket, 151|150|51');
+    //await nestCyberInk.release(nestMarket.address, ((10000 + 300) << 8) | 0x0a, 256, 151);
+    //await nestCyberInk.release(nestMarket.address, ((10000 + 150) << 8) | 0x05, 256, 150);
+    //await nestCyberInk.release(nestMarket.address, ((10000 + 30 ) << 8) | 0x01, 256, 51);
         
     console.log('---------- OK ----------');
     

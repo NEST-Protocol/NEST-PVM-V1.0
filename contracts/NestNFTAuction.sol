@@ -81,7 +81,6 @@ contract NestNFTAuction is NestFrequentlyUsed, INestNFTAuction {
         require(price >= 990 && price < 0x100000000, "AUCTION:price too low");
         require(cycle >= 1 hours && cycle <= 1 weeks, "AUCTION:cycle not valid");
         
-        //TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), uint(price));
         emit StartAuction(msg.sender, tokenId, uint(price), _auctions.length);
 
         // Push auction information to the array
