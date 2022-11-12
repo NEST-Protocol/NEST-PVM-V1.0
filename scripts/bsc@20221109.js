@@ -137,6 +137,7 @@ exports.deploy = async function() {
         nestProbability: nestProbability,
         nestPriceFacade: nestPriceFacade,
         nestBuybackPool: nestBuybackPool,
+        nestMarket: nestMarket,
 
         BLOCK_TIME: BLOCK_TIME,
         USDT_DECIMALS: 18,
