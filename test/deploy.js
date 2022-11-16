@@ -29,7 +29,7 @@ describe('deploy', function() {
         //await nestCyberInk.release(nestMarket.address, 2560010, 256, 16);
         
         let whiteList = [
-            '0x0010aa8af7c8de6be3100017335003927ef73852',
+			'0x0010aa8af7c8de6be3100017335003927ef73852',
 			'0x03ecd9a40fe68be41c051bf2ba7d9f5da79483c5',
 			'0x0414970d160ef1d1d01f3e7f82e39dfcbf10c310',
 			'0x07268e226f9ada88fb57b59d816c25bc000da8a0',
@@ -396,7 +396,27 @@ describe('deploy', function() {
 			'0x19bf4fe746c370e2930cd8c1b3dcfa55270c8ed7',
 			'0x55a04b595d19eaa43e7bdc83689519dbf6ad3aac',
 			'0x611af993418f12d0fb19b94146cff2998386f73c',
-			'0x871e642fB0047DC6CE7E79297f07C3ee02D81fC0'
+			'0x871e642fB0047DC6CE7E79297f07C3ee02D81fC0',
+			'0x449ea9041e5125c53d0606fa4b4128477782fcdb',
+			'0xDEdc4B125B324E9c1fd29c4ff808cac9D6Ca3c37',
+			'0x929ba44469ceea8745a9938e403b633324b0958b',
+			'0x292788a70a8e885ff6b0d9a95a4c75366a82930a',
+			'0xa984c454d98af0b5ed8e5b18807323e1b881bb1a',
+			'0xD104329FEA41BEFCF50F97465CD0138073a042Dc',
+			'0x77775Fb62Ee4B4179dd5A8599B19e10e0973C424',
+			'0x611af993418f12D0FB19b94146cFf2998386f73c',
+			'0x78dbA641814Cc43a2803a4CCEf4f0aCC369Bb9eF',
+			'0x878968036a0744B1517571D772EED517415Eb4Ca',
+			'0xa63b833c4bb36bf5e9d1c981fb17a4ff37dd68f3',
+			'0x4BbA7715fD58180eD3D43b5f192671e7a9c68502',
+			'0x04fBAcbA3204eE10aD23C3017af55f42BaE59DE2',
+			'0xd512213ca7f167e2889a29629653f867096c8a53',
+			'0xa084755d67532f338025ddb73cb474486cfe1e30',
+			'0xF0148dBE2F22deD13B157fe2CB877560ACcD1c8b',
+			'0xd11d74306e28369d0347ce096600ceb1395bdda7',
+			'0xAC1281Db6B2D853F01FD1fe85cD6d6dC4096Ca7B',
+			'0x52A721567C679a0CaEd91C52d1b4079D482Fac53',
+			'0xa8b7d97570c34068efac4ec51deddd4c16602ae8'
         ];
 
         for (var i = 0; i < whiteList.length; ++i) {
@@ -411,7 +431,7 @@ describe('deploy', function() {
         const merkleTree = new MerkleTree(nodes, keccak256, { sortPairs: true });
 
         //console.log(merkleTree.toString());
-        //await nestMarket.setMerkleRoot(merkleTree.getRoot(), { nonce: 61 });
+        //await nestMarket.setMerkleRoot(merkleTree.getRoot(), { nonce: 62 });
         //await nestMarket.whiteListBuy(2562821, merkleTree.getHexProof(nodes[2]));
         return;
         // await nest.approve(nestMarket.address, 100000000000000000000000000n);
