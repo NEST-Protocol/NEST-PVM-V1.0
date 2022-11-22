@@ -7,22 +7,22 @@ import "hardhat/console.sol";
 /// @dev PVM implementation
 library PVM {
 
-    uint8 public constant $ZERO = uint8(0); // 0
-    uint8 public constant $A = uint8(65);   // A
-    uint8 public constant $Z = uint8(90);   // Z
-    uint8 public constant $a = uint8(97);   // a
-    uint8 public constant $z = uint8(122);  // z
-    uint8 public constant $0 = uint8(48);   // 0
-    uint8 public constant $9 = uint8(57);   // 9
+    uint8 public constant $A = uint8(0x41);     // A
+    uint8 public constant $Z = uint8(0x5a);     // Z
+    uint8 public constant $a = uint8(0x61);     // a
+    uint8 public constant $z = uint8(0x7a);     // z
+    uint8 public constant $0 = uint8(0x30);     // 0
+    uint8 public constant $9 = uint8(0x39);     // 9
     
-    uint8 public constant $ADD = uint8(43); // +
-    uint8 public constant $SUB = uint8(45); // -
-    uint8 public constant $MUL = uint8(42); // *
-    uint8 public constant $DIV = uint8(47); // /
-    uint8 public constant $COL = uint8(58); // :
-    uint8 public constant $LBR = uint8(40); // (
-    uint8 public constant $RBR = uint8(41); // )
-    uint8 public constant $SPC = uint8(32); // SPACE
+    uint8 public constant $ADD = uint8(0x2b);   // +
+    uint8 public constant $SUB = uint8(0x2d);   // -
+    uint8 public constant $MUL = uint8(0x2a);   // *
+    uint8 public constant $DIV = uint8(0x2f);   // /
+    uint8 public constant $COL = uint8(0x3a);   // :
+    uint8 public constant $LBR = uint8(0x28);   // (
+    uint8 public constant $RBR = uint8(0x29);   // )
+    uint8 public constant $SPC = uint8(0x20);   // SPACE
+    uint8 public constant $ZERO = uint8(0x00);  // 0
 
     function calc(string memory expr) external view returns (uint) {
         return evaluate(bytes(expr), 0, bytes(expr).length);
@@ -32,13 +32,13 @@ library PVM {
     // 2. Use mapping(bytes1=>address) to storage function
     // TODO: bracket
     // TODO: Operator Priority
-
+    // TODO: 0 character may cause attack?
     function evaluate(bytes memory expr, uint start, uint end) internal view returns (uint) {
 
+        uint8 c;
         uint state = 0;
         uint index = start;
         uint left = 0;
-        uint8 c;
         uint top = 0;
         uint iv = 0;
         uint o = 0;
