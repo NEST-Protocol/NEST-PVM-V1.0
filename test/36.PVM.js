@@ -8,32 +8,31 @@ describe('36.PVM', function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         const PVM = await ethers.getContractFactory('PVM');
         
-        const { 
-            eth, usdt, hbtc, nest, dcu, nestOptions, nestFutures, nestLPGuarantee, nestProbability, nestCyberInk,
-            nestNFTAuction,
-            nestPriceFacade, nestBuybackPool, BLOCK_TIME, USDT_DECIMALS
-        } = await deploy();
+        // const { 
+        //     eth, usdt, hbtc, nest, dcu, nestOptions, nestFutures, nestLPGuarantee, nestProbability, nestCyberInk,
+        //     nestNFTAuction,
+        //     nestPriceFacade, nestBuybackPool, BLOCK_TIME, USDT_DECIMALS
+        // } = await deploy();
 
-        const tokens = [eth, nest];
-        const listAccounts = async function() {
-            let accounts = {
-                height: await ethers.provider.getBlockNumber(),
-                owner: await listBalances(owner, tokens),
-                nestNFTAuction: await listBalances(nestNFTAuction, tokens)
-            };
-            console.log(accounts);
-            return accounts;
-        }
+        // const tokens = [eth, nest];
+        // const listAccounts = async function() {
+        //     let accounts = {
+        //         height: await ethers.provider.getBlockNumber(),
+        //         owner: await listBalances(owner, tokens),
+        //         nestNFTAuction: await listBalances(nestNFTAuction, tokens)
+        //     };
+        //     console.log(accounts);
+        //     return accounts;
+        // }
 
-        await listAccounts();
-        await nest.transfer(owner.address, 100000000000000000000000000n);
-        await nest.approve(nestCyberInk.address, 100000000000000000000000000n);
-        await nest.approve(nestNFTAuction.address, 100000000000000000000000000n);
+        // await listAccounts();
+        // await nest.transfer(owner.address, 100000000000000000000000000n);
+        // await nest.approve(nestCyberInk.address, 100000000000000000000000000n);
+        // await nest.approve(nestNFTAuction.address, 100000000000000000000000000n);
         
         const pvm = await PVM.deploy();
 
-        let c = await pvm.calc('3 + (4 * 5) ');
-        console.log('end');
-        console.log('c=' + c.toString());
+        let c = await pvm.calc('3+4*5');
+        console.log('result=' + c.toString());
     });
 });
