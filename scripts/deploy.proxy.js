@@ -20,6 +20,7 @@ exports.deploy = async function() {
     const NestNFTAuction = await ethers.getContractFactory('NestNFTAuction');
     const NestFuturesWithPrice = await ethers.getContractFactory('NestFuturesWithPrice');
     const NestMarket = await ethers.getContractFactory('NestMarket');
+    const NestPVM = await ethers.getContractFactory('NestPVM');
 
     console.log('** Deploy: deploy.proxy.js **');
     
@@ -83,6 +84,10 @@ exports.deploy = async function() {
     //const nestMarket = await NestMarket.attach('0x0000000000000000000000000000000000000000');
     console.log('nestMarket: ' + nestMarket.address);
 
+    const nestPVM = await upgrades.deployProxy(NestPVM, [nestGovernance.address], { initializer: 'initialize' });
+    //const nestPVM = await NestPVM.attach('0x0000000000000000000000000000000000000000');
+    console.log('nestPVM: ' + nestPVM.address);
+
     console.log('2. nestGovernance.setBuiltinAddress()');
     await nestGovernance.setBuiltinAddress(
         nest.address,
@@ -117,7 +122,17 @@ exports.deploy = async function() {
     await nestBuybackPool.update(nestGovernance.address);
     console.log('9. nestCyberInk.update()');
     await nestCyberInk.update(nestGovernance.address);
+    console.log('9. nestCyberInk.update()');
 
+    await nestPVM.update(nestGovernance.address);
+    await nestPVM.setNestFutures(nestFuturesWithPrice.address);
+
+    await nestPVM.register('PI', 3141592653590000000n | (1n << 248n));
+    await nestPVM.register('E',  2718281828459000000n | (1n << 248n));
+    await nestPVM.registerAddress('P0', nestPVM.address);
+    await nestPVM.registerAddress('P1', nestPVM.address);
+    await nestPVM.registerAddress('P2', nestPVM.address);
+    
     console.log('10. nestNFTAuction.update()');
     await nestNFTAuction.update(nestGovernance.address);
     console.log('11. nestMarket.update()');
@@ -244,6 +259,7 @@ exports.deploy = async function() {
         nestNFTAuction: nestNFTAuction,
         nestFuturesWithPrice: nestFuturesWithPrice,
         nestMarket: nestMarket,
+        nestPVM: nestPVM,
 
         BLOCK_TIME: BLOCK_TIME,
         USDT_DECIMALS: 18,

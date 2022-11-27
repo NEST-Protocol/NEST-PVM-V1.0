@@ -7,5 +7,5 @@ interface INestPVMFunction {
 
     /// @dev Calculate value
     /// @dev byte array of arguments encoded by abi.encode()
-    function calculate(bytes memory abiArgs) external returns (uint);
+    function calculate(bytes memory abiArgs) external view returns (int);
 }

@@ -1,6 +1,6 @@
 require("@nomiclabs/hardhat-waffle");
 require('@openzeppelin/hardhat-upgrades');
-require('hardhat-gas-reporter');
+//require('hardhat-gas-reporter');
 
 const config = require('./.private.json');
 // This is a sample Hardhat task. To learn how to create your own go to
@@ -12,8 +12,8 @@ task("accounts", "Prints the list of accounts", async () => {
     console.log(account.address);
   }
 });
-// process.env.HTTP_PROXY = 'http://127.0.0.1:8580';
-// process.env.HTTPS_PROXY = 'http://127.0.0.1:8580';
+//process.env.HTTP_PROXY = 'http://192.168.1.200:8580';
+//process.env.HTTPS_PROXY = 'http://192.168.1.200:8580';
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
 
@@ -65,7 +65,15 @@ module.exports = {
       timeout: 2000000000
     },
     bsc_test: {
-      url: "http://localhost:50000/bsc_test_getblock/",// "https://bsc.getblock.io/testnet/?api_key=57d2baf4-a7a4-4d1b-af95-5c35653e05ea",
+      url: 
+      //"https://api-test.element.market/api/bsc/jsonrpc",
+      "https://bsc-testnet.s.chainbase.online/v1/2I7dQsT5I6FnYwx3YrJc80tN45U",
+      //"https://bsc-dataseed1.defibit.io/",
+      //"https://bsc-dataseed1.defibit.io/",
+      //"https://bsc.getblock.io/33a5ac19-a33e-40c9-aa06-33e32c18b459/testnet/",
+      //"https://bsc.getblock.io/57d2baf4-a7a4-4d1b-af95-5c35653e05ea/testnet/",
+      //"https://api-test.element.market/api/bsc/jsonrpc", 
+      //"https://bsc.getblock.io/testnet/?api_key=57d2baf4-a7a4-4d1b-af95-5c35653e05ea",
       chainId: 97,
       gasPrice: 10e9,
       gas: 6000000,
@@ -88,9 +96,9 @@ module.exports = {
   mocha: {
     timeout: 200000000
   },
-  gasReporter: {
-    currency: 'CHF',
-    gasPrice: 1
-  }
+  // gasReporter: {
+  //   currency: 'CHF',
+  //   gasPrice: 1
+  // }
 };
 

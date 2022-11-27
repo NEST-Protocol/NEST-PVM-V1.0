@@ -1,8 +1,8 @@
 const { expect } = require('chai');
 const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, listBalances, snd, tableSnd, d1, Vc, Vp, UI } = require('./utils.js');
-const { MerkleTree } = require('merkletreejs');
-const keccak256 = require('keccak256');
+//const { MerkleTree } = require('merkletreejs');
+//const keccak256 = require('keccak256');
 
 describe('deploy', function() {
     it('First', async function() {
@@ -24,6 +24,7 @@ describe('deploy', function() {
         } = await deploy();
 
         console.log('ok');
+		return;
         //await nestCyberInk.release(nestMarket.address, 2560001, 256, 16);
         //await nestCyberInk.release(nestMarket.address, 2560005, 256, 16);
         //await nestCyberInk.release(nestMarket.address, 2560010, 256, 16);
