@@ -182,7 +182,7 @@ library PVM {
                     brackets = 1;
                 } 
                 // zero
-                else if (c == $ZERO) { revert("PVM:0"); break; }
+                else if (c == $ZERO) { revert("PVM:0"); }
                 // space
                 else if (c == $SPC) { }
                 // error

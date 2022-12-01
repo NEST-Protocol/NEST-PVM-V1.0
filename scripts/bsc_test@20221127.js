@@ -168,13 +168,14 @@ exports.deploy = async function() {
     // nestMarket: 0xd435489F3BB3b6004230b67bb122bac22419Fdfd
     // nestPVM: 0x3f42A4Ba6bdcCD025B5BEb2598d3a9993635dA38
 
-    已经在bsc测试网上部署了PVM的demo版本，可以通过表达式定制产品，主要有以下四个接口
-    1. estimate(string memory expr). 计算产品表达式的价值，expr为表达式，表达式语法见末尾的表达式说明
+    已经在bsc测试网上更新了PVM的实现，支持了函数和自定义函数功能
+    1. estimate(string memory expr). 计算产品表达式的价值，expr为表达式，表达式语法见末尾的【表达式说明】
     2. buy(string memory expr). 买入expr表示的产品，记录为订单，可以通过list接口查询
     3. sell(uint index). 卖出指定编号的订单
     4. list(uint offset, uint count, uint order). 查找买入的订单
+    5. registerStaticCall(string memory functionName, address addr). 注册自定义函数
 
-    表达式说明：
+    【表达式说明】
     1. 表达式支持加（+）减（-）乘（*）除（/）以及指数运算（**）
     2. 表达式优先级 + -，* /，** 三个级别，
     3. 支持括号表达式，可以用括号改变计算优先级
@@ -182,12 +183,34 @@ exports.deploy = async function() {
     5. 不支持负数字面常量，如需负数，请用（0-47）这样的表达式
     6. 支持标识符，标识符以字母开头（区分大小写），后面可以跟字母或数字，最长31个字符
     7. 支持内置常量PI（3.14159265359)和E（2718281828459）
+    8. 支持函数，包括内置函数和自定义函数，函数可嵌套，函数说明详见末尾的【函数说明】
     8. 支持价格变量P0（ETH），P1（NEST），P2（BTC）的价格，价格是从nestFuturesWithPrice（0xA2D58989ef9981065f749C217984DB21970fF0b7）合约取的最新价格，是参考2000USD的价格
     9. 表达式中所有字符必须是英文半角字符
     10. 表达式中各部分之间允许空格
     11. 表达式计算结果为18位小数表示
     
-    表达式实例：P1 ** 0.5 + PI * (E+ 9527)
+    【函数说明】
+    1. 函数名称，函数名称以字母开头（区分大小写），后面可以跟字母或数字，最长31个字符，后面紧跟函数的括号
+    2. 支持以下内置函数
+        bn()                            获取当前区块号
+        ts()                            获取当前时间戳
+        op(int pairIndex)               从nestFuturesWithPrice（0xA2D58989ef9981065f749C217984DB21970fF0b7）合约获取最新价格
+        oav(int pairIndex, int count)   从nestFuturesWithPrice获取最新count个价格，并计算平均值
+        ln(int v)                       计算自然对数
+        exp(int v)                      计算e的指数
+        flo(int v)                      向下取整
+        cel(int v)                      向上取整
+        log(int a, int b)               计算对数
+        pow(int a, int b)               计算指数
+       内置函数可以在bscscan合约调用界面测试
+    3. 支持自定义函数，具体要求如下
+        3.1. 自定义函数的参数和返回值都是int类型表示的10位小数
+        3.2. 自定义函数名称不要和内置函数和变量重名
+        3.3. 自定义函数定义在独立的合约内，必须是只读的
+        3.4. 自定义函数需要调用registerStaticCall(string memory functionName, address addr)注册，其中functionName是函数名称（不包含括号）
+        3.5. 一个合约中允许包含多个自定义函数，需要多次调用registerStaticCall(）接口注册
+    
+    表达式实例：op(0) * exp(1 + 24953200 / bn() ) + log(op(1), PI)
 */
 
     return contracts;

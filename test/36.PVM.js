@@ -26,19 +26,30 @@ describe('36.PVM', function() {
         }
 
         //await listAccounts();
-        //await nest.transfer(owner.address, 100000000000000000000000000n);
-        //await nest.approve(nestPVM.address, 100000000000000000000000000n);
+        await nest.transfer(owner.address, 100000000000000000000000000n);
+        await nest.approve(nestPVM.address, 100000000000000000000000000n);
 
+        //await nestPVM.registerStaticCall('oav', nestPVM.address);
+        //await nestPVM.registerStaticCall('pow', nestPVM.address);
+        //await nestPVM.registerStaticCall('pow', nestPVM.address);
         let receipt = await nestFuturesWithPrice.directPost(200, [
             toBigInt(1.508461),
             toBigInt(66666666666),
             toBigInt(2000 / 20000)
         ]);
-        //let c = await nestPVM.calc('4*2**3+1+PI');
-        //let c = await nestPVM.calc('4*2**0.5**(2+1)+PI*3*4*5+(44+4)*6*7*9');
+
+        receipt = await nestFuturesWithPrice.directPost(200, [
+            toBigInt(1.508461 * 2),
+            toBigInt(66666666666 * 2),
+            toBigInt(2000 / 20000 * 2)
+        ]);
+        //let c = await nestPVM.estimate('4*2**3+1+PI');
+        //let c = await nestPVM.estimate('4*2**0.5**(2+1)+PI*3*4*5+(44+4)*6*7*9');
         //let c = await nestPVM.estimate('P0 * P1+ P1 + P0');
-        let c = await nestPVM.estimate('P1 ** 0.5 + PI * (E+ 9527)');
-        //let c = await nestPVM.calc('(0+3)**(0+1)');
+        //let c = await nestPVM.estimate('P1 ** 0.5 + PI * (E+ 9527)');
+        //let c = await nestPVM.estimate('(0+3)**(0+1)');
+        //let c = await nestPVM.estimate('3 + 4 + add(4,5,max( 10, 20 )) + op(1)');
+        let c = await nestPVM.estimate('pow(7, 2) + PI + E');
 
         console.log('result=' + toDecimal(c).toString());
         return;
@@ -62,6 +73,5 @@ describe('36.PVM', function() {
             await showReceipt(receipt);
             await listAccounts();
         }
-
     });
 });
