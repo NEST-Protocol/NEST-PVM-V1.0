@@ -73,7 +73,10 @@ module.exports = {
       timeout: 2000000000
     },
     bsc_main: {
-      url: "https://bsc-dataseed1.defibit.io/",
+      url: 
+      //"https://bsc-dataseed1.defibit.io/",
+      // "https://bsc-mainnet.s.chainbase.online/v1/2IACpoXYkHcgiWwSB4l2VmdWizr",
+      "https://bsc.getblock.io/33a5ac19-a33e-40c9-aa06-33e32c18b459/mainnet/",
       chainId: 56,
       gasPrice: 5e9,
       gas: 6000000,
