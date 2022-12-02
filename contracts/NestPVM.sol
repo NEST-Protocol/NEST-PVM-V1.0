@@ -30,39 +30,39 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
     event Buy(string expr, address owner, uint openBlock, uint shares, uint index);
 
     // TODO: Support variables: dT, blockNumber, timestamp
-    // TODO: Gas save, 1. use uint instead uint8
-    uint8 constant $A = uint8(0x41);        // A
-    uint8 constant $Z = uint8(0x5a);        // Z
-    uint8 constant $a = uint8(0x61);        // a
-    uint8 constant $z = uint8(0x7a);        // z
-    uint8 constant $0 = uint8(0x30);        // 0
-    uint8 constant $9 = uint8(0x39);        // 9
-    uint8 constant $ADD = uint8(0x2b);      // +
-    uint8 constant $SUB = uint8(0x2d);      // -
-    uint8 constant $MUL = uint8(0x2a);      // *
-    uint8 constant $DIV = uint8(0x2f);      // /
-    uint8 constant $COL = uint8(0x3a);      // :
-    uint8 constant $LBR = uint8(0x28);      // (
-    uint8 constant $RBR = uint8(0x29);      // )
-    uint8 constant $SPC = uint8(0x20);      // SPACE
-    uint8 constant $DOT = uint8(0x2e);      // .
-    uint8 constant $CMA = uint8(0x2c);      // ,
-    uint8 constant $EOF = uint8(0x00);      // 0
+    // TODO: When the actual value of the order is lower than a value, it can be liquidated?
+    uint constant $A            = uint(0x41);   // A
+    uint constant $Z            = uint(0x5a);   // Z
+    uint constant $a            = uint(0x61);   // a
+    uint constant $z            = uint(0x7a);   // z
+    uint constant $0            = uint(0x30);   // 0
+    uint constant $9            = uint(0x39);   // 9
+    uint constant $ADD          = uint(0x2b);   // +
+    uint constant $SUB          = uint(0x2d);   // -
+    uint constant $MUL          = uint(0x2a);   // *
+    uint constant $DIV          = uint(0x2f);   // /
+    uint constant $COL          = uint(0x3a);   // :
+    uint constant $LBR          = uint(0x28);   // (
+    uint constant $RBR          = uint(0x29);   // )
+    uint constant $SPC          = uint(0x20);   // SPACE
+    uint constant $DOT          = uint(0x2e);   // .
+    uint constant $CMA          = uint(0x2c);   // ,
+    uint constant $EOF          = uint(0x00);   // 0
 
     // Status
-    uint constant S_NORMAL = 0x0000;
-    uint constant S_INTEGER = 0x0101;
-    uint constant S_DECIMAL = 0x0102;
-    uint constant S_IDENTIFIER = 0x0103;
-    uint constant S_BRACKET = 0x0104;
-    uint constant S_FUNCTION = 0x0105;
-    uint constant S_STRING = 0x0106;        // consider a string can contain's bracket
-    uint constant S_OPERATOR = 0x0201;
-    uint constant S_CALCULATE = 0x0301;
+    uint constant S_NORMAL      = 0x0000;
+    uint constant S_INTEGER     = 0x0101;
+    uint constant S_DECIMAL     = 0x0102;
+    uint constant S_IDENTIFIER  = 0x0103;
+    uint constant S_BRACKET     = 0x0104;
+    uint constant S_FUNCTION    = 0x0105;
+    uint constant S_STRING      = 0x0106;       // consider a string can contains bracket
+    uint constant S_OPERATOR    = 0x0201;
+    uint constant S_CALCULATE   = 0x0301;
 
-    uint constant DECIMALS = 1 ether;
-    uint constant PI = 3141592653590000000;
-    uint constant E  = 2718281828459000000;
+    uint constant DECIMALS      = 1 ether;
+    uint constant PI            = 3141592653590000000;
+    uint constant E             = 2718281828459000000;
 
     mapping(uint=>uint) _functionMap;
 
@@ -79,11 +79,11 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
         _functionMap[_fromKey(key)] = value;
     }
 
-    function _fromKey(string memory key) internal pure returns (uint idtf) {
-        bytes memory bkey = bytes(key);
-        idtf = 0;
-        for (uint i = 0; i < bkey.length; ++i) {
-            idtf = (idtf << 8) | uint(uint8(bkey[i]));
+    function _fromKey(string memory key) internal pure returns (uint identifier) {
+        bytes memory bKey = bytes(key);
+        identifier = 0;
+        for (uint i = 0; i < bKey.length; ++i) {
+            identifier = (identifier << 8) | uint(uint8(bKey[i]));
         }
     }
 
@@ -97,9 +97,9 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
     }
 
     function registerStaticCall(string memory functionName, address addr) external {
-        uint idtf = _fromKey(functionName);
-        require(_functionMap[idtf] == 0, "PVM:identifier exists");
-        _functionMap[idtf] = (0x05 << 248) | uint(uint160(addr));
+        uint identifier = _fromKey(functionName);
+        require(_functionMap[identifier] == 0, "PVM:identifier exists");
+        _functionMap[identifier] = (0x05 << 248) | uint(uint160(addr));
     }
 
     /// @dev Find the mint requests of the target address (in reverse order)
@@ -283,7 +283,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
     /// @param v input value, 18 decimals
     /// @return floor value, 18 decimals
     function flo(int v) public pure returns (int) {
-        if (v < 0) { revert("PVM:not inplement"); }
+        if (v < 0) { revert("PVM:not implement"); }
         return v / int(DECIMALS) * int(DECIMALS);
     }
 
@@ -291,14 +291,14 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
     /// @param v input value, 18 decimals
     /// @return ceil value, 18 decimals
     function cel(int v) public pure returns (int) {
-        if (v < 0) { revert("PVM:not inplement"); }
+        if (v < 0) { revert("PVM:not implement"); }
         return (v + int(DECIMALS - 1))/ int(DECIMALS) * int(DECIMALS);
     }
 
     /// @dev Calculate log, based on b
     /// @param a input value, 18 decimals
     /// @param b base value, 18 decimals
-    /// @return v log vlaue, 18 decimals
+    /// @return v log value, 18 decimals
     function log(int a, int b) public pure returns (int v) {
         v = _toDEC(ABDKMath64x64.div(ABDKMath64x64.ln(_toX64(a)), ABDKMath64x64.ln(_toX64(b))));
     }
@@ -353,10 +353,10 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
         // Index for loop each character
         index = start;
 
-        uint8 c;
+        uint c;
         // Load character
         // TODO: Use compare index and end to optimize?
-        if (index < end) { c = uint8(expr[index]); } else { c = $EOF; }
+        if (index < end) { c = uint(uint8(expr[index])); } else { c = $EOF; }
 
         // Loop with each character
         for (; ; )
@@ -367,7 +367,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
                 // integer
                 if (c >= $0 && c <= $9)
                 {
-                    cv = int(uint(c - $0));
+                    cv = int(c - $0);
                     state = S_INTEGER;
                 }
                 // identifier
@@ -402,7 +402,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
                         require(temp1 > 1, "PVM:too many decimals");
                         temp1 /= 10;
                     }
-                    cv = cv * 10 + int(uint(c - $0));
+                    cv = cv * 10 + int(c - $0);
                 }
                 // decimal
                 else if (c == $DOT) {
@@ -421,16 +421,16 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
             else if (state == S_IDENTIFIER) {
                 // Lower letter, Upper letter or number
                 if ((c >= $A && c <= $Z) || (c >= $a && c <= $z) || (c >= $0 && c <= $9)) {
-                    require(temp1 <= 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF, "PVM:identifier too long");
-                    temp1 = (temp1 << 8) | uint(c);
+                    require(temp1 <= 0x00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF, "PVM:identifier too long");
+                    temp1 = (temp1 << 8) | c;
                 } 
                 // left bracket, function
                 else if (c == $LBR) {
+                    // cv: bracket counter
                     // temp1: identifier
                     // temp2: left index
-                    // cv: bracket counter
-                    temp2 = index + 1;
                     cv = 1;
+                    temp2 = index + 1;
                     state = S_FUNCTION;
                 }
                 // Identifier end
@@ -446,7 +446,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
                     // Normal integer
                     if ((temp2 >> 248) == 0x01) {
                         // TODO: sign may lost?
-                        cv = int(temp2 & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF);
+                        cv = int(temp2 & 0x00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF);
                     } 
                     // Address staticcall
                     else if ((temp2 >> 248) == 0x02) {
@@ -460,7 +460,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
                     else if ((temp2 >> 248) == 0x03) {
                         // call
                     } 
-                    // Address deledate call
+                    // Address delegatecall
                     else if ((temp2 >> 248) == 0x04) {
                         // delegatecall
                     } else {
@@ -504,7 +504,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
                 if (c == $CMA && cv == 1) {
                     // index is always equals to end when call end
                     (args[argIndex++], co, index) = _evaluatePart(context, 0, 0x0000, expr, temp2, index);
-                    require(co > 0x0000, "PVM:argument expresion is blank");
+                    require(co > 0x0000, "PVM:argument expression is blank");
                     temp2 = index + 1;
                 } else if (c == $RBR && --cv == 0) {
                     // index is always equals to end when call end
@@ -534,7 +534,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
                     if (c == $ADD) { co = 0x1001; } else 
                     if (c == $SUB) { co = 0x1002; } else 
                     if (c == $MUL) {
-                        if (index + 1 < end && uint8(expr[index + 1]) == $MUL) { ++index; co = 0x3001; }
+                        if (index + 1 < end && uint(uint8(expr[index + 1])) == $MUL) { ++index; co = 0x3001; }
                         else { co = 0x2001; }
                     } else 
                     if (c == $DIV) { co = 0x2002; } else 
@@ -560,7 +560,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
 
                     (cv, co, index) = _evaluatePart(context, cv, co, expr, ++index, end);
                     
-                    // now co is the last operator paraed by evaluatedPart just called
+                    // now co is the last operator parsed by evaluatedPart just called
                 }
 
                 // Calculate with pv
@@ -581,7 +581,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
 
             // Load character
             // TODO: Use compare index and end to optimize?
-            if (++index < end) { c = uint8(expr[index]); } else { c = $EOF; }
+            if (++index < end) { c = uint(uint8(expr[index])); } else { c = $EOF; }
         }
 
         cv = pv;
@@ -590,61 +590,72 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
     // Call function
     function _call(
         mapping(uint=>uint) storage context,
-        uint idtf,
+        uint identifier,
         int[4] memory args,
         uint argIndex
     ) internal view returns (int) {
-        (bool flag, int cv) = _internalCall(idtf, args, argIndex);
-        if (flag) { cv = _staticCall(context, idtf, args, argIndex); }
+        (bool flag, int cv) = _internalCall(identifier, args, argIndex);
+        if (flag) { cv = _staticCall(context, identifier, args, argIndex); }
         return cv;
-        //return _staticCall(context, idtf, args, argIndex);
+        //return _staticCall(context, identifier, args, argIndex);
     }
 
     // Internal call function
-    function _internalCall(uint idtf, int[4] memory args, uint argIndex) internal view returns (bool flag, int cv) 
+    function _internalCall(uint identifier, int[4] memory args, uint argIndex) internal view returns (bool flag, int cv) 
     {
+        return (true, 0);
         if (argIndex == 0) {
-            if (_equals(idtf,  "bn")) { cv =  bn(); } else 
-            if (_equals(idtf,  "ts")) { cv =  ts(); } else 
-            if (_equals(idtf,  "ob")) { cv =  ob(); } else { flag = true; }
+            if (_equals(identifier,  "bn")) { cv =  bn(); } else 
+            if (_equals(identifier,  "ts")) { cv =  ts(); } else 
+            if (_equals(identifier,  "ob")) { cv =  ob(); } else { flag = true; }
         } else if (argIndex == 1) {
-            if (_equals(idtf,  "op")) { cv =  op(args[0]); } else 
-            if (_equals(idtf,  "ln")) { cv =  ln(args[0]); } else 
-            if (_equals(idtf, "exp")) { cv = exp(args[0]); } else 
-            if (_equals(idtf, "flo")) { cv = flo(args[0]); } else 
-            if (_equals(idtf, "cel")) { cv = cel(args[0]); } else { flag = true; }
+            if (_equals(identifier,  "op")) { cv =  op(args[0]); } else 
+            if (_equals(identifier,  "ln")) { cv =  ln(args[0]); } else 
+            if (_equals(identifier, "exp")) { cv = exp(args[0]); } else 
+            if (_equals(identifier, "flo")) { cv = flo(args[0]); } else 
+            if (_equals(identifier, "cel")) { cv = cel(args[0]); } else { flag = true; }
         } else if (argIndex == 2) {
-            if (_equals(idtf, "log")) { cv = log(args[0], args[1]); } else
-            if (_equals(idtf, "pow")) { cv = pow(args[0], args[1]); } else 
-            if (_equals(idtf, "oav")) { cv = oav(args[0], args[1]); } else { flag = true;}
+            if (_equals(identifier, "log")) { cv = log(args[0], args[1]); } else
+            if (_equals(identifier, "pow")) { cv = pow(args[0], args[1]); } else 
+            if (_equals(identifier, "oav")) { cv = oav(args[0], args[1]); } else { flag = true;}
         } else { flag = true; }
     }
 
     // Static call function
     function _staticCall(
         mapping(uint=>uint) storage context, 
-        uint idtf, 
+        uint identifier, 
         int[4] memory args, 
         uint argIndex
     ) internal view returns (int cv) {
-        uint v = context[idtf];
+        uint v = context[identifier];
         // Custom function staticcall
         require((v >> 248) == 0x05, "PVM:not staticcall function");
 
         // Generate signature
-        string memory sign = _toIdtf(idtf);
-        bytes memory buffer = new bytes(256);
-        sign = StringHelper.sprintf(buffer, "%s%s", abi.encode(sign, "("));
+        uint length = _keyLength(identifier);
+        uint index = length + 2;
+        if (argIndex > 0) { index += argIndex * 7 - 1; }
+        bytes memory buffer = new bytes(index);
+        //sign = StringHelper.sprintf(buffer, "%s%s", abi.encode(sign, "("));
+        index = _writeKey(identifier, buffer, length);
+        index = StringHelper.sprintf(buffer, index, "%s", abi.encode("("));
+        
         for (uint i = 0; i < argIndex; ++i) {
-            if (i > 0) { sign = StringHelper.sprintf(buffer, "%s%s", abi.encode(sign, ",")); }
-            sign = StringHelper.sprintf(buffer, "%s%s", abi.encode(sign, "int256"));
+            //if (i > 0) { sign = StringHelper.sprintf(buffer, "%s%s", abi.encode(sign, ",")); }
+            if (i > 0) { index = StringHelper.sprintf(buffer, index, "%s", abi.encode(",")); }
+            //sign = StringHelper.sprintf(buffer, "%s%s", abi.encode(sign, "int256"));
+            index = StringHelper.sprintf(buffer, index, "%s", abi.encode("int256"));
         }
-        sign = StringHelper.sprintf(buffer, "%s%s", abi.encode(sign, ")"));
+        //sign = StringHelper.sprintf(buffer, "%s%s", abi.encode(sign, ")"));
+        index = StringHelper.sprintf(buffer, index, "%s", abi.encode(")"));
+        //sign = string(StringHelper.segment(buffer, 0, index));
 
         // Generate abi arguments
+        // TODO: Use assembly to optimize
         bytes memory abiArgs = new bytes(4 + (argIndex << 5));
         uint j = 0;
-        bytes4 selector = bytes4(keccak256(bytes(sign)));
+        bytes4 selector = bytes4(keccak256(buffer));
         for (uint i = 0; i < 4;) {
             abiArgs[j++] = selector[i++];
         }
@@ -669,7 +680,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
         //     revert("PVM:only support 4 arguments max");
         // }
 
-        //console.log(_toHexString(buffer, abiArgs));
+        console.log(_toHexString(abiArgs));
 
         // staticcall
         (bool flag, bytes memory data) = address(uint160(v)).staticcall(abiArgs);
@@ -686,33 +697,52 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
 
     // Convert 64 bits to 18 decimals
     function _toDEC(int128 v) internal pure returns (int) {
-        return int(v) * int(DECIMALS) / 0x10000000000000000;
+        // return int(v) * int(DECIMALS) / 0x10000000000000000;
+        return int(v) * int(DECIMALS) >> 64;
     }
 
-    // Convert uint identifier to string identifier
-    function _toIdtf(uint uid) internal pure returns (string memory idtf) {
-        uint ouid = uid;
-        uint length = 0;
+    // Get key length
+    function _keyLength(uint uid) internal pure returns (uint length) {
+        length = 0;
         while (uid > 0) {
             ++length;
             uid >>= 8;
         }
-        bytes memory bs = new bytes(length);
-        while (ouid > 0) {
-            bs[--length] = bytes1(uint8(ouid & 0xFF));
-            ouid >>= 8;
-        }
-        idtf = string(bs);
     }
 
+    // Convert uint identifier to string identifier
+    function _writeKey(uint uid, bytes memory buffer, uint index) internal pure returns (uint newIndex) {
+        newIndex = index;
+        while (uid > 0) {
+            buffer[--index] = bytes1(uint8(uid & 0xFF));
+            uid >>= 8;
+        }
+    }
+
+    // // Convert uint identifier to string identifier
+    // function _toKey(uint uid) internal pure returns (string memory identifier) {
+    //     uint oid = uid;
+    //     uint length = 0;
+    //     while (uid > 0) {
+    //         ++length;
+    //         uid >>= 8;
+    //     }
+    //     bytes memory bs = new bytes(length);
+    //     while (oid > 0) {
+    //         bs[--length] = bytes1(uint8(oid & 0xFF));
+    //         oid >>= 8;
+    //     }
+    //     identifier = string(bs);
+    // }
+
     // Convert uint identifier with string identifier
-    function _equals(uint idtf, bytes memory name) internal pure returns (bool) {
+    function _equals(uint identifier, bytes memory name) internal pure returns (bool) {
         uint length = name.length;
         while (length > 0) {
-            if ((idtf & 0xFF) != uint(uint8(name[--length]))) return false;
-            idtf >>= 8;
+            if ((identifier & 0xFF) != uint(uint8(name[--length]))) return false;
+            identifier >>= 8;
         }
-        return idtf == 0;
+        return identifier == 0;
     }
 
     // Only for test
@@ -726,11 +756,14 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
     }
 
     // Only for test
-    function _toHexString(bytes memory buffer, bytes memory data) internal pure returns (string memory) {
-        string memory s = "0x";
+    function _toHexString(bytes memory data) internal pure returns (string memory) {
+        bytes memory buffer = new bytes((data.length << 1) + 2);
+        //string memory s = "0x";
+        uint index = StringHelper.sprintf(buffer, 0, "%s", abi.encode("0x"));
         for (uint i = 0; i < data.length; ++i) {
-            s = StringHelper.sprintf(buffer, "%s%2x", abi.encode(s, uint(uint8(data[i]))));
+            //s = StringHelper.sprintf(buffer, "%s%2x", abi.encode(s, uint(uint8(data[i]))));
+            index = StringHelper.sprintf(buffer, index, "%2x", abi.encode(uint(uint8(data[i]))));
         }
-        return s;
+        return string(buffer);
     }
 }

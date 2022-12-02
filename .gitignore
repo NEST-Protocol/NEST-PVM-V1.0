@@ -5,4 +5,5 @@ opensrc
 #Hardhat files
 cache
 artifacts
+.DS_Store
 .private.json

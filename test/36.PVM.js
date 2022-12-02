@@ -29,9 +29,20 @@ describe('36.PVM', function() {
         await nest.transfer(owner.address, 100000000000000000000000000n);
         await nest.approve(nestPVM.address, 100000000000000000000000000n);
 
-        //await nestPVM.registerStaticCall('oav', nestPVM.address);
-        //await nestPVM.registerStaticCall('pow', nestPVM.address);
-        //await nestPVM.registerStaticCall('pow', nestPVM.address);
+        await nestPVM.registerStaticCall('bn', nestPVM.address);
+        await nestPVM.registerStaticCall('ts', nestPVM.address);
+        await nestPVM.registerStaticCall('ob', nestPVM.address);
+
+        await nestPVM.registerStaticCall('op', nestPVM.address);
+        await nestPVM.registerStaticCall('ln', nestPVM.address);
+        await nestPVM.registerStaticCall('exp', nestPVM.address);
+        await nestPVM.registerStaticCall('flo', nestPVM.address);
+        await nestPVM.registerStaticCall('cel', nestPVM.address);
+
+        await nestPVM.registerStaticCall('log', nestPVM.address);
+        await nestPVM.registerStaticCall('pow', nestPVM.address);
+        await nestPVM.registerStaticCall('oav', nestPVM.address);
+
         let receipt = await nestFuturesWithPrice.directPost(200, [
             toBigInt(1.508461),
             toBigInt(66666666666),
@@ -52,7 +63,7 @@ describe('36.PVM', function() {
         let c = await nestPVM.estimate('pow(7, 2) + PI + E');
 
         console.log('result=' + toDecimal(c).toString());
-        return;
+
         if (true) {
             console.log('1. buy');
             let receipt = await nestPVM.buy('P0');
@@ -70,6 +81,27 @@ describe('36.PVM', function() {
         if (true) {
             console.log('3. sell');
             let receipt = await nestPVM.sell(0);
+            await showReceipt(receipt);
+            await listAccounts();
+        }
+
+        if (true) {
+            console.log('4.buy2')
+            let receipt = await nestPVM.buy('op(0) * exp(1 + 60 / bn() ) + log(op(1), PI)');
+            await showReceipt(receipt);
+            await listAccounts();
+        }
+
+        if (true) {
+            console.log('5. list2');
+            let list = await nestPVM.list(0, 2, 0);
+            for (var i = 0; i < list.length; ++i) {
+                console.log(UI(list[i]));
+            }
+        }
+        if (true) {
+            console.log('6. sell2');
+            let receipt = await nestPVM.sell(1);
             await showReceipt(receipt);
             await listAccounts();
         }
