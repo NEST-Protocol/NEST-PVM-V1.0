@@ -60,7 +60,8 @@ describe('36.PVM', function() {
         //let c = await nestPVM.estimate('P1 ** 0.5 + PI * (E+ 9527)');
         //let c = await nestPVM.estimate('(0+3)**(0+1)');
         //let c = await nestPVM.estimate('3 + 4 + add(4,5,max( 10, 20 )) + op(1)');
-        let c = await nestPVM.estimate('pow(7, 2) + PI + E');
+        //let c = await nestPVM.estimate('pow(7, 2) + PI + E');
+        let c = await nestPVM.estimate('flo(0-3.14)');
 
         console.log('result=' + toDecimal(c).toString());
 

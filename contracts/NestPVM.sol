@@ -283,7 +283,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
     /// @param v input value, 18 decimals
     /// @return floor value, 18 decimals
     function flo(int v) public pure returns (int) {
-        if (v < 0) { revert("PVM:not implement"); }
+        if (v < 0) { return -cel(-v); }
         return v / int(DECIMALS) * int(DECIMALS);
     }
 
@@ -291,7 +291,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
     /// @param v input value, 18 decimals
     /// @return ceil value, 18 decimals
     function cel(int v) public pure returns (int) {
-        if (v < 0) { revert("PVM:not implement"); }
+        if (v < 0) { return -flo(-v); }
         return (v + int(DECIMALS - 1))/ int(DECIMALS) * int(DECIMALS);
     }
 
@@ -340,7 +340,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
         // result values
     ) internal view returns (int cv, uint co, uint index) {
         uint temp1 = 0;
-        uint temp2 = 0;
+        //uint temp2 = 0;
         uint state = S_NORMAL;
 
         // args
@@ -353,10 +353,12 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
         // Index for loop each character
         index = start;
 
-        uint c;
+        // TODO: use start to instate left index, remote temp2
+
         // Load character
         // TODO: Use compare index and end to optimize?
-        if (index < end) { c = uint(uint8(expr[index])); } else { c = $EOF; }
+        //if (index < end) { c = uint(uint8(expr[index])); } else { c = $EOF; }
+        uint c = index < end ? uint(uint8(expr[index])) : $EOF;
 
         // Loop with each character
         for (; ; )
@@ -383,7 +385,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
                     // temp1: bracket counter
                     // temp2: left index
                     temp1 = 1;
-                    temp2 = index + 1;
+                    start = index + 1;
                     state = S_BRACKET;
                 }
                 // end of file, break
@@ -430,7 +432,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
                     // temp1: identifier
                     // temp2: left index
                     cv = 1;
-                    temp2 = index + 1;
+                    start = index + 1;
                     state = S_FUNCTION;
                 }
                 // Identifier end
@@ -441,27 +443,27 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
                     // type: 0 int, 1 call address, 2 delegate call address
 
                     // Find identifer in context
-                    temp2 = context[temp1];
+                    start = context[temp1];
 
                     // Normal integer
-                    if ((temp2 >> 248) == 0x01) {
+                    if ((start >> 248) == 0x01) {
                         // TODO: sign may lost?
-                        cv = int(temp2 & 0x00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF);
+                        cv = int(start & 0x00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF);
                     } 
                     // Address staticcall
-                    else if ((temp2 >> 248) == 0x02) {
+                    else if ((start >> 248) == 0x02) {
                         // staticcall
-                        //cv = INestPVMFunction(address(uint160(temp2))).calculate(abi.encode(temp1));
-                        (bool flag, bytes memory data) = address(uint160(temp2)).staticcall(abi.encodeWithSignature("calculate(bytes)", abi.encode(temp1)));
+                        //cv = INestPVMFunction(address(uint160(start))).calculate(abi.encode(temp1));
+                        (bool flag, bytes memory data) = address(uint160(start)).staticcall(abi.encodeWithSignature("calculate(bytes)", abi.encode(temp1)));
                         require(flag, "PVM:call failed");
                         cv = abi.decode(data, (int));
                     } 
                     // Address call
-                    else if ((temp2 >> 248) == 0x03) {
+                    else if ((start >> 248) == 0x03) {
                         // call
                     } 
                     // Address delegatecall
-                    else if ((temp2 >> 248) == 0x04) {
+                    else if ((start >> 248) == 0x04) {
                         // delegatecall
                     } else {
                         revert("PVM:identifier not exist");
@@ -469,7 +471,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
 
                     // Restore status
                     temp1 = 0;
-                    temp2 = 0;
+                    start = 0;
                     state = S_OPERATOR;
                     continue;
                 }
@@ -484,8 +486,8 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
                     if (--temp1 == 0)
                     {
                         // calculate sub expression in brackets
-                        //cv = evaluate(expr, temp2, index);
-                        (cv, co,) = _evaluatePart(context, 0, 0x0000, expr, temp2, index);
+                        //cv = evaluate(expr, start, index);
+                        (cv, co,) = _evaluatePart(context, 0, 0x0000, expr, start, index);
                         require(co > 0x0000, "PVM:expression is blank");
                         // calculate end, find next operator
                         state = S_OPERATOR;
@@ -503,13 +505,12 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
                 // cv: bracket counter
                 if (c == $CMA && cv == 1) {
                     // index is always equals to end when call end
-                    (args[argIndex++], co, index) = _evaluatePart(context, 0, 0x0000, expr, temp2, index);
+                    (args[argIndex++], co, index) = _evaluatePart(context, 0, 0x0000, expr, start, index);
                     require(co > 0x0000, "PVM:argument expression is blank");
-                    temp2 = index + 1;
+                    start = index + 1;
                 } else if (c == $RBR && --cv == 0) {
                     // index is always equals to end when call end
-                    (args[argIndex], co, index) = _evaluatePart(context, 0, 0x0000, expr, temp2, index);
-                    // TODO: nop(3,) is ok?
+                    (args[argIndex], co, index) = _evaluatePart(context, 0, 0x0000, expr, start, index);
                     if (co > 0x0000) { ++argIndex; }
                     else { require(argIndex == 0, "PVM:arg expression is blank");}
 
@@ -517,7 +518,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
                     cv = _call(context, temp1, args, argIndex);
                     // Restore status
                     temp1 = 0;
-                    temp2 = 0;
+                    start = 0;
                     argIndex = 0;
                     state = S_OPERATOR;
                 } else if (c == $LBR) {
