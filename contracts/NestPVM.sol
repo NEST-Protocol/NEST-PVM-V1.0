@@ -508,12 +508,12 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
                 // cv: bracket counter
                 if (c == $CMA && cv == 1) {
                     // index is always equals to end when call end
-                    (args[argIndex++], co, index) = _evaluatePart(context, 0, 0x0000, expr, start, index);
+                    (args[argIndex++], co,) = _evaluatePart(context, 0, 0x0000, expr, start, index);
                     require(co > 0x0000, "PVM:argument expression is blank");
                     start = index + 1;
                 } else if (c == $RBR && --cv == 0) {
                     // index is always equals to end when call end
-                    (args[argIndex], co, index) = _evaluatePart(context, 0, 0x0000, expr, start, index);
+                    (args[argIndex], co,) = _evaluatePart(context, 0, 0x0000, expr, start, index);
                     if (co > 0x0000) { ++argIndex; }
                     else { require(argIndex == 0, "PVM:arg expression is blank");}
 
@@ -585,7 +585,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
 
             // Load character
             // TODO: Use compare index and end to optimize?
-            if (++index < end) { c = uint(uint8(expr[index])); } else { c = $EOF; }
+            unchecked { if (++index < end) { c = uint(uint8(expr[index])); } else { c = $EOF; } }
         }
 
         cv = pv;
@@ -607,21 +607,37 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
     // Internal call function
     function _internalCall(uint identifier, int[4] memory args, uint argIndex) internal view returns (bool flag, int cv) 
     {
-        return (true, 0);
+        //return (true, 0);
+        // if (argIndex == 0) {
+        //     if (_equals(identifier,  "bn")) { cv =  bn(); } else 
+        //     if (_equals(identifier,  "ts")) { cv =  ts(); } else 
+        //     if (_equals(identifier,  "ob")) { cv =  ob(); } else { flag = true; }
+        // } else if (argIndex == 1) {
+        //     if (_equals(identifier,  "op")) { cv =  op(args[0]); } else 
+        //     if (_equals(identifier,  "ln")) { cv =  ln(args[0]); } else 
+        //     if (_equals(identifier, "exp")) { cv = exp(args[0]); } else 
+        //     if (_equals(identifier, "flo")) { cv = flo(args[0]); } else 
+        //     if (_equals(identifier, "cel")) { cv = cel(args[0]); } else { flag = true; }
+        // } else if (argIndex == 2) {
+        //     if (_equals(identifier, "log")) { cv = log(args[0], args[1]); } else
+        //     if (_equals(identifier, "pow")) { cv = pow(args[0], args[1]); } else 
+        //     if (_equals(identifier, "oav")) { cv = oav(args[0], args[1]); } else { flag = true;}
+        // } else { flag = true; }
+
         if (argIndex == 0) {
-            if (_equals(identifier,  "bn")) { cv =  bn(); } else 
-            if (_equals(identifier,  "ts")) { cv =  ts(); } else 
-            if (_equals(identifier,  "ob")) { cv =  ob(); } else { flag = true; }
+            if (identifier == 0x0000626e) { cv =  bn(); } else 
+            if (identifier == 0x00007473) { cv =  ts(); } else 
+            if (identifier == 0x00006f62) { cv =  ob(); } else { flag = true; }
         } else if (argIndex == 1) {
-            if (_equals(identifier,  "op")) { cv =  op(args[0]); } else 
-            if (_equals(identifier,  "ln")) { cv =  ln(args[0]); } else 
-            if (_equals(identifier, "exp")) { cv = exp(args[0]); } else 
-            if (_equals(identifier, "flo")) { cv = flo(args[0]); } else 
-            if (_equals(identifier, "cel")) { cv = cel(args[0]); } else { flag = true; }
+            if (identifier == 0x00006f70) { cv =  op(args[0]); } else 
+            if (identifier == 0x00006c6e) { cv =  ln(args[0]); } else 
+            if (identifier == 0x00657870) { cv = exp(args[0]); } else 
+            if (identifier == 0x00666c6f) { cv = flo(args[0]); } else 
+            if (identifier == 0x0063656c) { cv = cel(args[0]); } else { flag = true; }
         } else if (argIndex == 2) {
-            if (_equals(identifier, "log")) { cv = log(args[0], args[1]); } else
-            if (_equals(identifier, "pow")) { cv = pow(args[0], args[1]); } else 
-            if (_equals(identifier, "oav")) { cv = oav(args[0], args[1]); } else { flag = true;}
+            if (identifier == 0x006c6f67) { cv = log(args[0], args[1]); } else
+            if (identifier == 0x00706f77) { cv = pow(args[0], args[1]); } else 
+            if (identifier == 0x006f6176) { cv = oav(args[0], args[1]); } else { flag = true;}
         } else { flag = true; }
     }
 
@@ -643,16 +659,25 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
         bytes memory buffer = new bytes(index);
         //sign = StringHelper.sprintf(buffer, "%s%s", abi.encode(sign, "("));
         index = _writeKey(identifier, buffer, length);
-        index = StringHelper.sprintf(buffer, index, "%s", abi.encode("("));
+        //index = StringHelper.sprintf(buffer, index, "%s", abi.encode("("));
+        buffer[index++] = bytes1(uint8($LBR));
         
         for (uint i = 0; i < argIndex; ++i) {
             //if (i > 0) { sign = StringHelper.sprintf(buffer, "%s%s", abi.encode(sign, ",")); }
-            if (i > 0) { index = StringHelper.sprintf(buffer, index, "%s", abi.encode(",")); }
+            //if (i > 0) { index = StringHelper.sprintf(buffer, index, "%s", abi.encode(",")); }
+            if (i > 0) { buffer[index++] = bytes1(uint8($CMA)); }
             //sign = StringHelper.sprintf(buffer, "%s%s", abi.encode(sign, "int256"));
-            index = StringHelper.sprintf(buffer, index, "%s", abi.encode("int256"));
+            //index = StringHelper.sprintf(buffer, index, "%s", abi.encode("int256"));
+            buffer[index++] = bytes1(uint8(0x69));
+            buffer[index++] = bytes1(uint8(0x6e));
+            buffer[index++] = bytes1(uint8(0x74));
+            buffer[index++] = bytes1(uint8(0x32));
+            buffer[index++] = bytes1(uint8(0x35));
+            buffer[index++] = bytes1(uint8(0x36));
         }
         //sign = StringHelper.sprintf(buffer, "%s%s", abi.encode(sign, ")"));
-        index = StringHelper.sprintf(buffer, index, "%s", abi.encode(")"));
+        //index = StringHelper.sprintf(buffer, index, "%s", abi.encode(")"));
+        buffer[index++] = bytes1(uint8($RBR));
         //sign = string(StringHelper.segment(buffer, 0, index));
 
         // Generate abi arguments
@@ -684,7 +709,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
         //     revert("PVM:only support 4 arguments max");
         // }
 
-        console.log(_toHexString(abiArgs));
+        //console.log(_toHexString(abiArgs));
 
         // staticcall
         (bool flag, bytes memory data) = address(uint160(v)).staticcall(abiArgs);
@@ -763,11 +788,23 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
     function _toHexString(bytes memory data) internal pure returns (string memory) {
         bytes memory buffer = new bytes((data.length << 1) + 2);
         //string memory s = "0x";
-        uint index = StringHelper.sprintf(buffer, 0, "%s", abi.encode("0x"));
+        //uint index = StringHelper.sprintf(buffer, 0, "%s", abi.encode("0x"));
+        buffer[0] = bytes1(uint8(0x30));
+        buffer[1] = bytes1(uint8(0x78));
+        uint index = 2;
         for (uint i = 0; i < data.length; ++i) {
             //s = StringHelper.sprintf(buffer, "%s%2x", abi.encode(s, uint(uint8(data[i]))));
-            index = StringHelper.sprintf(buffer, index, "%2x", abi.encode(uint(uint8(data[i]))));
+            //index = StringHelper.sprintf(buffer, index, "%2x", abi.encode(uint(uint8(data[i]))));
+
+            uint v = uint(uint8(data[i]));
+            buffer[index++] = bytes1(uint8(_hex(v >> 4)));
+            buffer[index++] = bytes1(uint8(_hex(v & 0xF)));
         }
         return string(buffer);
+    }
+
+    function _hex(uint v) internal pure returns (uint x) {
+        if (v < 10) return v + 48;
+        return v + 87;
     }
 }
