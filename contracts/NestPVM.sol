@@ -340,20 +340,20 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
         // result values
     ) internal view returns (int cv, uint co, uint index) {
         uint temp1 = 0;
-        //uint temp2 = 0;
         uint state = S_NORMAL;
 
         // args
         uint argIndex = 0;
         int[4] memory args;
-        // Current value
-        cv = 0;
-        // Current operator
-        co = 0;
-        // Index for loop each character
         index = start;
 
-        // TODO: use start to instate left index, remote temp2
+        // Restore status
+        // Current value
+        // cv = 0;
+        // Current operator
+        // co = 0;
+        // Index for loop each character
+        // start = 0;
 
         // Load character
         // TODO: Use compare index and end to optimize?
@@ -370,6 +370,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
                 if (c >= $0 && c <= $9)
                 {
                     cv = int(c - $0);
+                    temp1 = 0;
                     state = S_INTEGER;
                 }
                 // identifier
@@ -383,7 +384,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
                 else if (c == $LBR)
                 {
                     // temp1: bracket counter
-                    // temp2: left index
+                    // start: left index
                     temp1 = 1;
                     start = index + 1;
                     state = S_BRACKET;
@@ -408,6 +409,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
                 }
                 // decimal
                 else if (c == $DOT) {
+                    // temp1: decimals
                     temp1 = DECIMALS;
                 }
                 // else, parse end
@@ -430,7 +432,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
                 else if (c == $LBR) {
                     // cv: bracket counter
                     // temp1: identifier
-                    // temp2: left index
+                    // start: left index
                     cv = 1;
                     start = index + 1;
                     state = S_FUNCTION;
@@ -443,6 +445,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
                     // type: 0 int, 1 call address, 2 delegate call address
 
                     // Find identifer in context
+                    // Here start means tmp value
                     start = context[temp1];
 
                     // Normal integer
@@ -470,8 +473,8 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
                     }
 
                     // Restore status
-                    temp1 = 0;
-                    start = 0;
+                    // temp1 = 0;
+                    // start = 0;
                     state = S_OPERATOR;
                     continue;
                 }
@@ -501,7 +504,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
             // function
             else if (state == S_FUNCTION) {
                 // temp1: identifier
-                // temp2: left index
+                // start: left index
                 // cv: bracket counter
                 if (c == $CMA && cv == 1) {
                     // index is always equals to end when call end
@@ -517,8 +520,8 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
                     // do call
                     cv = _call(context, temp1, args, argIndex);
                     // Restore status
-                    temp1 = 0;
-                    start = 0;
+                    // temp1 = 0;
+                    // start = 0;
                     argIndex = 0;
                     state = S_OPERATOR;
                 } else if (c == $LBR) {
