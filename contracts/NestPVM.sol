@@ -707,12 +707,18 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
             // TODO: Use assembly to optimize
             bytes memory abiArgs = new bytes(4 + (argIndex << 5));
             uint v = uint(keccak256(buffer));
-            assembly { mstore(add(add(abiArgs, 0x20), 0), v) }
-            uint j = 4;
+            uint j = 0;
+            assembly { 
+                j := add(abiArgs, 0x20)
+                mstore(j, v) 
+                j := add(j, 4)
+            }
             for (uint i = 0; i < argIndex; ++i) {
                 v = uint(args[i]);
-                assembly { mstore(add(add(abiArgs, 0x20), j), v) }
-                j += 32;
+                assembly { 
+                    mstore(j, v) 
+                    j := add(j, 0x20)
+                }
             }
 
             // uint j = 0;
