@@ -16,7 +16,7 @@ import "./custom/NestPriceAdapter.sol";
 
 import "hardhat/console.sol";
 
-/// @dev Futures
+/// @dev NestPVM implementation
 contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestPVMFunction {
 
     struct PVMOrder {
@@ -351,17 +351,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
         int[4] memory args;
         index = start;
 
-        // Restore status
-        // Current value
-        // cv = 0;
-        // Current operator
-        // co = 0;
-        // Index for loop each character
-        // start = 0;
-
         // Load character
-        // TODO: Use compare index and end to optimize?
-        // if (index < end) { c = uint(uint8(expr[index])); } else { c = $EOF; }
         // uint c = index < end ? uint(uint8(expr[index])) : $EOF;
         uint c = $EOF;
         if (index < end) { c = uint(uint8(expr[index])); }
@@ -486,9 +476,6 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
                         revert("PVM:identifier not exist");
                     }
 
-                    // Restore status
-                    // temp1 = 0;
-                    // start = 0;
                     state = S_OPERATOR;
                     continue;
                 }
@@ -504,7 +491,6 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
                         if (--temp1 == 0)
                         {
                             // calculate sub expression in brackets
-                            //cv = evaluate(expr, start, index);
                             (cv, co,) = _evaluatePart(context, 0, 0x0000, expr, start, index);
                             require(co > 0x0000, "PVM:expression is blank");
                             // calculate end, find next operator
@@ -536,9 +522,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
 
                         // do call
                         cv = _call(context, temp1, args, argIndex);
-                        // Restore status
-                        // temp1 = 0;
-                        // start = 0;
+
                         argIndex = 0;
                         state = S_OPERATOR;
                     } else if (c == $LBR) {
@@ -577,12 +561,11 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
                     // While co > po, calculate with next
                     while ((co >> 8) > (po >> 8))
                     {
-                        // in S_OPERATOR state, index doesn't increased
-                        // move to next and evaluate
-
                         // test expr1: 4*2**3+1
                         // test expr2: 5+4*2**3+1
 
+                        // in S_OPERATOR state, index doesn't increased
+                        // move to next and evaluate
                         (cv, co, index) = _evaluatePart(context, cv, co, expr, ++index, end);
                         
                         // now co is the last operator parsed by evaluatedPart just called
@@ -606,7 +589,6 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
             }
 
             // Load character
-            // TODO: Use compare index and end to optimize?
             unchecked { if (++index < end) { c = uint(uint8(expr[index])); } else { c = $EOF; } }
         }
 
@@ -623,29 +605,11 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
         (bool flag, int cv) = _internalCall(identifier, args, argIndex);
         if (flag) { cv = _staticCall(context, identifier, args, argIndex); }
         return cv;
-        //return _staticCall(context, identifier, args, argIndex);
     }
 
     // Internal call function
     function _internalCall(uint identifier, int[4] memory args, uint argIndex) internal view returns (bool flag, int cv) 
     {
-        return (true, 0);
-        // if (argIndex == 0) {
-        //     if (_equals(identifier,  "bn")) { cv =  bn(); } else 
-        //     if (_equals(identifier,  "ts")) { cv =  ts(); } else 
-        //     if (_equals(identifier,  "ob")) { cv =  ob(); } else { flag = true; }
-        // } else if (argIndex == 1) {
-        //     if (_equals(identifier,  "op")) { cv =  op(args[0]); } else 
-        //     if (_equals(identifier,  "ln")) { cv =  ln(args[0]); } else 
-        //     if (_equals(identifier, "exp")) { cv = exp(args[0]); } else 
-        //     if (_equals(identifier, "flo")) { cv = flo(args[0]); } else 
-        //     if (_equals(identifier, "cel")) { cv = cel(args[0]); } else { flag = true; }
-        // } else if (argIndex == 2) {
-        //     if (_equals(identifier, "log")) { cv = log(args[0], args[1]); } else
-        //     if (_equals(identifier, "pow")) { cv = pow(args[0], args[1]); } else 
-        //     if (_equals(identifier, "oav")) { cv = oav(args[0], args[1]); } else { flag = true;}
-        // } else { flag = true; }
-
         if (argIndex == 0) {
             if (identifier == 0x0000626e) { cv =  bn(); } else 
             if (identifier == 0x00007473) { cv =  ts(); } else 
@@ -680,31 +644,22 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
             uint index = length + 2;
             if (argIndex > 0) { index += argIndex * 7 - 1; }
             bytes memory buffer = new bytes(index);
-            //sign = StringHelper.sprintf(buffer, "%s%s", abi.encode(sign, "("));
             index = _writeKey(identifier, buffer, length);
-            //index = StringHelper.sprintf(buffer, index, "%s", abi.encode("("));
-            buffer[index++] = bytes1(uint8($LBR));
+            buffer[index++] = bytes1(uint8($LBR));                      // (
             
             for (uint i = 0; i < argIndex; ++i) {
-                //if (i > 0) { sign = StringHelper.sprintf(buffer, "%s%s", abi.encode(sign, ",")); }
-                //if (i > 0) { index = StringHelper.sprintf(buffer, index, "%s", abi.encode(",")); }
-                if (i > 0) { buffer[index++] = bytes1(uint8($CMA)); }
-                //sign = StringHelper.sprintf(buffer, "%s%s", abi.encode(sign, "int256"));
-                //index = StringHelper.sprintf(buffer, index, "%s", abi.encode("int256"));
-                buffer[index++] = bytes1(uint8(0x69));
-                buffer[index++] = bytes1(uint8(0x6e));
-                buffer[index++] = bytes1(uint8(0x74));
-                buffer[index++] = bytes1(uint8(0x32));
-                buffer[index++] = bytes1(uint8(0x35));
-                buffer[index++] = bytes1(uint8(0x36));
+                if (i > 0) { buffer[index++] = bytes1(uint8($CMA)); }   // ,
+                // int256
+                buffer[index++] = bytes1(uint8(0x69));                  // i
+                buffer[index++] = bytes1(uint8(0x6e));                  // n
+                buffer[index++] = bytes1(uint8(0x74));                  // t
+                buffer[index++] = bytes1(uint8(0x32));                  // 2
+                buffer[index++] = bytes1(uint8(0x35));                  // 5
+                buffer[index++] = bytes1(uint8(0x36));                  // 6
             }
-            //sign = StringHelper.sprintf(buffer, "%s%s", abi.encode(sign, ")"));
-            //index = StringHelper.sprintf(buffer, index, "%s", abi.encode(")"));
-            buffer[index++] = bytes1(uint8($RBR));
-            //sign = string(StringHelper.segment(buffer, 0, index));
+            buffer[index++] = bytes1(uint8($RBR));                      // )
 
             // Generate abi arguments
-            // TODO: Use assembly to optimize
             bytes memory abiArgs = new bytes(4 + (argIndex << 5));
             uint v = uint(keccak256(buffer));
             uint j = 0;
@@ -720,33 +675,6 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
                     j := add(j, 0x20)
                 }
             }
-
-            // uint j = 0;
-            // bytes4 selector = bytes4(keccak256(buffer));
-            // for (uint i = 0; i < 4;) {
-            //     abiArgs[j++] = selector[i++];
-            // }
-            // for (uint i = 0; i < argIndex; ++i) {
-            //     for (uint k = 32; k > 0;) {
-            //         abiArgs[j++] = bytes1(uint8(uint(args[i]) >> ((--k) << 3)));
-            //     }
-            // }
-
-            // if (argIndex == 0) {
-            //     data = abi.encodeWithSignature(sign);
-            // } else if (argIndex == 1) {
-            //     data = abi.encodeWithSignature(sign, args[0]);
-            // } else if (argIndex == 2) {
-            //     data = abi.encodeWithSignature(sign, args[0], args[1]);
-            // } else if (argIndex == 3) {
-            //     data = abi.encodeWithSignature(sign, args[0], args[1], args[2]);
-            // } else if (argIndex == 4) {
-            //     data = abi.encodeWithSignature(sign, args[0], args[1], args[2], args[3]);
-            // } else {
-            //     revert("PVM:only support 4 arguments max");
-            // }
-
-            console.log(_toHexString(abiArgs));
 
             // staticcall
             (bool flag, bytes memory data) = address(uint160(value)).staticcall(abiArgs);
@@ -764,7 +692,6 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
 
     // Convert 64 bits to 18 decimals
     function _toDEC(int128 v) internal pure returns (int) {
-        // return int(v) * int(DECIMALS) / 0x10000000000000000;
         return int(v) * int(DECIMALS) >> 64;
     }
 
@@ -790,32 +717,6 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
         }
     }
 
-    // // Convert uint identifier to string identifier
-    // function _toKey(uint uid) internal pure returns (string memory identifier) {
-    //     uint oid = uid;
-    //     uint length = 0;
-    //     while (uid > 0) {
-    //         ++length;
-    //         uid >>= 8;
-    //     }
-    //     bytes memory bs = new bytes(length);
-    //     while (oid > 0) {
-    //         bs[--length] = bytes1(uint8(oid & 0xFF));
-    //         oid >>= 8;
-    //     }
-    //     identifier = string(bs);
-    // }
-
-    // // Convert uint identifier with string identifier
-    // function _equals(uint identifier, bytes memory name) internal pure returns (bool) {
-    //     uint length = name.length;
-    //     while (length > 0) {
-    //         if ((identifier & 0xFF) != uint(uint8(name[--length]))) return false;
-    //         identifier >>= 8;
-    //     }
-    //     return identifier == 0;
-    // }
-
     // Only for test
     function _toString(bytes memory expr, uint start, uint end) internal pure returns (string memory) {
         uint length = end - start;
@@ -830,15 +731,10 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
     function _toHexString(bytes memory data) internal pure returns (string memory) {
         unchecked {
             bytes memory buffer = new bytes((data.length << 1) + 2);
-            //string memory s = "0x";
-            //uint index = StringHelper.sprintf(buffer, 0, "%s", abi.encode("0x"));
-            buffer[0] = bytes1(uint8(0x30));
-            buffer[1] = bytes1(uint8(0x78));
+            buffer[0] = bytes1(uint8(0x30));    // 0
+            buffer[1] = bytes1(uint8(0x78));    // x
             uint index = 2;
             for (uint i = 0; i < data.length; ++i) {
-                //s = StringHelper.sprintf(buffer, "%s%2x", abi.encode(s, uint(uint8(data[i]))));
-                //index = StringHelper.sprintf(buffer, index, "%2x", abi.encode(uint(uint8(data[i]))));
-
                 uint v = uint(uint8(data[i]));
                 buffer[index++] = bytes1(uint8(_hex(v >> 4)));
                 buffer[index++] = bytes1(uint8(_hex(v & 15)));
