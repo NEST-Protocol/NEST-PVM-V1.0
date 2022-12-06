@@ -343,16 +343,17 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
         uint end
         // result values
     ) internal view returns (int cv, uint co, uint index) {
-        uint temp1 = 0;
-        uint state = S_NORMAL;
-
-        // args
-        uint argIndex = 0;
+        // Args
         int[4] memory args;
+        uint argIndex = 0;
+        // Temp value
+        uint temp1 = 0;
+        // Machine state
+        uint state = S_NORMAL;
+        // Loop index
         index = start;
 
         // Load character
-        // uint c = index < end ? uint(uint8(expr[index])) : $EOF;
         uint c = $EOF;
         if (index < end) { c = uint(uint8(expr[index])); }
 

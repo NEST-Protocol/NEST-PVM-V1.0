@@ -100,22 +100,18 @@ namespace Baiynui.Utils
             int _end = end;
             Console.WriteLine($"{space(level)}-evaluatePart({_pv},0x{_po},'{toString(expr, _start, _end)}')");
 
-            int temp1 = 0;
-            int temp2 = 0;
-            int state = S_NORMAL;
-
+            // Args
             List<int> args = null;
-            // Current value
-            cv = 0;
-            // Current operator
-            co = 0;
-            // Index for loop each character
+            // Temp value
+            int temp1 = 0;
+            // Machine state
+            int state = S_NORMAL;
+            // Loop index
             index = start;
 
-            char c;
             // Load character
-            // TODO: Use compare index and end to optimize?
-            if (index < end) { c = (char)expr[index]; } else { c = _EOF; }
+            char c = _EOF;
+            if (index < end) { c = (char)expr[index]; } 
 
             // Loop with each character
             for(; ; )
@@ -127,22 +123,23 @@ namespace Baiynui.Utils
                     if (c >= _0 && c <= _9)
                     {
                         cv = (int)(c - _0);
+                        temp1 = 0;
                         state = S_INTEGER;
                     }
                     // identifier
                     else if ((c >= _A && c <= _Z) || (c >= _a && c <= _z))
                     {
                         // temp1: identifier
-                        temp1 = (int)(c);
+                        temp1 = (int)c;
                         state = S_IDENTIFIER;
                     }
                     // left bracket
                     else if (c == _LBR)
                     {
                         // temp1: bracket counter
-                        // temp2: left index
+                        // start: left index
                         temp1 = 1;
-                        temp2 = index + 1;
+                        start = index + 1;
                         state = S_BRACKET;
                     }
                     // end of file, break
@@ -171,22 +168,21 @@ namespace Baiynui.Utils
                 {
                     if ((c >= _A && c <= _Z) || (c >= _a && c <= _z) || (c >= _0 && c <= _9))
                     {
-                        temp1 = (temp1 << 8) | (int)(c);
+                        temp1 = (temp1 << 8) | (int)c;
                     }
                     // left bracket, function
                     else if (c == _LBR)
                     {
-                        // temp1: identifier
-                        // temp2: left index
                         // cv: bracket counter
-                        temp2 = index + 1;
+                        // temp1: identifier
+                        // start: left index
                         cv = 1;
+                        start = index + 1;
                         state = S_FUNCTION;
                     }
                     else
                     {
-                        cv = (int)(_functionMap[temp1]);
-                        temp1 = 0;
+                        cv = (int)_functionMap[temp1];
                         state = S_OPERATOR;
                         continue;
                     }
@@ -202,7 +198,7 @@ namespace Baiynui.Utils
                         {
                             // calculate sub expression in brackets
                             // index is always equals to end when call end
-                            evaluatePart(level + 1, 0, 0x0000, expr, temp2, index, out cv, out co, out index);
+                            evaluatePart(level + 1, 0, 0x0000, expr, start, index, out cv, out co, out index);
                             if (co == 0x0000) { throw new NormalException("bracket expression is blank"); }
                             // calculate end, find next operator
                             state = S_OPERATOR;
@@ -218,21 +214,22 @@ namespace Baiynui.Utils
                 else if (state == S_FUNCTION)
                 {
                     // temp1: identifier
-                    // temp2: left index
+                    // start: left index
                     // cv: bracket counter
                     if (c == _CMA && cv == 1)
                     {
                         // index is always equals to end when call end
-                        evaluatePart(level + 1, 0, 0x0000, expr, temp2, index, out int v, out co, out index);
-                        if (co == 0x0000) { throw new NormalException("argument expression is blank"); }
+                        evaluatePart(level + 1, 0, 0x0000, expr, start, index, out int v, out co, out index);
+                        if (co == 0x0000) { throw new NormalException("PVM:argument expression is blank"); }
                         args.Add(v);
-                        temp2 = index + 1;
+                        start = index + 1;
                     }
                     else if (c == _RBR && --cv == 0)
                     {
                         // index is always equals to end when call end
-                        evaluatePart(level + 1, 0, 0x0000, expr, temp2, index, out int v, out co , out index);
+                        evaluatePart(level + 1, 0, 0x0000, expr, start, index, out int v, out co , out index);
                         if (co > 0x0000) { args.Add(v); }
+                        else if (args != null) { throw new NormalException("PVM:arg expression is blank"); }
 
                         string s = "";
                         cv = 0;
@@ -247,8 +244,6 @@ namespace Baiynui.Utils
 
                         // Restore status
                         args = null;
-                        temp1 = 0;
-                        temp2 = 0;
                         state = S_OPERATOR;
                     }
                     else if (c == _LBR)
@@ -257,7 +252,8 @@ namespace Baiynui.Utils
                     }
                     else if (c != _SPC)
                     {
-                        if (args ==null) args = new List<int>();
+                        // TODO: why?
+                        if (args == null) args = new List<int>();
                     }
                 }
                 // find next operator
