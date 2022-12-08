@@ -58,7 +58,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
     uint constant S_FUNCTION    = 0x0105;
     uint constant S_STRING      = 0x0106;       // consider a string can contains bracket
     uint constant S_OPERATOR    = 0x0201;
-    uint constant S_CALCULATE   = 0x0301;
+    //uint constant S_CALCULATE   = 0x0301;
 
     uint constant DECIMALS      = 1 ether;
     uint constant PI            = 3141592653590000000;
@@ -461,10 +461,13 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
                     // Address staticcall
                     else if ((start >> 248) == 0x02) {
                         // staticcall
-                        //cv = INestPVMFunction(address(uint160(start))).calculate(abi.encode(temp1));
-                        (bool flag, bytes memory data) = address(uint160(start)).staticcall(abi.encodeWithSignature("calculate(bytes)", abi.encode(temp1)));
-                        require(flag, "PVM:call failed");
-                        cv = abi.decode(data, (int));
+                        cv = INestPVMFunction(address(uint160(start))).calculate(abi.encode(temp1));
+                        // (bool flag, bytes memory data) = address(uint160(start)).staticcall(abi.encodeWithSignature(
+                        //     "calculate(bytes)", 
+                        //     abi.encode(temp1)
+                        // ));
+                        //require(flag, "PVM:call failed");
+                        //cv = abi.decode(data, (int));
                     } 
                     // Address call
                     else if ((start >> 248) == 0x03) {
@@ -519,7 +522,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
                         // index is always equals to end when call end
                         (args[argIndex], co,) = _evaluatePart(context, 0, 0x0000, expr, start, index);
                         if (co > 0x0000) { ++argIndex; }
-                        else { require(argIndex == 0, "PVM:arg expression is blank");}
+                        else { require(argIndex == 0, "PVM:arg expression is blank"); }
 
                         // do call
                         cv = _call(context, temp1, args, argIndex);
@@ -550,38 +553,31 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
                         if (c == $EOF) { co = 0x0001; }
                         else { revert("PVM:expression invalid"); }
 
-                        state = S_CALCULATE;
-                    }
-                    continue;
-                }
-            }
-            // calculate
-            else if (state == S_CALCULATE)
-            {
-                unchecked {
-                    // While co > po, calculate with next
-                    while ((co >> 8) > (po >> 8))
-                    {
-                        // test expr1: 4*2**3+1
-                        // test expr2: 5+4*2**3+1
+                        // While co > po, calculate with next
+                        while ((co >> 8) > (po >> 8))
+                        {
+                            // test expr1: 4*2**3+1
+                            // test expr2: 5+4*2**3+1
 
-                        // in S_OPERATOR state, index doesn't increased
-                        // move to next and evaluate
-                        (cv, co, index) = _evaluatePart(context, cv, co, expr, ++index, end);
-                        
-                        // now co is the last operator parsed by evaluatedPart just called
+                            // in S_OPERATOR state, index doesn't increased
+                            // move to next and evaluate
+                            (cv, co, index) = _evaluatePart(context, cv, co, expr, ++index, end);
+                            
+                            // now co is the last operator parsed by evaluatedPart just called
+                        }
                     }
-                }
 
-                // Calculate with pv
-                if (po == 0x1001) { pv += cv; } else 
-                if (po == 0x1002) { pv -= cv; } else 
-                if (po == 0x2001) { pv = pv * cv / int(DECIMALS); } else 
-                if (po == 0x2002) { pv = pv * int(DECIMALS) / cv; } else 
-                if (po == 0x3001) { pv = pow(pv, cv); } else 
-                // po is 0, means this is the first part, pv = cv
-                if (po == 0x0000) { pv = cv; }
-                break;
+                    // Calculate with pv
+                    if (po == 0x1001) { pv += cv; } else 
+                    if (po == 0x1002) { pv -= cv; } else 
+                    if (po == 0x2001) { pv = pv * cv / int(DECIMALS); } else 
+                    if (po == 0x2002) { pv = pv * int(DECIMALS) / cv; } else 
+                    if (po == 0x3001) { pv = pow(pv, cv); } else 
+                    // po is 0, means this is the first part, pv = cv
+                    if (po == 0x0000) { pv = cv; }
+                    
+                    break;
+                }
             }
             // not implement
             else
@@ -603,38 +599,24 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
         int[4] memory args,
         uint argIndex
     ) internal view returns (int) {
-        (bool flag, int cv) = _internalCall(identifier, args, argIndex);
-        if (flag) { cv = _staticCall(context, identifier, args, argIndex); }
-        return cv;
-    }
-
-    // Internal call function
-    function _internalCall(uint identifier, int[4] memory args, uint argIndex) internal view returns (bool flag, int cv) 
-    {
+        // Internal call
         if (argIndex == 0) {
-            if (identifier == 0x0000626e) { cv =  bn(); } else 
-            if (identifier == 0x00007473) { cv =  ts(); } else 
-            if (identifier == 0x00006f62) { cv =  ob(); } else { flag = true; }
+            if (identifier == 0x0000626e) { return  bn(); } else 
+            if (identifier == 0x00007473) { return ts(); } else 
+            if (identifier == 0x00006f62) { return ob(); } 
         } else if (argIndex == 1) {
-            if (identifier == 0x00006f70) { cv =  op(args[0]); } else 
-            if (identifier == 0x00006c6e) { cv =  ln(args[0]); } else 
-            if (identifier == 0x00657870) { cv = exp(args[0]); } else 
-            if (identifier == 0x00666c6f) { cv = flo(args[0]); } else 
-            if (identifier == 0x0063656c) { cv = cel(args[0]); } else { flag = true; }
+            if (identifier == 0x00006f70) { return  op(args[0]); } else 
+            if (identifier == 0x00006c6e) { return  ln(args[0]); } else 
+            if (identifier == 0x00657870) { return exp(args[0]); } else 
+            if (identifier == 0x00666c6f) { return flo(args[0]); } else 
+            if (identifier == 0x0063656c) { return cel(args[0]); } 
         } else if (argIndex == 2) {
-            if (identifier == 0x006c6f67) { cv = log(args[0], args[1]); } else
-            if (identifier == 0x00706f77) { cv = pow(args[0], args[1]); } else 
-            if (identifier == 0x006f6176) { cv = oav(args[0], args[1]); } else { flag = true;}
-        } else { flag = true; }
-    }
+            if (identifier == 0x006c6f67) { return log(args[0], args[1]); } else
+            if (identifier == 0x00706f77) { return pow(args[0], args[1]); } else 
+            if (identifier == 0x006f6176) { return oav(args[0], args[1]); } 
+        } 
 
-    // Static call function
-    function _staticCall(
-        mapping(uint=>uint) storage context, 
-        uint identifier, 
-        int[4] memory args, 
-        uint argIndex
-    ) internal view returns (int cv) {
+        // Custom static call
         unchecked {
             uint value = context[identifier];
             // Custom function staticcall
