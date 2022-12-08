@@ -2,55 +2,90 @@
 
 pragma solidity ^0.8.6;
 
-import "./libs/ABDKMath64x64.sol";
 import "./libs/TransferHelper.sol";
-import "./libs/StringHelper.sol";
-
-import "./custom/ChainParameter.sol";
-import "./custom/NestFrequentlyUsed.sol";
 
 import "hardhat/console.sol";
 
 /// @dev NestMultiSign implementation
 contract NestMultiSign {
 
+    // Passed Thresholds
+    uint constant P = 3;
     // Number of members
     uint constant M = 3;
     // Number of addresses per each account
     uint constant N = 3;
 
+    // Transaction data structure
     struct Transaction {
         address tokenAddress;
         uint32 startBlock;
         uint32 executeBlock;
+        // sign3(1+7)|sign2(1+7)|sign1(1+7)|sign0(1+7)
         uint32 signs;
         address to;
         uint96 value;
     }
 
+    // Transaction information for view method
     struct TransactionView {
+        uint32 index;
         address tokenAddress;
         uint32 startBlock;
         uint32 executeBlock;
-        // signs: 0 not sign, 1 signed, 2 rejected
-        uint8[M] signs;
         address to;
         uint96 value;
+        // signs: 0 address means not signed
+        address[M] signs;
     }
 
+    // Members of this multi sign account
     address[M][N] _members;
 
+    // Transaction array
     Transaction[] _transactions;
 
+    // Only member is allowed
+    modifier onlyMember(uint i, uint j) {
+        _checkMember(i, j);
+        _;
+    }
+
+    // Ctor
     constructor(address[M][N] memory members) {
         // TODO: check repeat
         _members = members;
     }
 
-    // Only for test
+    // TODO: Only for test
     function modifyAddress(uint i, uint j, address newAddress) external /* onlyMember(i, j) */ {
         // TODO: check repeat
         _members[i][j] = newAddress;
+    }
+
+    /// @dev Get member at given position
+    /// @param i Index of member
+    /// @param j Index of address
+    /// @return member Member at (i, j)
+    /// @return m Number of members
+    /// @return n Number of addresses per each account
+    function getMember(uint i, uint j) external view returns (address member, uint m, uint n) {
+        return (_members[i][j], M, N);
+    }
+
+    /// @dev Find member by target address
+    /// @param target Target address
+    /// @return Index of member
+    /// @return Index of address
+    function findMember(address target) external view returns (uint, uint) {
+        for (uint i = 0; i < M; ++i) {
+            for (uint j = 0; j < N; ++j) {
+                if (_members[i][j] == target) {
+                    return (i, j);
+                }
+            }
+        }
+        revert("NMS:member not found");
     }
 
     /// @dev List transactions
@@ -75,7 +110,8 @@ contract NestMultiSign {
             uint index = length - offset;
             uint end = index > count ? index - count : 0;
             while (index > end) {
-                transactionArray[i++] = _toTransactionView(transactions[--index]);
+                --index;
+                (transactionArray[i++] = _toTransactionView(transactions[index])).index = uint32(index);
             }
         } 
         // Positive order
@@ -86,57 +122,19 @@ contract NestMultiSign {
                 end = length;
             }
             while (index < end) {
-                transactionArray[i++] = _toTransactionView(transactions[index++]);
+                (transactionArray[i++] = _toTransactionView(transactions[index])).index = uint32(index);
+                ++index;
             }
         }
     }
 
-    function _toTransactionView(Transaction memory transaction) internal pure returns (TransactionView memory tv) {
-        uint signs = uint(transaction.signs);
-        uint8[M] memory signArray;
-        for (uint i = 0; i < M; ++i) {
-            uint sign = (signs >> (i << 3)) & 0xFF;
-            if (sign == 0) signArray[i] = uint8(0); 
-            else if (sign >= 0x80) signArray[i] = uint8(2); 
-            else signArray[i] = uint8(1);
-        }
-
-        tv = TransactionView(
-            transaction.tokenAddress,
-            transaction.startBlock,
-            transaction.executeBlock,
-            signArray,
-            transaction.to,
-            transaction.value
-        );
-    }
-
-    function getMember(uint i, uint j) external view returns (address member) {
-        return _members[i][j];
-    }
-
-    function findMember(address target) external view returns (uint, uint) {
-        for (uint i = 0; i < M; ++i) {
-            for (uint j = 0; j < N; ++j) {
-                if (_members[i][j] == target) {
-                    return (i, j);
-                }
-            }
-        }
-        revert("NMS:member not found");
-    }
-
-    modifier onlyMember(uint i, uint j) {
-        _checkMember(i, j);
-        _;
-    }
-
-    function _checkMember(uint i, uint j) internal view {
-        require(_members[i][j] == msg.sender, "NMS:member not found");
-    }
-
+    /// @dev Start a new transaction
+    /// @param i Index of member
+    /// @param j Index of address
+    /// @param tokenAddress Address of target token
+    /// @param to Target address
+    /// @param value Transaction amount
     function newTransaction(uint i, uint j, address tokenAddress, address to, uint96 value) external onlyMember(i, j) {
-        //(uint i, uint j) = _memberId(msg.sender);
         _transactions.push(Transaction(
             tokenAddress,
             uint32(block.number),
@@ -147,37 +145,85 @@ contract NestMultiSign {
         ));
     }
 
+    /// @dev Sign transaction
+    /// @param i Index of member
+    /// @param j Index of address
+    /// @param index Index of transaction
     function signTransaction(uint i, uint j, uint index) external onlyMember(i, j) {
         _transactions[index].signs |= uint32((1 << j) << (i << 3));
     }
 
+    /// @dev Reject transaction
+    /// @param i Index of member
+    /// @param j Index of address
+    /// @param index Index of transaction
     function rejectTransaction(uint i, uint j, uint index) external onlyMember(i, j) {
         _transactions[index].signs |= uint32((1 << 7) << (i << 3));
     }
 
+    /// @dev Execute transaction
+    /// @param i Index of member
+    /// @param j Index of address
+    /// @param index Index of transaction
     function executeTransaction(uint i, uint j, uint index) external onlyMember(i, j) {
-        //(uint i, uint j) = _memberId(msg.sender);
-        Transaction memory tx = _transactions[index];
-        require(tx.executeBlock == 0, "NMS:executed");
-        uint signs = uint(tx.signs) | uint32((1 << j) << (i << 3));
+        Transaction memory transaction = _transactions[index];
+        require(transaction.executeBlock == 0, "NMS:executed");
+        uint signs = uint(transaction.signs) | ((1 << j) << (i << 3));
         
-        //console.log("%d", signs);
+        uint p = 0;
         for (uint k = 0; k < M; ++k) {
             uint sign = (signs >> (k << 3)) & 0xFF;
-            //console.log("%d", (sign >> 7));
-            require(sign > 0 && sign < 0x80, "NMS:not passed");
+            if (sign > 0 && sign < 0x80) {
+                ++p;
+            }
         }
+        require(p >= P, "NMS:not passed");
 
-        tx.signs = uint32(signs);
-        tx.executeBlock = uint32(block.number);
-        _transactions[index] = tx;
+        transaction.signs = uint32(signs);
+        transaction.executeBlock = uint32(block.number);
+        _transactions[index] = transaction;
 
-        if (tx.tokenAddress == address(0)) {
-            payable(tx.to).transfer(tx.value);
+        if (transaction.tokenAddress == address(0)) {
+            payable(transaction.to).transfer(transaction.value);
         } else {
-            TransferHelper.safeTransfer(tx.tokenAddress, tx.to, tx.value);
+            TransferHelper.safeTransfer(transaction.tokenAddress, transaction.to, transaction.value);
         }
     }
 
+    // Convert to TransactionView
+    function _toTransactionView(Transaction memory transaction) internal view returns (TransactionView memory tv) {
+        uint signs = uint(transaction.signs);
+        address[M] memory signArray;
+        for (uint i = 0; i < M; ++i) {
+            uint sign = (signs >> (i << 3)) & 0xFF;
+            if (sign == 0) signArray[i] = address(0); 
+            else if (sign >= 0x80) signArray[i] = address(0); 
+            else {
+                for (uint j = 0; j < N; ++j) {
+                    if ((sign >> j) & 0x01 == 0x01) {
+                        signArray[i] = _members[i][j];
+                        break;
+                    }
+                }
+            }
+        }
+
+        tv = TransactionView(
+            uint32(0),
+            transaction.tokenAddress,
+            transaction.startBlock,
+            transaction.executeBlock,
+            transaction.to,
+            transaction.value,
+            signArray
+        );
+    }
+
+    // Check if sender is member
+    function _checkMember(uint i, uint j) internal view {
+        require(_members[i][j] == msg.sender, "NMS:member not found");
+    }
+
+    // Support eth
     receive() external payable { }
 }
