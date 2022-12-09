@@ -15,6 +15,7 @@ contract NestMultiSign {
     uint constant M = 3;
     // Number of addresses per each account
     uint constant N = 3;
+    // TODO: Other M, N and P not test
 
     // Transaction data structure
     struct Transaction {

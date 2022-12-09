@@ -68,6 +68,53 @@ describe('37.NestMultiSign', function() {
             console.log('3. list');
             let list = await nestMultiSign.list(0, 1, 0);
             console.log(UI(list));
+            expect(list[0].signs[0]).to.eq(owner.address);
+            expect(list[0].signs[1]).to.eq(addr3.address);
+            expect(list[0].signs[2]).to.eq(addr6.address);
+        }
+
+        if (true) {
+            console.log('3. newTransaction');
+            await nestMultiSign.connect(addr8).newTransaction(2, 2, nest.address, addr8.address, toBigInt(1));
+            let list = await nestMultiSign.list(0, 1, 0);
+            console.log(UI(list));
+            expect(list[0].signs[0]).to.eq(eth.address);
+            expect(list[0].signs[1]).to.eq(eth.address);
+            expect(list[0].signs[2]).to.eq(addr8.address);
+            await listAccounts();
+        }
+
+        if (true) {
+            console.log('4. signTransaction');
+            await nestMultiSign.connect(addr1).signTransaction(0, 1, 1);
+            let list = await nestMultiSign.list(0, 1, 0);
+            console.log(UI(list));
+            expect(list[0].signs[0]).to.eq(addr1.address);
+            expect(list[0].signs[1]).to.eq(eth.address);
+            expect(list[0].signs[2]).to.eq(addr8.address);
+            await listAccounts();
+        }
+
+        if (true) {
+            console.log('5. executeTransaction');
+            await nestMultiSign.connect(addr5).executeTransaction(1, 2, 1);
+            let list = await nestMultiSign.list(0, 1, 0);
+            console.log(UI(list));
+            expect(list[0].signs[0]).to.eq(addr1.address);
+            expect(list[0].signs[1]).to.eq(addr5.address);
+            expect(list[0].signs[2]).to.eq(addr8.address);
+            await listAccounts();
+        }
+
+        if (true) {
+            console.log('6. new Sign');
+            await nestMultiSign.connect(addr4).signTransaction(1, 1, 1);
+            let list = await nestMultiSign.list(0, 1, 0);
+            console.log(UI(list));
+            expect(list[0].signs[0]).to.eq(addr1.address);
+            expect(list[0].signs[1]).to.eq(addr4.address);
+            expect(list[0].signs[2]).to.eq(addr8.address);
+            await listAccounts();
         }
     });
 });
