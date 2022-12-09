@@ -4,8 +4,6 @@ pragma solidity ^0.8.6;
 
 import "./libs/TransferHelper.sol";
 
-import "hardhat/console.sol";
-
 /// @dev NestMultiSign implementation
 contract NestMultiSign {
 
@@ -15,33 +13,43 @@ contract NestMultiSign {
     uint constant M = 3;
     // Number of addresses per each account
     uint constant N = 3;
-    // TODO: Other M, N and P not test
 
     // Transaction data structure
     struct Transaction {
+        // Address of token to transfer
         address tokenAddress;
+        // Transaction start block
         uint32 startBlock;
+        // Transaction execute block
         uint32 executeBlock;
         // sign3(1+7)|sign2(1+7)|sign1(1+7)|sign0(1+7)
         uint32 signs;
+        // Token receive address
         address to;
+        // Transfer value
         uint96 value;
     }
 
     // Transaction information for view method
     struct TransactionView {
+        // Index of transaction in _transactions
         uint32 index;
+        // Address of token to transfer
         address tokenAddress;
+        // Transaction start block
         uint32 startBlock;
+        // Transaction execute block
         uint32 executeBlock;
+        // Token receive address
         address to;
+        // Transfer value
         uint96 value;
         // signs: 0 address means not signed
         address[M] signs;
     }
 
     // Members of this multi sign account
-    address[M][N] _members;
+    address[N][M] _members;
 
     // Transaction array
     Transaction[] _transactions;
@@ -52,8 +60,9 @@ contract NestMultiSign {
         _;
     }
 
-    // Ctor
-    constructor(address[M][N] memory members) {
+    /// @dev Ctor
+    /// @param members Member array, stored by group, don't repeat
+    constructor(address[N][M] memory members) {
         // TODO: check repeat
         _members = members;
     }
@@ -167,10 +176,14 @@ contract NestMultiSign {
     /// @param j Index of address
     /// @param index Index of transaction
     function executeTransaction(uint i, uint j, uint index) external onlyMember(i, j) {
+        // Load transaction
         Transaction memory transaction = _transactions[index];
+        // executeBlock == 0 means executed
         require(transaction.executeBlock == 0, "NMS:executed");
+        // Load sign, and sign with current member
         uint signs = uint(transaction.signs) | ((1 << j) << (i << 3));
         
+        // Count of signs
         uint p = 0;
         for (uint k = 0; k < M; ++k) {
             uint sign = (signs >> (k << 3)) & 0xFF;
@@ -180,32 +193,37 @@ contract NestMultiSign {
         }
         require(p >= P, "NMS:not passed");
 
+        // Update transaction
         transaction.signs = uint32(signs);
         transaction.executeBlock = uint32(block.number);
         _transactions[index] = transaction;
 
+        // Transfer eth
         if (transaction.tokenAddress == address(0)) {
             payable(transaction.to).transfer(transaction.value);
-        } else {
+        } 
+        // Transfer token
+        else {
             TransferHelper.safeTransfer(transaction.tokenAddress, transaction.to, transaction.value);
         }
     }
 
     // Convert to TransactionView
     function _toTransactionView(Transaction memory transaction) internal view returns (TransactionView memory tv) {
+        // Resolve signs
         uint signs = uint(transaction.signs);
         address[M] memory signArray;
         for (uint i = 0; i < M; ++i) {
             uint sign = (signs >> (i << 3)) & 0xFF;
-            if (sign == 0) signArray[i] = address(0); 
-            else if (sign >= 0x80) signArray[i] = address(0); 
-            else {
+            if (sign > 0 && sign < 0x80) {
                 for (uint j = 0; j < N; ++j) {
                     if ((sign >> j) & 0x01 == 0x01) {
                         signArray[i] = _members[i][j];
                         break;
                     }
                 }
+            } else {
+                signArray[i] = address(0); 
             }
         }
 

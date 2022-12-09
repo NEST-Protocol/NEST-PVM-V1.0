@@ -1,6 +1,6 @@
 require("@nomiclabs/hardhat-waffle");
 require('@openzeppelin/hardhat-upgrades');
-require('hardhat-gas-reporter');
+//require('hardhat-gas-reporter');
 
 const config = require('./.private.json');
 // This is a sample Hardhat task. To learn how to create your own go to
@@ -97,7 +97,7 @@ module.exports = {
     timeout: 200000000
   },
   gasReporter: {
-    currency: 'CHF',
+    //currency: 'CHF',
     gasPrice: 1
   }
 };
