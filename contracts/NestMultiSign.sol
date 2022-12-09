@@ -7,11 +7,11 @@ import "./libs/TransferHelper.sol";
 /// @dev NestMultiSign implementation
 contract NestMultiSign {
 
-    // Passed Thresholds
+    // Passed Thresholds, max M
     uint constant P = 3;
-    // Number of members
+    // Number of members, max 8
     uint constant M = 3;
-    // Number of addresses per each account
+    // Number of addresses per each account, max 3
     uint constant N = 3;
 
     // Transaction data structure
@@ -22,7 +22,7 @@ contract NestMultiSign {
         uint32 startBlock;
         // Transaction execute block
         uint32 executeBlock;
-        // sign3(1+7)|sign2(1+7)|sign1(1+7)|sign0(1+7)
+        // sign7(1+3)|sign6(1+3)|sign5(1+3)|sign4(1+3)|sign3(1+3)|sign2(1+3)|sign1(1+3)|sign0(1+3)
         uint32 signs;
         // Token receive address
         address to;
@@ -149,7 +149,7 @@ contract NestMultiSign {
             tokenAddress,
             uint32(block.number),
             uint32(0),
-            uint32((1 << j) << (i << 3)),
+            uint32((1 << j) << (i << 2)),
             to,
             value
         ));
@@ -160,7 +160,7 @@ contract NestMultiSign {
     /// @param j Index of address
     /// @param index Index of transaction
     function signTransaction(uint i, uint j, uint index) external onlyMember(i, j) {
-        _transactions[index].signs |= uint32((1 << j) << (i << 3));
+        _transactions[index].signs |= uint32((1 << j) << (i << 2));
     }
 
     /// @dev Reject transaction
@@ -168,7 +168,7 @@ contract NestMultiSign {
     /// @param j Index of address
     /// @param index Index of transaction
     function rejectTransaction(uint i, uint j, uint index) external onlyMember(i, j) {
-        _transactions[index].signs |= uint32((1 << 7) << (i << 3));
+        _transactions[index].signs |= uint32((1 << 3) << (i << 2));
     }
 
     /// @dev Execute transaction
@@ -181,13 +181,13 @@ contract NestMultiSign {
         // executeBlock == 0 means executed
         require(transaction.executeBlock == 0, "NMS:executed");
         // Load sign, and sign with current member
-        uint signs = uint(transaction.signs) | ((1 << j) << (i << 3));
+        uint signs = uint(transaction.signs) | ((1 << j) << (i << 2));
         
         // Count of signs
         uint p = 0;
         for (uint k = 0; k < M; ++k) {
-            uint sign = (signs >> (k << 3)) & 0xFF;
-            if (sign > 0 && sign < 0x80) {
+            uint sign = (signs >> (k << 2)) & 0xF;
+            if (sign > 0 && sign < 8) {
                 ++p;
             }
         }
@@ -213,17 +213,17 @@ contract NestMultiSign {
         // Resolve signs
         uint signs = uint(transaction.signs);
         address[M] memory signArray;
-        for (uint i = 0; i < M; ++i) {
-            uint sign = (signs >> (i << 3)) & 0xFF;
-            if (sign > 0 && sign < 0x80) {
+        for (uint k = 0; k < M; ++k) {
+            uint sign = (signs >> (k << 2)) & 0xF;
+            if (sign > 0 && sign < 8) {
                 for (uint j = 0; j < N; ++j) {
                     if ((sign >> j) & 0x01 == 0x01) {
-                        signArray[i] = _members[i][j];
+                        signArray[k] = _members[k][j];
                         break;
                     }
                 }
             } else {
-                signArray[i] = address(0); 
+                signArray[k] = address(0); 
             }
         }
 
