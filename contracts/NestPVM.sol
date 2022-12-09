@@ -2,23 +2,20 @@
 
 pragma solidity ^0.8.6;
 
-import "./libs/PVM.sol";
 import "./libs/ABDKMath64x64.sol";
 import "./libs/TransferHelper.sol";
-import "./libs/StringHelper.sol";
 
 import "./interfaces/INestPVMFunction.sol";
 import "./interfaces/INestFuturesWithPrice.sol";
 
-import "./custom/ChainParameter.sol";
 import "./custom/NestFrequentlyUsed.sol";
-import "./custom/NestPriceAdapter.sol";
 
 import "hardhat/console.sol";
 
 /// @dev NestPVM implementation
-contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestPVMFunction {
+contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
 
+    /// @dev PVM Order data structure
     struct PVMOrder {
         address owner;
         uint32 openBlock;
@@ -31,23 +28,23 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
 
     // TODO: Support variables: dT, blockNumber, timestamp
     // TODO: When the actual value of the order is lower than a value, it can be liquidated?
-    uint constant $A            = uint(0x41);   // A
-    uint constant $Z            = uint(0x5a);   // Z
-    uint constant $a            = uint(0x61);   // a
-    uint constant $z            = uint(0x7a);   // z
-    uint constant $0            = uint(0x30);   // 0
-    uint constant $9            = uint(0x39);   // 9
-    uint constant $ADD          = uint(0x2b);   // +
-    uint constant $SUB          = uint(0x2d);   // -
-    uint constant $MUL          = uint(0x2a);   // *
-    uint constant $DIV          = uint(0x2f);   // /
-    uint constant $COL          = uint(0x3a);   // :
-    uint constant $LBR          = uint(0x28);   // (
-    uint constant $RBR          = uint(0x29);   // )
-    uint constant $SPC          = uint(0x20);   // SPACE
-    uint constant $DOT          = uint(0x2e);   // .
-    uint constant $CMA          = uint(0x2c);   // ,
-    uint constant $EOF          = uint(0x00);   // 0
+    uint constant $A            = 0x41;         // A
+    uint constant $Z            = 0x5a;         // Z
+    uint constant $a            = 0x61;         // a
+    uint constant $z            = 0x7a;         // z
+    uint constant $0            = 0x30;         // 0
+    uint constant $9            = 0x39;         // 9
+    uint constant $ADD          = 0x2b;         // +
+    uint constant $SUB          = 0x2d;         // -
+    uint constant $MUL          = 0x2a;         // *
+    uint constant $DIV          = 0x2f;         // /
+    uint constant $COL          = 0x3a;         // :
+    uint constant $LBR          = 0x28;         // (
+    uint constant $RBR          = 0x29;         // )
+    uint constant $SPC          = 0x20;         // SPACE
+    uint constant $DOT          = 0x2e;         // .
+    uint constant $CMA          = 0x2c;         // ,
+    uint constant $EOF          = 0x00;         // 0
 
     // Status
     uint constant S_NORMAL      = 0x0000;
@@ -64,21 +61,24 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
     uint constant PI            = 3141592653590000000;
     uint constant E             = 2718281828459000000;
 
-    mapping(uint=>uint) _functionMap;
+    // Identifier map
+    mapping(uint=>uint) _identifierMap;
 
+    // PVM Order array
     PVMOrder[] _orders;
 
+    // TODO: Only for test
     address _nestFutures;
-
     function setNestFutures(address nestFutures) external onlyGovernance {
         _nestFutures = nestFutures;
     }
 
     // type(8)|data(248)
     function _register(string memory key, uint value) internal {
-        _functionMap[_fromKey(key)] = value;
+        _identifierMap[_fromKey(key)] = value;
     }
 
+    // Calculate identifier from key
     function _fromKey(string memory key) internal pure returns (uint identifier) {
         bytes memory bKey = bytes(key);
         identifier = 0;
@@ -87,19 +87,27 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
         }
     }
 
-    // type(8)|data(248)
+    /// @dev Register to identifier map
+    /// @param key Target key
+    /// @param value Target value, type(8)|data(248)
     function register(string memory key, uint value) public onlyGovernance {
         _register(key, value);
     }
 
+    /// @dev Register INestPVMFunction address
+    /// @param key Target key
+    /// @param addr Address of target INestPVMFunction implementation contract
     function registerAddress(string memory key, address addr) external {
         register(key, (0x02 << 248) | uint(uint160(addr)));
     }
 
+    /// @dev Register custom staticcall function
+    /// @param functionName Name of target function
+    /// @param addr Address of implementation contract
     function registerStaticCall(string memory functionName, address addr) external {
         uint identifier = _fromKey(functionName);
-        require(_functionMap[identifier] == 0, "PVM:identifier exists");
-        _functionMap[identifier] = (0x05 << 248) | uint(uint160(addr));
+        require(_identifierMap[identifier] == 0, "PVM:identifier exists");
+        _identifierMap[identifier] = (0x05 << 248) | uint(uint160(addr));
     }
 
     /// @dev Find the mint requests of the target address (in reverse order)
@@ -190,7 +198,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
     /// @return value Estimated value
     function estimate(string memory expr) external view returns (int value) {
         //return evaluate(bytes(expr), 0, bytes(expr).length);
-        (value,,) = _evaluatePart(_functionMap, 0, 0x0000, bytes(expr), 0, bytes(expr).length);
+        (value,,) = _evaluatePart(_identifierMap, 0, 0x0000, bytes(expr), 0, bytes(expr).length);
     }
 
     // TODO: Make expression as a product and can reuse?
@@ -198,7 +206,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
     /// @dev Buy a product
     /// @param expr Target expression
     function buy(string memory expr) external {
-        (int value,,) = _evaluatePart(_functionMap, 0, 0x0000, bytes(expr), 0, bytes(expr).length);
+        (int value,,) = _evaluatePart(_identifierMap, 0, 0x0000, bytes(expr), 0, bytes(expr).length);
         require(value > 0, "PVM:expression value must > 0");
         TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), uint(value));
 
@@ -213,7 +221,7 @@ contract NestPVM is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, INestP
         require(msg.sender == order.owner, "PVM:must owner");
 
         string memory expr = order.expr;
-        (int value,,) = _evaluatePart(_functionMap, 0, 0x0000, bytes(expr), 0, bytes(expr).length);
+        (int value,,) = _evaluatePart(_identifierMap, 0, 0x0000, bytes(expr), 0, bytes(expr).length);
 
         value = value * int(uint(order.shares));
         require(value > 0, "PVM:no balance");

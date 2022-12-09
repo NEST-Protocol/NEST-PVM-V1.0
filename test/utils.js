@@ -24,6 +24,9 @@ exports.toDecimal = function(bi, decimals) {
     }
     decimals = BigInt(decimals.toString());
     bi = BigInt(bi.toString());
+    if (bi < BigInt(0)) {
+        return '-' + exports.toDecimal(-bi, decimals);
+    }
     let BASE = BigInt(10);
     let r = '';
     while (decimals > 0) {
