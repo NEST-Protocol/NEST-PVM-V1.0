@@ -56,6 +56,7 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
     uint constant S_STRING      = 0x0106;       // consider a string can contains bracket
     uint constant S_OPERATOR    = 0x0201;
     //uint constant S_CALCULATE   = 0x0301;
+    uint constant S_INVALID     = 0xffff;
 
     uint constant DECIMALS      = 1 ether;
     uint constant PI            = 3141592653590000000;
@@ -368,24 +369,27 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
         // Loop with each character
         for (; ; )
         {
+            // SPC  (  )  *  +  ,  -  .  /  0  9  :  A  Z  _  a  z
+            // 20   28 29 2a 2b 2c 2d 2e 2f 30 39 3a 41 5a 5f 61 7a
             // normal state, find part start
             if (state == S_NORMAL)
             {
-                // integer
-                if (c >= $0 && c <= $9)
+                if (c >= $0)
                 {
-                    unchecked { 
-                        cv = int(c - $0); 
-                        temp1 = 0;
-                        state = S_INTEGER;
-                    }
-                }
-                // identifier
-                else if ((c >= $A && c <= $Z) || (c >= $a && c <= $z))
-                {
-                    // temp1: identifier
-                    temp1 = uint(c);
-                    state = S_IDENTIFIER;
+                    // integer
+                    if (c <= $9) {
+                        unchecked { 
+                            cv = int(c - $0); 
+                            temp1 = 0;
+                            state = S_INTEGER;
+                        }
+                    } 
+                    // identifier
+                    else if (c >= $A && (c <= $Z || (c >= $a && c <= $z))) {
+                        // temp1: identifier
+                        temp1 = uint(c);
+                        state = S_IDENTIFIER;
+                    } else { revert("PVM:expression invalid"); }
                 }
                 // left bracket
                 else if (c == $LBR)
@@ -435,7 +439,8 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
             // identifier
             else if (state == S_IDENTIFIER) {
                 // Lower letter, Upper letter or number
-                if ((c >= $A && c <= $Z) || (c >= $a && c <= $z) || (c >= $0 && c <= $9)) {
+                if (c >= $0 && (c <= $9 || (c >= $A && (c <= $Z || (c >= $a && c <= $z))))) {
+                //if ((c >= $A && c <= $Z) || (c >= $a && c <= $z) || (c >= $0 && c <= $9)) {
                     require(temp1 <= 0x00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF, "PVM:identifier too long");
                     temp1 = (temp1 << 8) | c;
                 } 
