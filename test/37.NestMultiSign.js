@@ -116,5 +116,26 @@ describe('37.NestMultiSign', function() {
             expect(list[0].signs[2]).to.eq(addr8.address);
             await listAccounts();
         }
+
+        if (true) {
+            console.log('7. member');
+            console.log(await nestMultiSign.getMember(2, 1));
+        }
+
+        if (true) {
+            console.log('8. change member');
+            await nestMultiSign.newTransaction(
+                0, 
+                0, 
+                '0xffffffffffffffffffffffffffffffffffffffff', 
+                '0x5fa1dd7f6DCE7066d8be8B8787575d66a20Dc44C',
+                (2n << 32n) | (1n)
+            );
+
+            await nestMultiSign.connect(addr4).signTransaction(1, 1, 2);
+            await nestMultiSign.connect(addr8).executeTransaction(2, 2, 2);
+
+            console.log(await nestMultiSign.getMember(2, 1));
+        }
     });
 });

@@ -198,13 +198,18 @@ contract NestMultiSign {
         transaction.executeBlock = uint32(block.number);
         _transactions[index] = transaction;
 
+        uint value = uint(transaction.value);
         // Transfer eth
         if (transaction.tokenAddress == address(0)) {
-            payable(transaction.to).transfer(transaction.value);
+            payable(transaction.to).transfer(value);
         } 
+        // Modify member
+        else if (transaction.tokenAddress == 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF) {
+            _members[value >> 32][value & 0xFFFFFFFF] = transaction.to;
+        }
         // Transfer token
         else {
-            TransferHelper.safeTransfer(transaction.tokenAddress, transaction.to, transaction.value);
+            TransferHelper.safeTransfer(transaction.tokenAddress, transaction.to, value);
         }
     }
 
