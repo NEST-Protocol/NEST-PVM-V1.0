@@ -18,21 +18,21 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
     // TODO: Support variables: dT, blockNumber, timestamp
     // TODO: When the actual value of the order is lower than a value, it can be liquidated?
     uint constant $A            = 0x41;         // A
-    uint constant $Z            = 0x5a;         // Z
+    uint constant $Z            = 0x5A;         // Z
     uint constant $a            = 0x61;         // a
-    uint constant $z            = 0x7a;         // z
+    uint constant $z            = 0x7A;         // z
     uint constant $0            = 0x30;         // 0
     uint constant $9            = 0x39;         // 9
-    uint constant $ADD          = 0x2b;         // +
-    uint constant $SUB          = 0x2d;         // -
-    uint constant $MUL          = 0x2a;         // *
-    uint constant $DIV          = 0x2f;         // /
-    uint constant $COL          = 0x3a;         // :
+    uint constant $ADD          = 0x2B;         // +
+    uint constant $SUB          = 0x2D;         // -
+    uint constant $MUL          = 0x2A;         // *
+    uint constant $DIV          = 0x2F;         // /
+    uint constant $COL          = 0x3A;         // :
     uint constant $LBR          = 0x28;         // (
     uint constant $RBR          = 0x29;         // )
     uint constant $SPC          = 0x20;         // SPACE
-    uint constant $DOT          = 0x2e;         // .
-    uint constant $CMA          = 0x2c;         // ,
+    uint constant $DOT          = 0x2E;         // .
+    uint constant $CMA          = 0x2C;         // ,
     uint constant $EOF          = 0x00;         // 0
 
     // Status
@@ -45,7 +45,7 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
     uint constant S_STRING      = 0x0106;       // consider a string can contains bracket
     uint constant S_OPERATOR    = 0x0201;
     //uint constant S_CALCULATE   = 0x0301;
-    uint constant S_INVALID     = 0xffff;
+    uint constant S_INVALID     = 0xFFFF;
 
     uint constant DECIMALS      = 1 ether;
     uint constant PI            = 3141592653590000000;
@@ -610,19 +610,19 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
     ) internal view returns (int) {
         // Internal call
         if (argIndex == 0) {
-            if (identifier == 0x0000626e) { return  bn(); } else 
+            if (identifier == 0x0000626E) { return  bn(); } else 
             if (identifier == 0x00007473) { return  ts(); } else 
-            if (identifier == 0x00006f62) { return  ob(); } 
+            if (identifier == 0x00006F62) { return  ob(); } 
         } else if (argIndex == 1) {
-            if (identifier == 0x00006f70) { return  op(args[0]); } else 
-            if (identifier == 0x00006c6e) { return  ln(args[0]); } else 
+            if (identifier == 0x00006F70) { return  op(args[0]); } else 
+            if (identifier == 0x00006C6E) { return  ln(args[0]); } else 
             if (identifier == 0x00657870) { return exp(args[0]); } else 
-            if (identifier == 0x00666c6f) { return flo(args[0]); } else 
-            if (identifier == 0x0063656c) { return cel(args[0]); } 
+            if (identifier == 0x00666C6F) { return flo(args[0]); } else 
+            if (identifier == 0x0063656C) { return cel(args[0]); } 
         } else if (argIndex == 2) {
-            if (identifier == 0x006c6f67) { return log(args[0], args[1]); } else
-            if (identifier == 0x00706f77) { return pow(args[0], args[1]); } else 
-            if (identifier == 0x006f6176) { return oav(args[0], args[1]); } 
+            if (identifier == 0x006C6F67) { return log(args[0], args[1]); } else
+            if (identifier == 0x00706F77) { return pow(args[0], args[1]); } else 
+            if (identifier == 0x006F6176) { return oav(args[0], args[1]); } 
         } 
 
         // Custom static call
@@ -651,7 +651,7 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
                     } 
                     // int256
                     mstore8(add(index, 0), 0x69)        // i
-                    mstore8(add(index, 1), 0x6e)        // n
+                    mstore8(add(index, 1), 0x6E)        // n
                     mstore8(add(index, 2), 0x74)        // t
                     mstore8(add(index, 3), 0x32)        // 2
                     mstore8(add(index, 4), 0x35)        // 5
