@@ -15,17 +15,6 @@ import "hardhat/console.sol";
 /// @dev NestPVM implementation
 contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
 
-    /// @dev PVM Order data structure
-    struct PVMOrder {
-        address owner;
-        uint32 openBlock;
-        uint32 shares;
-        uint32 index;
-        string expr;
-    }
-
-    event Buy(string expr, address owner, uint openBlock, uint shares, uint index);
-
     // TODO: Support variables: dT, blockNumber, timestamp
     // TODO: When the actual value of the order is lower than a value, it can be liquidated?
     uint constant $A            = 0x41;         // A
@@ -61,6 +50,17 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
     uint constant DECIMALS      = 1 ether;
     uint constant PI            = 3141592653590000000;
     uint constant E             = 2718281828459000000;
+
+    event Buy(string expr, address owner, uint openBlock, uint shares, uint index);
+
+    /// @dev PVM Order data structure
+    struct PVMOrder {
+        address owner;
+        uint32 openBlock;
+        uint32 shares;
+        uint32 index;
+        string expr;
+    }
 
     // Identifier map
     mapping(uint=>uint) _identifierMap;
@@ -475,20 +475,6 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
                     else if ((start >> 248) == 0x02) {
                         // staticcall
                         cv = INestPVMFunction(address(uint160(start))).calculate(abi.encode(temp1));
-                        // (bool flag, bytes memory data) = address(uint160(start)).staticcall(abi.encodeWithSignature(
-                        //     "calculate(bytes)", 
-                        //     abi.encode(temp1)
-                        // ));
-                        //require(flag, "PVM:call failed");
-                        //cv = abi.decode(data, (int));
-                    } 
-                    // Address call
-                    else if ((start >> 248) == 0x03) {
-                        // call
-                    } 
-                    // Address delegatecall
-                    else if ((start >> 248) == 0x04) {
-                        // delegatecall
                     } else {
                         revert("PVM:identifier not exist");
                     }
@@ -544,7 +530,7 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
                         state = S_OPERATOR;
                     } else if (c == $LBR) {
                         ++cv;
-                    } //else if (c != $SPC) { }
+                    } 
                 }
             }
             // find next operator
@@ -565,6 +551,16 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
                         // eof, next operator
                         if (c == $EOF) { co = 0x0001; }
                         else { revert("PVM:expression invalid"); }
+
+                        // assembly {
+                        //     switch c
+                        //     case 0x2b { co := 0x1001 }
+                        //     case 0x2d { co := 0x1002 }
+                        //     case 0x2a { co := 0x2001 }
+                        //     case 0x2f { co := 0x2002 }
+                        //     case 0x00 { co := 0x0001 }
+                        //     default { revert(0, 0) }
+                        // }
 
                         // While co > po, calculate with next
                         while ((co >> 8) > (po >> 8))
@@ -615,8 +611,8 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
         // Internal call
         if (argIndex == 0) {
             if (identifier == 0x0000626e) { return  bn(); } else 
-            if (identifier == 0x00007473) { return ts(); } else 
-            if (identifier == 0x00006f62) { return ob(); } 
+            if (identifier == 0x00007473) { return  ts(); } else 
+            if (identifier == 0x00006f62) { return  ob(); } 
         } else if (argIndex == 1) {
             if (identifier == 0x00006f70) { return  op(args[0]); } else 
             if (identifier == 0x00006c6e) { return  ln(args[0]); } else 
@@ -636,39 +632,44 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
             require((value >> 248) == 0x05, "PVM:not staticcall function");
 
             // Generate signature
-            uint length = _keyLength(identifier);
-            uint index = length + 2;
-            if (argIndex > 0) { index += argIndex * 7 - 1; }
-            bytes memory buffer = new bytes(index);
-            index = _writeKey(identifier, buffer, length);
-            buffer[index++] = bytes1(uint8($LBR));                      // (
-            
-            for (uint i = 0; i < argIndex; ++i) {
-                if (i > 0) { buffer[index++] = bytes1(uint8($CMA)); }   // ,
-                // int256
-                buffer[index++] = bytes1(uint8(0x69));                  // i
-                buffer[index++] = bytes1(uint8(0x6e));                  // n
-                buffer[index++] = bytes1(uint8(0x74));                  // t
-                buffer[index++] = bytes1(uint8(0x32));                  // 2
-                buffer[index++] = bytes1(uint8(0x35));                  // 5
-                buffer[index++] = bytes1(uint8(0x36));                  // 6
-            }
-            buffer[index++] = bytes1(uint8($RBR));                      // )
-
-            // Generate abi arguments
+            uint index = _keyLength(identifier);
+            uint length = index + 2;
+            if (argIndex > 0) { length += argIndex * 7 - 1; }
+            bytes memory buffer = new bytes(length);
             bytes memory abiArgs = new bytes(4 + (argIndex << 5));
-            uint v = uint(keccak256(buffer));
-            uint j = 0;
-            assembly { 
-                j := add(abiArgs, 0x20)
-                mstore(j, v) 
-                j := add(j, 4)
-            }
-            for (uint i = 0; i < argIndex; ++i) {
-                v = uint(args[i]);
-                assembly { 
-                    mstore(j, v) 
-                    j := add(j, 0x20)
+            index = _writeKey(identifier, buffer, index);
+            
+            assembly {
+                index := add(add(buffer, 0x20), index)
+                mstore8(index, $LBR)
+                index := add(index, 1)
+
+                for { let i := 0 } lt(i, argIndex) { i := add(i, 1) } {
+                    if gt(i, 0) { 
+                        mstore8(index, $CMA)
+                        index := add(index, 1)
+                    } 
+                    // int256
+                    mstore8(add(index, 0), 0x69)        // i
+                    mstore8(add(index, 1), 0x6e)        // n
+                    mstore8(add(index, 2), 0x74)        // t
+                    mstore8(add(index, 3), 0x32)        // 2
+                    mstore8(add(index, 4), 0x35)        // 5
+                    mstore8(add(index, 5), 0x36)        // 6
+                    index := add(index, 6)
+                }
+
+                mstore8(index, $RBR)
+                index := add(index, 1)
+
+                // 4 bytes signature
+                mstore(add(abiArgs, 0x20), keccak256(add(buffer, 0x20), sub(index, add(buffer, 0x20)))) 
+
+                // Generate abi arguments
+                argIndex := shl(5, argIndex)
+                for { let j := add(abiArgs, 0x24) } gt(argIndex, 0) { } { 
+                    argIndex := sub(argIndex, 0x20)
+                    mstore(add(j, argIndex), mload(add(args, argIndex))) 
                 }
             }
 
