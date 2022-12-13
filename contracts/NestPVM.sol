@@ -364,13 +364,15 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
 
         // Load character
         uint c = $EOF;
-        if (index < end) { c = uint(uint8(expr[index])); }
+        uint pExp = 0;
+        assembly {
+            pExp := add(expr, 0x20)
+            if lt(index, end) { c := shr(248, mload(add(pExp, index))) }
+        }
 
         // Loop with each character
         for (; ; )
         {
-            // SPC  (  )  *  +  ,  -  .  /  0  9  :  A  Z  _  a  z
-            // 20   28 29 2a 2b 2c 2d 2e 2f 30 39 3a 41 5a 5f 61 7a
             // normal state, find part start
             if (state == S_NORMAL)
             {
@@ -595,7 +597,12 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
             }
 
             // Load character
-            unchecked { if (++index < end) { c = uint(uint8(expr[index])); } else { c = $EOF; } }
+            assembly {
+                index := add(index, 1)
+                switch lt(index, end)
+                case true  { c := shr(248, mload(add(pExp, index))) }
+                case false { c := $EOF }
+            }
         }
 
         cv = pv;
@@ -608,76 +615,109 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
         int[4] memory args,
         uint argIndex
     ) internal view returns (int) {
-        // Internal call
-        if (argIndex == 0) {
-            if (identifier == 0x0000626E) { return  bn(); } else 
-            if (identifier == 0x00007473) { return  ts(); } else 
-            if (identifier == 0x00006F62) { return  ob(); } 
-        } else if (argIndex == 1) {
-            if (identifier == 0x00006F70) { return  op(args[0]); } else 
-            if (identifier == 0x00006C6E) { return  ln(args[0]); } else 
-            if (identifier == 0x00657870) { return exp(args[0]); } else 
-            if (identifier == 0x00666C6F) { return flo(args[0]); } else 
-            if (identifier == 0x0063656C) { return cel(args[0]); } 
-        } else if (argIndex == 2) {
-            if (identifier == 0x006C6F67) { return log(args[0], args[1]); } else
-            if (identifier == 0x00706F77) { return pow(args[0], args[1]); } else 
-            if (identifier == 0x006F6176) { return oav(args[0], args[1]); } 
-        } 
+        // // Internal call
+        // if (argIndex == 0) {
+        //     if (identifier == 0x0000626E) { return  bn(); } else 
+        //     if (identifier == 0x00007473) { return  ts(); } else 
+        //     if (identifier == 0x00006F62) { return  ob(); } 
+        // } else if (argIndex == 1) {
+        //     if (identifier == 0x00006F70) { return  op(args[0]); } else 
+        //     if (identifier == 0x00006C6E) { return  ln(args[0]); } else 
+        //     if (identifier == 0x00657870) { return exp(args[0]); } else 
+        //     if (identifier == 0x00666C6F) { return flo(args[0]); } else 
+        //     if (identifier == 0x0063656C) { return cel(args[0]); } 
+        // } else if (argIndex == 2) {
+        //     if (identifier == 0x006C6F67) { return log(args[0], args[1]); } else
+        //     if (identifier == 0x00706F77) { return pow(args[0], args[1]); } else 
+        //     if (identifier == 0x006F6176) { return oav(args[0], args[1]); } 
+        // } 
+
+        uint value = context[identifier];
+        // Custom function staticcall
+        require((value >> 248) == 0x05, "PVM:not staticcall function");
 
         // Custom static call
-        unchecked {
-            uint value = context[identifier];
-            // Custom function staticcall
-            require((value >> 248) == 0x05, "PVM:not staticcall function");
+        uint flag;
+        uint data;
+        assembly {
+            // Allocate memory and return pointer to first byte
+            function allocate(size) -> ptr {
+                ptr := mload(0x40)
+                if iszero(ptr) { ptr := 0x60 }
+                mstore(0x40, add(ptr, size))
+            }
+
+            // Calculate length of identifier
+            let index := 0
+            for { let uid := identifier } gt(uid, 0) { uid := shr(8, uid) } {
+                index := add(index, 1)
+            }
+
+            // Calculate length of signature
+            let length := add(index, 2)
+            if gt(argIndex, 0) { length := add(length, sub(mul(argIndex, 7), 1)) }
+
+            // Calculate length of abi arguments
+            let abiLength := add(4, shl(5, argIndex))
+
+            // Create memory buffer
+            let pBuf := 0
+            switch gt(abiLength, length) 
+            case true  { pBuf := allocate(abiLength) }
+            case false { pBuf := allocate(length) }
 
             // Generate signature
-            uint index = _keyLength(identifier);
-            uint length = index + 2;
-            if (argIndex > 0) { length += argIndex * 7 - 1; }
-            bytes memory buffer = new bytes(length);
-            bytes memory abiArgs = new bytes(4 + (argIndex << 5));
-            index = _writeKey(identifier, buffer, index);
-            
-            assembly {
-                index := add(add(buffer, 0x20), index)
-                mstore8(index, $LBR)
-                index := add(index, 1)
+            // Function name
+            pBuf := add(pBuf, index)
+            for { } gt(identifier, 0) { } {
+                pBuf := sub(pBuf, 1)
+                mstore8(pBuf, and(identifier, 0xFF))
+                identifier := shr(8, identifier)
+            }
+            pBuf := add(pBuf, index)
 
-                for { let i := 0 } lt(i, argIndex) { i := add(i, 1) } {
-                    if gt(i, 0) { 
-                        mstore8(index, $CMA)
-                        index := add(index, 1)
-                    } 
-                    // int256
-                    mstore8(add(index, 0), 0x69)        // i
-                    mstore8(add(index, 1), 0x6E)        // n
-                    mstore8(add(index, 2), 0x74)        // t
-                    mstore8(add(index, 3), 0x32)        // 2
-                    mstore8(add(index, 4), 0x35)        // 5
-                    mstore8(add(index, 5), 0x36)        // 6
-                    index := add(index, 6)
-                }
+            // Left bracket
+            mstore8(pBuf, $LBR)
+            pBuf := add(pBuf, 1)
 
-                mstore8(index, $RBR)
-                index := add(index, 1)
+            // Type of arguments
+            for { let i := 0 } lt(i, argIndex) { i := add(i, 1) } {
+                if gt(i, 0) { 
+                    mstore8(pBuf, $CMA)
+                    pBuf := add(pBuf, 1)
+                } 
+                // int256
+                mstore8(add(pBuf, 0), 0x69)        // i
+                mstore8(add(pBuf, 1), 0x6E)        // n
+                mstore8(add(pBuf, 2), 0x74)        // t
+                mstore8(add(pBuf, 3), 0x32)        // 2
+                mstore8(add(pBuf, 4), 0x35)        // 5
+                mstore8(add(pBuf, 5), 0x36)        // 6
+                pBuf := add(pBuf, 6)
+            }
 
-                // 4 bytes signature
-                mstore(add(abiArgs, 0x20), keccak256(add(buffer, 0x20), sub(index, add(buffer, 0x20)))) 
+            // Right bracket
+            mstore8(pBuf, $RBR)
+            pBuf := add(pBuf, 1)
 
-                // Generate abi arguments
-                argIndex := shl(5, argIndex)
-                for { let j := add(abiArgs, 0x24) } gt(argIndex, 0) { } { 
-                    argIndex := sub(argIndex, 0x20)
-                    mstore(add(j, argIndex), mload(add(args, argIndex))) 
-                }
+            // 4 bytes signature
+            pBuf := sub(pBuf, length)
+            mstore(pBuf, keccak256(pBuf, length)) 
+
+            // Generate abi arguments
+            argIndex := shl(5, argIndex)
+            for { let j := add(pBuf, 0x04) } gt(argIndex, 0) { } { 
+                argIndex := sub(argIndex, 0x20)
+                mstore(add(j, argIndex), mload(add(args, argIndex))) 
             }
 
             // staticcall
-            (bool flag, bytes memory data) = address(uint160(value)).staticcall(abiArgs);
-            require(flag, "PVM:call failed");
-            return abi.decode(data, (int));
+            flag := staticcall(0x80000, value, pBuf, abiLength, 0x00, 0x20)
+            data := mload(0x00)
         }
+
+        require(flag == 1, "PVM:call failed");
+        return int(data);
     }
 
     // Convert 18 decimals to 64 bits
