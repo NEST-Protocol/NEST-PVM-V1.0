@@ -199,7 +199,11 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
     /// @return value Estimated value
     function estimate(string memory expr) external view returns (int value) {
         //return evaluate(bytes(expr), 0, bytes(expr).length);
-        (value,,) = _evaluatePart(_identifierMap, 0, 0x0000, bytes(expr), 0, bytes(expr).length);
+        uint start = 0;
+        assembly {
+            start := add(expr, 0x20)
+        }
+        (value,,) = _evaluatePart(_identifierMap, 0, 0x0000, start, start + bytes(expr).length);
     }
 
     // TODO: Make expression as a product and can reuse?
@@ -207,7 +211,11 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
     /// @dev Buy a product
     /// @param expr Target expression
     function buy(string memory expr) external {
-        (int value,,) = _evaluatePart(_identifierMap, 0, 0x0000, bytes(expr), 0, bytes(expr).length);
+        uint start = 0;
+        assembly {
+            start := add(expr, 0x20)
+        }
+        (int value,,) = _evaluatePart(_identifierMap, 0, 0x0000, start, start + bytes(expr).length);
         require(value > 0, "PVM:expression value must > 0");
         TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), uint(value));
 
@@ -222,7 +230,11 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
         require(msg.sender == order.owner, "PVM:must owner");
 
         string memory expr = order.expr;
-        (int value,,) = _evaluatePart(_identifierMap, 0, 0x0000, bytes(expr), 0, bytes(expr).length);
+        uint start = 0;
+        assembly {
+            start := add(expr, 0x20)
+        }
+        (int value,,) = _evaluatePart(_identifierMap, 0, 0x0000, start, start + bytes(expr).length);
 
         value = value * int(uint(order.shares));
         require(value > 0, "PVM:no balance");
@@ -344,11 +356,9 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
         int pv,
         // Previous operator
         uint po,
-        // String expression
-        bytes memory expr,
-        // Index of expression start in expr
+        // Pointer to string expression start
         uint start,
-        // Index of expression end in expr
+        // Pointer to string expression end
         uint end
         // result values
     ) internal view returns (int cv, uint co, uint index) {
@@ -359,15 +369,12 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
         uint temp1 = 0;
         // Machine state
         uint state = S_NORMAL;
-        // Loop index
-        index = start;
 
         // Load character
         uint c = $EOF;
-        uint pExp = 0;
         assembly {
-            pExp := add(expr, 0x20)
-            if lt(index, end) { c := shr(248, mload(add(pExp, index))) }
+            index := start
+            if lt(index, end) { c := shr(248, mload(index)) }
         }
 
         // Loop with each character
@@ -389,7 +396,7 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
                     // identifier
                     else if (c >= $A && (c <= $Z || (c >= $a && c <= $z))) {
                         // temp1: identifier
-                        temp1 = uint(c);
+                        temp1 = c;
                         state = S_IDENTIFIER;
                     } else { revert("PVM:expression invalid"); }
                 }
@@ -465,7 +472,6 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
                     // type: 0 int, 1 call address, 2 delegate call address
 
                     // Find identifer in context
-                    // Here start means tmp value
                     start = context[temp1];
 
                     // Normal integer
@@ -496,7 +502,7 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
                         if (--temp1 == 0)
                         {
                             // calculate sub expression in brackets
-                            (cv, co,) = _evaluatePart(context, 0, 0x0000, expr, start, index);
+                            (cv, co,) = _evaluatePart(context, 0, 0x0000, start, index);
                             require(co > 0x0000, "PVM:expression is blank");
                             // calculate end, find next operator
                             state = S_OPERATOR;
@@ -516,12 +522,12 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
                     // cv: bracket counter
                     if (c == $CMA && cv == 1) {
                         // index is always equals to end when call end
-                        (args[argIndex++], co,) = _evaluatePart(context, 0, 0x0000, expr, start, index);
+                        (args[argIndex++], co,) = _evaluatePart(context, 0, 0x0000, start, index);
                         require(co > 0x0000, "PVM:argument expression is blank");
                         start = index + 1;
                     } else if (c == $RBR && --cv == 0) {
                         // index is always equals to end when call end
-                        (args[argIndex], co,) = _evaluatePart(context, 0, 0x0000, expr, start, index);
+                        (args[argIndex], co,) = _evaluatePart(context, 0, 0x0000, start, index);
                         if (co > 0x0000) { ++argIndex; }
                         else { require(argIndex == 0, "PVM:arg expression is blank"); }
 
@@ -546,8 +552,18 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
                         if (c == $ADD) { co = 0x1001; } else 
                         if (c == $SUB) { co = 0x1002; } else 
                         if (c == $MUL) {
-                            if (index + 1 < end && uint(uint8(expr[index + 1])) == $MUL) { ++index; co = 0x3001; }
-                            else { co = 0x2001; }
+                            //if (index + 1 < end && uint(uint8(expr[index + 1])) == $MUL) { ++index; co = 0x3001; }
+                            //else { co = 0x2001; }
+                            assembly {
+                                switch and(lt(add(index, 1), end), eq(shr(248, mload(add(index, 1))), $MUL))
+                                case true {
+                                    index := add(index, 1)
+                                    co := 0x3001
+                                }
+                                case false { 
+                                    co := 0x2001
+                                }
+                            }
                         } else 
                         if (c == $DIV) { co = 0x2002; } else 
                         // eof, next operator
@@ -572,7 +588,7 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
 
                             // in S_OPERATOR state, index doesn't increased
                             // move to next and evaluate
-                            (cv, co, index) = _evaluatePart(context, cv, co, expr, ++index, end);
+                            (cv, co, index) = _evaluatePart(context, cv, co, ++index, end);
                             
                             // now co is the last operator parsed by evaluatedPart just called
                         }
@@ -600,7 +616,7 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
             assembly {
                 index := add(index, 1)
                 switch lt(index, end)
-                case true  { c := shr(248, mload(add(pExp, index))) }
+                case true  { c := shr(248, mload(index)) }
                 case false { c := $EOF }
             }
         }
@@ -615,22 +631,22 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
         int[4] memory args,
         uint argIndex
     ) internal view returns (int) {
-        // // Internal call
-        // if (argIndex == 0) {
-        //     if (identifier == 0x0000626E) { return  bn(); } else 
-        //     if (identifier == 0x00007473) { return  ts(); } else 
-        //     if (identifier == 0x00006F62) { return  ob(); } 
-        // } else if (argIndex == 1) {
-        //     if (identifier == 0x00006F70) { return  op(args[0]); } else 
-        //     if (identifier == 0x00006C6E) { return  ln(args[0]); } else 
-        //     if (identifier == 0x00657870) { return exp(args[0]); } else 
-        //     if (identifier == 0x00666C6F) { return flo(args[0]); } else 
-        //     if (identifier == 0x0063656C) { return cel(args[0]); } 
-        // } else if (argIndex == 2) {
-        //     if (identifier == 0x006C6F67) { return log(args[0], args[1]); } else
-        //     if (identifier == 0x00706F77) { return pow(args[0], args[1]); } else 
-        //     if (identifier == 0x006F6176) { return oav(args[0], args[1]); } 
-        // } 
+        // Internal call
+        if (argIndex == 0) {
+            if (identifier == 0x0000626E) { return  bn(); } else 
+            if (identifier == 0x00007473) { return  ts(); } else 
+            if (identifier == 0x00006F62) { return  ob(); } 
+        } else if (argIndex == 1) {
+            if (identifier == 0x00006F70) { return  op(args[0]); } else 
+            if (identifier == 0x00006C6E) { return  ln(args[0]); } else 
+            if (identifier == 0x00657870) { return exp(args[0]); } else 
+            if (identifier == 0x00666C6F) { return flo(args[0]); } else 
+            if (identifier == 0x0063656C) { return cel(args[0]); } 
+        } else if (argIndex == 2) {
+            if (identifier == 0x006C6F67) { return log(args[0], args[1]); } else
+            if (identifier == 0x00706F77) { return pow(args[0], args[1]); } else 
+            if (identifier == 0x006F6176) { return oav(args[0], args[1]); } 
+        } 
 
         uint value = context[identifier];
         // Custom function staticcall
@@ -669,10 +685,9 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
             // Generate signature
             // Function name
             pBuf := add(pBuf, index)
-            for { } gt(identifier, 0) { } {
+            for { } gt(identifier, 0) { identifier := shr(8, identifier) } {
                 pBuf := sub(pBuf, 1)
                 mstore8(pBuf, and(identifier, 0xFF))
-                identifier := shr(8, identifier)
             }
             pBuf := add(pBuf, index)
 
@@ -730,28 +745,6 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
     // Convert 64 bits to 18 decimals
     function _toDEC(int128 v) internal pure returns (int) {
         return int(v) * int(DECIMALS) >> 64;
-    }
-
-    // Get key length
-    function _keyLength(uint uid) internal pure returns (uint length) {
-        unchecked {
-            length = 0;
-            while (uid > 0) {
-                ++length;
-                uid >>= 8;
-            }
-        }
-    }
-
-    // Convert uint identifier to string identifier
-    function _writeKey(uint uid, bytes memory buffer, uint index) internal pure returns (uint newIndex) {
-        unchecked {
-            newIndex = index;
-            while (uid > 0) {
-                buffer[--index] = bytes1(uint8(uid & 0xFF));
-                uid >>= 8;
-            }
-        }
     }
 
     // Only for test
