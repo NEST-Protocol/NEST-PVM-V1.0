@@ -29,10 +29,23 @@ contract NestNFTAuction is NestFrequentlyUsed, INestNFTAuction {
     // Price unit
     uint constant PRICE_UNIT = 0.01 ether;
 
+    // Collect to PVM vault threshold (by PRICE_UNIT)
+    // TODO: 
+    uint constant COLLECT_THRESHOLD = 10000;
+
     // All auctions
     Auction[] _auctions;
 
+    // PVM vault temp
+    uint _vault;
+
     constructor() {
+    }
+
+    /// @dev In order to reduce gas cost for bid() method, 
+    function collect() public {
+        TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, NEST_VAULT_ADDRESS, _vault * PRICE_UNIT);
+        _vault = 0;
     }
 
     /// @dev List auctions
@@ -125,10 +138,17 @@ contract NestNFTAuction is NestFrequentlyUsed, INestNFTAuction {
         TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), price * PRICE_UNIT);
         // Owner has no reward, bidder is 0 means no bidder
         if (bidder != address(0)) {
-            TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, bidder, ((price + lastPrice) >> 1) * PRICE_UNIT);
+            uint halfGap = (price - lastPrice) >> 1;
+            
+            if ((_vault += halfGap / 5) >= COLLECT_THRESHOLD) {
+                collect();
+            }
+
+            TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, bidder, (lastPrice + halfGap - halfGap / 5) * PRICE_UNIT);
+            
             // price + lastPrice and price - lastPrice is always the same parity, 
             // So it's no need to consider the problem of dividing losses
-            reward += ((price - lastPrice) >> 1);
+            reward += halfGap;
         }
 
         // Update bid information: new bidder, new price, total reward

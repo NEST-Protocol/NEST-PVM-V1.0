@@ -9,7 +9,7 @@ describe('35.NestNFTAuction', function() {
         
         const { 
             eth, usdt, hbtc, nest, dcu, nestOptions, nestFutures, nestLPGuarantee, nestProbability, nestCyberInk,
-            nestNFTAuction,
+            nestNFTAuction, nestVault,
             nestPriceFacade, nestBuybackPool, BLOCK_TIME, USDT_DECIMALS
         } = await deploy();
 
@@ -18,7 +18,8 @@ describe('35.NestNFTAuction', function() {
             let accounts = {
                 height: await ethers.provider.getBlockNumber(),
                 owner: await listBalances(owner, tokens),
-                nestNFTAuction: await listBalances(nestNFTAuction, tokens)
+                nestNFTAuction: await listBalances(nestNFTAuction, tokens),
+                nestVault: await listBalances(nestVault, tokens)
             };
             console.log(accounts);
             return accounts;

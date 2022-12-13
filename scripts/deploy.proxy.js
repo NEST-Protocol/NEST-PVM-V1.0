@@ -244,6 +244,7 @@ exports.deploy = async function() {
         nestNFTAuction: nestNFTAuction,
         nestFuturesWithPrice: nestFuturesWithPrice,
         nestMarket: nestMarket,
+        nestVault: nestVault,
 
         BLOCK_TIME: BLOCK_TIME,
         USDT_DECIMALS: 18,
