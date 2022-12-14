@@ -433,6 +433,7 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
                 }
                 // decimal
                 else if (c == $DOT) {
+                    require(temp1 == 0, "PVM:too many points");
                     // temp1: decimals
                     temp1 = DECIMALS;
                 }
@@ -631,22 +632,22 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
         int[4] memory args,
         uint argIndex
     ) internal view returns (int) {
-        // Internal call
-        if (argIndex == 0) {
-            if (identifier == 0x0000626E) { return  bn(); } else 
-            if (identifier == 0x00007473) { return  ts(); } else 
-            if (identifier == 0x00006F62) { return  ob(); } 
-        } else if (argIndex == 1) {
-            if (identifier == 0x00006F70) { return  op(args[0]); } else 
-            if (identifier == 0x00006C6E) { return  ln(args[0]); } else 
-            if (identifier == 0x00657870) { return exp(args[0]); } else 
-            if (identifier == 0x00666C6F) { return flo(args[0]); } else 
-            if (identifier == 0x0063656C) { return cel(args[0]); } 
-        } else if (argIndex == 2) {
-            if (identifier == 0x006C6F67) { return log(args[0], args[1]); } else
-            if (identifier == 0x00706F77) { return pow(args[0], args[1]); } else 
-            if (identifier == 0x006F6176) { return oav(args[0], args[1]); } 
-        } 
+        // // Internal call
+        // if (argIndex == 0) {
+        //     if (identifier == 0x0000626E) { return  bn(); } else 
+        //     if (identifier == 0x00007473) { return  ts(); } else 
+        //     if (identifier == 0x00006F62) { return  ob(); } 
+        // } else if (argIndex == 1) {
+        //     if (identifier == 0x00006F70) { return  op(args[0]); } else 
+        //     if (identifier == 0x00006C6E) { return  ln(args[0]); } else 
+        //     if (identifier == 0x00657870) { return exp(args[0]); } else 
+        //     if (identifier == 0x00666C6F) { return flo(args[0]); } else 
+        //     if (identifier == 0x0063656C) { return cel(args[0]); } 
+        // } else if (argIndex == 2) {
+        //     if (identifier == 0x006C6F67) { return log(args[0], args[1]); } else
+        //     if (identifier == 0x00706F77) { return pow(args[0], args[1]); } else 
+        //     if (identifier == 0x006F6176) { return oav(args[0], args[1]); } 
+        // } 
 
         uint value = context[identifier];
         // Custom function staticcall
@@ -659,7 +660,8 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
             // Allocate memory and return pointer to first byte
             function allocate(size) -> ptr {
                 ptr := mload(0x40)
-                if iszero(ptr) { ptr := 0x60 }
+                // Memory are allocated many times, the free memory pointer is impossible be 0 
+                //if iszero(ptr) { ptr := 0x60 }
                 mstore(0x40, add(ptr, size))
             }
 
@@ -727,7 +729,7 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
             }
 
             // staticcall
-            flag := staticcall(0x80000, value, pBuf, abiLength, 0x00, 0x20)
+            flag := staticcall(gas(), value, pBuf, abiLength, 0x00, 0x20)
             data := mload(0x00)
         }
 
