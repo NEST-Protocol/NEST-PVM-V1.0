@@ -17,23 +17,27 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
 
     // TODO: Support variables: dT, blockNumber, timestamp
     // TODO: When the actual value of the order is lower than a value, it can be liquidated?
-    uint constant $A            = 0x41;         // A
-    uint constant $Z            = 0x5A;         // Z
-    uint constant $a            = 0x61;         // a
-    uint constant $z            = 0x7A;         // z
-    uint constant $0            = 0x30;         // 0
-    uint constant $9            = 0x39;         // 9
-    uint constant $ADD          = 0x2B;         // +
-    uint constant $SUB          = 0x2D;         // -
-    uint constant $MUL          = 0x2A;         // *
-    uint constant $DIV          = 0x2F;         // /
-    uint constant $COL          = 0x3A;         // :
+    uint constant $EOF          = 0x00;         // 0
+    uint constant $SPC          = 0x20;         // SPACE
     uint constant $LBR          = 0x28;         // (
     uint constant $RBR          = 0x29;         // )
-    uint constant $SPC          = 0x20;         // SPACE
-    uint constant $DOT          = 0x2E;         // .
+    uint constant $MUL          = 0x2A;         // *
+    uint constant $ADD          = 0x2B;         // +
     uint constant $CMA          = 0x2C;         // ,
-    uint constant $EOF          = 0x00;         // 0
+    uint constant $SUB          = 0x2D;         // -
+    uint constant $DOT          = 0x2E;         // .
+    uint constant $DIV          = 0x2F;         // /
+    uint constant $0            = 0x30;         // 0
+    uint constant $9            = 0x39;         // 9
+    uint constant $COL          = 0x3A;         // :
+    uint constant $PA           = 0x40;         // @
+    uint constant $A            = 0x41;         // A
+    uint constant $Z            = 0x5A;         // Z
+    uint constant $BZ           = 0x5B;         // [
+    uint constant $Pa           = 0x60;         // `
+    uint constant $a            = 0x61;         // a
+    uint constant $z            = 0x7A;         // z
+    uint constant $Bz           = 0x7B;         // {
 
     // Status
     uint constant S_NORMAL      = 0x0000;
@@ -383,10 +387,10 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
             // normal state, find part start
             if (state == S_NORMAL)
             {
-                if (c >= $0)
+                if (c > $DIV)
                 {
                     // integer
-                    if (c <= $9) {
+                    if (c < $COL) {
                         unchecked { 
                             cv = int(c - $0); 
                             temp1 = 0;
@@ -394,7 +398,7 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
                         }
                     } 
                     // identifier
-                    else if (c >= $A && (c <= $Z || (c >= $a && c <= $z))) {
+                    else if (c > $PA && (c < $BZ || (c > $Pa && c < $Bz))) {
                         // temp1: identifier
                         temp1 = c;
                         state = S_IDENTIFIER;
@@ -420,7 +424,7 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
             else if (state == S_INTEGER)
             {
                 // 0 ~ 9, parse integer
-                if (c >= $0 && c <= $9)
+                if (c > $DIV && c < $COL)
                 {
                     unchecked {
                         // Process decimal
@@ -449,8 +453,7 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
             // identifier
             else if (state == S_IDENTIFIER) {
                 // Lower letter, Upper letter or number
-                if (c >= $0 && (c <= $9 || (c >= $A && (c <= $Z || (c >= $a && c <= $z))))) {
-                //if ((c >= $A && c <= $Z) || (c >= $a && c <= $z) || (c >= $0 && c <= $9)) {
+                if (c > $DIV && (c < $COL || (c > $PA && (c < $BZ || (c > $Pa && c < $Bz))))) {
                     require(temp1 <= 0x00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF, "PVM:identifier too long");
                     temp1 = (temp1 << 8) | c;
                 } 
@@ -632,30 +635,29 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
         int[4] memory args,
         uint argIndex
     ) internal view returns (int) {
-        // // Internal call
-        // if (argIndex == 0) {
-        //     if (identifier == 0x0000626E) { return  bn(); } else 
-        //     if (identifier == 0x00007473) { return  ts(); } else 
-        //     if (identifier == 0x00006F62) { return  ob(); } 
-        // } else if (argIndex == 1) {
-        //     if (identifier == 0x00006F70) { return  op(args[0]); } else 
-        //     if (identifier == 0x00006C6E) { return  ln(args[0]); } else 
-        //     if (identifier == 0x00657870) { return exp(args[0]); } else 
-        //     if (identifier == 0x00666C6F) { return flo(args[0]); } else 
-        //     if (identifier == 0x0063656C) { return cel(args[0]); } 
-        // } else if (argIndex == 2) {
-        //     if (identifier == 0x006C6F67) { return log(args[0], args[1]); } else
-        //     if (identifier == 0x00706F77) { return pow(args[0], args[1]); } else 
-        //     if (identifier == 0x006F6176) { return oav(args[0], args[1]); } 
-        // } 
+        // Internal call
+        if (argIndex == 0) {
+            if (identifier == 0x0000626E) { return  bn(); } else 
+            if (identifier == 0x00007473) { return  ts(); } else 
+            if (identifier == 0x00006F62) { return  ob(); } 
+        } else if (argIndex == 1) {
+            if (identifier == 0x00006F70) { return  op(args[0]); } else 
+            if (identifier == 0x00006C6E) { return  ln(args[0]); } else 
+            if (identifier == 0x00657870) { return exp(args[0]); } else 
+            if (identifier == 0x00666C6F) { return flo(args[0]); } else 
+            if (identifier == 0x0063656C) { return cel(args[0]); } 
+        } else if (argIndex == 2) {
+            if (identifier == 0x006C6F67) { return log(args[0], args[1]); } else
+            if (identifier == 0x00706F77) { return pow(args[0], args[1]); } else 
+            if (identifier == 0x006F6176) { return oav(args[0], args[1]); } 
+        } 
 
         uint value = context[identifier];
         // Custom function staticcall
         require((value >> 248) == 0x05, "PVM:not staticcall function");
 
         // Custom static call
-        uint flag;
-        uint data;
+        uint temp;
         assembly {
             // Allocate memory and return pointer to first byte
             function allocate(size) -> ptr {
@@ -667,74 +669,74 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
 
             // Calculate length of identifier
             let index := 0
-            for { let uid := identifier } gt(uid, 0) { uid := shr(8, uid) } {
+            for { temp := identifier } gt(temp, 0) { temp := shr(8, temp) } {
                 index := add(index, 1)
             }
 
             // Calculate length of signature
-            let length := add(index, 2)
-            if gt(argIndex, 0) { length := add(length, sub(mul(argIndex, 7), 1)) }
+            temp := add(index, 2)
+            if gt(argIndex, 0) { temp := add(temp, sub(mul(argIndex, 7), 1)) }
 
             // Calculate length of abi arguments
-            let abiLength := add(4, shl(5, argIndex))
+            let size := add(4, shl(5, argIndex))
 
             // Create memory buffer
-            let pBuf := 0
-            switch gt(abiLength, length) 
-            case true  { pBuf := allocate(abiLength) }
-            case false { pBuf := allocate(length) }
+            let buf := 0
+            switch gt(size, temp) 
+            case true  { buf := allocate(size) }
+            case false { buf := allocate(temp) }
 
             // Generate signature
             // Function name
-            pBuf := add(pBuf, index)
+            buf := add(buf, index)
             for { } gt(identifier, 0) { identifier := shr(8, identifier) } {
-                pBuf := sub(pBuf, 1)
-                mstore8(pBuf, and(identifier, 0xFF))
+                buf := sub(buf, 1)
+                mstore8(buf, and(identifier, 0xFF))
             }
-            pBuf := add(pBuf, index)
+            buf := add(buf, index)
 
             // Left bracket
-            mstore8(pBuf, $LBR)
-            pBuf := add(pBuf, 1)
+            mstore8(buf, $LBR)
+            buf := add(buf, 1)
 
             // Type of arguments
-            for { let i := 0 } lt(i, argIndex) { i := add(i, 1) } {
-                if gt(i, 0) { 
-                    mstore8(pBuf, $CMA)
-                    pBuf := add(pBuf, 1)
+            for { index := 0 } lt(index, argIndex) { index := add(index, 1) } {
+                if gt(index, 0) { 
+                    mstore8(buf, $CMA)
+                    buf := add(buf, 1)
                 } 
                 // int256
-                mstore8(add(pBuf, 0), 0x69)        // i
-                mstore8(add(pBuf, 1), 0x6E)        // n
-                mstore8(add(pBuf, 2), 0x74)        // t
-                mstore8(add(pBuf, 3), 0x32)        // 2
-                mstore8(add(pBuf, 4), 0x35)        // 5
-                mstore8(add(pBuf, 5), 0x36)        // 6
-                pBuf := add(pBuf, 6)
+                mstore8(add(buf, 0), 0x69)        // i
+                mstore8(add(buf, 1), 0x6E)        // n
+                mstore8(add(buf, 2), 0x74)        // t
+                mstore8(add(buf, 3), 0x32)        // 2
+                mstore8(add(buf, 4), 0x35)        // 5
+                mstore8(add(buf, 5), 0x36)        // 6
+                buf := add(buf, 6)
             }
 
             // Right bracket
-            mstore8(pBuf, $RBR)
-            pBuf := add(pBuf, 1)
+            mstore8(buf, $RBR)
+            buf := add(buf, 1)
 
             // 4 bytes signature
-            pBuf := sub(pBuf, length)
-            mstore(pBuf, keccak256(pBuf, length)) 
+            buf := sub(buf, temp)
+            mstore(buf, keccak256(buf, temp)) 
 
             // Generate abi arguments
             argIndex := shl(5, argIndex)
-            for { let j := add(pBuf, 0x04) } gt(argIndex, 0) { } { 
+            for { index := add(buf, 0x04) } gt(argIndex, 0) { } { 
                 argIndex := sub(argIndex, 0x20)
-                mstore(add(j, argIndex), mload(add(args, argIndex))) 
+                mstore(add(index, argIndex), mload(add(args, argIndex))) 
             }
 
             // staticcall
-            flag := staticcall(gas(), value, pBuf, abiLength, 0x00, 0x20)
-            data := mload(0x00)
+            temp := staticcall(gas(), value, buf, size, 0x00, 0x20)
+            if eq(temp, 0) { revert(add("PVM:call failed", 0x20), 15) }
+            temp := mload(0x00)
         }
 
-        require(flag == 1, "PVM:call failed");
-        return int(data);
+        return int(temp);
     }
 
     // Convert 18 decimals to 64 bits
