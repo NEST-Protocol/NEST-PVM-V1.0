@@ -144,7 +144,7 @@ contract NestNFTAuction is NestFrequentlyUsed, INestNFTAuction {
                 collect();
             }
 
-            TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, bidder, (lastPrice + halfGap - halfGap / 5) * PRICE_UNIT);
+            TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, bidder, (lastPrice + (halfGap << 2) / 5) * PRICE_UNIT);
             
             // price + lastPrice and price - lastPrice is always the same parity, 
             // So it's no need to consider the problem of dividing losses
