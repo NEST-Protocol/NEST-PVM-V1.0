@@ -90,13 +90,49 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
     /// @param equivalents Price array, one to one with pairs
     function directPost(uint period, uint[3] calldata equivalents) external {
         require(msg.sender == DIRECT_POSTER, "NFWP:not directPoster");
-        _prices.push(
-            (period << 240)
-            | (block.number << 192) 
-            | uint(_encodeFloat(equivalents[2])) << 128
-            | uint(_encodeFloat(equivalents[1])) << 64
-            | uint(_encodeFloat(equivalents[0]))
-        );
+
+        assembly {
+            // Encode value at position indicated by value to float
+            function encode(value) -> v {
+                v := 0
+                // Load value from calldata
+                value := calldataload(value)
+                // Encode logic
+                for { } gt(value, 0x3FFFFFFFFFFFFFF) { v := add(v, 1) } {
+                    value := shr(4, value)
+                }
+                v := or(v, shl(6, value))
+            }
+
+            period := 
+            or(
+                or(
+                    or(
+                        or(
+                            // period
+                            shl(240, period), 
+                            // block.number
+                            shl(192, number())
+                        ), 
+                        // equivalents[2]
+                        shl(128, encode(0x64))
+                    ), 
+                    // equivalents[1]
+                    shl(64, encode(0x44))
+                ), 
+                // equivalents[0]
+                encode(0x24)
+            )
+        }
+        _prices.push(period);
+
+        // _prices.push(
+        //     (period << 240)
+        //     | (block.number << 192) 
+        //     | uint(_encodeFloat(equivalents[2])) << 128
+        //     | uint(_encodeFloat(equivalents[1])) << 64
+        //     | uint(_encodeFloat(equivalents[0]))
+        // );
     }
 
     /// @dev List prices
@@ -518,15 +554,24 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
 
     /// @dev Encode the uint value as a floating-point representation in the form of fraction * 16 ^ exponent
     /// @param value Destination uint value
-    /// @return float format
-    function _encodeFloat(uint value) internal pure returns (uint64) {
+    /// @return v float format
+    function _encodeFloat(uint value) internal pure returns (uint64 v) {
 
-        uint exponent = 0; 
-        while (value > 0x3FFFFFFFFFFFFFF) {
-            value >>= 4;
-            ++exponent;
+        // uint exponent = 0; 
+        // while (value > 0x3FFFFFFFFFFFFFF) {
+        //     value >>= 4;
+        //     ++exponent;
+        // }
+        // return uint64((value << 6) | exponent);
+
+        assembly {
+            v := 0
+            for { } gt(value, 0x3FFFFFFFFFFFFFF) { v := add(v, 1) } {
+                value := shr(4, value)
+            }
+
+            v := or(v, shl(6, value))
         }
-        return uint64((value << 6) | exponent);
     }
 
     /// @dev Decode the floating-point representation of fraction * 16 ^ exponent to uint
