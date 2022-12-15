@@ -18,7 +18,7 @@ exports.deploy = async function() {
     const NestBuybackPool = await ethers.getContractFactory('NestBuybackPool');
     const NestCyberInk = await ethers.getContractFactory('NestCyberInk');
     const NestNFTAuction = await ethers.getContractFactory('NestNFTAuction');
-    const NestFuturesWithPrice = await ethers.getContractFactory('NestFuturesWithPrice');
+    const NestFuturesWithPrice = await ethers.getContractFactory('NestFutures2');
     const NestMarket = await ethers.getContractFactory('NestMarket');
 
     console.log('** Deploy: deploy.proxy.js **');

@@ -3,7 +3,7 @@ const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, listBalances, snd, tableSnd, d1, Vc, Vp } = require('./utils.js');
 const { ethers, upgrades } = require('hardhat');
 
-describe('34.NestFuturesWithPrice', function() {
+describe('36.NestFutures2', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
@@ -44,7 +44,7 @@ describe('34.NestFuturesWithPrice', function() {
         if (true) {
             console.log('1. buy');
             await listAccounts();
-            await nestFuturesWithPrice.buy(eth.address, 5, true, toBigInt(1000));
+            await nestFuturesWithPrice.buy2(0, 5, true, toBigInt(1000));
             await listAccounts();
           
         }
@@ -57,7 +57,7 @@ describe('34.NestFuturesWithPrice', function() {
                 toBigInt(2000 / 20000)
             ]);
             await showReceipt(receipt);
-            await nestFuturesWithPrice.sell(5, toBigInt(1000));
+            await nestFuturesWithPrice.sell2(0, toBigInt(1000));
             await listAccounts();
         }
 

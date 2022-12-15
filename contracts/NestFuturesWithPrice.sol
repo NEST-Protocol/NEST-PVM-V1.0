@@ -88,9 +88,8 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
     /// @dev Direct post price
     /// @param period Term of validity
     /// @param equivalents Price array, one to one with pairs
-    function directPost(uint period, uint[] calldata equivalents) external {
+    function directPost(uint period, uint[3] calldata equivalents) external {
         require(msg.sender == DIRECT_POSTER, "NFWP:not directPoster");
-        require(equivalents.length == 3, "NFWP:must 3 prices");
         _prices.push(
             (period << 240)
             | (block.number << 192) 
@@ -488,7 +487,7 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
         uint nestAmount, 
         TokenConfig memory tokenConfig, 
         bool enlarge
-    ) private view returns (uint oraclePrice) {
+    ) internal view returns (uint oraclePrice) {
 
         // Query price from oracle
         (uint period, uint height, uint price) = _decodePrice(_prices[_prices.length - 1], uint(tokenConfig.pairIndex));
@@ -520,7 +519,7 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
     /// @dev Encode the uint value as a floating-point representation in the form of fraction * 16 ^ exponent
     /// @param value Destination uint value
     /// @return float format
-    function _encodeFloat(uint value) private pure returns (uint64) {
+    function _encodeFloat(uint value) internal pure returns (uint64) {
 
         uint exponent = 0; 
         while (value > 0x3FFFFFFFFFFFFFF) {
@@ -533,7 +532,7 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
     /// @dev Decode the floating-point representation of fraction * 16 ^ exponent to uint
     /// @param floatValue fraction value
     /// @return decode format
-    function _decodeFloat(uint64 floatValue) private pure returns (uint) {
+    function _decodeFloat(uint64 floatValue) internal pure returns (uint) {
         return (uint(floatValue) >> 6) << ((uint(floatValue) & 0x3F) << 2);
     }
 
@@ -564,7 +563,7 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
         uint oraclePrice, 
         bool ORIENTATION, 
         uint LEVER
-    ) private view returns (uint) {
+    ) internal view returns (uint) {
 
         if (balance > 0) {
             uint left;
