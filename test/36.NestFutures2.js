@@ -26,6 +26,7 @@ describe('36.NestFutures2', function() {
 
         await listAccounts();
         await nest.transfer(owner.address, 100000000000000000000000000n);
+        await nestFuturesWithPrice.init();
 
         if (true) {
             console.log('1. directPost');
@@ -72,6 +73,26 @@ describe('36.NestFutures2', function() {
                     price: toDecimal(prices[i + 2].toString())
                 });
             }
+        }
+
+        if (true) {
+            console.log('4. buy');
+            await listAccounts();
+            await nestFuturesWithPrice.buy2(0, 5, true, toBigInt(1000));
+            await listAccounts();
+          
+        }
+
+        if (true) {
+            console.log('5. sell');
+            let receipt = await nestFuturesWithPrice.directPost(200, [
+                toBigInt(1.508461),
+                toBigInt(66666666666),
+                toBigInt(2000 / 20000)
+            ]);
+            await showReceipt(receipt);
+            await nestFuturesWithPrice.sell2(1, toBigInt(1000));
+            await listAccounts();
         }
     });
 });

@@ -15,8 +15,8 @@ import "./NestFuturesWithPrice.sol";
 /// @dev Futures
 contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
 
-    // Future array, element of 0 is place holder
-    Future2[] _future2s;
+    // Order array
+    Order[] _orders;
 
     // Registered account address mapping
     mapping(address=>uint) _accountMapping;
@@ -27,44 +27,50 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
     constructor() {
     }
 
-    /// @dev Returns the current value of target address in the specified future
-    /// @param index Index of future
+    // Initialize account array, execute once
+    function init() external {
+        require(_accounts.length == 0, "NF:initialized");
+        _accounts.push();
+    }
+
+    /// @dev Returns the current value of target address in the specified order
+    /// @param index Index of order
     /// @param oraclePrice Current price from oracle, usd based, 18 decimals
     function balanceOf2(uint index, uint oraclePrice) external view override returns (uint) {
-        Future2 memory future = _future2s[index];
+        Order memory order = _orders[index];
         return _balanceOf(
-            _tokenConfigs[uint(future.tokenIndex)],
-            _decodeFloat(future.balance), 
-            _decodeFloat(future.basePrice), 
-            uint(future.baseBlock),
+            _tokenConfigs[uint(order.tokenIndex)],
+            _decodeFloat(order.balance), 
+            _decodeFloat(order.basePrice), 
+            uint(order.baseBlock),
             oraclePrice, 
-            future.orientation, 
-            uint(future.lever)
+            order.orientation, 
+            uint(order.lever)
         );
     }
 
-    /// @dev Find the futures of the target address (in reverse order)
+    /// @dev Find the orders of the target address (in reverse order)
     /// @param start Find forward from the index corresponding to the given owner address 
     /// (excluding the record corresponding to start)
     /// @param count Maximum number of records returned
     /// @param maxFindCount Find records at most
     /// @param owner Target address
-    /// @return futureArray Matched futures
+    /// @return orderArray Matched orders
     function find2(
         uint start, 
         uint count, 
         uint maxFindCount, 
         address owner
-    ) external view override returns (Future2[] memory futureArray) {
-        futureArray = new Future2[](count);
+    ) external view override returns (Order[] memory orderArray) {
+        orderArray = new Order[](count);
         // Calculate search region
-        Future2[] storage futures = _future2s;
+        Order[] storage orders = _orders;
 
         // Loop from start to end
         uint end = 0;
         // start is 0 means Loop from the last item
         if (start == 0) {
-            start = futures.length;
+            start = orders.length;
         }
         // start > maxFindCount, so end is not 0
         if (start > maxFindCount) {
@@ -74,28 +80,28 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
         // Loop lookup to write qualified records to the buffer
         uint ownerIndex = _accountMapping[owner];
         for (uint index = 0; index < count && start > end;) {
-            Future2 memory fi = futures[--start];
-            if (_decodeFloat(fi.balance) > 0 && uint(fi.owner) == ownerIndex) {
-                futureArray[index++] = fi;
+            Order memory order = orders[--start];
+            if (_decodeFloat(order.balance) > 0 && uint(order.owner) == ownerIndex) {
+                orderArray[index++] = order;
             }
         }
     }
 
-    /// @dev List futures
+    /// @dev List orders
     /// @param offset Skip previous (offset) records
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
-    /// @return futureArray List of futures
+    /// @return orderArray List of orders
     function list2(
         uint offset, 
         uint count, 
         uint order
-    ) external view override returns (Future2[] memory futureArray) {
-        // Load futures
-        Future2[] storage futures = _future2s;
+    ) external view override returns (Order[] memory orderArray) {
+        // Load orders
+        Order[] storage orders = _orders;
         // Create result array
-        futureArray = new Future2[](count);
-        uint length = futures.length;
+        orderArray = new Order[](count);
+        uint length = orders.length;
         uint i = 0;
 
         // Reverse order
@@ -103,8 +109,8 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
             uint index = length - offset;
             uint end = index > count ? index - count : 0;
             while (index > end) {
-                Future2 memory fi = futures[--index];
-                futureArray[i++] = fi;
+                Order memory fi = orders[--index];
+                orderArray[i++] = fi;
             }
         } 
         // Positive order
@@ -115,32 +121,15 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
                 end = length;
             }
             while (index < end) {
-                futureArray[i++] = futures[index];
+                orderArray[i++] = orders[index];
                 ++index;
             }
         }
     }
 
-    /// @dev Gets the index number of the specified address. If it does not exist, register
-    /// @param addr Destination address
-    /// @return The index number of the specified address
-    function _addressIndex(address addr) private returns (uint) {
-
-        // TODO: no first address
-        uint index = _accountMapping[addr];
-        if (index == 0) {
-            // If it exceeds the maximum number that 32 bits can store, you can't continue to register a new account.
-            // If you need to support a new account, you need to update the contract
-            require((_accountMapping[addr] = index = _accounts.length) < 0x100000000, "NO:!accounts");
-            _accounts.push(addr);
-        }
-
-        return index;
-    }
-
-    /// @dev Buy future direct
+    /// @dev Buy order direct
     /// @param tokenIndex Index of token
-    /// @param lever Lever of future
+    /// @param lever Lever of order
     /// @param orientation true: call, false: put
     /// @param nestAmount Amount of paid NEST
     function buy2(uint16 tokenIndex, uint8 lever, bool orientation, uint nestAmount) external payable override {
@@ -157,10 +146,11 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
         TokenConfig memory tokenConfig = _tokenConfigs[tokenIndex];
         uint oraclePrice = _queryPrice(nestAmount, tokenConfig, orientation);
 
-        // 3. Merger price
-        // TODO: Emit event
+        // 3. Emit event
+        emit Buy2(_orders.length, nestAmount, msg.sender);
 
-        _future2s.push(Future2(
+        // 4. Create order
+        _orders.push(Order(
             uint32(_addressIndex(msg.sender)),
             _encodeFloat(oraclePrice),
             _encodeFloat(nestAmount),
@@ -169,113 +159,121 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
             lever,
             orientation
         ));
-
-        // emit Buy event
-        // emit Buy(index, nestAmount, msg.sender);
     }
 
-    /// @dev Sell future
-    /// @param index Index of future
+    /// @dev Sell order
+    /// @param index Index of order
     /// @param amount Amount to sell
     function sell2(uint index, uint amount) external payable override {
 
-        // 1. Load the future
-        Future2 memory future = _future2s[index];
-        bool orientation = future.orientation;
+        // 1. Load the order
+        Order memory order = _orders[index];
+        require(_accounts[uint(order.owner)] == msg.sender, "NF:not owner");
+        bool orientation = order.orientation;
 
         // 2. Query oracle price
         // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
         // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
         // When merger, s0 use recorded price, s1 use corrected by k
-        TokenConfig memory tokenConfig = _tokenConfigs[uint(future.tokenIndex)];
+        TokenConfig memory tokenConfig = _tokenConfigs[uint(order.tokenIndex)];
         uint oraclePrice = _queryPrice(0, tokenConfig, !orientation);
 
         // 3. Update account
-        future.balance = _encodeFloat(_decodeFloat(future.balance) - amount);
-        _future2s[index] = future;
+        order.balance = _encodeFloat(_decodeFloat(order.balance) - amount);
+        _orders[index] = order;
 
         // 4. Transfer NEST to user
         uint value = _balanceOf(
             tokenConfig,
             amount, 
-            _decodeFloat(future.basePrice), 
-            uint(future.baseBlock),
+            _decodeFloat(order.basePrice), 
+            uint(order.baseBlock),
             oraclePrice, 
             orientation, 
-            uint(future.lever)
+            uint(order.lever)
         );
         INestVault(NEST_VAULT_ADDRESS).transferTo(msg.sender, value);
 
-        // TODO: Emit event
-        // emit Sell event
-        //emit Sell(index, amount, msg.sender, value);
+        // 5. Emit event
+        emit Sell2(index, amount, msg.sender, value);
     }
 
-    /// @dev Settle future
-    /// @param indices Target future indices
+    /// @dev Liquidate order
+    /// @param indices Target order indices
     function liquidate2(uint[] calldata indices) external payable override {
-
-        // 1. Load the future
-
-        // 2. Query oracle price
-        // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
-        // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
-        // When merger, s0 use recorded price, s1 use corrected by k
         TokenConfig memory tokenConfig;
         uint oraclePrice = 0;
         uint tokenIndex = 0;
         bool orientation = false;
 
-        // 3. Loop and settle
+        // 1. Loop and settle
         uint reward = 0;
         for (uint i = indices.length; i > 0;) {
-            Future2 memory future = _future2s[indices[--i]];
+            uint index = indices[--i];
+            Order memory order = _orders[index];
 
             if (oraclePrice == 0) {
-                tokenIndex = uint(future.tokenIndex);
-                orientation = future.orientation;
+                // 2. Query oracle price
+                // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
+                // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
+                // When merger, s0 use recorded price, s1 use corrected by k
+                tokenIndex = uint(order.tokenIndex);
+                orientation = order.orientation;
                 tokenConfig = _tokenConfigs[tokenIndex];
                 oraclePrice = _queryPrice(0, tokenConfig, !orientation);
                 require(oraclePrice > 0, "NF:price error");
             } else {
-                require(tokenIndex == uint(future.tokenIndex), "NF:tokenIndex error");
-                require(orientation == future.orientation, "NF:orientation error");
+                require(tokenIndex == uint(order.tokenIndex), "NF:tokenIndex error");
+                require(orientation == order.orientation, "NF:orientation error");
             }
 
-            uint lever = uint(future.lever);
-            uint balance = _decodeFloat(future.balance);
+            uint lever = uint(order.lever);
+            uint balance = _decodeFloat(order.balance);
 
             if (lever > 1 && balance > 0) {
-                // 4. Update account
+                // 3. Update account
                 uint remain = _balanceOf(
                     tokenConfig,
                     balance, 
-                    _decodeFloat(future.basePrice), 
-                    uint(future.baseBlock),
+                    _decodeFloat(order.basePrice), 
+                    uint(order.baseBlock),
                     oraclePrice, 
                     orientation, 
                     lever
                 );
 
-                // 5. Settle logic
+                // 4. Liquidate logic
                 // lever is great than 1, and balance less than a regular value, can be liquidated
                 // the regular value is: Max(balance * lever * 2%, MIN_VALUE)
                 uint minValue = balance * lever / 50;
                 if (remain < (minValue < MIN_VALUE ? MIN_VALUE : minValue)) {
-                    future.balance = uint64(0);
-                    future.baseBlock = uint32(0);
-                    _future2s[indices[i]] = future;
+                    order.balance = uint64(0);
+                    order.baseBlock = uint32(0);
+                    _orders[index] = order;
                     reward += remain;
-                    // TODO: Emit event
-                    //emit Settle(index, acc, msg.sender, balance);
+                    emit Liquidate2(index, msg.sender, remain);
                 }
             }
         }
 
         // 6. Transfer NEST to user
         if (reward > 0) {
-            //DCU(DCU_TOKEN_ADDRESS).mint(msg.sender, reward);
             INestVault(NEST_VAULT_ADDRESS).transferTo(msg.sender, reward);
         }
+    }
+
+    /// @dev Gets the index number of the specified address. If it does not exist, register
+    /// @param addr Destination address
+    /// @return The index number of the specified address
+    function _addressIndex(address addr) private returns (uint) {
+        uint index = _accountMapping[addr];
+        if (index == 0) {
+            // If it exceeds the maximum number that 32 bits can store, you can't continue to register a new account.
+            // If you need to support a new account, you need to update the contract
+            require((_accountMapping[addr] = index = _accounts.length) < 0x100000000, "NO:!accounts");
+            _accounts.push(addr);
+        }
+
+        return index;
     }
 }

@@ -33,6 +33,7 @@ interface INestFuturesWithPrice {
     /// @dev Buy future event
     /// @param index Index of future
     /// @param nestAmount Amount of paid NEST
+    /// @param owner The owner of future
     event Buy(
         uint index,
         uint nestAmount,
