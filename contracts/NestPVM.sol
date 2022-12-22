@@ -732,7 +732,7 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
 
             // staticcall
             temp := staticcall(gas(), value, buf, size, 0x00, 0x20)
-            if eq(temp, 0) { revert(add("PVM:call failed", 0x20), 15) }
+            if iszero(temp) { revert(add("PVM:call failed", 0x20), 15) }
             temp := mload(0x00)
         }
 
