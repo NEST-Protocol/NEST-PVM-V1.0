@@ -1,6 +1,6 @@
 const { expect } = require('chai');
 const { deploy } = require('../scripts/deploy.js');
-const { toBigInt, toDecimal, showReceipt, listBalances, snd, tableSnd, d1, Vc, Vp } = require('./utils.js');
+const { toBigInt, toDecimal, showReceipt, listBalances, snd, tableSnd, d1, Vc, Vp, UI } = require('./utils.js');
 const { ethers, upgrades } = require('hardhat');
 
 describe('36.NestFutures2', function() {
@@ -93,6 +93,25 @@ describe('36.NestFutures2', function() {
             await showReceipt(receipt);
             await nestFuturesWithPrice.sell2(1, toBigInt(1000));
             await listAccounts();
+        }
+
+        if (true) {
+            console.log('6. listPrice');
+
+            let prices = await nestFuturesWithPrice.listPrice(0, 0, 5, 1);
+            for (var i = 0; i < prices.length; i += 3) {
+                console.log({ 
+                    period: prices[i].toString(),
+                    height: prices[i + 1].toString(),
+                    price: toDecimal(prices[i + 2].toString())
+                });
+            }
+        }
+
+        if (true) {
+            console.log('7. findPrice');
+            let p = await nestFuturesWithPrice.findPrice(0, 70);
+            console.log(UI(p));
         }
     });
 });

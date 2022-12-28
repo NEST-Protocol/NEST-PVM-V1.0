@@ -96,10 +96,9 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
             function encode(value) -> v {
                 v := 0
                 // Load value from calldata
-                value := calldataload(value)
                 // Encode logic
-                for { } gt(value, 0x3FFFFFFFFFFFFFF) { v := add(v, 1) } {
-                    value := shr(4, value)
+                for { value := calldataload(value) } gt(value, 0x3FFFFFFFFFFFFFF) { value := shr(4, value) } {
+                    v := add(v, 1)
                 }
                 v := or(v, shl(6, value))
             }
@@ -175,6 +174,48 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
                 i += 3;
             }
         }
+    }
+
+    /// @dev Find the price at block number
+    /// @param pairIndex index of token in channel 0 on NEST Oracle
+    /// @param height Destination block number
+    /// @return blockNumber The block number of price
+    /// @return price The token price. (1eth equivalent to (price) token)
+    function findPrice(
+        uint pairIndex,
+        uint height
+    ) external view returns (uint blockNumber, uint price) {
+
+        uint length = _prices.length;
+        uint index = 0;
+        uint sheetHeight;
+        {
+            // If there is no sheet in this channel, length is 0, length - 1 will overflow,
+            uint right = length - 1;
+            uint left = 0;
+            // Find the index use Binary Search
+            while (left < right) {
+
+                index = (left + right) >> 1;
+                sheetHeight = (_prices[index] >> 192) & 0xFFFFFFFFFFFF;
+                if (height > sheetHeight) {
+                    left = ++index;
+                } else if (height < sheetHeight) {
+                    // When index = 0, this statement will have an underflow exception, which usually 
+                    // indicates that the effective block height passed during the call is lower than 
+                    // the block height of the first quotation
+                    right = --index;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        while (((_prices[index] >> 192) & 0xFFFFFFFFFFFF) > height) {
+            --index;
+        }
+
+        (,blockNumber, price) = _decodePrice(_prices[index], pairIndex);
     }
 
     /// @dev Register token configuration
