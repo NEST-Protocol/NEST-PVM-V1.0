@@ -27,6 +27,11 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
     constructor() {
     }
 
+    modifier onlyProxy {
+        // TODO:
+        _;
+    }
+
     // Initialize account array, execute once
     function init() external {
         require(_accounts.length == 0, "NF:initialized");
@@ -260,6 +265,93 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
         if (reward > 0) {
             INestVault(NEST_VAULT_ADDRESS).transferTo(msg.sender, reward);
         }
+    }
+
+    /// @dev Buy from NestFuturesPRoxy
+    /// @param tokenIndex Index of token
+    /// @param lever Lever of order
+    /// @param orientation true: call, false: put
+    /// @param nestAmount Amount of paid NEST
+    /// @return index Index of future order
+    function proxyBuy2(
+        address owner, 
+        uint16 tokenIndex, 
+        uint8 lever, 
+        bool orientation, 
+        uint nestAmount
+    ) external payable onlyProxy returns (uint index) {
+
+        //require(nestAmount >= 50 ether, "NF:at least 50 NEST");
+
+        // 1. Transfer NEST from user
+        // TODO: Transfer NEST token
+        //TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, NEST_VAULT_ADDRESS, nestAmount);
+
+        // 2. Query oracle price
+        // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
+        // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
+        // When merger, s0 use recorded price, s1 use corrected by k
+        TokenConfig memory tokenConfig = _tokenConfigs[tokenIndex];
+        uint oraclePrice = _queryPrice(nestAmount, tokenConfig, orientation);
+
+        // 3. Emit event
+        index = _orders.length;
+        emit Buy2(index, nestAmount, owner);
+
+        // 4. Create order
+        _orders.push(Order(
+            uint32(_addressIndex(owner)),
+            _encodeFloat(oraclePrice),
+            _encodeFloat(nestAmount),
+            uint32(block.number),
+            tokenIndex,
+            lever,
+            orientation
+        ));
+    }
+
+    /// @dev Sell order
+    /// @param index Index of order
+    function proxySell2(uint index) external payable onlyProxy {
+
+        // 1. Load the order
+        Order memory order = _orders[index];
+        //require(_accounts[uint(order.owner)] == msg.sender, "NF:not owner");
+        bool orientation = order.orientation;
+
+        // 2. Query oracle price
+        // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
+        // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
+        // When merger, s0 use recorded price, s1 use corrected by k
+        TokenConfig memory tokenConfig = _tokenConfigs[uint(order.tokenIndex)];
+        uint oraclePrice = _queryPrice(0, tokenConfig, !orientation);
+
+        // 3. Update account
+        uint amount = _decodeFloat(order.balance);
+        order.balance = 0;
+        _orders[index] = order;
+
+        // 4. Transfer NEST to user
+        uint value = _balanceOf(
+            tokenConfig,
+            amount, 
+            _decodeFloat(order.basePrice), 
+            uint(order.baseBlock),
+            oraclePrice, 
+            orientation, 
+            uint(order.lever)
+        );
+        INestVault(NEST_VAULT_ADDRESS).transferTo(msg.sender, value);
+
+        // 5. Emit event
+        emit Sell2(index, amount, msg.sender, value);
+    }
+
+    // Get order main information
+    function getOrder(uint index) external view returns (address owner, uint balance) {
+        Order memory order = _orders[index];
+        owner = _accounts[order.owner];
+        balance = _decodeFloat(order.balance);
     }
 
     /// @dev Gets the index number of the specified address. If it does not exist, register
