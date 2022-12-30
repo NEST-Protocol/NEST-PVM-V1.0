@@ -17,6 +17,26 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
 
     uint constant NEST_UNIT = 0.0001 ether;
 
+    /// @dev Order structure
+    struct Order {
+        // Address index of owner
+        uint32 owner;
+        // Base price of this order, encoded with _encodeFloat()
+        uint64 basePrice;
+        // Balance of this order, 4 decimals
+        uint48 balance;
+        // Open block of this order
+        uint32 baseBlock;
+        // Index of target token, support eth and btc
+        uint16 tokenIndex;
+        // Leverage of this order
+        uint8 lever;
+        // Orientation of this order, long or short
+        bool orientation;
+        // Stop price, for stop order
+        uint48 stopPrice;
+    }
+
     // Order array
     Order[] _orders;
 
@@ -26,12 +46,22 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
     // Registered accounts
     address[] _accounts;
 
+    address _futuresProxy;
+    
     constructor() {
     }
 
     modifier onlyProxy {
         // TODO:
         _;
+    }
+
+    /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
+    ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
+    /// @param newGovernance INestGovernance implementation contract address
+    function update(address newGovernance) public virtual override {
+        super.update(newGovernance);
+        _futuresProxy = INestGovernance(newGovernance).checkAddress("nest.app.futuresProxy");
     }
 
     // Initialize account array, execute once
@@ -68,8 +98,8 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
         uint count, 
         uint maxFindCount, 
         address owner
-    ) external view override returns (Order[] memory orderArray) {
-        orderArray = new Order[](count);
+    ) external view override returns (OrderView[] memory orderArray) {
+        orderArray = new OrderView[](count);
         // Calculate search region
         Order[] storage orders = _orders;
 
@@ -89,7 +119,7 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
         for (uint index = 0; index < count && start > end;) {
             Order memory order = orders[--start];
             if (uint(order.balance) > 0 && uint(order.owner) == ownerIndex) {
-                orderArray[index++] = order;
+                orderArray[index++] = _toOrderView(order, start);
             }
         }
     }
@@ -103,11 +133,11 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
         uint offset, 
         uint count, 
         uint order
-    ) external view override returns (Order[] memory orderArray) {
+    ) external view override returns (OrderView[] memory orderArray) {
         // Load orders
         Order[] storage orders = _orders;
         // Create result array
-        orderArray = new Order[](count);
+        orderArray = new OrderView[](count);
         uint length = orders.length;
         uint i = 0;
 
@@ -116,8 +146,8 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
             uint index = length - offset;
             uint end = index > count ? index - count : 0;
             while (index > end) {
-                Order memory fi = orders[--index];
-                orderArray[i++] = fi;
+                Order memory order = orders[--index];
+                orderArray[i++] = _toOrderView(order, index);
             }
         } 
         // Positive order
@@ -128,7 +158,7 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
                 end = length;
             }
             while (index < end) {
-                orderArray[i++] = orders[index];
+                orderArray[i++] = _toOrderView(orders[index], index);
                 ++index;
             }
         }
@@ -274,43 +304,45 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
     /// @param tokenIndex Index of token
     /// @param lever Lever of order
     /// @param orientation true: call, false: put
-    /// @param nestAmount Amount of paid NEST, 4 decimals
+    /// @param amount Amount of paid NEST, 4 decimals
+    /// @param stopPrice Stop price for stop order
     /// @return index Index of future order
     function proxyBuy2(
         address owner, 
         uint16 tokenIndex, 
         uint8 lever, 
         bool orientation, 
-        uint nestAmount
+        uint48 amount,
+        uint48 stopPrice
     ) external payable onlyProxy returns (uint index) {
 
-        //require(nestAmount >= 50 ether, "NF:at least 50 NEST");
+        //require(amount >= 50 ether, "NF:at least 50 NEST");
 
         // 1. Transfer NEST from user
         // TODO: Transfer NEST token
-        //TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, NEST_VAULT_ADDRESS, nestAmount);
+        //TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, NEST_VAULT_ADDRESS, amount);
 
         // 2. Query oracle price
         // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
         // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
         // When merger, s0 use recorded price, s1 use corrected by k
         TokenConfig memory tokenConfig = _tokenConfigs[tokenIndex];
-        uint oraclePrice = _queryPrice(nestAmount * NEST_UNIT, tokenConfig, orientation);
+        uint oraclePrice = _queryPrice(uint(amount) * NEST_UNIT, tokenConfig, orientation);
 
         // 3. Emit event
         index = _orders.length;
-        emit Buy2(index, nestAmount, owner);
+        emit Buy2(index, uint(amount), owner);
 
         // 4. Create order
         _orders.push(Order(
             uint32(_addressIndex(owner)),
             _encodeFloat(oraclePrice),
-            uint48(nestAmount),
+            amount,
             uint32(block.number),
             tokenIndex,
             lever,
             orientation,
-            uint48(0)
+            stopPrice
         ));
     }
 
@@ -320,6 +352,7 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
 
         // 1. Load the order
         Order memory order = _orders[index];
+        require(order.stopPrice > 0, "NF:not stop order");
         //require(_accounts[uint(order.owner)] == msg.sender, "NF:not owner");
         bool orientation = order.orientation;
 
@@ -353,11 +386,22 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
         emit Sell2(index, amount, owner, value);
     }
 
-    // Get order main information
-    function getOrder(uint index) external view returns (address owner, uint balance) {
+    /// @dev Set stop price for stop order
+    /// @param index Index of order
+    /// @param stopPrice Stop price for trigger sell
+    function setStopPrice(uint index, uint stopPrice) external {
         Order memory order = _orders[index];
-        owner = _accounts[order.owner];
-        balance = uint(order.balance);
+        require(msg.sender == _accounts[order.owner], "NF:not owner");
+        if (uint(order.stopPrice) == 0) {
+            TransferHelper.safeTransferFrom(
+                NEST_TOKEN_ADDRESS, 
+                msg.sender, 
+                _futuresProxy, 
+                uint(order.balance) * 2 / 1000 * NEST_UNIT
+            );
+        }
+        order.stopPrice = _encodeFloat48(stopPrice);
+        _orders[index] = order;
     }
 
     /// @dev Gets the index number of the specified address. If it does not exist, register
@@ -373,5 +417,34 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
         }
 
         return index;
+    }
+    
+    // Convert Order to OrderView
+    function _toOrderView(Order memory order, uint index) internal view returns (OrderView memory v) {
+        v = OrderView(
+            uint32(index),
+            _accounts[uint(order.owner)],
+            order.balance,
+            order.tokenIndex,
+            order.baseBlock,
+            order.lever,
+            order.orientation,
+            _decodeFloat(order.basePrice),
+            _decodeFloat(order.stopPrice)
+        );
+    }
+    
+    /// @dev Encode the uint value as a floating-point representation in the form of fraction * 16 ^ exponent
+    /// @param value Destination uint value
+    /// @return v float format
+    function _encodeFloat48(uint value) internal pure returns (uint48 v) {
+        assembly {
+            v := 0
+            for { } gt(value, 0x3FFFFFFFFFF) { v := add(v, 1) } {
+                value := shr(4, value)
+            }
+
+            v := or(v, shl(6, value))
+        }
     }
 }

@@ -5,24 +5,26 @@ pragma solidity ^0.8.6;
 /// @dev Defines methods for Futures
 interface INestFutures2 {
 
-    /// @dev Order structure
-    struct Order {
-        // Address index of owner
-        uint32 owner;
-        // Base price of this order, encoded with _encodeFloat()
-        uint64 basePrice;
+    /// @dev Order for view methods
+    struct OrderView {
+        // Index of this order
+        uint32 index;
+        // Owner of this order
+        address owner;
         // Balance of this order, 4 decimals
         uint48 balance;
-        // Open block of this order
-        uint32 baseBlock;
         // Index of target token, support eth and btc
         uint16 tokenIndex;
+        // Open block of this order
+        uint32 baseBlock;
         // Leverage of this order
         uint8 lever;
         // Orientation of this order, long or short
         bool orientation;
-        // Extend value
-        uint48 temp;
+        // Base price of this order
+        uint basePrice;
+        // Stop price, for stop order
+        uint stopPrice;
     }
     
     /// @dev Buy order event
@@ -74,7 +76,7 @@ interface INestFutures2 {
         uint count, 
         uint maxFindCount, 
         address owner
-    ) external view returns (Order[] memory orderArray);
+    ) external view returns (OrderView[] memory orderArray);
 
     /// @dev List orders
     /// @param offset Skip previous (offset) records
@@ -85,7 +87,7 @@ interface INestFutures2 {
         uint offset, 
         uint count, 
         uint order
-    ) external view returns (Order[] memory orderArray);
+    ) external view returns (OrderView[] memory orderArray);
 
     /// @dev Buy order direct
     /// @param tokenIndex Index of token

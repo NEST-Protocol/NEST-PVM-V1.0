@@ -104,6 +104,7 @@ exports.deploy = async function() {
     await nestGovernance.registerAddress('nest.v4.openPrice', nestPriceFacade.address);
     await nestGovernance.registerAddress('nest.app.vault', nestVault.address);
     await nestGovernance.registerAddress('nest.app.futures', nestFuturesWithPrice.address);
+    await nestGovernance.registerAddress('nest.app.futuresProxy', nestFuturesProxy.address);
     await nestGovernance.registerAddress('nest.app.dcu', dcu.address);
     await nestGovernance.registerAddress('nest.app.prc', nestProbability.address);
     await nestGovernance.registerAddress('nest.app.cyberink', nestCyberInk.address);

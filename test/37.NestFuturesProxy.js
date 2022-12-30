@@ -48,7 +48,7 @@ describe('37.NestFuturesProxy', function() {
         if (true) {
             console.log('1. limit buy');
             //function newLimitOrder(uint16 tokenIndex, uint8 lever, bool orientation, uint amount, uint limitPrice) external {
-            await nestFuturesProxy.newLimitOrder(0, 5, true, 1000 * NEST_BASE, toBigInt(1.538461));
+            await nestFuturesProxy.newLimitOrder(0, 5, true, 1000 * NEST_BASE, toBigInt(1.538461), 0);
             await listAccounts();
         }
         if (true) {
@@ -59,13 +59,32 @@ describe('37.NestFuturesProxy', function() {
 
         if (true) {
             console.log('3. stop order');
-            await nestFuturesProxy.newStopOrder(0, toBigInt(1.53));
+            await nestFuturesWithPrice.setStopPrice(0, toBigInt(1.53));
             await listAccounts();
         }
 
         if (true) {
             console.log('4. execute stop order');
             await nestFuturesProxy.executeStopOrder([0]);
+            await listAccounts();
+        }
+
+        if (true) {
+            console.log('5. limit with stop');
+            await nestFuturesProxy.newLimitOrder(0, 5, true, 1000 * NEST_BASE, toBigInt(1.538461), toBigInt(1.538461));
+            await listAccounts();
+        }
+
+        if (true) {
+            console.log('6. execute limit order');
+            await nestFuturesProxy.executeLimitOrder([1]);
+            //await nestFuturesProxy.executeLimitOrder([1]);
+            await listAccounts();
+        }
+
+        if (true) {
+            console.log('7. execute stop order');
+            await nestFuturesProxy.executeStopOrder([1]);
             await listAccounts();
         }
     });
