@@ -42,10 +42,11 @@ describe('36.NestFutures2', function() {
             ]);
         }
 
+        const NEST_BASE = 10000;
         if (true) {
             console.log('1. buy');
             await listAccounts();
-            await nestFuturesWithPrice.buy2(0, 5, true, toBigInt(1000));
+            await nestFuturesWithPrice.buy2(0, 5, true, 1000 * NEST_BASE);
             await listAccounts();
           
         }
@@ -58,7 +59,7 @@ describe('36.NestFutures2', function() {
                 toBigInt(2000 / 20000)
             ]);
             await showReceipt(receipt);
-            await nestFuturesWithPrice.sell2(0, toBigInt(1000));
+            await nestFuturesWithPrice.sell2(0);
             await listAccounts();
         }
 
@@ -78,7 +79,7 @@ describe('36.NestFutures2', function() {
         if (true) {
             console.log('4. buy');
             await listAccounts();
-            await nestFuturesWithPrice.buy2(0, 5, true, toBigInt(1000));
+            await nestFuturesWithPrice.buy2(0, 5, true, 1000 * NEST_BASE);
             await listAccounts();
           
         }
@@ -91,7 +92,7 @@ describe('36.NestFutures2', function() {
                 toBigInt(2000 / 20000)
             ]);
             await showReceipt(receipt);
-            await nestFuturesWithPrice.sell2(1, toBigInt(1000));
+            await nestFuturesWithPrice.sell2(1);
             await listAccounts();
         }
 

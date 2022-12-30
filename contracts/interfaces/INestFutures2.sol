@@ -7,18 +7,27 @@ interface INestFutures2 {
 
     /// @dev Order structure
     struct Order {
+        // Address index of owner
         uint32 owner;
+        // Base price of this order, encoded with _encodeFloat()
         uint64 basePrice;
-        uint64 balance;
+        // Balance of this order, 4 decimals
+        uint48 balance;
+        // Open block of this order
         uint32 baseBlock;
+        // Index of target token, support eth and btc
         uint16 tokenIndex;
+        // Leverage of this order
         uint8 lever;
+        // Orientation of this order, long or short
         bool orientation;
+        // Extend value
+        uint48 temp;
     }
     
     /// @dev Buy order event
     /// @param index Index of order
-    /// @param nestAmount Amount of paid NEST
+    /// @param nestAmount Amount of paid NEST, 4 decimals
     /// @param owner The owner of order
     event Buy2(
         uint index,
@@ -28,7 +37,7 @@ interface INestFutures2 {
 
     /// @dev Sell order event
     /// @param index Index of order
-    /// @param amount Amount to sell
+    /// @param amount Amount to sell, 4 decimals
     /// @param owner The owner of order
     /// @param value Amount of NEST obtained
     event Sell2(
@@ -51,7 +60,7 @@ interface INestFutures2 {
     /// @dev Returns the current value of target address in the specified order
     /// @param index Index of order
     /// @param oraclePrice Current price from oracle, usd based, 18 decimals
-    function balanceOf2(uint index, uint oraclePrice) external view returns (uint);
+    function valueOf2(uint index, uint oraclePrice) external view returns (uint);
 
     /// @dev Find the orders of the target address (in reverse order)
     /// @param start Find forward from the index corresponding to the given owner address 
@@ -82,13 +91,12 @@ interface INestFutures2 {
     /// @param tokenIndex Index of token
     /// @param lever Lever of order
     /// @param orientation true: call, false: put
-    /// @param nestAmount Amount of paid NEST
-    function buy2(uint16 tokenIndex, uint8 lever, bool orientation, uint nestAmount) external payable;
+    /// @param amount Amount of paid NEST, 4 decimals
+    function buy2(uint16 tokenIndex, uint8 lever, bool orientation, uint amount) external payable;
 
     /// @dev Sell order
     /// @param index Index of order
-    /// @param amount Amount to sell
-    function sell2(uint index, uint amount) external payable;
+    function sell2(uint index) external payable;
 
     /// @dev Liquidate order
     /// @param indices Target order indices

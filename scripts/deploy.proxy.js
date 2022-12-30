@@ -20,6 +20,7 @@ exports.deploy = async function() {
     const NestNFTAuction = await ethers.getContractFactory('NestNFTAuction');
     const NestFuturesWithPrice = await ethers.getContractFactory('NestFutures2');
     const NestMarket = await ethers.getContractFactory('NestMarket');
+    const NestFuturesProxy = await ethers.getContractFactory('NestFuturesProxy');
 
     console.log('** Deploy: deploy.proxy.js **');
     
@@ -83,6 +84,10 @@ exports.deploy = async function() {
     //const nestMarket = await NestMarket.attach('0x0000000000000000000000000000000000000000');
     console.log('nestMarket: ' + nestMarket.address);
 
+    const nestFuturesProxy = await upgrades.deployProxy(NestFuturesProxy, [nestGovernance.address], { initializer: 'initialize' });
+    //const nestFuturesProxy = await NestFuturesProxy.attach('0x0000000000000000000000000000000000000000');
+    console.log('nestFuturesProxy: ' + nestFuturesProxy.address);
+
     console.log('2. nestGovernance.setBuiltinAddress()');
     await nestGovernance.setBuiltinAddress(
         nest.address,
@@ -98,6 +103,7 @@ exports.deploy = async function() {
     );
     await nestGovernance.registerAddress('nest.v4.openPrice', nestPriceFacade.address);
     await nestGovernance.registerAddress('nest.app.vault', nestVault.address);
+    await nestGovernance.registerAddress('nest.app.futures', nestFuturesWithPrice.address);
     await nestGovernance.registerAddress('nest.app.dcu', dcu.address);
     await nestGovernance.registerAddress('nest.app.prc', nestProbability.address);
     await nestGovernance.registerAddress('nest.app.cyberink', nestCyberInk.address);
@@ -122,6 +128,8 @@ exports.deploy = async function() {
     await nestNFTAuction.update(nestGovernance.address);
     console.log('11. nestMarket.update()');
     await nestMarket.update(nestGovernance.address);
+    console.log('12. nestFuturesProxy.update()');
+    await nestFuturesProxy.update(nestGovernance.address);
 
     // 2.4. Register ETH ans HBTC
     console.log('7. nestOptions.register(eth.address)');
@@ -245,6 +253,7 @@ exports.deploy = async function() {
         nestFuturesWithPrice: nestFuturesWithPrice,
         nestMarket: nestMarket,
         nestVault: nestVault,
+        nestFuturesProxy: nestFuturesProxy,
 
         BLOCK_TIME: BLOCK_TIME,
         USDT_DECIMALS: 18,
