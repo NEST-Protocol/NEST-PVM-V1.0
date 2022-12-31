@@ -572,16 +572,13 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
         
         price = _toUSDTPrice(price);
 
-        // Convert to usdt based price
-        uint k = 0.003 ether;
-
-        // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
-        // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
+        // When long, the base price multiply (1 + k), and the sell price divide (1 + k)
+        // When short, the base price divide (1 + k), and the sell price multiply (1 + k)
         // When merger, s0 use recorded price, s1 use corrected by k
         if (enlarge) {
-            oraclePrice = price * (1 ether + k + impactCost(nestAmount)) / 1 ether;
+            oraclePrice = price * (1.002 ether + impactCost(nestAmount)) / 1 ether;
         } else {
-            oraclePrice = price * 1 ether / (1 ether + k + impactCost(nestAmount));
+            oraclePrice = price * 1 ether / (1.002 ether + impactCost(nestAmount));
         }
     }
 

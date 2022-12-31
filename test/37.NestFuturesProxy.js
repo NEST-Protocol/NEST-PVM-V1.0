@@ -87,5 +87,17 @@ describe('37.NestFuturesProxy', function() {
             await nestFuturesProxy.executeStopOrder([1]);
             await listAccounts();
         }
+
+        if (true) {
+            console.log('8. list order');
+            const list = await nestFuturesWithPrice.list2(0, 3, 0);
+            console.log(UI(list));
+        }
+
+        if (true) {
+            console.log('9. list limit order');
+            const list = await nestFuturesProxy.list(0, 3, 0);
+            console.log(UI(list));
+        }
     });
 });
