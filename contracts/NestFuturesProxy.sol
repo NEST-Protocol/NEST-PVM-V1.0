@@ -78,20 +78,21 @@ contract NestFuturesProxy is NestFrequentlyUsed {
     // Array of limit orders
     LimitOrder[] _limitOrders;
 
-    address _nestFutures;
-
-    modifier onlyMaintains {
-        // TODO:
-        //require(msg.sender == "");
-        _;
-    }
-
+    // TODO:
+    address NEST_FUTURES_ADDRESS;
+    address MAINTAINS_ADDRESS;
     /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
     ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
     /// @param newGovernance INestGovernance implementation contract address
     function update(address newGovernance) public virtual override {
         super.update(newGovernance);
-        _nestFutures = INestGovernance(newGovernance).checkAddress("nest.app.futures");
+        NEST_FUTURES_ADDRESS = INestGovernance(newGovernance).checkAddress("nest.app.futures");
+        MAINTAINS_ADDRESS = INestGovernance(newGovernance).checkAddress("nest.app.maintains");
+    }
+
+    modifier onlyMaintains {
+        require(msg.sender == MAINTAINS_ADDRESS, "NFP:not maintains");
+        _;
     }
 
     /// @dev Find the orders of the target address (in reverse order)
@@ -264,13 +265,12 @@ contract NestFuturesProxy is NestFrequentlyUsed {
 
     // Execute limit order, only maintains account
     function executeLimitOrder(uint[] calldata indices) external onlyMaintains {
-        address futures = _nestFutures;
         uint totalNest = 0;
         for (uint i = indices.length; i > 0;) {
             uint index = indices[--i];
             LimitOrder memory order = _limitOrders[index];
             if (uint(order.status) == S_NORMAL) {
-                uint orderIndex = NestFutures2(futures).proxyBuy2(
+                uint orderIndex = NestFutures2(NEST_FUTURES_ADDRESS).proxyBuy2(
                     order.owner, 
                     order.tokenIndex, 
                     order.lever, 
@@ -296,7 +296,6 @@ contract NestFuturesProxy is NestFrequentlyUsed {
 
     // Execute stop order, only maintains account
     function executeStopOrder(uint[] calldata indices) external onlyMaintains {
-        address futures = _nestFutures;
         for (uint i = indices.length; i > 0;) {
             uint index = indices[--i];
             // StopOrder memory order = _stopOrders[index];
@@ -304,7 +303,7 @@ contract NestFuturesProxy is NestFrequentlyUsed {
             //     order.status == uint8(S_EXECUTED);
             //     NestFutures2(futures).proxySell2(order.orderIndex);
             // }
-            NestFutures2(futures).proxySell2(index);
+            NestFutures2(NEST_FUTURES_ADDRESS).proxySell2(index);
         }
     }
 

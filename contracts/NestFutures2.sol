@@ -37,6 +37,9 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
         uint48 stopPrice;
     }
 
+    // TODO: place holder
+    uint[3] _placeHolder;
+
     // Order array
     Order[] _orders;
 
@@ -46,22 +49,22 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
     // Registered accounts
     address[] _accounts;
 
-    address _futuresProxy;
-    
-    constructor() {
-    }
-
-    modifier onlyProxy {
-        // TODO:
-        _;
-    }
-
+    // TODO:
+    address FUTURES_PROXY_ADDRESS;
     /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
     ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
     /// @param newGovernance INestGovernance implementation contract address
     function update(address newGovernance) public virtual override {
         super.update(newGovernance);
-        _futuresProxy = INestGovernance(newGovernance).checkAddress("nest.app.futuresProxy");
+        FUTURES_PROXY_ADDRESS = INestGovernance(newGovernance).checkAddress("nest.app.futuresProxy");
+    }
+
+    constructor() {
+    }
+
+    modifier onlyProxy {
+        require(msg.sender == FUTURES_PROXY_ADDRESS, "NF:not futures proxy");
+        _;
     }
 
     // Initialize account array, execute once
@@ -396,7 +399,7 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
             TransferHelper.safeTransferFrom(
                 NEST_TOKEN_ADDRESS, 
                 msg.sender, 
-                _futuresProxy, 
+                FUTURES_PROXY_ADDRESS, 
                 uint(order.balance) * 2 / 1000 * NEST_UNIT
             );
         }

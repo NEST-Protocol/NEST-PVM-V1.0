@@ -75,6 +75,17 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
     // price array, period(16)|height(48)|price3(64)|price2(64)|price1(64)
     uint[] _prices;
 
+    // TODO:
+    // Direct poster
+    address DIRECT_POSTER;
+    /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
+    ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
+    /// @param newGovernance INestGovernance implementation contract address
+    function update(address newGovernance) public virtual override {
+        super.update(newGovernance);
+        DIRECT_POSTER = INestGovernance(newGovernance).checkAddress("nest.app.directPoster");
+    }
+
     constructor() {
     }
 

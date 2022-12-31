@@ -109,6 +109,7 @@ exports.deploy = async function() {
     await nestGovernance.registerAddress('nest.app.prc', nestProbability.address);
     await nestGovernance.registerAddress('nest.app.cyberink', nestCyberInk.address);
     await nestGovernance.registerAddress('nest.app.directPoster', (await ethers.getSigners())[0].address)
+    await nestGovernance.registerAddress('nest.app.maintains', (await ethers.getSigners())[0].address);
 
     console.log('4. nestVault.update()');
     await nestVault.update(nestGovernance.address);
