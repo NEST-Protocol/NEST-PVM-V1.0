@@ -121,8 +121,17 @@ exports.deploy = async function() {
     // console.log('11. nestMarket.update()');
     // await nestMarket.update(nestGovernance.address);
 
-    const newNestFutures2 = await NestFutures2.deploy({ nonce: 1235 });
-    console.log('newNestFutures2: ' + newNestFutures2.address);
+    //const newNestFutures2 = await NestFutures2.deploy({ nonce: 1235 });
+    //console.log('newNestFutures2: ' + newNestFutures2.address);
+
+    //await nestGovernance.registerAddress('nest.app.directPoster', '0xd9f3aa57576a6da995fb4b7e7272b4f16f04e681');
+    // let dp = await nestGovernance.checkAddress('nest.app.directPoster');
+    // console.log('dp: ' + dp);
+
+    // let mt = await nestGovernance.checkAddress('nest.app.maintains');
+    // console.log('mt: ' + mt);
+
+    // await nestFutures2.update(nestGovernance.address);
 
     console.log('---------- OK ----------');
     

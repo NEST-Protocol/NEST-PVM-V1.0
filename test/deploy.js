@@ -423,7 +423,27 @@ describe('deploy', function() {
 			'0x4a046f54d7385BADFEf6ffebE04e66dA730a833b',
 			'0xAca316C975e5bA0F909CbE4dee4dE3c049cAc933',
 			'0xaAcb96F0aBe180d6FCe1A60Fe2e579Db351899cE',
-			'0x1390f4DB2d80868a45287100De0dc5d2077eF964',			
+			'0x1390f4DB2d80868a45287100De0dc5d2077eF964',
+			'0x95656d549fe00e0e40580fe7fa3d3c4c75400224',
+			'0xec9e93ed7fa50a3424a61737d2fa7c2c79e2ae20',
+			'0xefdd3bb43ecae908ea81dd9b1852e8759310c6ef',
+			'0xc849c1f5c275f774dfc4925cf55823d8fadb93b7',
+			'0x996c84489c7bfe9c02fe94036980aadb34fba1b2',
+			'0xbb1404f7c2062ba5a1487ee425ed80b79819970d',
+			'0x5f8cec07e3a4026f43cdd3661befd7cbe91531a3',
+			'0x1c2920c57cc79c7e1b3dc066a7aa8a99de61ab12',
+			'0x88d2cc1c9fc5ca05bb7c1a82837995676e4f8155',
+			'0x28fd98443ab2e8cbfb0cf7729a8d6ce28fd74b72',
+			'0x73db9ff24fe0b1f4a7f23a919da8c607448eef02',
+			'0xc4eca93f259156d98ff765add39611a193b068e2',
+			'0x1429cecdcf6b85f0f54d6c3a5d136fb54b0ac1a9',
+			'0xa33fc17645307ce41917a8da23e38d2d1f2557b8',
+			'0x8e53219f38ede100b94dbaf04c568f25008cfa23',
+			'0x953c13d733e7d46793738a5767434966acfc4e60',
+			'0xd64e57ad8ba30db1d9a7bd5c5bd0a7f095eb788f',
+			'0x510da1f73de670ea854e4bd956735420c2b3fbb9',
+			'0xba36866cdb81a5794a32183ec6b995db3698c6a4',
+			'0x481a74d43ae3A7BdE38B7fE36E46CF9a6cbb4F39',		
         ];
 
         for (var i = 0; i < whiteList.length; ++i) {
@@ -438,7 +458,7 @@ describe('deploy', function() {
         const merkleTree = new MerkleTree(nodes, keccak256, { sortPairs: true });
 
         //console.log(merkleTree.toString());
-        await nestMarket.setMerkleRoot(merkleTree.getRoot(), { nonce: 64 });
+        await nestMarket.setMerkleRoot(merkleTree.getRoot(), { nonce: 69 });
         //await nestMarket.whiteListBuy(2562821, merkleTree.getHexProof(nodes[2]));
         return;
         // await nest.approve(nestMarket.address, 100000000000000000000000000n);
