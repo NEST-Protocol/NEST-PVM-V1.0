@@ -149,8 +149,8 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
             uint index = length - offset;
             uint end = index > count ? index - count : 0;
             while (index > end) {
-                Order memory order = orders[--index];
-                orderArray[i++] = _toOrderView(order, index);
+                Order memory o = orders[--index];
+                orderArray[i++] = _toOrderView(o, index);
             }
         } 
         // Positive order
@@ -172,12 +172,24 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
     /// @param lever Lever of order
     /// @param orientation true: call, false: put
     /// @param amount Amount of paid NEST, 4 decimals
-    function buy2(uint16 tokenIndex, uint8 lever, bool orientation, uint amount) external payable override {
+    /// @param stopPrice Stop price for trigger sell
+    function buy2(
+        uint16 tokenIndex, 
+        uint8 lever, 
+        bool orientation, 
+        uint amount, 
+        uint stopPrice
+    ) external payable override {
 
-        require(amount >= 50 ether / NEST_UNIT && amount < 0x1000000000000, "NF:nestAmount invalid");
+        require(amount >= 50 ether / NEST_UNIT && amount < 0x1000000000000, "NF:amount invalid");
 
         // 1. Transfer NEST from user
-        TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, NEST_VAULT_ADDRESS, amount * NEST_UNIT);
+        TransferHelper.safeTransferFrom(
+            NEST_TOKEN_ADDRESS, 
+            msg.sender, 
+            NEST_VAULT_ADDRESS, 
+            stopPrice > 0 ? ((amount + amount * 2 / 100) * NEST_UNIT) : (amount * NEST_UNIT)
+        );
 
         // 2. Query oracle price
         // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
@@ -198,8 +210,53 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
             tokenIndex,
             lever,
             orientation,
-            uint48(0)
+            stopPrice > 0 ? _encodeFloat48(stopPrice) : uint48(0)
         ));
+    }
+
+    /// @dev Append buy
+    /// @param index Index of future
+    /// @param amount Amount of paid NEST
+    function add2(uint index, uint amount) public payable override {
+        // require(index != 0, "NF:not exist");
+        require(amount >= 50 ether / NEST_UNIT, "NF:at least 50 NEST");
+
+        // 1. Transfer NEST from user
+        TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, NEST_VAULT_ADDRESS, amount * NEST_UNIT);
+
+        // 1. Load the order
+        Order memory order = _orders[index];
+        require(_accounts[uint(order.owner)] == msg.sender, "NF:not owner");
+        bool orientation = order.orientation;
+
+        // 2. Query oracle price
+        // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
+        // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
+        // When merger, s0 use recorded price, s1 use corrected by k
+        TokenConfig memory tokenConfig = _tokenConfigs[uint(order.tokenIndex)];
+        uint oraclePrice = _queryPrice(amount * NEST_UNIT, tokenConfig, orientation);
+
+        // 3. Merger price
+        uint basePrice = _decodeFloat(order.basePrice);
+        uint balance = uint(order.balance);
+        uint newBalance = balance + amount;
+        require(balance > 0, "NF:order cleared");
+        require(newBalance < 0x1000000000000, "NF:balance to big");
+        uint newPrice = newBalance * oraclePrice * basePrice / (
+            basePrice * amount + (balance << 64) * oraclePrice / _expMiuT(
+                uint(orientation ? tokenConfig.miuLong : tokenConfig.miuShort), 
+                uint(order.baseBlock)
+            )
+        );
+
+        // 4. Update order
+        order.balance = uint48(newBalance);
+        order.basePrice = _encodeFloat(newPrice);
+        order.baseBlock = uint32(block.number);
+        _orders[index] = order;
+
+        // 5. Emit event
+        emit Buy2(index, amount, msg.sender);
     }
 
     /// @dev Sell order
@@ -208,7 +265,8 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
 
         // 1. Load the order
         Order memory order = _orders[index];
-        require(_accounts[uint(order.owner)] == msg.sender, "NF:not owner");
+        address owner = _accounts[uint(order.owner)];
+        require(msg.sender == owner || msg.sender == FUTURES_PROXY_ADDRESS, "NF:not owner");
         bool orientation = order.orientation;
 
         // 2. Query oracle price
@@ -233,10 +291,11 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
             orientation, 
             uint(order.lever)
         );
-        INestVault(NEST_VAULT_ADDRESS).transferTo(msg.sender, value);
+
+        INestVault(NEST_VAULT_ADDRESS).transferTo(owner, value);
 
         // 5. Emit event
-        emit Sell2(index, amount, msg.sender, value);
+        emit Sell2(index, amount, owner, value);
     }
 
     /// @dev Liquidate order
@@ -347,46 +406,6 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
             orientation,
             stopPrice
         ));
-    }
-
-    /// @dev Sell order
-    /// @param index Index of order
-    function proxySell2(uint index) external payable onlyProxy {
-
-        // 1. Load the order
-        Order memory order = _orders[index];
-        require(order.stopPrice > 0, "NF:not stop order");
-        //require(_accounts[uint(order.owner)] == msg.sender, "NF:not owner");
-        bool orientation = order.orientation;
-
-        // 2. Query oracle price
-        // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
-        // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
-        // When merger, s0 use recorded price, s1 use corrected by k
-        TokenConfig memory tokenConfig = _tokenConfigs[uint(order.tokenIndex)];
-        uint oraclePrice = _queryPrice(0, tokenConfig, !orientation);
-
-        // 3. Update account
-        uint amount = uint(order.balance);
-        order.balance = 0;
-        _orders[index] = order;
-
-        // 4. Transfer NEST to user
-        uint value = _balanceOf(
-            tokenConfig,
-            amount * NEST_UNIT, 
-            _decodeFloat(order.basePrice), 
-            uint(order.baseBlock),
-            oraclePrice, 
-            orientation, 
-            uint(order.lever)
-        );
-
-        address owner = _accounts[uint(order.owner)];
-        INestVault(NEST_VAULT_ADDRESS).transferTo(owner, value);
-
-        // 5. Emit event
-        emit Sell2(index, amount, owner, value);
     }
 
     /// @dev Set stop price for stop order

@@ -27,7 +27,7 @@ describe('deploy', function() {
         //await nestCyberInk.release(nestMarket.address, 2560001, 256, 16);
         //await nestCyberInk.release(nestMarket.address, 2560005, 256, 16);
         //await nestCyberInk.release(nestMarket.address, 2560010, 256, 16);
-        
+        return;
         let whiteList = [
 			'0x0010aa8af7c8de6be3100017335003927ef73852',
 			'0x03ecd9a40fe68be41c051bf2ba7d9f5da79483c5',

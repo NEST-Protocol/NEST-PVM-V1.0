@@ -436,8 +436,6 @@ contract NestFutures is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
     /// @return Impact cost
     function impactCost(uint vol) public pure override returns (uint) {
         //impactCost = vol / 10000 / 1000;
-        // TODO:
-        return 0;
         return vol / 10000000;
     }
 

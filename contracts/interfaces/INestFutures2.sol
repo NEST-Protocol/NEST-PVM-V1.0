@@ -94,7 +94,13 @@ interface INestFutures2 {
     /// @param lever Lever of order
     /// @param orientation true: call, false: put
     /// @param amount Amount of paid NEST, 4 decimals
-    function buy2(uint16 tokenIndex, uint8 lever, bool orientation, uint amount) external payable;
+    /// @param stopPrice Stop price for trigger sell
+    function buy2(uint16 tokenIndex, uint8 lever, bool orientation, uint amount, uint stopPrice) external payable;
+
+    /// @dev Append buy
+    /// @param index Index of future
+    /// @param amount Amount of paid NEST
+    function add2(uint index, uint amount) external payable;
 
     /// @dev Sell order
     /// @param index Index of order

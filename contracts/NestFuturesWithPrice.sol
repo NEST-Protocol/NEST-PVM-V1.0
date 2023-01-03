@@ -98,8 +98,8 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
 
     /// @dev Direct post price
     /// @param period Term of validity
-    /// @param equivalents Price array, one to one with pairs
-    function directPost(uint period, uint[3] calldata equivalents) external {
+    // @param equivalents Price array, one to one with pairs
+    function directPost(uint period, uint[3] calldata /*equivalents*/) external {
         require(msg.sender == DIRECT_POSTER, "NFWP:not directPoster");
 
         assembly {
@@ -401,64 +401,65 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
         return _toFutureView(_futures[index], index, msg.sender);
     }
 
-    /// @dev Buy future
-    /// @param tokenAddress Target token address, 0 means eth
-    /// @param lever Lever of future
-    /// @param orientation true: call, false: put
-    /// @param nestAmount Amount of paid NEST
+    // @dev Buy future
+    // @param tokenAddress Target token address, 0 means eth
+    // @param lever Lever of future
+    // @param orientation true: call, false: put
+    // @param nestAmount Amount of paid NEST
     function buy(
-        address tokenAddress,
-        uint lever,
-        bool orientation,
-        uint nestAmount
+        address,// tokenAddress,
+        uint,// lever,
+        bool,// orientation,
+        uint// nestAmount
     ) external payable override {
-        return buyDirect(_futureMapping[_getKey(tokenAddress, lever, orientation)], nestAmount);
+        revert("NF:please use buy2");
+        // return buyDirect(_futureMapping[_getKey(tokenAddress, lever, orientation)], nestAmount);
     }
 
-    /// @dev Buy future direct
-    /// @param index Index of future
-    /// @param nestAmount Amount of paid NEST
-    function buyDirect(uint index, uint nestAmount) public payable override {
+    // @dev Buy future direct
+    // @param index Index of future
+    // @param nestAmount Amount of paid NEST
+    function buyDirect(uint /*index*/, uint /*nestAmount*/) public payable override {
+        revert("NF:please use buy2");
+        // require(index != 0, "NF:not exist");
+        // require(nestAmount >= 50 ether, "NF:at least 50 NEST");
 
-        require(index != 0, "NF:not exist");
-        require(nestAmount >= 50 ether, "NF:at least 50 NEST");
+        // // 1. Transfer NEST from user
+        // //DCU(DCU_TOKEN_ADDRESS).burn(msg.sender, nestAmount);
+        // TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, NEST_VAULT_ADDRESS, nestAmount);
 
-        // 1. Transfer NEST from user
-        //DCU(DCU_TOKEN_ADDRESS).burn(msg.sender, nestAmount);
-        TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, NEST_VAULT_ADDRESS, nestAmount);
-
-        FutureInfo storage fi = _futures[index];
-        bool orientation = fi.orientation;
+        // FutureInfo storage fi = _futures[index];
+        // bool orientation = fi.orientation;
         
-        // 2. Query oracle price
-        // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
-        // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
-        // When merger, s0 use recorded price, s1 use corrected by k
-        TokenConfig memory tokenConfig = _tokenConfigs[uint(fi.tokenIndex)];
-        uint oraclePrice = _queryPrice(nestAmount, tokenConfig, orientation);
+        // // 2. Query oracle price
+        // // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
+        // // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
+        // // When merger, s0 use recorded price, s1 use corrected by k
+        // TokenConfig memory tokenConfig = _tokenConfigs[uint(fi.tokenIndex)];
+        // uint oraclePrice = _queryPrice(nestAmount, tokenConfig, orientation);
 
-        // 3. Merger price
-        Account memory account = fi.accounts[msg.sender];
-        uint basePrice = _decodeFloat(account.basePrice);
-        uint balance = uint(account.balance);
-        uint newPrice = oraclePrice;
-        if (uint(account.baseBlock) > 0) {
-            newPrice = (balance + nestAmount) * oraclePrice * basePrice / (
-                basePrice * nestAmount + (balance << 64) * oraclePrice / _expMiuT(
-                    uint(orientation ? tokenConfig.miuLong : tokenConfig.miuShort), 
-                    uint(account.baseBlock)
-                )
-            );
-        }
+        // // 3. Merger price
+        // Account memory account = fi.accounts[msg.sender];
+        // uint basePrice = _decodeFloat(account.basePrice);
+        // uint balance = uint(account.balance);
+        // uint newPrice = oraclePrice;
+        // if (uint(account.baseBlock) > 0) {
+        //     newPrice = (balance + nestAmount) * oraclePrice * basePrice / (
+        //         basePrice * nestAmount + (balance << 64) * oraclePrice / _expMiuT(
+        //             uint(orientation ? tokenConfig.miuLong : tokenConfig.miuShort), 
+        //             uint(account.baseBlock)
+        //         )
+        //     );
+        // }
         
-        // 4. Update account
-        account.balance = _toUInt128(balance + nestAmount);
-        account.basePrice = _encodeFloat(newPrice);
-        account.baseBlock = uint32(block.number);
-        fi.accounts[msg.sender] = account;
+        // // 4. Update account
+        // account.balance = _toUInt128(balance + nestAmount);
+        // account.basePrice = _encodeFloat(newPrice);
+        // account.baseBlock = uint32(block.number);
+        // fi.accounts[msg.sender] = account;
 
-        // emit Buy event
-        emit Buy(index, nestAmount, msg.sender);
+        // // emit Buy event
+        // emit Buy(index, nestAmount, msg.sender);
     }
 
     /// @dev Sell future
@@ -686,7 +687,7 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
     }
 
     // Calculate e^μT
-    function _expMiuT(uint miu, uint baseBlock) private view returns (uint) {
+    function _expMiuT(uint miu, uint baseBlock) internal view returns (uint) {
         // return _toUInt(ABDKMath64x64.exp(
         //     _toInt128((orientation ? MIU_LONG : MIU_SHORT) * (block.number - baseBlock) * BLOCK_TIME)
         // ));

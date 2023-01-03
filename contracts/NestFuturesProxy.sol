@@ -154,8 +154,8 @@ contract NestFuturesProxy is NestFrequentlyUsed {
             uint index = length - offset;
             uint end = index > count ? index - count : 0;
             while (index > end) {
-                LimitOrder memory order = orders[--index];
-                orderArray[i++] = _toOrderView(order, index);
+                LimitOrder memory o = orders[--index];
+                orderArray[i++] = _toOrderView(o, index);
             }
         } 
         // Positive order
@@ -270,7 +270,7 @@ contract NestFuturesProxy is NestFrequentlyUsed {
             uint index = indices[--i];
             LimitOrder memory order = _limitOrders[index];
             if (uint(order.status) == S_NORMAL) {
-                uint orderIndex = NestFutures2(NEST_FUTURES_ADDRESS).proxyBuy2(
+                NestFutures2(NEST_FUTURES_ADDRESS).proxyBuy2(
                     order.owner, 
                     order.tokenIndex, 
                     order.lever, 
@@ -298,12 +298,7 @@ contract NestFuturesProxy is NestFrequentlyUsed {
     function executeStopOrder(uint[] calldata indices) external onlyMaintains {
         for (uint i = indices.length; i > 0;) {
             uint index = indices[--i];
-            // StopOrder memory order = _stopOrders[index];
-            // if (uint(order.status) == S_NORMAL) {
-            //     order.status == uint8(S_EXECUTED);
-            //     NestFutures2(futures).proxySell2(order.orderIndex);
-            // }
-            NestFutures2(NEST_FUTURES_ADDRESS).proxySell2(index);
+            NestFutures2(NEST_FUTURES_ADDRESS).sell2(index);
         }
     }
 

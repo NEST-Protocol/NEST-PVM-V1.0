@@ -21,6 +21,7 @@ exports.deploy = async function() {
     const NestFutures2 = await ethers.getContractFactory('NestFutures2');
     const NestMarket = await ethers.getContractFactory('NestMarket');
     const NestFuturesProxy = await ethers.getContractFactory('NestFuturesProxy');
+    const NestRedeem = await ethers.getContractFactory('NestRedeem');
 
     console.log('** Deploy: bsc_test@20221231.js **');
     
@@ -41,6 +42,8 @@ exports.deploy = async function() {
     // nestMarket: 0xd435489F3BB3b6004230b67bb122bac22419Fdfd
     // nestFutures2: 0xA2D58989ef9981065f749C217984DB21970fF0b7
     // nestFuturesProxy: 0xd6C4BE39748510BB5b8B2eF0b0aF71B860691bcb
+    // nhbtc: 0xDda3801487a8Bb5ec19dD1E3510b6340BA435863
+    // nestRedeem: 0x6E9c1edACe6Fc03f9666769f09D557b1383f7F57
     // proxyAdmin: 0x43D2c8141E792D391A64F7140E708Ba05962C71A
 
     const dcu = await TestERC20.attach('0x5Df87aE415206707fd52aDa20a5Eac2Ec70e8dbb');
@@ -103,6 +106,15 @@ exports.deploy = async function() {
     //const nestFuturesProxy = await upgrades.deployProxy(NestFuturesProxy, [nestGovernance.address], { initializer: 'initialize' });
     const nestFuturesProxy = await NestFuturesProxy.attach('0xd6C4BE39748510BB5b8B2eF0b0aF71B860691bcb');
     console.log('nestFuturesProxy: ' + nestFuturesProxy.address);
+
+    //const nhbtc = await TestERC20.deploy('NHBTC', 'NHBTC', 18);
+    const nhbtc = await TestERC20.attach('0xDda3801487a8Bb5ec19dD1E3510b6340BA435863');
+    console.log('nhbtc: ' + nhbtc.address);
+    //const nestRedeem = await NestRedeem.deploy(nhbtc.address, nest.address, 500000000000000000n);
+    const nestRedeem = await NestRedeem.attach('0x6E9c1edACe6Fc03f9666769f09D557b1383f7F57');
+    console.log('nestRedeem: ' + nestRedeem.address);
+
+    //await nestRedeem.initialize(nestGovernance.address);
 
     // await nestGovernance.registerAddress('nest.v4.openPrice', nestPriceFacade.address);
     // await nestGovernance.registerAddress('nest.app.vault', nestVault.address);
