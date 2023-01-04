@@ -15,10 +15,14 @@ import "./NestFutures2.sol";
 /// @dev Futures
 contract NestFuturesProxy is NestFrequentlyUsed {
     
+    // Status of limit order: executed
     uint constant S_EXECUTED = 0;
+    // Status of limit order: normal
     uint constant S_NORMAL = 1;
+    // Status of limit order: canceled
     uint constant S_CANCELED = 2;
 
+    // Unit of nest
     uint constant NEST_UNIT = 0.0001 ether;
 
     // Limit order
@@ -78,7 +82,7 @@ contract NestFuturesProxy is NestFrequentlyUsed {
     // Array of limit orders
     LimitOrder[] _limitOrders;
 
-    // TODO:
+    // TODO: Remove and add as constant to NestFrequentlyUsed
     address NEST_FUTURES_ADDRESS;
     address MAINTAINS_ADDRESS;
     /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
@@ -172,26 +176,13 @@ contract NestFuturesProxy is NestFrequentlyUsed {
         }
     }
 
-    // Convert LimitOrder to LimitOrderView
-    function _toOrderView(LimitOrder memory order, uint index) internal pure returns (LimitOrderView memory v) {
-        v = LimitOrderView(
-            uint32(index),
-            order.owner,
-            order.tokenIndex,
-            order.lever,
-            order.orientation,
-            
-            _decodeFloat(uint(order.limitPrice)),
-            _decodeFloat(uint(order.stopPrice)),
-
-            order.balance,
-            order.fee,
-            order.stopFee,
-            order.status
-        );
-    }
-
-    // Create limit order, for everyone
+    /// @dev Create limit order, for everyone
+    /// @param tokenIndex Index of target token, support eth and btc
+    /// @param lever Leverage of this order
+    /// @param orientation Orientation of this order, long or short
+    /// @param amount Amount of buy order
+    /// @param limitPrice Limit price for trigger buy
+    /// @param stopPrice If not 0, will open a stop order
     function newLimitOrder(
         uint16 tokenIndex, 
         uint8 lever, 
@@ -231,39 +222,27 @@ contract NestFuturesProxy is NestFrequentlyUsed {
         );
     }
 
-    // // Create stop order, for everyone
-    // function setStopOrder(uint orderIndex, uint stopPrice) external {
-    //     // TODO: duplicate stop order?
-    //     (address owner, uint balance) = NestFutures2(_nestFutures).setStopPrice(orderIndex, _encodeFloat48(stopPrice));
-    //     require(owner == msg.sender, "NFP:not owner");
-    //     //uint stopFee = balance * 2 / 1000;
-    //     //_stopOrders.push(StopOrder(msg.sender, orderIndex, uint8(S_NORMAL), _encodeFloat(stopPrice), uint48(stopFee)));
-    //     if (balance > 0) {
-    //         TransferHelper.safeTransferFrom(
-    //             NEST_TOKEN_ADDRESS, 
-    //             msg.sender, 
-    //             address(this), 
-    //             balance * 2 / 1000 * NEST_UNIT
-    //         );
-    //     }
-    // }
+    /// @dev Update limitPrice for limit order
+    /// @param index Index of limit order
+    /// @param limitPrice Limit price for trigger buy
+    function updateLimitOrder(uint index, uint limitPrice) external {
+        _limitOrders[index].limitPrice = _encodeFloat(limitPrice);
+    }
 
-    // Cancel limit order, for everyone
+    /// @dev Cancel limit order, for everyone
+    /// @param index Index of limit order
     function cancelLimitOrder(uint index) external {
         LimitOrder memory order = _limitOrders[index];
         require(uint(order.status) == S_NORMAL, "NFP:order can't be canceled");
         uint nestAmount = uint(order.balance) + uint(order.fee) + uint(order.stopFee);
-        // if (order.stopOrderIndex > 0 && order.status == S_WAITING) {
-        //     require(uint(_stopOrders[order.stopOrderIndex].status) == S_WAITING, "NFP:status error");
-        //     _stopOrders[order.stopOrderIndex].status = uint8(S_CANCELED);
-        //     nestAmount += _stopOrders[order.stopOrderIndex].fee;
-        // }
+
         order.status = uint8(S_CANCELED);
         _limitOrders[index] = order;
         TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, msg.sender, nestAmount * NEST_UNIT);
     }
 
-    // Execute limit order, only maintains account
+    /// @dev Execute limit order, only maintains account
+    /// @param indices Array of limit order index
     function executeLimitOrder(uint[] calldata indices) external onlyMaintains {
         uint totalNest = 0;
         for (uint i = indices.length; i > 0;) {
@@ -282,19 +261,14 @@ contract NestFuturesProxy is NestFrequentlyUsed {
 
                 order.status = uint8(S_EXECUTED);
                 _limitOrders[index] = order;
-                
-                // if (order.stopOrderIndex > 0 && order.status == S_WAITING) {
-                //     require(uint(_stopOrders[order.stopOrderIndex].status) == S_WAITING, "NFP:status error");
-                //     _stopOrders[order.stopOrderIndex].orderIndex = uint32(orderIndex);
-                //     _stopOrders[order.stopOrderIndex].status = uint8(S_NORMAL);
-                // }
             }
         }
 
         TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, NEST_VAULT_ADDRESS, totalNest * NEST_UNIT);
     }
 
-    // Execute stop order, only maintains account
+    /// @dev Execute stop order, only maintains account
+    /// @param indices Array of futures order index
     function executeStopOrder(uint[] calldata indices) external onlyMaintains {
         for (uint i = indices.length; i > 0;) {
             uint index = indices[--i];
@@ -302,18 +276,29 @@ contract NestFuturesProxy is NestFrequentlyUsed {
         }
     }
 
+    // Convert LimitOrder to LimitOrderView
+    function _toOrderView(LimitOrder memory order, uint index) internal pure returns (LimitOrderView memory v) {
+        v = LimitOrderView(
+            uint32(index),
+            order.owner,
+            order.tokenIndex,
+            order.lever,
+            order.orientation,
+            
+            _decodeFloat(uint(order.limitPrice)),
+            _decodeFloat(uint(order.stopPrice)),
+
+            order.balance,
+            order.fee,
+            order.stopFee,
+            order.status
+        );
+    }
+
     /// @dev Encode the uint value as a floating-point representation in the form of fraction * 16 ^ exponent
     /// @param value Destination uint value
     /// @return v float format
     function _encodeFloat(uint value) internal pure returns (uint64 v) {
-
-        // uint exponent = 0; 
-        // while (value > 0x3FFFFFFFFFFFFFF) {
-        //     value >>= 4;
-        //     ++exponent;
-        // }
-        // return uint64((value << 6) | exponent);
-
         assembly {
             v := 0
             for { } gt(value, 0x3FFFFFFFFFFFFFF) { v := add(v, 1) } {

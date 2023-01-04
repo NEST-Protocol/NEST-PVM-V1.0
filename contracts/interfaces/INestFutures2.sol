@@ -59,7 +59,7 @@ interface INestFutures2 {
         uint reward
     );
 
-    /// @dev Returns the current value of target address in the specified order
+    /// @dev Returns the current value of target order
     /// @param index Index of order
     /// @param oraclePrice Current price from oracle, usd based, 18 decimals
     function valueOf2(uint index, uint oraclePrice) external view returns (uint);
@@ -83,19 +83,20 @@ interface INestFutures2 {
     /// @param count Return (count) records
     /// @param order Order. 0 reverse order, non-0 positive order
     /// @return orderArray List of orders
-    function list2(
-        uint offset, 
-        uint count, 
-        uint order
-    ) external view returns (OrderView[] memory orderArray);
+    function list2(uint offset, uint count, uint order) external view returns (OrderView[] memory orderArray);
 
-    /// @dev Buy order direct
+    /// @dev Buy futures
     /// @param tokenIndex Index of token
     /// @param lever Lever of order
-    /// @param orientation true: call, false: put
+    /// @param orientation true: long, false: short
     /// @param amount Amount of paid NEST, 4 decimals
-    /// @param stopPrice Stop price for trigger sell
+    /// @param stopPrice Stop price for trigger sell, 0 means not stop order
     function buy2(uint16 tokenIndex, uint8 lever, bool orientation, uint amount, uint stopPrice) external payable;
+
+    /// @dev Set stop price for stop order
+    /// @param index Index of order
+    /// @param stopPrice Stop price for trigger sell
+    function setStopPrice(uint index, uint stopPrice) external;
 
     /// @dev Append buy
     /// @param index Index of future
@@ -109,4 +110,19 @@ interface INestFutures2 {
     /// @dev Liquidate order
     /// @param indices Target order indices
     function liquidate2(uint[] calldata indices) external payable;
+    
+    /// @dev Buy from NestFuturesPRoxy
+    /// @param tokenIndex Index of token
+    /// @param lever Lever of order
+    /// @param orientation true: call, false: put
+    /// @param amount Amount of paid NEST, 4 decimals
+    /// @param stopPrice Stop price for stop order
+    function proxyBuy2(
+        address owner, 
+        uint16 tokenIndex, 
+        uint8 lever, 
+        bool orientation, 
+        uint48 amount,
+        uint48 stopPrice
+    ) external payable;
 }

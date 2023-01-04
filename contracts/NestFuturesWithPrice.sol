@@ -544,8 +544,7 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
                 // 5. Settle logic
                 // lever is great than 1, and balance less than a regular value, can be liquidated
                 // the regular value is: Max(balance * lever * 2%, MIN_VALUE)
-                uint minValue = uint(account.balance) * lever / 50;
-                if (balance < (minValue < MIN_VALUE ? MIN_VALUE : minValue)) {
+                if (balance < MIN_VALUE || balance < uint(account.balance) * lever / 50) {
                     fi.accounts[acc] = Account(uint128(0), uint64(0), uint32(0));
                     reward += balance;
                     emit Settle(index, acc, msg.sender, balance);
