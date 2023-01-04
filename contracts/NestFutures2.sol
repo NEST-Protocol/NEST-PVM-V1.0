@@ -197,7 +197,9 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
             NEST_TOKEN_ADDRESS, 
             msg.sender, 
             NEST_VAULT_ADDRESS, 
-            stopPrice > 0 ? ((amount + amount * 2 / 100) * NEST_UNIT) : (amount * NEST_UNIT)
+            stopPrice > 0 
+                ? (amount * (1 ether + CommonLib.FEE_RATE) / 1 ether + amount * 2 / 100) * NEST_UNIT 
+                : (amount * (1 ether + CommonLib.FEE_RATE) / 1 ether * NEST_UNIT)
         );
 
         // 2. Query oracle price
@@ -207,7 +209,7 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
 
         // TODO: Use fee to instead of k
         TokenConfig memory tokenConfig = _tokenConfigs[tokenIndex];
-        uint oraclePrice = _queryPrice(amount * NEST_UNIT, tokenConfig, orientation);
+        uint oraclePrice = _queryPrice(tokenConfig);
 
         // 3. Emit event
         emit Buy2(_orders.length, amount, msg.sender);
@@ -259,7 +261,12 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
         require(amount >= 50 ether / NEST_UNIT, "NF:at least 50 NEST");
 
         // 1. Transfer NEST from user
-        TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, NEST_VAULT_ADDRESS, amount * NEST_UNIT);
+        TransferHelper.safeTransferFrom(
+            NEST_TOKEN_ADDRESS, 
+            msg.sender, 
+            NEST_VAULT_ADDRESS, 
+            amount * (1 ether + CommonLib.FEE_RATE) / 1 ether * NEST_UNIT
+        );
 
         // 1. Load the order
         Order memory order = _orders[index];
@@ -271,7 +278,7 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
         // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
         // When merger, s0 use recorded price, s1 use corrected by k
         TokenConfig memory tokenConfig = _tokenConfigs[uint(order.tokenIndex)];
-        uint oraclePrice = _queryPrice(amount * NEST_UNIT, tokenConfig, orientation);
+        uint oraclePrice = _queryPrice(tokenConfig);
 
         // 3. Merger price
         uint basePrice = _decodeFloat(order.basePrice);
@@ -310,7 +317,7 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
         // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
         // When merger, s0 use recorded price, s1 use corrected by k
         TokenConfig memory tokenConfig = _tokenConfigs[uint(order.tokenIndex)];
-        uint oraclePrice = _queryPrice(0, tokenConfig, !orientation);
+        uint oraclePrice = _queryPrice(tokenConfig);
 
         // 3. Update account
         uint balance = uint(order.balance);
@@ -333,7 +340,7 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
             orientation, 
             // LEVER
             uint(order.lever)
-        );
+        ) * (1 ether - CommonLib.FEE_RATE) / 1 ether;
 
         INestVault(NEST_VAULT_ADDRESS).transferTo(owner, value);
 
@@ -357,13 +364,10 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
 
             if (oraclePrice == 0) {
                 // 2. Query oracle price
-                // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
-                // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
-                // When merger, s0 use recorded price, s1 use corrected by k
                 tokenIndex = uint(order.tokenIndex);
                 orientation = order.orientation;
                 tokenConfig = _tokenConfigs[tokenIndex];
-                oraclePrice = _queryPrice(0, tokenConfig, !orientation);
+                oraclePrice = _queryPrice(tokenConfig);
                 require(oraclePrice > 0, "NF:price error");
             } else {
                 require(tokenIndex == uint(order.tokenIndex), "NF:tokenIndex error");
@@ -435,15 +439,11 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
         //require(amount >= 50 ether, "NF:at least 50 NEST");
 
         // 1. Transfer NEST from user
-        // TODO: Transfer NEST token
         //TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, NEST_VAULT_ADDRESS, amount);
 
         // 2. Query oracle price
-        // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
-        // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
-        // When merger, s0 use recorded price, s1 use corrected by k
         TokenConfig memory tokenConfig = _tokenConfigs[tokenIndex];
-        uint oraclePrice = _queryPrice(uint(amount) * NEST_UNIT, tokenConfig, orientation);
+        uint oraclePrice = _queryPrice(tokenConfig);
 
         // 3. Emit event
         emit Buy2(_orders.length, uint(amount), owner);

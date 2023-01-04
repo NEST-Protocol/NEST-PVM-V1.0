@@ -8,6 +8,9 @@ library CommonLib {
     // Unit of nest, 4 decimals
     uint constant NEST_UNIT4 = 0.0001 ether;
 
+    // Service fee for buy, sell, add and liquidate
+    uint constant FEE_RATE = 0.002 ether;
+    
     // Fee for limit order
     uint constant LIMIT_ORDER_FEE = 10 ether;
 

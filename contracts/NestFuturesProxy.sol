@@ -3,6 +3,7 @@
 pragma solidity ^0.8.6;
 
 import "./libs/TransferHelper.sol";
+import "./libs/CommonLib.sol";
 
 import "./interfaces/INestFuturesWithPrice.sol";
 import "./interfaces/INestVault.sol";
@@ -40,8 +41,10 @@ contract NestFuturesProxy is NestFrequentlyUsed {
 
         // Balance of nest, 4 decimals
         uint48 balance;
-        // Limit order fee, 4 decimals
+        // Service fee, 4 decimals
         uint48 fee;
+        // Limit order fee, 4 decimals
+        uint48 limitFee;
         // Stop price for trigger sell, encode by _encodeFloat48()
         uint48 stopPrice;
         // Stop order fee, 4 decimals
@@ -71,8 +74,10 @@ contract NestFuturesProxy is NestFrequentlyUsed {
 
         // Balance of nest, 4 decimals
         uint48 balance;
-        // Limit order fee, 4 decimals
+        // Service fee, 4 decimals
         uint48 fee;
+        // Limit order fee, 4 decimals
+        uint48 limitFee;
         // Stop order fee, 4 decimals
         uint48 stopFee;
         // Status of order, 0: executed, 1: normal, 2: canceled
@@ -193,7 +198,8 @@ contract NestFuturesProxy is NestFrequentlyUsed {
     ) external {
         require(amount >= 50 ether / NEST_UNIT && amount < 0x1000000000000, "NF:amount invalid");
         
-        uint fee = amount * 2 / 1000;
+        uint fee = amount * CommonLib.FEE_RATE / 1 ether;
+        uint limitFee = amount * 2 / 1000;
         uint stopFee = 0;
         if (stopPrice > 0) {
             stopFee = amount * 2 / 1000;
@@ -208,6 +214,7 @@ contract NestFuturesProxy is NestFrequentlyUsed {
 
             uint48(amount),
             uint48(fee),
+            uint48(limitFee),
             stopPrice > 0 ? _encodeFloat48(stopPrice) : uint48(0),
             uint48(stopFee),
 
@@ -218,7 +225,7 @@ contract NestFuturesProxy is NestFrequentlyUsed {
             NEST_TOKEN_ADDRESS, 
             msg.sender, 
             address(this), 
-            (amount + fee + stopFee) * NEST_UNIT
+            (amount + fee + limitFee + stopFee) * NEST_UNIT
         );
     }
 
@@ -234,7 +241,7 @@ contract NestFuturesProxy is NestFrequentlyUsed {
     function cancelLimitOrder(uint index) external {
         LimitOrder memory order = _limitOrders[index];
         require(uint(order.status) == S_NORMAL, "NFP:order can't be canceled");
-        uint nestAmount = uint(order.balance) + uint(order.fee) + uint(order.stopFee);
+        uint nestAmount = uint(order.balance) + uint(order.fee) + uint(order.limitFee) + uint(order.stopFee);
 
         order.status = uint8(S_CANCELED);
         _limitOrders[index] = order;
@@ -257,7 +264,7 @@ contract NestFuturesProxy is NestFrequentlyUsed {
                     order.balance,
                     order.stopPrice
                 );
-                totalNest += order.balance;
+                totalNest += uint(order.balance) + uint(order.fee);
 
                 order.status = uint8(S_EXECUTED);
                 _limitOrders[index] = order;
@@ -290,6 +297,7 @@ contract NestFuturesProxy is NestFrequentlyUsed {
 
             order.balance,
             order.fee,
+            order.limitFee,
             order.stopFee,
             order.status
         );

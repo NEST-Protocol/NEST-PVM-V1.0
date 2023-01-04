@@ -3,6 +3,7 @@
 pragma solidity ^0.8.6;
 
 import "./libs/TransferHelper.sol";
+import "./libs/CommonLib.sol";
 
 import "./interfaces/INestFuturesWithPrice.sol";
 import "./interfaces/INestVault.sol";
@@ -425,18 +426,19 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
         // require(nestAmount >= 50 ether, "NF:at least 50 NEST");
 
         // // 1. Transfer NEST from user
-        // //DCU(DCU_TOKEN_ADDRESS).burn(msg.sender, nestAmount);
-        // TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, NEST_VAULT_ADDRESS, nestAmount);
+        // TransferHelper.safeTransferFrom(
+        //     NEST_TOKEN_ADDRESS, 
+        //     msg.sender, 
+        //     NEST_VAULT_ADDRESS, 
+        //     nestAmount * (1 ether + CommonLib.FEE_RATE) / 1 ether
+        // );
 
         // FutureInfo storage fi = _futures[index];
         // bool orientation = fi.orientation;
         
         // // 2. Query oracle price
-        // // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
-        // // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
-        // // When merger, s0 use recorded price, s1 use corrected by k
         // TokenConfig memory tokenConfig = _tokenConfigs[uint(fi.tokenIndex)];
-        // uint oraclePrice = _queryPrice(nestAmount, tokenConfig, orientation);
+        // uint oraclePrice = _queryPrice(tokenConfig);
 
         // // 3. Merger price
         // Account memory account = fi.accounts[msg.sender];
@@ -466,7 +468,6 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
     /// @param index Index of future
     /// @param amount Amount to sell
     function sell(uint index, uint amount) external payable override {
-
         require(index != 0, "NF:not exist");
         
         // 1. Load the future
@@ -474,11 +475,8 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
         bool orientation = fi.orientation;
 
         // 2. Query oracle price
-        // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
-        // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
-        // When merger, s0 use recorded price, s1 use corrected by k
         TokenConfig memory tokenConfig = _tokenConfigs[uint(fi.tokenIndex)];
-        uint oraclePrice = _queryPrice(0, tokenConfig, !orientation);
+        uint oraclePrice = _queryPrice(tokenConfig);
 
         // 3. Update account
         Account memory account = fi.accounts[msg.sender];
@@ -494,8 +492,8 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
             oraclePrice, 
             orientation, 
             uint(fi.lever)
-        );
-        //DCU(DCU_TOKEN_ADDRESS).mint(msg.sender, value);
+        ) * (1 ether - CommonLib.FEE_RATE) / 1 ether;
+
         INestVault(NEST_VAULT_ADDRESS).transferTo(msg.sender, value);
 
         // emit Sell event
@@ -517,11 +515,8 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
         bool orientation = fi.orientation;
             
         // 2. Query oracle price
-        // When call, the base price multiply (1 + k), and the sell price divide (1 + k)
-        // When put, the base price divide (1 + k), and the sell price multiply (1 + k)
-        // When merger, s0 use recorded price, s1 use corrected by k
         TokenConfig memory tokenConfig = _tokenConfigs[uint(fi.tokenIndex)];
-        uint oraclePrice = _queryPrice(0, tokenConfig, !orientation);
+        uint oraclePrice = _queryPrice(tokenConfig);
 
         // 3. Loop and settle
         uint reward = 0;
@@ -571,48 +566,17 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
     }
     
     // Query price
-    function _queryPrice(
-        uint nestAmount, 
-        TokenConfig memory tokenConfig, 
-        bool enlarge
-    ) internal view returns (uint oraclePrice) {
-
+    function _queryPrice(TokenConfig memory tokenConfig) internal view returns (uint oraclePrice) {
         // Query price from oracle
         (uint period, uint height, uint price) = _decodePrice(_prices[_prices.length - 1], uint(tokenConfig.pairIndex));
         require(block.number < height + period, "NFWP:price expired");
-        
-        price = _toUSDTPrice(price);
-
-        // When long, the base price multiply (1 + k), and the sell price divide (1 + k)
-        // When short, the base price divide (1 + k), and the sell price multiply (1 + k)
-        // When merger, s0 use recorded price, s1 use corrected by k
-        if (enlarge) {
-            oraclePrice = price * (1.002 ether + impactCost(nestAmount)) / 1 ether;
-        } else {
-            oraclePrice = price * 1 ether / (1.002 ether + impactCost(nestAmount));
-        }
-    }
-
-    /// @dev Calculate the impact cost
-    /// @param vol Trade amount in NEST
-    /// @return Impact cost
-    function impactCost(uint vol) public pure override returns (uint) {
-        //impactCost = vol / 10000 / 1000;
-        return vol / 10000000;
+        oraclePrice = _toUSDTPrice(price);
     }
 
     /// @dev Encode the uint value as a floating-point representation in the form of fraction * 16 ^ exponent
     /// @param value Destination uint value
     /// @return v float format
     function _encodeFloat(uint value) internal pure returns (uint64 v) {
-
-        // uint exponent = 0; 
-        // while (value > 0x3FFFFFFFFFFFFFF) {
-        //     value >>= 4;
-        //     ++exponent;
-        // }
-        // return uint64((value << 6) | exponent);
-
         assembly {
             v := 0
             for { } gt(value, 0x3FFFFFFFFFFFFFF) { v := add(v, 1) } {

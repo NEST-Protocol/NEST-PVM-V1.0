@@ -151,9 +151,4 @@ interface INestFuturesWithPrice {
     /// @param index Index of future
     /// @param addresses Target addresses
     function settle(uint index, address[] calldata addresses) external payable;
-
-    /// @dev Calculate the impact cost
-    /// @param vol Trade amount in NEST
-    /// @return Impact cost
-    function impactCost(uint vol) external pure returns (uint);
 }
