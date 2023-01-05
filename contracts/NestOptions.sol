@@ -4,6 +4,7 @@ pragma solidity ^0.8.6;
 
 import "./libs/ABDKMath64x64.sol";
 import "./libs/TransferHelper.sol";
+import "./libs/CommonLib.sol";
 
 import "./interfaces/INestOptions.sol";
 import "./interfaces/INestVault.sol";
@@ -564,7 +565,7 @@ contract NestOptions is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
     ) private view returns (uint v) {
 
         // Convert the total time according to the average block out time
-        uint T = (exerciseBlock - block.number) * BLOCK_TIME / 1000;
+        uint T = (exerciseBlock - block.number) * CommonLib.BLOCK_TIME / 1000;
         v = orientation 
             ? _calcVc(tokenConfig, oraclePrice, T, strikePrice) 
             : _calcVp(tokenConfig, oraclePrice, T, strikePrice);

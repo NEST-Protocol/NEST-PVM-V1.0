@@ -31,11 +31,18 @@ contract NestRedeem is NestBase {
         TransferHelper.safeTransfer(NEW_TOKEN, msg.sender, oldTokenAmount * EXCHANGE_RATIO / 1 ether);
     }
 
-    /// @dev Migrate funds from current contract to NestLedger
-    /// The funds of in BuybackPool is offered by DAO, after buyback ended, transfer tokens to DAO
-    function migrate() external onlyGovernance {
-        address to = INestGovernance(_governance).getNestLedgerAddress();
-        TransferHelper.safeTransfer(OLD_TOKEN, to, IERC20(OLD_TOKEN).balanceOf(address(this)));
-        TransferHelper.safeTransfer(NEW_TOKEN, to, IERC20(NEW_TOKEN).balanceOf(address(this)));
+    // /// @dev Migrate funds from current contract to NestLedger
+    // /// The funds of in BuybackPool is offered by DAO, after buyback ended, transfer tokens to DAO
+    // function migrate() external onlyGovernance {
+    //     address to = INestGovernance(_governance).getNestLedgerAddress();
+    //     TransferHelper.safeTransfer(OLD_TOKEN, to, IERC20(OLD_TOKEN).balanceOf(address(this)));
+    //     TransferHelper.safeTransfer(NEW_TOKEN, to, IERC20(NEW_TOKEN).balanceOf(address(this)));
+    // }
+
+    /// @dev Migrate token to NestLedger
+    /// @param tokenAddress Address of target token
+    /// @param value Value of target token
+    function migrate(address tokenAddress, uint value) external onlyGovernance {
+        TransferHelper.safeTransfer(tokenAddress, INestGovernance(_governance).getNestLedgerAddress(), value);
     }
 }

@@ -104,11 +104,11 @@ interface INestFuturesWithPrice {
     /// @return futureArray List of futures
     function list(uint offset, uint count, uint order) external view returns (FutureView[] memory futureArray);
 
-    /// @dev Create future
-    /// @param tokenAddress Target token address, 0 means eth
-    /// @param levers Levers of future
-    /// @param orientation true: call, false: put
-    function create(address tokenAddress, uint[] calldata levers, bool orientation) external;
+    // /// @dev Create future
+    // /// @param tokenAddress Target token address, 0 means eth
+    // /// @param levers Levers of future
+    // /// @param orientation true: call, false: put
+    // function create(address tokenAddress, uint[] calldata levers, bool orientation) external;
 
     /// @dev Obtain the number of futures that have been created
     /// @return Number of futures created

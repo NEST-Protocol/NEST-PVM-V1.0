@@ -23,9 +23,6 @@ contract NestFuturesProxy is NestFrequentlyUsed {
     // Status of limit order: canceled
     uint constant S_CANCELED = 2;
 
-    // Unit of nest
-    uint constant NEST_UNIT = 0.0001 ether;
-
     // Limit order
     struct LimitOrder {
         // Owner of this order
@@ -47,8 +44,6 @@ contract NestFuturesProxy is NestFrequentlyUsed {
         uint48 limitFee;
         // Stop price for trigger sell, encode by _encodeFloat48()
         uint48 stopPrice;
-        // Stop order fee, 4 decimals
-        uint48 stopFee;
 
         // 0: executed, 1: normal, 2: canceled
         uint8 status;
@@ -78,8 +73,6 @@ contract NestFuturesProxy is NestFrequentlyUsed {
         uint48 fee;
         // Limit order fee, 4 decimals
         uint48 limitFee;
-        // Stop order fee, 4 decimals
-        uint48 stopFee;
         // Status of order, 0: executed, 1: normal, 2: canceled
         uint8 status;
     }
@@ -196,27 +189,22 @@ contract NestFuturesProxy is NestFrequentlyUsed {
         uint limitPrice,
         uint stopPrice
     ) external {
-        require(amount >= 50 ether / NEST_UNIT && amount < 0x1000000000000, "NF:amount invalid");
+        require(amount >= 50 ether / CommonLib.NEST_UNIT4 && amount < 0x1000000000000, "NF:amount invalid");
         
-        uint fee = amount * CommonLib.FEE_RATE / 1 ether;
-        uint limitFee = amount * 2 / 1000;
-        uint stopFee = 0;
-        if (stopPrice > 0) {
-            stopFee = amount * 2 / 1000;
-        }
+        // TODO: fee is included 15 nest execute fee
+        uint fee = amount * CommonLib.FEE_RATE * uint(lever) / 1 ether;
 
         _limitOrders.push(LimitOrder(
             msg.sender,
-            _encodeFloat(limitPrice),
+            CommonLib.encodeFloat64(limitPrice),
             tokenIndex,
             lever,
             orientation,
 
             uint48(amount),
             uint48(fee),
-            uint48(limitFee),
-            stopPrice > 0 ? _encodeFloat48(stopPrice) : uint48(0),
-            uint48(stopFee),
+            uint48(CommonLib.EXECUTE_FEE),
+            stopPrice > 0 ? CommonLib.encodeFloat48(stopPrice) : uint48(0),
 
             uint8(S_NORMAL)
         ));
@@ -225,7 +213,7 @@ contract NestFuturesProxy is NestFrequentlyUsed {
             NEST_TOKEN_ADDRESS, 
             msg.sender, 
             address(this), 
-            (amount + fee + limitFee + stopFee) * NEST_UNIT
+            (amount + fee + CommonLib.EXECUTE_FEE) * CommonLib.NEST_UNIT4
         );
     }
 
@@ -233,7 +221,7 @@ contract NestFuturesProxy is NestFrequentlyUsed {
     /// @param index Index of limit order
     /// @param limitPrice Limit price for trigger buy
     function updateLimitOrder(uint index, uint limitPrice) external {
-        _limitOrders[index].limitPrice = _encodeFloat(limitPrice);
+        _limitOrders[index].limitPrice = CommonLib.encodeFloat64(limitPrice);
     }
 
     /// @dev Cancel limit order, for everyone
@@ -241,11 +229,11 @@ contract NestFuturesProxy is NestFrequentlyUsed {
     function cancelLimitOrder(uint index) external {
         LimitOrder memory order = _limitOrders[index];
         require(uint(order.status) == S_NORMAL, "NFP:order can't be canceled");
-        uint nestAmount = uint(order.balance) + uint(order.fee) + uint(order.limitFee) + uint(order.stopFee);
+        uint amount = uint(order.balance) + uint(order.fee) + uint(order.limitFee);
 
         order.status = uint8(S_CANCELED);
         _limitOrders[index] = order;
-        TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, msg.sender, nestAmount * NEST_UNIT);
+        TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, msg.sender, amount * CommonLib.NEST_UNIT4);
     }
 
     /// @dev Execute limit order, only maintains account
@@ -271,7 +259,7 @@ contract NestFuturesProxy is NestFrequentlyUsed {
             }
         }
 
-        TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, NEST_VAULT_ADDRESS, totalNest * NEST_UNIT);
+        TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, NEST_VAULT_ADDRESS, totalNest * CommonLib.NEST_UNIT4);
     }
 
     /// @dev Execute stop order, only maintains account
@@ -279,8 +267,15 @@ contract NestFuturesProxy is NestFrequentlyUsed {
     function executeStopOrder(uint[] calldata indices) external onlyMaintains {
         for (uint i = indices.length; i > 0;) {
             uint index = indices[--i];
-            NestFutures2(NEST_FUTURES_ADDRESS).sell2(index);
+            NestFutures2(NEST_FUTURES_ADDRESS).proxySell2(index);
         }
+    }
+
+    /// @dev Migrate token to NestLedger
+    /// @param tokenAddress Address of target token
+    /// @param value Value of target token
+    function migrate(address tokenAddress, uint value) external onlyGovernance {
+        TransferHelper.safeTransfer(tokenAddress, INestGovernance(_governance).getNestLedgerAddress(), value);
     }
 
     // Convert LimitOrder to LimitOrderView
@@ -292,49 +287,13 @@ contract NestFuturesProxy is NestFrequentlyUsed {
             order.lever,
             order.orientation,
             
-            _decodeFloat(uint(order.limitPrice)),
-            _decodeFloat(uint(order.stopPrice)),
+            CommonLib.decodeFloat(uint(order.limitPrice)),
+            CommonLib.decodeFloat(uint(order.stopPrice)),
 
             order.balance,
             order.fee,
             order.limitFee,
-            order.stopFee,
             order.status
         );
-    }
-
-    /// @dev Encode the uint value as a floating-point representation in the form of fraction * 16 ^ exponent
-    /// @param value Destination uint value
-    /// @return v float format
-    function _encodeFloat(uint value) internal pure returns (uint64 v) {
-        assembly {
-            v := 0
-            for { } gt(value, 0x3FFFFFFFFFFFFFF) { v := add(v, 1) } {
-                value := shr(4, value)
-            }
-
-            v := or(v, shl(6, value))
-        }
-    }
-
-    /// @dev Encode the uint value as a floating-point representation in the form of fraction * 16 ^ exponent
-    /// @param value Destination uint value
-    /// @return v float format
-    function _encodeFloat48(uint value) internal pure returns (uint48 v) {
-        assembly {
-            v := 0
-            for { } gt(value, 0x3FFFFFFFFFF) { v := add(v, 1) } {
-                value := shr(4, value)
-            }
-
-            v := or(v, shl(6, value))
-        }
-    }
-
-    /// @dev Decode the floating-point representation of fraction * 16 ^ exponent to uint
-    /// @param floatValue fraction value
-    /// @return decode format
-    function _decodeFloat(uint floatValue) internal pure returns (uint) {
-        return (floatValue >> 6) << ((floatValue & 0x3F) << 2);
     }
 }

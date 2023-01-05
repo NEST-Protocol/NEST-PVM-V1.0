@@ -208,17 +208,17 @@ exports.deploy = async function() {
     console.log('14. create hbtc short lever');
     await nestFutures.create(hbtc.address, [1, 2, 3, 4, 5], false);
 
-    // 3.5. Register levels for ETH
-    console.log('13. create eth long lever');
-    await nestFuturesWithPrice.create(eth.address, [1, 2, 3, 4, 5], true);
-    console.log('14. create eth short lever');
-    await nestFuturesWithPrice.create(eth.address, [1, 2, 3, 4, 5], false);
+    // // 3.5. Register levels for ETH
+    // console.log('13. create eth long lever');
+    // await nestFuturesWithPrice.create(eth.address, [1, 2, 3, 4, 5], true);
+    // console.log('14. create eth short lever');
+    // await nestFuturesWithPrice.create(eth.address, [1, 2, 3, 4, 5], false);
     
-    // 3.5. Register levels for HBTC
-    console.log('13. create hbtc long lever');
-    await nestFuturesWithPrice.create(hbtc.address, [1, 2, 3, 4, 5], true);
-    console.log('14. create hbtc short lever');
-    await nestFuturesWithPrice.create(hbtc.address, [1, 2, 3, 4, 5], false);
+    // // 3.5. Register levels for HBTC
+    // console.log('13. create hbtc long lever');
+    // await nestFuturesWithPrice.create(hbtc.address, [1, 2, 3, 4, 5], true);
+    // console.log('14. create hbtc short lever');
+    // await nestFuturesWithPrice.create(hbtc.address, [1, 2, 3, 4, 5], false);
 
     await nestVault.approve(nestOptions.address, 100000000000000000000000000n);
     await nestVault.approve(nestFutures.address, 100000000000000000000000000n);

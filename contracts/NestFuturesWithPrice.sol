@@ -55,11 +55,11 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
         uint64 miuShort;
     }
 
-    // Post unit: 2000usd
-    uint constant POST_UNIT = 2000 * USDT_BASE;
+    // // Post unit: 2000usd
+    // uint constant POST_UNIT = 2000 * USDT_BASE;
 
-    // Minimum balance quantity. If the balance is less than this value, it will be liquidated
-    uint constant MIN_VALUE = 10 ether;
+    // // Minimum balance quantity. If the balance is less than this value, it will be liquidated
+    // uint constant MIN_VALUE = 10 ether;
 
     // Mapping from composite key to future index
     mapping(uint=>uint) _futureMapping;
@@ -261,7 +261,7 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
         return _balanceOf(
             _tokenConfigs[fi.tokenIndex],
             uint(account.balance), 
-            _decodeFloat(account.basePrice), 
+            CommonLib.decodeFloat(account.basePrice), 
             uint(account.baseBlock),
             oraclePrice, 
             fi.orientation, 
@@ -346,41 +346,41 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
         }
     }
 
-    /// @dev Create future
-    /// @param tokenAddress Target token address, 0 means eth
-    /// @param levers Levers of future
-    /// @param orientation true: call, false: put
-    function create(address tokenAddress, uint[] calldata levers, bool orientation) external override onlyGovernance {
+    // /// @dev Create future
+    // /// @param tokenAddress Target token address, 0 means eth
+    // /// @param levers Levers of future
+    // /// @param orientation true: call, false: put
+    // function create(address tokenAddress, uint[] calldata levers, bool orientation) external override onlyGovernance {
 
-        // Get registered tokenIndex by tokenAddress
-        // _tokenMapping[tokenAddress] is less than 0x10000, so it can convert to uint16
-        // If tokenAddress not registered, _tokenMapping[tokenAddress] is 0, subtract by 1 will failed
-        // This make sure tokenAddress must registered
-        uint16 tokenIndex = uint16(_tokenMapping[tokenAddress] - 1);
+    //     // Get registered tokenIndex by tokenAddress
+    //     // _tokenMapping[tokenAddress] is less than 0x10000, so it can convert to uint16
+    //     // If tokenAddress not registered, _tokenMapping[tokenAddress] is 0, subtract by 1 will failed
+    //     // This make sure tokenAddress must registered
+    //     uint16 tokenIndex = uint16(_tokenMapping[tokenAddress] - 1);
 
-        // Create futures
-        for (uint i = 0; i < levers.length; ++i) {
-            uint lever = levers[i];
+    //     // Create futures
+    //     for (uint i = 0; i < levers.length; ++i) {
+    //         uint lever = levers[i];
 
-            // Check if the future exists
-            uint key = _getKey(tokenAddress, lever, orientation);
-            uint index = _futureMapping[key];
-            require(index == 0, "NF:exists");
+    //         // Check if the future exists
+    //         uint key = _getKey(tokenAddress, lever, orientation);
+    //         uint index = _futureMapping[key];
+    //         require(index == 0, "NF:exists");
 
-            // Create future
-            index = _futures.length;
-            FutureInfo storage fi = _futures.push();
-            fi.tokenAddress = tokenAddress;
-            fi.lever = uint32(lever);
-            fi.orientation = orientation;
-            fi.tokenIndex = tokenIndex;
+    //         // Create future
+    //         index = _futures.length;
+    //         FutureInfo storage fi = _futures.push();
+    //         fi.tokenAddress = tokenAddress;
+    //         fi.lever = uint32(lever);
+    //         fi.orientation = orientation;
+    //         fi.tokenIndex = tokenIndex;
 
-            _futureMapping[key] = index;
+    //         _futureMapping[key] = index;
 
-            // emit New event
-            emit New(tokenAddress, lever, orientation, index);
-        }
-    }
+    //         // emit New event
+    //         emit New(tokenAddress, lever, orientation, index);
+    //     }
+    // }
 
     /// @dev Obtain the number of futures that have been created
     /// @return Number of futures created
@@ -442,7 +442,7 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
 
         // // 3. Merger price
         // Account memory account = fi.accounts[msg.sender];
-        // uint basePrice = _decodeFloat(account.basePrice);
+        // uint basePrice = CommonLib.decodeFloat(account.basePrice);
         // uint balance = uint(account.balance);
         // uint newPrice = oraclePrice;
         // if (uint(account.baseBlock) > 0) {
@@ -456,7 +456,7 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
         
         // // 4. Update account
         // account.balance = _toUInt128(balance + nestAmount);
-        // account.basePrice = _encodeFloat(newPrice);
+        // account.basePrice = CommonLib.encodeFloat64(newPrice);
         // account.baseBlock = uint32(block.number);
         // fi.accounts[msg.sender] = account;
 
@@ -487,7 +487,7 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
         uint value = _balanceOf(
             tokenConfig,
             amount, 
-            _decodeFloat(account.basePrice), 
+            CommonLib.decodeFloat(account.basePrice), 
             uint(account.baseBlock),
             oraclePrice, 
             orientation, 
@@ -529,7 +529,7 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
                 uint balance = _balanceOf(
                     tokenConfig,
                     uint(account.balance), 
-                    _decodeFloat(account.basePrice), 
+                    CommonLib.decodeFloat(account.basePrice), 
                     uint(account.baseBlock),
                     oraclePrice, 
                     orientation, 
@@ -539,7 +539,7 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
                 // 5. Settle logic
                 // lever is great than 1, and balance less than a regular value, can be liquidated
                 // the regular value is: Max(balance * lever * 2%, MIN_VALUE)
-                if (balance < MIN_VALUE || balance < uint(account.balance) * lever / 50) {
+                if (balance < CommonLib.MIN_FUTURE_VALUE || balance < uint(account.balance) * lever / 50) {
                     fi.accounts[acc] = Account(uint128(0), uint64(0), uint32(0));
                     reward += balance;
                     emit Settle(index, acc, msg.sender, balance);
@@ -570,28 +570,7 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
         // Query price from oracle
         (uint period, uint height, uint price) = _decodePrice(_prices[_prices.length - 1], uint(tokenConfig.pairIndex));
         require(block.number < height + period, "NFWP:price expired");
-        oraclePrice = _toUSDTPrice(price);
-    }
-
-    /// @dev Encode the uint value as a floating-point representation in the form of fraction * 16 ^ exponent
-    /// @param value Destination uint value
-    /// @return v float format
-    function _encodeFloat(uint value) internal pure returns (uint64 v) {
-        assembly {
-            v := 0
-            for { } gt(value, 0x3FFFFFFFFFFFFFF) { v := add(v, 1) } {
-                value := shr(4, value)
-            }
-
-            v := or(v, shl(6, value))
-        }
-    }
-
-    /// @dev Decode the floating-point representation of fraction * 16 ^ exponent to uint
-    /// @param floatValue fraction value
-    /// @return decode format
-    function _decodeFloat(uint64 floatValue) internal pure returns (uint) {
-        return (uint(floatValue) >> 6) << ((uint(floatValue) & 0x3F) << 2);
+        oraclePrice = CommonLib.toUSDTPrice(price);
     }
 
     // Convert uint to uint128
@@ -656,7 +635,7 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
         // ));
 
         // Using approximate algorithm: x*(1+rt)
-        return miu * (block.number - baseBlock) * BLOCK_TIME / 1000 + 0x10000000000000000;
+        return miu * (block.number - baseBlock) * CommonLib.BLOCK_TIME / 1000 + 0x10000000000000000;
     }
 
     // Convert FutureInfo to FutureView
@@ -668,22 +647,17 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
             uint(fi.lever),
             fi.orientation,
             uint(account.balance),
-            _decodeFloat(account.basePrice),
+            CommonLib.decodeFloat(account.basePrice),
             uint(account.baseBlock)
         );
     }
-    
-    // Convert to usdt based price
-    function _toUSDTPrice(uint rawPrice) private pure returns (uint) {
-        return POST_UNIT * 1 ether / rawPrice;
-    }
-    
+
     // Decode composed price
     function _decodePrice(uint rawPrice, uint pairIndex) private pure returns (uint period, uint height, uint price) {
         return (
             rawPrice >> 240,
             (rawPrice >> 192) & 0xFFFFFFFFFFFF,
-            _decodeFloat(uint64(rawPrice >> (pairIndex << 6)))
+            CommonLib.decodeFloat(uint64(rawPrice >> (pairIndex << 6)))
         );
     }
 }

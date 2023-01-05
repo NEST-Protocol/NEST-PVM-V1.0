@@ -3,6 +3,7 @@
 pragma solidity ^0.8.6;
 
 import "./libs/TransferHelper.sol";
+import "./libs/CommonLib.sol";
 
 import "./interfaces/INestFutures.sol";
 import "./interfaces/INestVault.sol";
@@ -462,7 +463,7 @@ contract NestFutures is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
 
         sigmaISQ = sigmaISQ * sigmaISQ / (bn - bn0);
         // sigmaSQ = sigmaSQ * BLOCK_TIME * 1e18 / 1000;
-        sigmaSQ = sigmaSQ * BLOCK_TIME * 1e15;
+        sigmaSQ = sigmaSQ * CommonLib.BLOCK_TIME * 1e15;
         k += _sqrt((sigmaSQ > sigmaISQ ? sigmaSQ : sigmaISQ) * (block.number - bn));
 
         // TODO:
@@ -577,7 +578,7 @@ contract NestFutures is ChainParameter, NestFrequentlyUsed, NestPriceAdapter, IN
         // ));
 
         // Using approximate algorithm: x*(1+rt)
-        return miu * (block.number - baseBlock) * BLOCK_TIME / 1000 + 0x10000000000000000;
+        return miu * (block.number - baseBlock) * CommonLib.BLOCK_TIME / 1000 + 0x10000000000000000;
     }
 
     // Convert FutureInfo to FutureView
