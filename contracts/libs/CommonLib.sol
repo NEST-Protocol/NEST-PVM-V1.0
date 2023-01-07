@@ -52,8 +52,8 @@ library CommonLib {
     // Unit of nest, 4 decimals
     uint constant NEST_UNIT4 = 0.0001 ether;
 
-    // Min amount of buy futures
-    uint constant FUTURES_MIN_NEST = 500000;
+    // Min amount of buy futures, amount >= 50 nest
+    uint constant FUTURES_NEST_LB = 499999;
 
     // Service fee for buy, sell, add and liquidate
     uint constant FEE_RATE = 0.002 ether;

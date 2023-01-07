@@ -50,7 +50,6 @@ describe('36.NestFutures2', function() {
             console.log('1. buy');
             await nestFuturesWithPrice.buy2(0, 5, true, 1000 * NEST_BASE, 0);
             await listAccounts();
-          
         }
 
         if (true) {
@@ -85,7 +84,7 @@ describe('36.NestFutures2', function() {
             await listAccounts();
         }
 
-        if (false) {
+        if (true) {
             console.log('5. sell');
             let receipt = await nestFuturesWithPrice.directPost(200, [
                 toBigInt(1.508461),
