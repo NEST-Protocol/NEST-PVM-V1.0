@@ -27,7 +27,7 @@ contract NestFuturesProxy is NestFrequentlyUsed {
     struct LimitOrder {
         // Owner of this order
         address owner;
-        // Limit price for trigger buy, encode by _encodeFloat()
+        // Limit price for trigger buy, encode by encodeFloat64()
         uint64 limitPrice;
         // Index of target token, support eth and btc
         uint16 tokenIndex;
@@ -42,7 +42,7 @@ contract NestFuturesProxy is NestFrequentlyUsed {
         uint48 fee;
         // Limit order fee, 4 decimals
         uint48 limitFee;
-        // Stop price for trigger sell, encode by _encodeFloat48()
+        // Stop price for trigger sell, encode by encodeFloat48()
         uint48 stopPrice;
 
         // 0: executed, 1: normal, 2: canceled
@@ -191,7 +191,6 @@ contract NestFuturesProxy is NestFrequentlyUsed {
     ) external {
         require(amount >= 50 ether / CommonLib.NEST_UNIT4 && amount < 0x1000000000000, "NF:amount invalid");
         
-        // TODO: fee is included 15 nest execute fee
         uint fee = amount * CommonLib.FEE_RATE * uint(lever) / 1 ether;
 
         _limitOrders.push(LimitOrder(

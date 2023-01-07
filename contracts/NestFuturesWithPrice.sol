@@ -136,14 +136,6 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
             )
         }
         _prices.push(period);
-
-        // _prices.push(
-        //     (period << 240)
-        //     | (block.number << 192) 
-        //     | uint(_encodeFloat(equivalents[2])) << 128
-        //     | uint(_encodeFloat(equivalents[1])) << 64
-        //     | uint(_encodeFloat(equivalents[0]))
-        // );
     }
 
     /// @dev List prices

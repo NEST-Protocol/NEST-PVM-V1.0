@@ -19,7 +19,7 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
     struct Order {
         // Address index of owner
         uint32 owner;
-        // Base price of this order, encoded with _encodeFloat()
+        // Base price of this order, encoded with encodeFloat64()
         uint64 basePrice;
         // Balance of this order, 4 decimals
         uint48 balance;
@@ -296,6 +296,8 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
 
         // 3. Update account
         uint balance = uint(order.balance);
+        uint lever = uint(order.lever);
+        uint basePrice = CommonLib.decodeFloat(uint(order.basePrice));
         order.balance = uint48(0);
         _orders[index] = order;
 
@@ -306,7 +308,7 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
             // balance
             balance * CommonLib.NEST_UNIT4, 
             // basePrice
-            CommonLib.decodeFloat(order.basePrice), 
+            basePrice, 
             // baseBlock
             uint(order.baseBlock),
             // oraclePrice
@@ -314,10 +316,13 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
             // ORIENTATION
             orientation, 
             // LEVER
-            uint(order.lever)
-        ) * (1 ether - CommonLib.FEE_RATE * uint(order.lever)) / 1 ether;
-
-        INestVault(NEST_VAULT_ADDRESS).transferTo(msg.sender, value);
+            lever
+        );
+        
+        uint fee = balance * lever * oraclePrice * CommonLib.FEE_RATE / basePrice / 1 ether * CommonLib.NEST_UNIT4;
+        if (value > fee) {
+            INestVault(NEST_VAULT_ADDRESS).transferTo(msg.sender, value - fee);
+        }
 
         // 5. Emit event
         emit Sell2(index, balance, msg.sender, value);
@@ -353,14 +358,15 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
             uint balance = uint(order.balance) * CommonLib.NEST_UNIT4;
 
             if (lever > 1 && balance > 0) {
-                // 3. Update account
+                // 3. Calculate order value
+                uint basePrice = CommonLib.decodeFloat(order.basePrice);
                 uint value = _balanceOf(
                     // tokenConfig
                     tokenConfig,
                     // balance
                     balance, 
                     // basePrice
-                    CommonLib.decodeFloat(order.basePrice), 
+                    basePrice, 
                     // baseBlock
                     uint(order.baseBlock),
                     // oraclePrice
@@ -373,8 +379,8 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
 
                 // 4. Liquidate logic
                 // lever is great than 1, and balance less than a regular value, can be liquidated
-                // the regular value is: Max(balance * lever * 2%, MIN_VALUE)
-                if (value < CommonLib.MIN_FUTURE_VALUE || value < balance * lever / 50) {
+                // the regular value is: Max(M0 * L * St / S0 * c, a)
+                if (value < CommonLib.MIN_FUTURE_VALUE || value < balance * lever * oraclePrice / basePrice / 50) {
                     // Clear balance
                     order.balance = uint48(0);
                     // Clear baseBlock
@@ -445,6 +451,7 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
 
         // 1. Load the order
         Order memory order = _orders[index];
+        require(order.stopPrice > 0, "NF:not stop order");
         address owner = _accounts[uint(order.owner)];
         bool orientation = order.orientation;
 
@@ -454,6 +461,8 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
 
         // 3. Update account
         uint balance = uint(order.balance);
+        uint lever = uint(order.lever);
+        uint basePrice = CommonLib.decodeFloat(uint(order.basePrice));
         order.balance = uint48(0);
         _orders[index] = order;
 
@@ -464,7 +473,7 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
             // balance
             balance * CommonLib.NEST_UNIT4, 
             // basePrice
-            CommonLib.decodeFloat(order.basePrice), 
+            basePrice, 
             // baseBlock
             uint(order.baseBlock),
             // oraclePrice
@@ -473,17 +482,15 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
             orientation, 
             // LEVER
             uint(order.lever)
-        ) * (1 ether - CommonLib.FEE_RATE * uint(order.lever)) / 1 ether;
+        );
 
-        if (value > CommonLib.EXECUTE_FEE * CommonLib.NEST_UNIT4) {
-            INestVault(NEST_VAULT_ADDRESS).transferTo(owner, value);
-            INestVault(NEST_VAULT_ADDRESS).transferTo(
-                FUTURES_PROXY_ADDRESS, 
-                CommonLib.EXECUTE_FEE * CommonLib.NEST_UNIT4
-            );
-        } else {
-            INestVault(NEST_VAULT_ADDRESS).transferTo(FUTURES_PROXY_ADDRESS, value);
+        // TODO: Optimize code, and improve precision
+        uint fee = balance * lever * oraclePrice * CommonLib.FEE_RATE / basePrice / 1 ether * CommonLib.NEST_UNIT4;
+
+        if (value > fee + CommonLib.EXECUTE_FEE_NEST) {
+            INestVault(NEST_VAULT_ADDRESS).transferTo(owner, value - fee - CommonLib.EXECUTE_FEE_NEST);
         }
+        INestVault(NEST_VAULT_ADDRESS).transferTo(FUTURES_PROXY_ADDRESS, CommonLib.EXECUTE_FEE_NEST);
 
         // 5. Emit event
         emit Sell2(index, balance, owner, value);

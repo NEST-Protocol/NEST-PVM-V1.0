@@ -114,36 +114,11 @@ exports.deploy = async function() {
     const nestRedeem = await NestRedeem.attach('0x6E9c1edACe6Fc03f9666769f09D557b1383f7F57');
     console.log('nestRedeem: ' + nestRedeem.address);
 
-    //await nestRedeem.initialize(nestGovernance.address);
-
-    // await nestGovernance.registerAddress('nest.v4.openPrice', nestPriceFacade.address);
-    // await nestGovernance.registerAddress('nest.app.vault', nestVault.address);
-    // await nestGovernance.registerAddress('nest.app.dcu', dcu.address);
-    // await nestGovernance.registerAddress('nest.app.prc', nestProbability.address);
-    // await nestGovernance.registerAddress('nest.app.cyberink', nestCyberInk.address);
-    //await nestGovernance.registerAddress('nest.app.maintains', '0xd9f3aa57576a6da995fb4b7e7272b4f16f04e681');
-    //await nestGovernance.registerAddress('nest.app.futures', nestFutures2.address);
-    //await nestGovernance.registerAddress('nest.app.futuresProxy', nestFuturesProxy.address);
-
-    // console.log('9. nestCyberInk.update()');
-    // await nestCyberInk.update(nestGovernance.address);
-
-    // console.log('10. nestNFTAuction.update()');
-    // await nestNFTAuction.update(nestGovernance.address);
-    // console.log('11. nestMarket.update()');
-    // await nestMarket.update(nestGovernance.address);
-
-    //const newNestFutures2 = await NestFutures2.deploy({ nonce: 1235 });
+    //const newNestFutures2 = await NestFutures2.deploy();
     //console.log('newNestFutures2: ' + newNestFutures2.address);
 
-    //await nestGovernance.registerAddress('nest.app.directPoster', '0xd9f3aa57576a6da995fb4b7e7272b4f16f04e681');
-    // let dp = await nestGovernance.checkAddress('nest.app.directPoster');
-    // console.log('dp: ' + dp);
-
-    // let mt = await nestGovernance.checkAddress('nest.app.maintains');
-    // console.log('mt: ' + mt);
-
-    // await nestFutures2.update(nestGovernance.address);
+    //const newNestFuturesProxy = await NestFuturesProxy.deploy();
+    //console.log('newNestFuturesProxy: ' + newNestFuturesProxy.address);
 
     console.log('---------- OK ----------');
     

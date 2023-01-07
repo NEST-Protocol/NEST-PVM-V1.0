@@ -61,6 +61,9 @@ library CommonLib {
     // Fee for execute limit order or stop order, 15 nest
     uint constant EXECUTE_FEE = 150000;
 
+    // Fee for execute limit order or stop order in nest values, 18 decimals
+    uint constant EXECUTE_FEE_NEST = EXECUTE_FEE * NEST_UNIT4;
+
     /// @dev Encode the uint value as a floating-point representation in the form of fraction * 16 ^ exponent
     /// @param value Destination uint value
     /// @return v float format

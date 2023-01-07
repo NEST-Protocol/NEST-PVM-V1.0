@@ -44,28 +44,11 @@ module.exports = {
       initialBaseFeePerGas: 1e6,
       timeout: 2000000000
     },
-    ropsten: {
-      url: `https://ropsten.infura.io/v3/${config.infura.key}`,
-      accounts: [config.account.test.key, config.account.test.userA, config.account.test.userB],
-      gas: 6e6,
-      initialBaseFeePerGas: 1e9,
-      timeout: 2000000000
-    },
-    rinkeby: {
-      url: `https://rinkeby.infura.io/v3/${config.infura.key}`,
-      accounts: [config.account.test.key, config.account.test.userA, config.account.test.userB],
-      gas: 5e6,
-      gasPrice: 20e9,
-      timeout: 2000000000
-    },
-    kovan: {
-      url: `https://kovan.infura.io/v3/${config.infura.key}`,
-      accounts: [config.account.test.key, config.account.test.userA, config.account.test.userB],
-      gasPrice:1e9,
-      timeout: 2000000000
-    },
     bsc_test: {
-      url: "http://localhost:50000/bsc_test_getblock/",// "https://bsc.getblock.io/testnet/?api_key=57d2baf4-a7a4-4d1b-af95-5c35653e05ea",
+      url: 
+      'http://localhost:50000/bsc_test_getblock/',
+      //'https://bsc.getblock.io/33a5ac19-a33e-40c9-aa06-33e32c18b459/testnet/',
+      //'https://bsc-testnet.s.chainbase.online/v1/2IACpoXYkHcgiWwSB4l2VmdWizr',
       chainId: 97,
       gasPrice: 10e9,
       gas: 6000000,
