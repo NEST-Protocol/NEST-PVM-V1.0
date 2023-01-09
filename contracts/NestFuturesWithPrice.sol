@@ -180,47 +180,47 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
         }
     }
 
-    /// @dev Find the price at block number
-    /// @param pairIndex index of token in channel 0 on NEST Oracle
-    /// @param height Destination block number
-    /// @return blockNumber The block number of price
-    /// @return price The token price. (1eth equivalent to (price) token)
-    function findPrice(
-        uint pairIndex,
-        uint height
-    ) external view returns (uint blockNumber, uint price) {
+    // /// @dev Find the price at block number
+    // /// @param pairIndex index of token in channel 0 on NEST Oracle
+    // /// @param height Destination block number
+    // /// @return blockNumber The block number of price
+    // /// @return price The token price. (1eth equivalent to (price) token)
+    // function findPrice(
+    //     uint pairIndex,
+    //     uint height
+    // ) external view returns (uint blockNumber, uint price) {
 
-        uint length = _prices.length;
-        uint index = 0;
-        uint sheetHeight;
-        {
-            // If there is no sheet in this channel, length is 0, length - 1 will overflow,
-            uint right = length - 1;
-            uint left = 0;
-            // Find the index use Binary Search
-            while (left < right) {
+    //     uint length = _prices.length;
+    //     uint index = 0;
+    //     uint sheetHeight;
+    //     {
+    //         // If there is no sheet in this channel, length is 0, length - 1 will overflow,
+    //         uint right = length - 1;
+    //         uint left = 0;
+    //         // Find the index use Binary Search
+    //         while (left < right) {
 
-                index = (left + right) >> 1;
-                sheetHeight = (_prices[index] >> 192) & 0xFFFFFFFFFFFF;
-                if (height > sheetHeight) {
-                    left = ++index;
-                } else if (height < sheetHeight) {
-                    // When index = 0, this statement will have an underflow exception, which usually 
-                    // indicates that the effective block height passed during the call is lower than 
-                    // the block height of the first quotation
-                    right = --index;
-                } else {
-                    break;
-                }
-            }
-        }
+    //             index = (left + right) >> 1;
+    //             sheetHeight = (_prices[index] >> 192) & 0xFFFFFFFFFFFF;
+    //             if (height > sheetHeight) {
+    //                 left = ++index;
+    //             } else if (height < sheetHeight) {
+    //                 // When index = 0, this statement will have an underflow exception, which usually 
+    //                 // indicates that the effective block height passed during the call is lower than 
+    //                 // the block height of the first quotation
+    //                 right = --index;
+    //             } else {
+    //                 break;
+    //             }
+    //         }
+    //     }
 
-        while (((_prices[index] >> 192) & 0xFFFFFFFFFFFF) > height) {
-            --index;
-        }
+    //     while (((_prices[index] >> 192) & 0xFFFFFFFFFFFF) > height) {
+    //         --index;
+    //     }
 
-        (,blockNumber, price) = _decodePrice(_prices[index], pairIndex);
-    }
+    //     (,blockNumber, price) = _decodePrice(_prices[index], pairIndex);
+    // }
 
     /// @dev Register token configuration
     /// @param tokenAddress Target token address, 0 means eth
@@ -337,42 +337,6 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
             }
         }
     }
-
-    // /// @dev Create future
-    // /// @param tokenAddress Target token address, 0 means eth
-    // /// @param levers Levers of future
-    // /// @param orientation true: call, false: put
-    // function create(address tokenAddress, uint[] calldata levers, bool orientation) external override onlyGovernance {
-
-    //     // Get registered tokenIndex by tokenAddress
-    //     // _tokenMapping[tokenAddress] is less than 0x10000, so it can convert to uint16
-    //     // If tokenAddress not registered, _tokenMapping[tokenAddress] is 0, subtract by 1 will failed
-    //     // This make sure tokenAddress must registered
-    //     uint16 tokenIndex = uint16(_tokenMapping[tokenAddress] - 1);
-
-    //     // Create futures
-    //     for (uint i = 0; i < levers.length; ++i) {
-    //         uint lever = levers[i];
-
-    //         // Check if the future exists
-    //         uint key = _getKey(tokenAddress, lever, orientation);
-    //         uint index = _futureMapping[key];
-    //         require(index == 0, "NF:exists");
-
-    //         // Create future
-    //         index = _futures.length;
-    //         FutureInfo storage fi = _futures.push();
-    //         fi.tokenAddress = tokenAddress;
-    //         fi.lever = uint32(lever);
-    //         fi.orientation = orientation;
-    //         fi.tokenIndex = tokenIndex;
-
-    //         _futureMapping[key] = index;
-
-    //         // emit New event
-    //         emit New(tokenAddress, lever, orientation, index);
-    //     }
-    // }
 
     /// @dev Obtain the number of futures that have been created
     /// @return Number of futures created
@@ -541,7 +505,6 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
 
         // 6. Transfer NEST to user
         if (reward > 0) {
-            //DCU(DCU_TOKEN_ADDRESS).mint(msg.sender, reward);
             INestVault(NEST_VAULT_ADDRESS).transferTo(msg.sender, reward);
         }
     }

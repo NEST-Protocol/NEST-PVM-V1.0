@@ -5,10 +5,6 @@ pragma solidity ^0.8.6;
 import "./libs/TransferHelper.sol";
 import "./libs/CommonLib.sol";
 
-import "./interfaces/INestFuturesWithPrice.sol";
-import "./interfaces/INestVault.sol";
-import "./interfaces/INestFutures2.sol";
-
 import "./custom/NestFrequentlyUsed.sol";
 
 import "./NestFutures2.sol";
@@ -189,25 +185,40 @@ contract NestFuturesProxy is NestFrequentlyUsed {
         uint limitPrice,
         uint stopPrice
     ) external {
-        require(amount >= 50 ether / CommonLib.NEST_UNIT4 && amount < 0x1000000000000, "NF:amount invalid");
+        // 1. Check arguments
+        require(amount > CommonLib.FUTURES_NEST_LB && amount < 0x1000000000000, "NF:amount invalid");
+        require(lever > 0 && lever < 21, "NF:lever not allowed");
         
+        // 2. Service fee, 4 decimals
         uint fee = amount * CommonLib.FEE_RATE * uint(lever) / 1 ether;
 
+        // 3. Create limit order
         _limitOrders.push(LimitOrder(
+            // owner
             msg.sender,
+            // limitPrice
             CommonLib.encodeFloat64(limitPrice),
+            // tokenIndex
             tokenIndex,
+            // lever
             lever,
+            // orientation
             orientation,
 
+            // balance
             uint48(amount),
+            // fee
             uint48(fee),
+            // limitFee
             uint48(CommonLib.EXECUTE_FEE),
+            // stopPrice
             stopPrice > 0 ? CommonLib.encodeFloat48(stopPrice) : uint48(0),
 
+            // status
             uint8(S_NORMAL)
         ));
 
+        // 4. Transfer nest from user to this contract
         TransferHelper.safeTransferFrom(
             NEST_TOKEN_ADDRESS, 
             msg.sender, 
@@ -228,31 +239,47 @@ contract NestFuturesProxy is NestFrequentlyUsed {
     function cancelLimitOrder(uint index) external {
         LimitOrder memory order = _limitOrders[index];
         require(uint(order.status) == S_NORMAL, "NFP:order can't be canceled");
-        uint amount = uint(order.balance) + uint(order.fee) + uint(order.limitFee);
 
         order.status = uint8(S_CANCELED);
         _limitOrders[index] = order;
-        TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, msg.sender, amount * CommonLib.NEST_UNIT4);
+
+        TransferHelper.safeTransfer(
+            NEST_TOKEN_ADDRESS, 
+            msg.sender, 
+            (uint(order.balance) + uint(order.fee) + uint(order.limitFee)) * CommonLib.NEST_UNIT4
+        );
     }
 
     /// @dev Execute limit order, only maintains account
     /// @param indices Array of limit order index
     function executeLimitOrder(uint[] calldata indices) external onlyMaintains {
         uint totalNest = 0;
+        // Loop and execute limit orders
         for (uint i = indices.length; i > 0;) {
+            // Get order index
             uint index = indices[--i];
+            // Load limit order
             LimitOrder memory order = _limitOrders[index];
+            // Status of limit order must be S_NORMAL
             if (uint(order.status) == S_NORMAL) {
+                // Create futures order by proxy
                 NestFutures2(NEST_FUTURES_ADDRESS).proxyBuy2(
+                    // owner
                     order.owner, 
+                    // tokenIndex
                     order.tokenIndex, 
+                    // lever
                     order.lever, 
+                    // orientation
                     order.orientation, 
+                    // amount
                     order.balance,
+                    // stopPrice
                     order.stopPrice
                 );
-                totalNest += uint(order.balance) + uint(order.fee);
 
+                // Add nest to totalNest
+                totalNest += uint(order.balance) + uint(order.fee);
                 order.status = uint8(S_EXECUTED);
                 _limitOrders[index] = order;
             }
@@ -264,9 +291,9 @@ contract NestFuturesProxy is NestFrequentlyUsed {
     /// @dev Execute stop order, only maintains account
     /// @param indices Array of futures order index
     function executeStopOrder(uint[] calldata indices) external onlyMaintains {
+        // Loop and execute stop orders
         for (uint i = indices.length; i > 0;) {
-            uint index = indices[--i];
-            NestFutures2(NEST_FUTURES_ADDRESS).proxySell2(index);
+            NestFutures2(NEST_FUTURES_ADDRESS).proxySell2(indices[--i]);
         }
     }
 
@@ -280,18 +307,29 @@ contract NestFuturesProxy is NestFrequentlyUsed {
     // Convert LimitOrder to LimitOrderView
     function _toOrderView(LimitOrder memory order, uint index) internal pure returns (LimitOrderView memory v) {
         v = LimitOrderView(
+            // index
             uint32(index),
+            // owner
             order.owner,
+            // tokenIndex
             order.tokenIndex,
+            // lever
             order.lever,
+            // orientation
             order.orientation,
             
+            // limitPrice
             CommonLib.decodeFloat(uint(order.limitPrice)),
+            // stopPrice
             CommonLib.decodeFloat(uint(order.stopPrice)),
 
+            // balance
             order.balance,
+            // fee
             order.fee,
+            // limitFee
             order.limitFee,
+            // status
             order.status
         );
     }

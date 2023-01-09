@@ -85,7 +85,7 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
             // balance
             uint(order.balance) * CommonLib.NEST_UNIT4, 
             // basePrice
-            CommonLib.decodeFloat(order.basePrice), 
+            CommonLib.decodeFloat(uint(order.basePrice)), 
             // baseBlock
             uint(order.baseBlock),
             // oraclePrice
@@ -312,6 +312,7 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
         );
         
         uint fee = balance * CommonLib.NEST_UNIT4 * lever * oraclePrice / basePrice * CommonLib.FEE_RATE / 1 ether;
+        // If value grater than fee, deduct and transfer NEST to owner
         if (value > fee) {
             INestVault(NEST_VAULT_ADDRESS).transferTo(msg.sender, value - fee);
         }
@@ -323,8 +324,6 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
     /// @dev Liquidate order
     /// @param indices Target order indices
     function liquidate2(uint[] calldata indices) external payable override {
-        // TODO: Test liquidate multiply order
-        // TODO: Test liquidate threshold
         uint reward = 0;
         uint oraclePrice = 0;
         uint tokenIndex = 0x10000;
@@ -369,7 +368,8 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
                 // 4. Liquidate logic
                 // lever is great than 1, and balance less than a regular value, can be liquidated
                 // the regular value is: Max(M0 * L * St / S0 * c, a)
-                if (value < CommonLib.MIN_FUTURE_VALUE || value < balance * lever * oraclePrice / basePrice / 50) {
+                if (value < CommonLib.MIN_FUTURE_VALUE || 
+                    value < balance * lever * oraclePrice / basePrice * CommonLib.FEE_RATE / 1 ether) {
                     // Clear balance
                     order.balance = uint48(0);
                     // Clear baseBlock
@@ -469,10 +469,8 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
             uint(order.lever)
         );
 
-        // TODO: Optimize code, and improve precision
         uint fee = balance * CommonLib.NEST_UNIT4 * lever * oraclePrice / basePrice * CommonLib.FEE_RATE / 1 ether;
-
-        // Newest value of order is greater than fee + EXECUTE_FEE, deduct and transfer to owner
+        // Newest value of order is greater than fee + EXECUTE_FEE, deduct and transfer NEST to owner
         if (value > fee + CommonLib.EXECUTE_FEE_NEST) {
             INestVault(NEST_VAULT_ADDRESS).transferTo(owner, value - fee - CommonLib.EXECUTE_FEE_NEST);
         }

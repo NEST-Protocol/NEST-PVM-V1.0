@@ -109,7 +109,7 @@ describe('36.NestFutures2', function() {
             }
         }
 
-        if (true) {
+        if (false) {
             console.log('7. findPrice');
             let p = await nestFuturesWithPrice.findPrice(0, 78);
             console.log(UI(p));
