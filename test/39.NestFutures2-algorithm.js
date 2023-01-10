@@ -49,6 +49,8 @@ describe('39.NestFutures2-algorithm', function() {
             console.log(await nestFutures2.list2(0, 1, 0));
             await nestFutures2.buy2(1, 7, true, 8000 * NEST_BASE, toBigInt(12000));
             await nestFutures2.buy2(0, 7, true, 5000 * NEST_BASE, toBigInt(1200));
+
+            accounts = await listAccounts();
         }
 
         const MIU_LONG = 3.4722222222016014E-09;
@@ -60,13 +62,13 @@ describe('39.NestFutures2-algorithm', function() {
             expect(Math.abs(parseFloat(o.a) - parseFloat(o.b))).to.lt(o.d);
         };
 
-        if (false) {
+        if (true) {
             console.log('2. sell2');
             await nestFutures2.directPost(200, [toBigInt(2000/2000), toBigInt(2000/200), toBigInt(2000/10000)]);
             await nestFutures2.sell2(0);
             
             let newAccounts = await listAccounts();
-            const totalNest = 1000 * (1 + Rt(7, 2000, 1250, 3 * 2)) - 1000 * 7 * 2000 / 1250 * 0.002;
+            const totalNest = 1000 * (1 + Rt(7, 2000, 1250, 3 * 4)) - 1000 * 7 * 2000 / 1250 * 0.002;
 
             FEQ({
                 a: parseFloat(newAccounts.owner.NEST),
@@ -86,7 +88,7 @@ describe('39.NestFutures2-algorithm', function() {
             let newAccounts = await listAccounts();
             const totalNest = 2000 + 2000 * 7 * 0.002;
 
-            console.log(UI(await nestFutures2.list2(0, 1, 0)));
+            console.log(UI(await nestFutures2.list2(0, 1, 1)));
 
             FEQ({
                 a: parseFloat(newAccounts.owner.NEST),
@@ -99,9 +101,9 @@ describe('39.NestFutures2-algorithm', function() {
                 d: 0.000000000001
             });
 
-            const newPrice = (1000 + 2000) * 1250 * 2000 / (1250 * 2000 + 2000 * 1000 / (1 + MIU_LONG * 3 * 2));
+            const newPrice = (1000 + 2000) * 1250 * 2000 / (1250 * 2000 + 2000 * 1000 / (1 + MIU_LONG * 3 * 4));
             FEQ({
-                a: toDecimal((await nestFutures2.list2(0, 1, 0))[0].basePrice),
+                a: toDecimal((await nestFutures2.list2(0, 1, 1))[0].basePrice),
                 b: newPrice,
                 d: 0.00000000001
             });

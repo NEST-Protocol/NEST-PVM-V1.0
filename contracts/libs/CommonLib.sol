@@ -50,7 +50,7 @@ library CommonLib {
     uint constant MIN_FUTURE_VALUE = 10 ether;
 
     // Unit of nest, 4 decimals
-    uint constant NEST_UNIT4 = 0.0001 ether;
+    uint constant NEST_UNIT = 0.0001 ether;
 
     // Min amount of buy futures, amount >= 50 nest
     uint constant FUTURES_NEST_LB = 499999;
@@ -62,32 +62,16 @@ library CommonLib {
     uint constant EXECUTE_FEE = 150000;
 
     // Fee for execute limit order or stop order in nest values, 18 decimals
-    uint constant EXECUTE_FEE_NEST = EXECUTE_FEE * NEST_UNIT4;
+    uint constant EXECUTE_FEE_NEST = EXECUTE_FEE * NEST_UNIT;
 
     /// @dev Encode the uint value as a floating-point representation in the form of fraction * 16 ^ exponent
     /// @param value Destination uint value
     /// @return v float format
-    function encodeFloat64(uint value) internal pure returns (uint64 v) {
+    function encodeFloat56(uint value) internal pure returns (uint56 v) {
         assembly {
-            v := 0
-            for { } gt(value, 0x3FFFFFFFFFFFFFF) { v := add(v, 1) } {
+            for { v := 0 } gt(value, 0x3FFFFFFFFFFFF) { v := add(v, 1) } {
                 value := shr(4, value)
             }
-
-            v := or(v, shl(6, value))
-        }
-    }
-
-    /// @dev Encode the uint value as a floating-point representation in the form of fraction * 16 ^ exponent
-    /// @param value Destination uint value
-    /// @return v float format
-    function encodeFloat48(uint value) internal pure returns (uint48 v) {
-        assembly {
-            v := 0
-            for { } gt(value, 0x3FFFFFFFFFF) { v := add(v, 1) } {
-                value := shr(4, value)
-            }
-
             v := or(v, shl(6, value))
         }
     }

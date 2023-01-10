@@ -8,11 +8,10 @@ import "./libs/CommonLib.sol";
 import "./interfaces/INestFuturesWithPrice.sol";
 import "./interfaces/INestVault.sol";
 
-import "./custom/ChainParameter.sol";
 import "./custom/NestFrequentlyUsed.sol";
 
 /// @dev Futures
-contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuturesWithPrice {
+contract NestFuturesWithPrice is NestFrequentlyUsed, INestFuturesWithPrice {
 
     /// @dev Future information
     struct FutureInfo {
@@ -428,7 +427,7 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
         
         // 1. Load the future
         FutureInfo storage fi = _futures[index];
-        bool orientation = fi.orientation;
+        uint lever = uint(fi.lever);
 
         // 2. Query oracle price
         TokenConfig memory tokenConfig = _tokenConfigs[uint(fi.tokenIndex)];
@@ -436,6 +435,7 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
 
         // 3. Update account
         Account memory account = fi.accounts[msg.sender];
+        uint basePrice = CommonLib.decodeFloat(uint(account.basePrice));
         account.balance -= _toUInt128(amount);
         fi.accounts[msg.sender] = account;
 
@@ -443,14 +443,18 @@ contract NestFuturesWithPrice is ChainParameter, NestFrequentlyUsed, INestFuture
         uint value = _balanceOf(
             tokenConfig,
             amount, 
-            CommonLib.decodeFloat(account.basePrice), 
+            basePrice, 
             uint(account.baseBlock),
             oraclePrice, 
-            orientation, 
-            uint(fi.lever)
-        ) * (1 ether - CommonLib.FEE_RATE) / 1 ether;
+            fi.orientation, 
+            lever
+        );
 
-        INestVault(NEST_VAULT_ADDRESS).transferTo(msg.sender, value);
+        uint fee = amount * lever * oraclePrice / basePrice * CommonLib.FEE_RATE / 1 ether;
+        // If value grater than fee, deduct and transfer NEST to owner
+        if (value > fee) {
+            INestVault(NEST_VAULT_ADDRESS).transferTo(msg.sender, value - fee);
+        } 
 
         // emit Sell event
         emit Sell(index, amount, msg.sender, value);

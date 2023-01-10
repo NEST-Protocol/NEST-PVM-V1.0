@@ -65,7 +65,7 @@ describe('37.NestFuturesProxy', function() {
 
         if (true) {
             console.log('4. execute stop order');
-            await nestFuturesProxy.executeStopOrder([0]);
+            await nestFuturesWithPrice.executeStopOrder([0]);
             await listAccounts();
         }
 
@@ -84,7 +84,7 @@ describe('37.NestFuturesProxy', function() {
 
         if (true) {
             console.log('7. execute stop order');
-            await nestFuturesProxy.executeStopOrder([1]);
+            await nestFuturesWithPrice.executeStopOrder([1]);
             await listAccounts();
         }
 

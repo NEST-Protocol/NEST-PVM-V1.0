@@ -123,6 +123,10 @@ interface INestFutures2 {
         uint8 lever, 
         bool orientation, 
         uint48 amount,
-        uint48 stopPrice
+        uint56 stopPrice
     ) external payable;
+
+    /// @dev Execute stop order, only for maintains account
+    /// @param indices Array of futures order index
+    function executeStopOrder(uint[] calldata indices) external payable;
 }

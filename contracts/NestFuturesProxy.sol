@@ -5,11 +5,11 @@ pragma solidity ^0.8.6;
 import "./libs/TransferHelper.sol";
 import "./libs/CommonLib.sol";
 
+import "./interfaces/INestFutures2.sol";
+
 import "./custom/NestFrequentlyUsed.sol";
 
-import "./NestFutures2.sol";
-
-/// @dev Futures
+/// @dev Futures proxy
 contract NestFuturesProxy is NestFrequentlyUsed {
     
     // Status of limit order: executed
@@ -23,8 +23,8 @@ contract NestFuturesProxy is NestFrequentlyUsed {
     struct LimitOrder {
         // Owner of this order
         address owner;
-        // Limit price for trigger buy, encode by encodeFloat64()
-        uint64 limitPrice;
+        // Limit price for trigger buy, encode by encodeFloat56()
+        uint56 limitPrice;
         // Index of target token, support eth and btc
         uint16 tokenIndex;
         // Leverage of this order
@@ -38,8 +38,8 @@ contract NestFuturesProxy is NestFrequentlyUsed {
         uint48 fee;
         // Limit order fee, 4 decimals
         uint48 limitFee;
-        // Stop price for trigger sell, encode by encodeFloat48()
-        uint48 stopPrice;
+        // Stop price for trigger sell, encode by encodeFloat56()
+        uint56 stopPrice;
 
         // 0: executed, 1: normal, 2: canceled
         uint8 status;
@@ -197,7 +197,7 @@ contract NestFuturesProxy is NestFrequentlyUsed {
             // owner
             msg.sender,
             // limitPrice
-            CommonLib.encodeFloat64(limitPrice),
+            CommonLib.encodeFloat56(limitPrice),
             // tokenIndex
             tokenIndex,
             // lever
@@ -212,7 +212,7 @@ contract NestFuturesProxy is NestFrequentlyUsed {
             // limitFee
             uint48(CommonLib.EXECUTE_FEE),
             // stopPrice
-            stopPrice > 0 ? CommonLib.encodeFloat48(stopPrice) : uint48(0),
+            stopPrice > 0 ? CommonLib.encodeFloat56(stopPrice) : uint56(0),
 
             // status
             uint8(S_NORMAL)
@@ -223,7 +223,7 @@ contract NestFuturesProxy is NestFrequentlyUsed {
             NEST_TOKEN_ADDRESS, 
             msg.sender, 
             address(this), 
-            (amount + fee + CommonLib.EXECUTE_FEE) * CommonLib.NEST_UNIT4
+            (amount + fee + CommonLib.EXECUTE_FEE) * CommonLib.NEST_UNIT
         );
     }
 
@@ -231,7 +231,7 @@ contract NestFuturesProxy is NestFrequentlyUsed {
     /// @param index Index of limit order
     /// @param limitPrice Limit price for trigger buy
     function updateLimitOrder(uint index, uint limitPrice) external {
-        _limitOrders[index].limitPrice = CommonLib.encodeFloat64(limitPrice);
+        _limitOrders[index].limitPrice = CommonLib.encodeFloat56(limitPrice);
     }
 
     /// @dev Cancel limit order, for everyone
@@ -246,7 +246,7 @@ contract NestFuturesProxy is NestFrequentlyUsed {
         TransferHelper.safeTransfer(
             NEST_TOKEN_ADDRESS, 
             msg.sender, 
-            (uint(order.balance) + uint(order.fee) + uint(order.limitFee)) * CommonLib.NEST_UNIT4
+            (uint(order.balance) + uint(order.fee) + uint(order.limitFee)) * CommonLib.NEST_UNIT
         );
     }
 
@@ -263,7 +263,7 @@ contract NestFuturesProxy is NestFrequentlyUsed {
             // Status of limit order must be S_NORMAL
             if (uint(order.status) == S_NORMAL) {
                 // Create futures order by proxy
-                NestFutures2(NEST_FUTURES_ADDRESS).proxyBuy2(
+                INestFutures2(NEST_FUTURES_ADDRESS).proxyBuy2(
                     // owner
                     order.owner, 
                     // tokenIndex
@@ -285,17 +285,18 @@ contract NestFuturesProxy is NestFrequentlyUsed {
             }
         }
 
-        TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, NEST_VAULT_ADDRESS, totalNest * CommonLib.NEST_UNIT4);
+        TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, NEST_VAULT_ADDRESS, totalNest * CommonLib.NEST_UNIT);
     }
 
-    /// @dev Execute stop order, only maintains account
-    /// @param indices Array of futures order index
-    function executeStopOrder(uint[] calldata indices) external onlyMaintains {
-        // Loop and execute stop orders
-        for (uint i = indices.length; i > 0;) {
-            NestFutures2(NEST_FUTURES_ADDRESS).proxySell2(indices[--i]);
-        }
-    }
+    // /// @dev Execute stop order, only maintains account
+    // /// @param indices Array of futures order index
+    // function executeStopOrder(uint[] calldata indices) external onlyMaintains {
+    //     // Loop and execute stop orders
+    //     // for (uint i = indices.length; i > 0;) {
+    //     //     NestFutures2(NEST_FUTURES_ADDRESS).proxySell2(indices[--i]);
+    //     // }
+    //     NestFutures2(NEST_FUTURES_ADDRESS).proxySell2(indices);
+    // }
 
     /// @dev Migrate token to NestLedger
     /// @param tokenAddress Address of target token
