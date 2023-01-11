@@ -231,6 +231,7 @@ contract NestFuturesProxy is NestFrequentlyUsed {
     /// @param index Index of limit order
     /// @param limitPrice Limit price for trigger buy
     function updateLimitOrder(uint index, uint limitPrice) external {
+        require(msg.sender == _limitOrders[index].owner, "NFP:not owner");
         _limitOrders[index].limitPrice = CommonLib.encodeFloat56(limitPrice);
     }
 
@@ -238,7 +239,8 @@ contract NestFuturesProxy is NestFrequentlyUsed {
     /// @param index Index of limit order
     function cancelLimitOrder(uint index) external {
         LimitOrder memory order = _limitOrders[index];
-        require(uint(order.status) == S_NORMAL, "NFP:order can't be canceled");
+        require(msg.sender == order.owner, "NFP:not owner");
+        require(uint(order.status) == S_NORMAL, "NFP:order status error");
 
         order.status = uint8(S_CANCELED);
         _limitOrders[index] = order;
@@ -287,16 +289,6 @@ contract NestFuturesProxy is NestFrequentlyUsed {
 
         TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, NEST_VAULT_ADDRESS, totalNest * CommonLib.NEST_UNIT);
     }
-
-    // /// @dev Execute stop order, only maintains account
-    // /// @param indices Array of futures order index
-    // function executeStopOrder(uint[] calldata indices) external onlyMaintains {
-    //     // Loop and execute stop orders
-    //     // for (uint i = indices.length; i > 0;) {
-    //     //     NestFutures2(NEST_FUTURES_ADDRESS).proxySell2(indices[--i]);
-    //     // }
-    //     NestFutures2(NEST_FUTURES_ADDRESS).proxySell2(indices);
-    // }
 
     /// @dev Migrate token to NestLedger
     /// @param tokenAddress Address of target token
