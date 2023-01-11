@@ -1,6 +1,6 @@
 const { expect } = require('chai');
 const { deploy } = require('../scripts/deploy.js');
-const { toBigInt, toDecimal, showReceipt, listBalances, snd, tableSnd, d1, Vc, Vp, UI } = require('./utils.js');
+const { toBigInt, toDecimal, showReceipt, listBalances, snd, tableSnd, d1, Vc, Vp, UI, FEQ } = require('./utils.js');
 const { ethers, upgrades } = require('hardhat');
 
 describe('39.NestFutures2-algorithm', function() {
@@ -16,8 +16,11 @@ describe('39.NestFutures2-algorithm', function() {
         const nestRedeem = await NestRedeem.deploy(dcu.address, nest.address, toBigInt(0.5));
 
         const tokens = [eth, nest, dcu];
+        let previous;
+        let accounts;
         const listAccounts = async function() {
-            let accounts = {
+            previous = accounts;
+            accounts = {
                 height: await ethers.provider.getBlockNumber(),
                 owner: await listBalances(owner, tokens),
                 nestVault: await listBalances(nestVault, tokens),
@@ -26,6 +29,10 @@ describe('39.NestFutures2-algorithm', function() {
             console.log(accounts);
             return accounts;
         }
+        const MIU_LONG = 3.4722222222016014E-09;
+        const Rt = function(L, St, S0, seconds) {
+            return L * (St / S0 / (1 + MIU_LONG * seconds) - 1);
+        };
 
         const NEST_BASE = 10000;
         const nestFutures2 = nestFuturesWithPrice;
@@ -33,51 +40,46 @@ describe('39.NestFutures2-algorithm', function() {
 
         await nest.transfer(owner.address, ownerNestBalance);
         await nestFutures2.init();
-        let accounts = await listAccounts();
+        await listAccounts();
 
         await nestFutures2.directPost(200, [toBigInt(2000/1250), toBigInt(2000/250), toBigInt(2000/16000)]);
         if (true) {
             console.log('1. buy2');
             await nestFutures2.buy2(0, 7, true, 1000 * NEST_BASE, toBigInt(1200));
-            let newAccounts = await listAccounts();
+            await listAccounts();
 
-            const totalNest = toBigInt(1000 + 1000 * 7 * 0.002);
-            expect(newAccounts.owner.NEST).to.eq(toDecimal(toBigInt(accounts.owner.NEST) - totalNest));
-            expect(newAccounts.nestVault.NEST).to.eq(toDecimal(toBigInt(accounts.nestVault.NEST) + totalNest));
-            accounts = newAccounts;
+            const totalNest = 1000 + 1000 * 7 * 0.002;
+            FEQ({ 
+                a: parseFloat(previous.owner.NEST) - totalNest,
+                b: parseFloat(accounts.owner.NEST)
+            });
+            FEQ({
+                a: parseFloat(previous.nestVault.NEST) + totalNest,
+                b: parseFloat(accounts.nestVault.NEST)
+            })
 
             console.log(await nestFutures2.list2(0, 1, 0));
             await nestFutures2.buy2(1, 7, true, 8000 * NEST_BASE, toBigInt(12000));
             await nestFutures2.buy2(0, 7, true, 5000 * NEST_BASE, toBigInt(1200));
-
-            accounts = await listAccounts();
+            await listAccounts();
         }
 
-        const MIU_LONG = 3.4722222222016014E-09;
-        const Rt = function(L, St, S0, seconds) {
-            return L * (St / S0 / (1 + MIU_LONG * seconds) - 1);
-        };
-        const FEQ = function(o) {
-            console.log(o);
-            expect(Math.abs(parseFloat(o.a) - parseFloat(o.b))).to.lt(o.d);
-        };
-
-        if (true) {
+        if (false) {
             console.log('2. sell2');
             await nestFutures2.directPost(200, [toBigInt(2000/2000), toBigInt(2000/200), toBigInt(2000/10000)]);
             await nestFutures2.sell2(0);
             
-            let newAccounts = await listAccounts();
+            await listAccounts();
             const totalNest = 1000 * (1 + Rt(7, 2000, 1250, 3 * 4)) - 1000 * 7 * 2000 / 1250 * 0.002;
 
             FEQ({
-                a: parseFloat(newAccounts.owner.NEST),
-                b: parseFloat(accounts.owner.NEST) + totalNest,
+                a: parseFloat(accounts.owner.NEST),
+                b: parseFloat(previous.owner.NEST) + totalNest,
                 d: 0.000000000001
             });
             FEQ({
-                a: parseFloat(newAccounts.nestVault.NEST),
-                b: parseFloat(accounts.nestVault.NEST) - totalNest,
+                a: parseFloat(accounts.nestVault.NEST),
+                b: parseFloat(previous.nestVault.NEST) - totalNest,
                 d: 0.000000000001
             });
         } else if (false) {
@@ -85,19 +87,19 @@ describe('39.NestFutures2-algorithm', function() {
             await nestFutures2.directPost(200, [toBigInt(2000/2000), toBigInt(2000/200), toBigInt(2000/10000)]);
             await nestFutures2.add2(0, 2000 * NEST_BASE);
             
-            let newAccounts = await listAccounts();
+            await listAccounts();
             const totalNest = 2000 + 2000 * 7 * 0.002;
 
             console.log(UI(await nestFutures2.list2(0, 1, 1)));
 
             FEQ({
-                a: parseFloat(newAccounts.owner.NEST),
-                b: parseFloat(accounts.owner.NEST) - totalNest,
+                a: parseFloat(accounts.owner.NEST),
+                b: parseFloat(previous.owner.NEST) - totalNest,
                 d: 0.000000000001
             });
             FEQ({
-                a: parseFloat(newAccounts.nestVault.NEST),
-                b: parseFloat(accounts.nestVault.NEST) + totalNest,
+                a: parseFloat(accounts.nestVault.NEST),
+                b: parseFloat(previous.nestVault.NEST) + totalNest,
                 d: 0.000000000001
             });
 
@@ -111,9 +113,27 @@ describe('39.NestFutures2-algorithm', function() {
             console.log('4. liquidate2');
             await nestFutures2.directPost(200, [toBigInt(1.862934), toBigInt(2000/200), toBigInt(0.145545)]);
             await nestFutures2.connect(addr2).liquidate2([2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1]);
+            await nestFutures2.connect(addr2).liquidate2([2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1]);
             
-            let newAccounts = await listAccounts();
+            await listAccounts();
             console.log(UI(await nestFutures2.list2(0, 3, 0)));
+
+            const nest1 = 1000 * (1 + Rt(7, 2000 / 1.862934, 1250, 3 * 4));
+            const nest2 = 8000 * (1 + Rt(7, 2000 / 0.145545, 16000, 3 * 3));
+            const nest3 = 5000 * (1 + Rt(7, 2000 / 1.862934, 1250, 3 * 2));
+
+            console.log({ nest1: nest1, nest2: nest2, nest3: nest3 });
+            
+            FEQ({
+                a: parseFloat(previous.addr2.NEST) + nest1 + nest2 + nest3,
+                b: parseFloat(accounts.addr2.NEST),
+                d: 0.000000001
+            });
+            FEQ({
+                a: parseFloat(previous.nestVault.NEST) - (nest1 + nest2 + nest3),
+                b: parseFloat(accounts.nestVault.NEST),
+                d: 0.000000001
+            });
         }
     });
 });

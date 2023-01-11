@@ -1,6 +1,6 @@
 const { expect } = require('chai');
 const { deploy } = require('../scripts/deploy.js');
-const { toBigInt, toDecimal, showReceipt, listBalances, snd, tableSnd, d1, Vc, Vp, UI } = require('./utils.js');
+const { toBigInt, toDecimal, showReceipt, listBalances, snd, tableSnd, d1, Vc, Vp, UI, FEQ } = require('./utils.js');
 const { ethers, upgrades } = require('hardhat');
 
 describe('36.NestFutures2', function() {
@@ -16,8 +16,11 @@ describe('36.NestFutures2', function() {
         const nestRedeem = await NestRedeem.deploy(dcu.address, nest.address, toBigInt(0.5));
 
         const tokens = [eth, nest, dcu];
+        let accounts;
+        let previous;
         const listAccounts = async function() {
-            let accounts = {
+            previous = accounts;
+            accounts = {
                 height: await ethers.provider.getBlockNumber(),
                 owner: await listBalances(owner, tokens),
                 nestVault: await listBalances(nestVault, tokens),
@@ -25,9 +28,12 @@ describe('36.NestFutures2', function() {
             };
             console.log(accounts);
             return accounts;
-        }
+        };
+        const MIU_LONG = 3.4722222222016014E-09;
+        const Rt = function(L, St, S0, seconds) {
+            return L * (St / S0 / (1 + MIU_LONG * seconds) - 1);
+        };
 
-        await listAccounts();
         await nest.transfer(owner.address, 100000000000000000000000000n);
         await nestFuturesWithPrice.init();
 
@@ -44,12 +50,23 @@ describe('36.NestFutures2', function() {
                 toBigInt(2000 / 20000)
             ]);
         }
+        await listAccounts();
 
         const NEST_BASE = 10000;
         if (true) {
             console.log('1. buy');
             await nestFuturesWithPrice.buy2(0, 5, true, 1000 * NEST_BASE, 0);
             await listAccounts();
+            
+            const totalNest = (1000 + 1000 * 5 * 0.002);
+            FEQ({
+                a: parseFloat(previous.owner.NEST) - totalNest,
+                b: parseFloat(accounts.owner.NEST),
+            });
+            FEQ({
+                a: parseFloat(previous.nestVault.NEST) + totalNest,
+                b: parseFloat(accounts.nestVault.NEST)
+            })
         }
 
         if (true) {
@@ -63,6 +80,16 @@ describe('36.NestFutures2', function() {
             await nestFuturesWithPrice.add2(0, 1000 * NEST_BASE);
             //await nestFuturesWithPrice.sell2(0);
             await listAccounts();
+
+            const totalNest = 1000 + 1000 * 5 * 0.002;
+            FEQ({
+                a: parseFloat(previous.owner.NEST) - totalNest,
+                b: parseFloat(accounts.owner.NEST) 
+            });
+            FEQ({
+                a: parseFloat(previous.nestVault.NEST) + totalNest,
+                b: parseFloat(accounts.nestVault.NEST)
+            });
         }
 
         if (true) {
@@ -82,6 +109,16 @@ describe('36.NestFutures2', function() {
             console.log('4. buy');
             await nestFuturesWithPrice.buy2(0, 5, true, 1000 * NEST_BASE, 0);
             await listAccounts();
+
+            const totalNest = 1000 + 1000 * 5 * 0.002;
+            FEQ({
+                a: parseFloat(previous.owner.NEST) - totalNest,
+                b: parseFloat(accounts.owner.NEST)
+            });
+            FEQ({
+                a: parseFloat(previous.nestVault.NEST) + totalNest,
+                b: parseFloat(accounts.nestVault.NEST)
+            });
         }
 
         if (true) {
@@ -93,7 +130,20 @@ describe('36.NestFutures2', function() {
             ]);
             await showReceipt(receipt);
             await nestFuturesWithPrice.sell2(1);
+            await nestFuturesWithPrice.sell2(1);
             await listAccounts();
+
+            const totalNest = 1000 * (1 + Rt(5, 2000 / 1.508461, 2000 / 1.508461, 3 * 2));
+            const totalFee = 1000 * 5 * (2000 / 1.508461) / (2000 / 1.508461) * 0.002;
+
+            FEQ({
+                a: parseFloat(previous.owner.NEST) + totalNest - totalFee,
+                b: parseFloat(accounts.owner.NEST)
+            });
+            FEQ({
+                a: parseFloat(previous.nestVault.NEST) - (totalNest - totalFee),
+                b: parseFloat(accounts.nestVault.NEST)
+            });
         }
 
         if (true) {
