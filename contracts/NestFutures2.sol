@@ -343,7 +343,7 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
                     tokenIndex = uint(order.tokenIndex);
                     tokenConfig = _tokenConfigs[tokenIndex];
                     oraclePrice = _queryPrice(tokenConfig);
-                    require(oraclePrice > 0, "NF:price error");
+                    //require(oraclePrice > 0, "NF:price error");
                 }
 
                 // 3. Calculate order value
@@ -456,7 +456,7 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
                     tokenIndex = uint(order.tokenIndex);
                     tokenConfig = _tokenConfigs[tokenIndex];
                     oraclePrice = _queryPrice(tokenConfig);
-                    require(oraclePrice > 0, "NF:price error");
+                    //require(oraclePrice > 0, "NF:price error");
                 }
 
                 uint lever = uint(order.lever);

@@ -290,11 +290,10 @@ contract NestFuturesProxy is NestFrequentlyUsed {
         TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, NEST_VAULT_ADDRESS, totalNest * CommonLib.NEST_UNIT);
     }
 
-    /// @dev Migrate token to NestLedger
-    /// @param tokenAddress Address of target token
-    /// @param value Value of target token
-    function migrate(address tokenAddress, uint value) external onlyGovernance {
-        TransferHelper.safeTransfer(tokenAddress, INestGovernance(_governance).getNestLedgerAddress(), value);
+    /// @dev Settle execute fee to MAINTAINS_ADDRESS
+    /// @param value Value of total execute fee
+    function settleExecuteFee(uint value) external onlyGovernance {
+        TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, MAINTAINS_ADDRESS, value);
     }
 
     // Convert LimitOrder to LimitOrderView
