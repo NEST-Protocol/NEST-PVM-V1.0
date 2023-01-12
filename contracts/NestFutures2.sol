@@ -32,9 +32,6 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
         uint56 stopPrice;
     }
 
-    // TODO: place holder
-    uint[3] _placeHolder;
-
     // Array of orders
     Order[] _orders;
 
@@ -44,17 +41,9 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
     // Registered accounts
     address[] _accounts;
 
-    // TODO:
-    address FUTURES_PROXY_ADDRESS;
-    address MAINTAINS_ADDRESS;
-    /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
-    ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
-    /// @param newGovernance INestGovernance implementation contract address
-    function update(address newGovernance) public virtual override {
-        super.update(newGovernance);
-        FUTURES_PROXY_ADDRESS = INestGovernance(newGovernance).checkAddress("nest.app.futuresProxy");
-        MAINTAINS_ADDRESS = INestGovernance(newGovernance).checkAddress("nest.app.maintains");
-    }
+    // TODO: Update FUTURES_PROXY_ADDRESS
+    address constant FUTURES_PROXY_ADDRESS = address(0);
+    address constant MAINTAINS_ADDRESS = 0x029972C516c4F248c5B066DA07DbAC955bbb5E7F;
 
     constructor() {
     }
@@ -370,12 +359,20 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
                 // the regular value is: Max(M0 * L * St / S0 * c, a)
                 if (value < CommonLib.MIN_FUTURE_VALUE || 
                     value < balance * lever * oraclePrice / basePrice * CommonLib.FEE_RATE / 1 ether) {
+
+                    // Clear all data of order, use this code next time
+                    // assembly {
+                    //     mstore(0, _orders.slot)
+                    //     sstore(add(keccak256(0, 0x20), index), 0)
+                    // }
+                    
                     // Clear balance
                     order.balance = uint48(0);
                     // Clear baseBlock
                     order.baseBlock = uint32(0);
                     // Update order
                     _orders[index] = order;
+
                     // Add reward
                     reward += value;
 

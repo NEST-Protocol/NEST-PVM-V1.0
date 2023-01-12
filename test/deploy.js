@@ -16,7 +16,7 @@ describe('deploy', function() {
             nestPRCSwap,
 
             nestCyberInk, nestNFTAuction,
-            nestFuturesWithPrice, nestMarket,
+            nestFutures2, nestMarket, nestFuturesProxy,
 
             nestGovernance,
             nestOptions, nestFutures,
@@ -24,7 +24,6 @@ describe('deploy', function() {
         } = await deploy();
 
 		console.log('ok');
-		
 		return;
 		
         let whiteList = [

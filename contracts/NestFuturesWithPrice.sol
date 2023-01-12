@@ -54,12 +54,6 @@ contract NestFuturesWithPrice is NestFrequentlyUsed, INestFuturesWithPrice {
         uint64 miuShort;
     }
 
-    // // Post unit: 2000usd
-    // uint constant POST_UNIT = 2000 * USDT_BASE;
-
-    // // Minimum balance quantity. If the balance is less than this value, it will be liquidated
-    // uint constant MIN_VALUE = 10 ether;
-
     // Mapping from composite key to future index
     mapping(uint=>uint) _futureMapping;
 
@@ -74,17 +68,6 @@ contract NestFuturesWithPrice is NestFrequentlyUsed, INestFuturesWithPrice {
 
     // price array, period(16)|height(48)|price3(64)|price2(64)|price1(64)
     uint[] _prices;
-
-    // TODO:
-    // Direct poster
-    address DIRECT_POSTER;
-    /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
-    ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
-    /// @param newGovernance INestGovernance implementation contract address
-    function update(address newGovernance) public virtual override {
-        super.update(newGovernance);
-        DIRECT_POSTER = INestGovernance(newGovernance).checkAddress("nest.app.directPoster");
-    }
 
     constructor() {
     }

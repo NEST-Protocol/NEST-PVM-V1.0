@@ -76,17 +76,8 @@ contract NestFuturesProxy is NestFrequentlyUsed {
     // Array of limit orders
     LimitOrder[] _limitOrders;
 
-    // TODO: Remove and add as constant to NestFrequentlyUsed
-    address NEST_FUTURES_ADDRESS;
-    address MAINTAINS_ADDRESS;
-    /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
-    ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
-    /// @param newGovernance INestGovernance implementation contract address
-    function update(address newGovernance) public virtual override {
-        super.update(newGovernance);
-        NEST_FUTURES_ADDRESS = INestGovernance(newGovernance).checkAddress("nest.app.futures");
-        MAINTAINS_ADDRESS = INestGovernance(newGovernance).checkAddress("nest.app.maintains");
-    }
+    address constant NEST_FUTURES_ADDRESS = 0x8e32C33814271bD64D5138bE9d47Cd55025074CD;
+    address constant MAINTAINS_ADDRESS = 0x029972C516c4F248c5B066DA07DbAC955bbb5E7F;
 
     modifier onlyMaintains {
         require(msg.sender == MAINTAINS_ADDRESS, "NFP:not maintains");
