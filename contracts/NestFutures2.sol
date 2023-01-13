@@ -41,8 +41,7 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
     // Registered accounts
     address[] _accounts;
 
-    // TODO: Update FUTURES_PROXY_ADDRESS
-    address constant FUTURES_PROXY_ADDRESS = address(0);
+    address constant FUTURES_PROXY_ADDRESS = 0x8b2A11F6C5cEbB00793dCE502a9B08741eDBcb96;
     address constant MAINTAINS_ADDRESS = 0x029972C516c4F248c5B066DA07DbAC955bbb5E7F;
 
     constructor() {

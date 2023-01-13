@@ -39,6 +39,7 @@ exports.deploy = async function() {
     // nestFutures: 0x8e32C33814271bD64D5138bE9d47Cd55025074CD
     // nestProbability: 0xCA52f25f37d213CeD3dDE81a539e64464dEa8f3C
     // nestBuybackPool: 0x8AA36CF9CD7e88b63F32c53C66BFaDd409367B2f
+    // nestFuturesProxy: 0x8b2A11F6C5cEbB00793dCE502a9B08741eDBcb96
     // proxyAdmin: 0x42557CAc22ED9933b5E91c8a285167586153A0EB
 
     //const nestVault = await NestVault.deploy(); //await upgrades.deployProxy(NestVault, [nestGovernance.address], { initializer: 'initialize' });
@@ -87,17 +88,15 @@ exports.deploy = async function() {
     // Resolve all TODO task
 
     // 1. Deploy nestFuturesProxy with proxy
-    // TODO: Make sure nestFuturesProxy.NEST_FUTURES_ADDRESS set
-    // TODO: Make sure nestFuturesProxy.MAINTAINS_ADDRESS set (Ask for wll)
-    const nestFuturesProxy = await upgrades.deployProxy(NestFuturesProxy, [nestGovernance.address], { initializer: 'initialize' });
-    //const nestFuturesProxy = await NestFuturesProxy.attach('0x0000000000000000000000000000000000000000');
-    console.log('nestFuturesProxy' + nestFuturesProxy.address);
+    //const nestFuturesProxy = await upgrades.deployProxy(NestFuturesProxy, [nestGovernance.address], { initializer: 'initialize' });
+    const nestFuturesProxy = await NestFuturesProxy.attach('0x8b2A11F6C5cEbB00793dCE502a9B08741eDBcb96');
+    console.log('nestFuturesProxy: ' + nestFuturesProxy.address);
 
     // 2. Deploy nestFutures2
     // TODO: Make sure nestFutures2.FUTURES_PROXY_ADDRESS set (After nestFuturesProxy deployed)
     // TODO: Make sure nestFutures2.MAINTAINS_ADDRESS set (Ask for wll)
-    return;
-    const newNestFutures2 = await NestFutures2.deploy();
+    // const newNestFutures2 = await NestFutures2.deploy();
+    // console.log('newNestFutures2: ' + newNestFutures2.address);
 
     // 3. Verify code on bscscan
 
