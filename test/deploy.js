@@ -24,6 +24,60 @@ describe('deploy', function() {
         } = await deploy();
 
 		console.log('ok');
+
+		if (false) {
+			const list = await nestFuturesProxy.list(0, 20, 0);
+			//console.log(UI(list));
+			
+			let totalBalance = 0;
+			let totalFee = 0;
+			let totalLimitFee = 0;
+			let totalEarned = 0;
+			for (var i = 0; i < list.length; ++i) {
+				const order = list[i];
+				if (order.owner != '0x0000000000000000000000000000000000000000') {
+					const status = parseInt(order.status);
+					const balance = parseFloat(order.balance) / 10000;
+					const fee = parseFloat(order.fee) / 10000;
+					const limitFee = parseFloat(order.limitFee) / 10000;
+					if (status == 0) {
+						totalEarned += limitFee;
+					} else if (status == 1) {
+						totalBalance += balance;
+						totalFee += fee;
+						totalLimitFee += limitFee;
+					} else if (status == 2) {
+
+					} else {
+						console.log('error');
+					}
+				} else {
+					console.log('empty: ' + i);
+				}
+			}
+
+			console.log({
+				totalBalance: totalBalance,
+				totalFee: totalFee,
+				totalLimitFee: totalLimitFee,
+				totalEarned: totalEarned,
+				total: totalBalance + totalFee + totalLimitFee + totalEarned
+			});
+		}
+
+		if (true) {
+			const list = await nestFutures2.list2(0, 200, 0);
+			//console.log(UI(list));
+			for (var i = 0; i < list.length; ++i) {
+				var order = list[i];
+				var owner = order.owner;
+				
+				var baseBlock = parseInt(order.baseBlock);
+				if (baseBlock > 0 && owner != '0x0000000000000000000000000000000000000000') {
+					console.log(UI(order));
+				}
+			}
+		}
 		return;
 		
         let whiteList = [

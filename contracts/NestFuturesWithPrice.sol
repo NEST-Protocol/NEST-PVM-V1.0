@@ -72,12 +72,13 @@ contract NestFuturesWithPrice is NestFrequentlyUsed, INestFuturesWithPrice {
     constructor() {
     }
 
-    // /// @dev To support open-zeppelin/upgrades
-    // /// @param governance INestGovernance implementation contract address
-    // function initialize(address governance) public override {
-    //     super.initialize(governance);
-    //     _futures.push();
-    // }
+    // TODO: Can remove if there is an exists proxy contract
+    /// @dev To support open-zeppelin/upgrades
+    /// @param governance INestGovernance implementation contract address
+    function initialize(address governance) public override {
+        super.initialize(governance);
+        _futures.push();
+    }
 
     /// @dev Direct post price
     /// @param period Term of validity

@@ -73,7 +73,7 @@ exports.deploy = async function() {
     console.log('nestOptions: ' + nestOptions.address);
 
     //const nestFutures = await upgrades.deployProxy(NestFutures, [nestGovernance.address], { initializer: 'initialize' });
-    const nestFutures = await NestFutures.attach('0x8e32C33814271bD64D5138bE9d47Cd55025074CD');
+    const nestFutures = await NestFutures2.attach('0x8e32C33814271bD64D5138bE9d47Cd55025074CD');
     console.log('nestFutures: ' + nestFutures.address);
 
     //const nestProbability = await upgrades.deployProxy(NestProbability, [nestGovernance.address], { initializer: 'initialize' });
@@ -125,6 +125,8 @@ exports.deploy = async function() {
         nestProbability: nestProbability,
         nestPriceFacade: nestPriceFacade,
         nestBuybackPool: nestBuybackPool,
+        nestFutures2: nestFutures,
+        nestFuturesProxy: nestFuturesProxy,
 
         BLOCK_TIME: BLOCK_TIME,
         USDT_DECIMALS: 18,
