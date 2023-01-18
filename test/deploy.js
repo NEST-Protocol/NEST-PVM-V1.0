@@ -24,60 +24,7 @@ describe('deploy', function() {
         } = await deploy();
 
 		console.log('ok');
-
-		if (false) {
-			const list = await nestFuturesProxy.list(0, 20, 0);
-			//console.log(UI(list));
-			
-			let totalBalance = 0;
-			let totalFee = 0;
-			let totalLimitFee = 0;
-			let totalEarned = 0;
-			for (var i = 0; i < list.length; ++i) {
-				const order = list[i];
-				if (order.owner != '0x0000000000000000000000000000000000000000') {
-					const status = parseInt(order.status);
-					const balance = parseFloat(order.balance) / 10000;
-					const fee = parseFloat(order.fee) / 10000;
-					const limitFee = parseFloat(order.limitFee) / 10000;
-					if (status == 0) {
-						totalEarned += limitFee;
-					} else if (status == 1) {
-						totalBalance += balance;
-						totalFee += fee;
-						totalLimitFee += limitFee;
-					} else if (status == 2) {
-
-					} else {
-						console.log('error');
-					}
-				} else {
-					console.log('empty: ' + i);
-				}
-			}
-
-			console.log({
-				totalBalance: totalBalance,
-				totalFee: totalFee,
-				totalLimitFee: totalLimitFee,
-				totalEarned: totalEarned,
-				total: totalBalance + totalFee + totalLimitFee + totalEarned
-			});
-		}
-
-		if (true) {
-			const list = await nestFutures2.list2(0, 200, 0);
-			//console.log(UI(list));
-			for (var i = 0; i < list.length; ++i) {
-				var order = list[i];
-				var owner = order.owner;
-				
-				var baseBlock = parseInt(order.baseBlock);
-				if (baseBlock > 0 && owner != '0x0000000000000000000000000000000000000000') {
-					console.log(UI(order));
-				}
-			}
-		}
+		
 		return;
 		
         let whiteList = [
@@ -551,7 +498,9 @@ describe('deploy', function() {
 			'0xfe2482eddaaf851bd98c15ce0dbbc097f34c48bf',
 			'0xfe52554a3c63659eab9b83f8cc86f2ec212103ef',
 			'0xff017d9cd92b57af4cd3d801739f72fe519cbbda',
-			'0xff6b9a7cb1ffd16d09e020fa72f5cda79dc5651c',				
+			'0xff6b9a7cb1ffd16d09e020fa72f5cda79dc5651c',
+			'0x31443FA74CA82b23e7C1dedc359E0753BFB80075',
+			'0x39cDB03AfD08F6C21cD0A2b013bE86578a862de3',						
         ];
 
         for (var i = 0; i < whiteList.length; ++i) {
@@ -560,14 +509,14 @@ describe('deploy', function() {
                     console.log('i = %d, j = %d', i, j);
                 }
             }
-        }
-
+		}
+		
         const nodes = whiteList.map(addr=>keccak256(addr));
         const merkleTree = new MerkleTree(nodes, keccak256, { sortPairs: true });
 
         //console.log(merkleTree.toString());
         //await nestMarket.whiteListBuy(2562821, merkleTree.getHexProof(nodes[2]));
-        await nestMarket.setMerkleRoot(merkleTree.getRoot(), { nonce: 70 });
+        await nestMarket.setMerkleRoot(merkleTree.getRoot(), { nonce: 76 });
 		return;
 		
         // 概率        抽奖nft起始编号（16进制）                          首发nft起始编号（16进制）
