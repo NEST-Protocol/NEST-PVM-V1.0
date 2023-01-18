@@ -56,7 +56,7 @@ contract NestMultiSign {
 
     // Only member is allowed
     modifier onlyMember(uint i, uint j) {
-        _checkMember(i, j);
+        require(_members[i][j] == msg.sender, "NMS:member not found");
         _;
     }
 
@@ -65,12 +65,6 @@ contract NestMultiSign {
     constructor(address[N][M] memory members) {
         // TODO: check repeat
         _members = members;
-    }
-
-    // TODO: Only for test
-    function modifyAddress(uint i, uint j, address newAddress) external /* onlyMember(i, j) */ {
-        // TODO: check repeat
-        _members[i][j] = newAddress;
     }
 
     /// @dev Get member at given position
@@ -241,11 +235,6 @@ contract NestMultiSign {
             transaction.value,
             signArray
         );
-    }
-
-    // Check if sender is member
-    function _checkMember(uint i, uint j) internal view {
-        require(_members[i][j] == msg.sender, "NMS:member not found");
     }
 
     // Support eth

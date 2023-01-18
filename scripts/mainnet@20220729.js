@@ -135,7 +135,7 @@ exports.deploy = async function() {
 
     // await nestVault.approve(nestOptions.address, 10000000000000000000000000n);
     // await nestVault.approve(nestFutures.address, 10000000000000000000000000n);
-    await nestVault.approve(nestProbability.address, 500000000000000000000000n);
+    // await nestVault.approve(nestProbability.address, 500000000000000000000000n);
 
     console.log('---------- OK ----------');
     
