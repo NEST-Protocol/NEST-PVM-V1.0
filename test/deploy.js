@@ -24,9 +24,8 @@ describe('deploy', function() {
         } = await deploy();
 
 		console.log('ok');
-		
 		return;
-		
+				
         let whiteList = [
 			'0x2a69bb61416b9eb9582a96eaa63b758c6458a820',
 			'0xaf35441f1d852f7d20928c70ca8d387eb416aca4',
@@ -500,7 +499,10 @@ describe('deploy', function() {
 			'0xff017d9cd92b57af4cd3d801739f72fe519cbbda',
 			'0xff6b9a7cb1ffd16d09e020fa72f5cda79dc5651c',
 			'0x31443FA74CA82b23e7C1dedc359E0753BFB80075',
-			'0x39cDB03AfD08F6C21cD0A2b013bE86578a862de3',						
+			'0x39cDB03AfD08F6C21cD0A2b013bE86578a862de3',
+			'0xaB2BD702F802E72D7f6B2D821a3afb4934d8C42c',
+			'0x4D506b22658702A935D1DAF79BabF3aacfe24141',
+			'0x344CcCfe380A166Cc1d260A9db94047f72Ff118e'					
         ];
 
         for (var i = 0; i < whiteList.length; ++i) {
@@ -515,8 +517,8 @@ describe('deploy', function() {
         const merkleTree = new MerkleTree(nodes, keccak256, { sortPairs: true });
 
         //console.log(merkleTree.toString());
-        //await nestMarket.whiteListBuy(2562821, merkleTree.getHexProof(nodes[2]));
-        await nestMarket.setMerkleRoot(merkleTree.getRoot(), { nonce: 76 });
+		//await nestMarket.whiteListBuy(2562821, merkleTree.getHexProof(nodes[2]));
+        await nestMarket.setMerkleRoot(merkleTree.getRoot(), { nonce: 77 });
 		return;
 		
         // 概率        抽奖nft起始编号（16进制）                          首发nft起始编号（16进制）
