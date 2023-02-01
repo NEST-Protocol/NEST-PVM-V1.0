@@ -10,8 +10,8 @@ import "./interfaces/INestFuturesWithPrice.sol";
 
 import "./custom/NestFrequentlyUsed.sol";
 
-/// @dev NestPVM implementation
-contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
+/// @dev NestCraft implementation
+contract NestCraft is NestFrequentlyUsed, INestPVMFunction {
 
     // TODO: Support variables: dT, blockNumber, timestamp
     // TODO: When the actual value of the order is lower than a value, it can be liquidated?
@@ -83,9 +83,14 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
     PVMOrder[] _orders;
 
     // TODO: Only for test
-    address _nestFutures;
-    function setNestFutures(address nestFutures) external onlyGovernance {
-        _nestFutures = nestFutures;
+    address NEST_FUTURES_ADDRESS;
+
+    /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
+    ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
+    /// @param newGovernance INestGovernance implementation contract address
+    function update(address newGovernance) public virtual override {
+        super.update(newGovernance);
+        NEST_FUTURES_ADDRESS = INestGovernance(newGovernance).checkAddress("nest.app.futures");
     }
 
     function registerTokenConfig(TokenConfig calldata tokenConfig) external onlyGovernance {
@@ -208,7 +213,7 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
     function calculate(bytes memory abiArgs) external view override returns (int) {
         uint v = abi.decode(abiArgs, (uint));
         uint pairIndex = (v & 0xFF) - 0x30;
-        uint[] memory prices = INestFuturesWithPrice(_nestFutures).listPrice(pairIndex, 0, 1, 0);
+        uint[] memory prices = INestFuturesWithPrice(NEST_FUTURES_ADDRESS).listPrice(pairIndex, 0, 1, 0);
         return int(prices[2]);
     }
 
@@ -286,7 +291,7 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
     function op(int pairIndex) public view returns (int) {
         uint pi = uint(pairIndex) / DECIMALS;
         require(pi < 3, "PVM:pairIndex must < 3");
-        return int(INestFuturesWithPrice(_nestFutures).listPrice(pi, 0, 1, 0)[2]);
+        return int(INestFuturesWithPrice(NEST_FUTURES_ADDRESS).listPrice(pi, 0, 1, 0)[2]);
     }
 
     /// @dev Calculate oracle average price
@@ -298,7 +303,7 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
             uint pi = uint(pairIndex) / DECIMALS;
             uint n = uint(count) / DECIMALS;
             require(pi < 3, "PVM:pairIndex must < 3");
-            uint[] memory prices = INestFuturesWithPrice(_nestFutures).listPrice(pi, 0, n, 0);
+            uint[] memory prices = INestFuturesWithPrice(NEST_FUTURES_ADDRESS).listPrice(pi, 0, n, 0);
             uint total = 0;
             for (uint i = 0; i < n; ++i) {
                 require(prices[i * 3 + 1] > 0, "PVM:no such price");

@@ -16,7 +16,7 @@ describe('38.NestMultiSign2', function() {
 
         const { 
             eth, usdt, hbtc, nest, dcu, nestOptions, nestFutures, nestLPGuarantee, nestProbability, nestCyberInk,
-            nestNFTAuction, nestFuturesWithPrice, nestGovernance, nestPVM,
+            nestNFTAuction, nestFuturesWithPrice, nestGovernance, nestCraft,
             nestPriceFacade, nestBuybackPool, BLOCK_TIME, USDT_DECIMALS
         } = await deploy();
 
@@ -33,7 +33,7 @@ describe('38.NestMultiSign2', function() {
         }
 
         await nest.transfer(owner.address, 100000000000000000000000000n);
-        await nest.approve(nestPVM.address, 100000000000000000000000000n);
+        await nest.approve(nestCraft.address, 100000000000000000000000000n);
 
         let receipt = await nestFuturesWithPrice.directPost(200, [
             toBigInt(1.508461),

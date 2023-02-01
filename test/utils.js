@@ -1,4 +1,6 @@
 
+const { expect } = require('chai');
+
 exports.toBigInt = function(val, decimals) {
     decimals = decimals || 18;
     val = parseFloat(val.toString());

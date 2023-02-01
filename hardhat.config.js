@@ -66,8 +66,9 @@ module.exports = {
     },
     bsc_test: {
       url: 
+      'http://localhost:50000/bsc_test_getblock/',
       //"https://api-test.element.market/api/bsc/jsonrpc",
-      "https://bsc-testnet.s.chainbase.online/v1/2I7dQsT5I6FnYwx3YrJc80tN45U",
+      //"https://bsc-testnet.s.chainbase.online/v1/2I7dQsT5I6FnYwx3YrJc80tN45U",
       //"https://bsc-dataseed1.defibit.io/",
       //"https://bsc-dataseed1.defibit.io/",
       //"https://bsc.getblock.io/33a5ac19-a33e-40c9-aa06-33e32c18b459/testnet/",

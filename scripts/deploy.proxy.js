@@ -20,7 +20,7 @@ exports.deploy = async function() {
     const NestNFTAuction = await ethers.getContractFactory('NestNFTAuction');
     const NestFuturesWithPrice = await ethers.getContractFactory('NestFuturesWithPrice');
     const NestMarket = await ethers.getContractFactory('NestMarket');
-    const NestPVM = await ethers.getContractFactory('NestPVM');
+    const NestCraft = await ethers.getContractFactory('NestCraft');
 
     console.log('** Deploy: deploy.proxy.js **');
     
@@ -84,9 +84,9 @@ exports.deploy = async function() {
     //const nestMarket = await NestMarket.attach('0x0000000000000000000000000000000000000000');
     console.log('nestMarket: ' + nestMarket.address);
 
-    const nestPVM = await upgrades.deployProxy(NestPVM, [nestGovernance.address], { initializer: 'initialize' });
-    //const nestPVM = await NestPVM.attach('0x0000000000000000000000000000000000000000');
-    console.log('nestPVM: ' + nestPVM.address);
+    const nestCraft = await upgrades.deployProxy(NestCraft, [nestGovernance.address], { initializer: 'initialize' });
+    //const nestCraft = await NestCraft.attach('0x0000000000000000000000000000000000000000');
+    console.log('nestCraft: ' + nestCraft.address);
 
     console.log('2. nestGovernance.setBuiltinAddress()');
     await nestGovernance.setBuiltinAddress(
@@ -107,6 +107,7 @@ exports.deploy = async function() {
     await nestGovernance.registerAddress('nest.app.prc', nestProbability.address);
     await nestGovernance.registerAddress('nest.app.cyberink', nestCyberInk.address);
     await nestGovernance.registerAddress('nest.app.directPoster', (await ethers.getSigners())[0].address)
+    await nestGovernance.registerAddress('nest.app.futures', nestFuturesWithPrice.address);
 
     console.log('4. nestVault.update()');
     await nestVault.update(nestGovernance.address);
@@ -124,14 +125,13 @@ exports.deploy = async function() {
     await nestCyberInk.update(nestGovernance.address);
     console.log('9. nestCyberInk.update()');
 
-    await nestPVM.update(nestGovernance.address);
-    await nestPVM.setNestFutures(nestFuturesWithPrice.address);
+    await nestCraft.update(nestGovernance.address);
 
-    await nestPVM.register('PI', 3141592653590000000n | (1n << 248n));
-    await nestPVM.register('E',  2718281828459000000n | (1n << 248n));
-    await nestPVM.registerAddress('P0', nestPVM.address);
-    await nestPVM.registerAddress('P1', nestPVM.address);
-    await nestPVM.registerAddress('P2', nestPVM.address);
+    await nestCraft.register('PI', 3141592653590000000n | (1n << 248n));
+    await nestCraft.register('E',  2718281828459000000n | (1n << 248n));
+    await nestCraft.registerAddress('P0', nestCraft.address);
+    await nestCraft.registerAddress('P1', nestCraft.address);
+    await nestCraft.registerAddress('P2', nestCraft.address);
     
     console.log('10. nestNFTAuction.update()');
     await nestNFTAuction.update(nestGovernance.address);
@@ -259,7 +259,7 @@ exports.deploy = async function() {
         nestNFTAuction: nestNFTAuction,
         nestFuturesWithPrice: nestFuturesWithPrice,
         nestMarket: nestMarket,
-        nestPVM: nestPVM,
+        nestCraft: nestCraft,
 
         BLOCK_TIME: BLOCK_TIME,
         USDT_DECIMALS: 18,
