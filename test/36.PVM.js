@@ -15,15 +15,19 @@ describe('36.PVM', function() {
         } = await deploy();
 
         const tokens = [eth, nest];
+        let previous;
+        let accounts;
         const listAccounts = async function() {
-            let accounts = {
+            previous = accounts;
+            accounts = {
                 height: await ethers.provider.getBlockNumber(),
                 owner: await listBalances(owner, tokens),
-                nestPVM: await listBalances(nestPVM, tokens)
+                nestPVM: await listBalances(nestPVM, tokens),
+                addr2: await listBalances(addr2, tokens)
             };
             console.log(accounts);
             return accounts;
-        }
+        };
 
         await nestPVM.registerTokenConfig({
             // The pairIndex for call nest price

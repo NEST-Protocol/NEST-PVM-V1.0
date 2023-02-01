@@ -227,3 +227,8 @@ exports.listBalances = async function(account, tokens) {
 
     return balances;
 };
+
+exports.FEQ = function(o) {
+    console.log(o);
+    expect(Math.abs(parseFloat(o.a) - parseFloat(o.b))).to.lte(o.d || 0);
+};
