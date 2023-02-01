@@ -25,6 +25,34 @@ describe('36.PVM', function() {
             return accounts;
         }
 
+        await nestPVM.registerTokenConfig({
+            // The pairIndex for call nest price
+            pairIndex: 0,
+
+            // SigmaSQ for token
+            sigmaSQ: toBigInt(0.0005),
+            // MIU_LONG for token
+            miu: toBigInt(0.00001),
+        });
+        await nestPVM.registerTokenConfig({
+            // The pairIndex for call nest price
+            pairIndex: 0,
+
+            // SigmaSQ for token
+            sigmaSQ: toBigInt(0.0005),
+            // MIU_LONG for token
+            miu: toBigInt(0.00001),
+        });
+        await nestPVM.registerTokenConfig({
+            // The pairIndex for call nest price
+            pairIndex: 0,
+
+            // SigmaSQ for token
+            sigmaSQ: toBigInt(0.0005),
+            // MIU for token
+            miu: toBigInt(0.00001),
+        });
+
         //await listAccounts();
         await nest.transfer(owner.address, 100000000000000000000000000n);
         await nest.approve(nestPVM.address, 100000000000000000000000000n);
@@ -103,6 +131,20 @@ describe('36.PVM', function() {
         if (true) {
             console.log('6. sell2');
             let receipt = await nestPVM.sell(1);
+            await showReceipt(receipt);
+            await listAccounts();
+        }
+
+        if (true) {
+            console.log('7. full');
+            let receipt = await nestPVM.buy('m1(0) + m2(2) + m3(0) + m4(0) + m5(0)');
+            await showReceipt(receipt);
+            await listAccounts();
+        }
+
+        if (true) {
+            console.log('8. sell full');
+            let receipt = await nestPVM.sell(2);
             await showReceipt(receipt);
             await listAccounts();
         }

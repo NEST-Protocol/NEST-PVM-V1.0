@@ -57,6 +57,16 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
 
     event Buy(string expr, address owner, uint openBlock, uint shares, uint index);
 
+    struct TokenConfig {
+        // The pairIndex for call nest price
+        uint16 pairIndex;
+
+        // SigmaSQ for token
+        int64 sigmaSQ;
+        // MIU for token
+        int64 miu;
+    }
+
     /// @dev PVM Order data structure
     struct PVMOrder {
         address owner;
@@ -69,6 +79,8 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
     // Identifier map
     mapping(uint=>uint) _identifierMap;
 
+    TokenConfig[] _tokenConfigs;
+
     // PVM Order array
     PVMOrder[] _orders;
 
@@ -76,6 +88,10 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
     address _nestFutures;
     function setNestFutures(address nestFutures) external onlyGovernance {
         _nestFutures = nestFutures;
+    }
+
+    function registerTokenConfig(TokenConfig calldata tokenConfig) external onlyGovernance {
+        _tokenConfigs.push(tokenConfig);
     }
 
     // type(8)|data(248)
@@ -207,7 +223,7 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
         assembly {
             start := add(expr, 0x20)
         }
-        (value,,) = _evaluatePart(_identifierMap, 0, 0x0000, start, start + bytes(expr).length);
+        (value,,) = _evaluatePart(_identifierMap, 0, 0, 0x0000, start, start + bytes(expr).length);
     }
 
     // TODO: Make expression as a product and can reuse?
@@ -215,16 +231,19 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
     /// @dev Buy a product
     /// @param expr Target expression
     function buy(string memory expr) external {
+        
+        uint index = _orders.length;
+
+        emit Buy(expr, msg.sender, block.number, 1, index);
+        _orders.push(PVMOrder(msg.sender, uint32(block.number), uint24(1), uint32(_orders.length), expr));
+
         uint start = 0;
         assembly {
             start := add(expr, 0x20)
         }
-        (int value,,) = _evaluatePart(_identifierMap, 0, 0x0000, start, start + bytes(expr).length);
+        (int value,,) = _evaluatePart(_identifierMap, (OP_BUY << 248) | index, 0, 0x0000, start, start + bytes(expr).length);
         require(value > 0, "PVM:expression value must > 0");
         TransferHelper.safeTransferFrom(NEST_TOKEN_ADDRESS, msg.sender, address(this), uint(value));
-
-        emit Buy(expr, msg.sender, block.number, 1, _orders.length);
-        _orders.push(PVMOrder(msg.sender, uint32(block.number), uint32(1), uint32(_orders.length), expr));
     }
 
     /// @dev Sell a order
@@ -238,11 +257,11 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
         assembly {
             start := add(expr, 0x20)
         }
-        (int value,,) = _evaluatePart(_identifierMap, 0, 0x0000, start, start + bytes(expr).length);
+        (int value,,) = _evaluatePart(_identifierMap, (OP_SELL << 248) | index, 0, 0x0000, start, start + bytes(expr).length);
 
         value = value * int(uint(order.shares));
         require(value > 0, "PVM:no balance");
-        _orders[index].shares = uint32(0);
+        _orders[index].shares = uint24(0);
         TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, msg.sender, uint(value));
     }
 
@@ -352,10 +371,19 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
         }
     }
 
+    /// Calculate sqrt(v)
+    /// @param v input value, 18 decimals
+    /// @return sqrt(v), 18 decimals
+    function sqrt(int v) public pure returns (int) {
+        return _toDEC(ABDKMath64x64.sqrt(_toX64(v)));
+    }
+
     // Calculate left value with remain expression, and return value
     function _evaluatePart(
         // Identifier context
         mapping(uint=>uint) storage context,
+        // Order information
+        uint oi,
         // Previous value
         int pv,
         // Previous operator
@@ -506,7 +534,7 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
                         if (--temp1 == 0)
                         {
                             // calculate sub expression in brackets
-                            (cv, co,) = _evaluatePart(context, 0, 0x0000, start, index);
+                            (cv, co,) = _evaluatePart(context, oi, 0, 0x0000, start, index);
                             require(co > 0x0000, "PVM:expression is blank");
                             // calculate end, find next operator
                             state = S_OPERATOR;
@@ -526,17 +554,17 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
                     // cv: bracket counter
                     if (c == $CMA && cv == 1) {
                         // index is always equals to end when call end
-                        (args[argIndex++], co,) = _evaluatePart(context, 0, 0x0000, start, index);
+                        (args[argIndex++], co,) = _evaluatePart(context, oi, 0, 0x0000, start, index);
                         require(co > 0x0000, "PVM:argument expression is blank");
                         start = index + 1;
                     } else if (c == $RBR && --cv == 0) {
                         // index is always equals to end when call end
-                        (args[argIndex], co,) = _evaluatePart(context, 0, 0x0000, start, index);
+                        (args[argIndex], co,) = _evaluatePart(context, oi, 0, 0x0000, start, index);
                         if (co > 0x0000) { ++argIndex; }
                         else { require(argIndex == 0, "PVM:arg expression is blank"); }
 
                         // do call
-                        cv = _call(context, temp1, args, argIndex);
+                        cv = _call(context, oi, temp1, args, argIndex);
 
                         argIndex = 0;
                         state = S_OPERATOR;
@@ -592,7 +620,7 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
 
                             // in S_OPERATOR state, index doesn't increased
                             // move to next and evaluate
-                            (cv, co, index) = _evaluatePart(context, cv, co, ++index, end);
+                            (cv, co, index) = _evaluatePart(context, oi, cv, co, ++index, end);
                             
                             // now co is the last operator parsed by evaluatedPart just called
                         }
@@ -631,6 +659,7 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
     // Call function
     function _call(
         mapping(uint=>uint) storage context,
+        uint oi,
         uint identifier,
         int[4] memory args,
         uint argIndex
@@ -645,7 +674,12 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
             if (identifier == 0x00006C6E) { return  ln(args[0]); } else 
             if (identifier == 0x00657870) { return exp(args[0]); } else 
             if (identifier == 0x00666C6F) { return flo(args[0]); } else 
-            if (identifier == 0x0063656C) { return cel(args[0]); } 
+            if (identifier == 0x0063656C) { return cel(args[0]); } else 
+            if (identifier == 0x00006D31) { return  m1(oi, args[0]); } else 
+            if (identifier == 0x00006D32) { return  m2(oi, args[0]); } else 
+            if (identifier == 0x00006D33) { return  m3(oi, args[0]); } else 
+            if (identifier == 0x00006D34) { return  m4(oi, args[0]); } else 
+            if (identifier == 0x00006D35) { return  m5(oi, args[0]); } 
         } else if (argIndex == 2) {
             if (identifier == 0x006C6F67) { return log(args[0], args[1]); } else
             if (identifier == 0x00706F77) { return pow(args[0], args[1]); } else 
@@ -781,6 +815,141 @@ contract NestPVM is NestFrequentlyUsed, INestPVMFunction {
         unchecked {
             if (v < 10) return v + 48;
             return v + 87;
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // 
+    int constant BLOCK_TIME = 3000;
+    uint constant OP_BUY = 0;
+    uint constant OP_SELL = 1;
+
+    // TODO: Restrict linear relationship
+    // TODO: When λ is negative, means short(put), use short(put) μ
+    
+    // Context: μ, t0, 
+    // ctx: operation(8)|reserved(216)|orderIndex(32)
+    function m1(uint ctx, int pairIndex) public view returns (int v) {
+        uint operation = ctx >> 248;
+        int St = op(pairIndex);
+        
+        // Buy
+        if (operation == OP_BUY) {
+            v = St;
+        } 
+        // Sell
+        else if (operation == OP_SELL) {
+            TokenConfig memory tokenConfig = _tokenConfigs[uint(pairIndex / int(DECIMALS))];
+            PVMOrder memory order = _orders[ctx & 0xFFFFFFFF];
+            int miu = int(tokenConfig.miu);
+            int t0 = int(uint(order.openBlock));
+            int t = (int(block.number) - t0) * BLOCK_TIME / 1000;
+
+            v = St * int(DECIMALS) / exp(miu * t / int(DECIMALS));
+        } 
+        // Not support
+        else {
+            revert("PVM:operation error");
+        }
+    }
+
+    function m2(uint ctx, int pairIndex) public view returns (int v) {
+        uint operation = ctx >> 248;
+        int St = op(pairIndex);
+
+        // Buy
+        if (operation == OP_BUY) {
+            v = St * St / int(DECIMALS);
+        } 
+        // Sell
+        else if (operation == OP_SELL) {
+            TokenConfig memory tokenConfig = _tokenConfigs[uint(pairIndex / int(DECIMALS))];
+            PVMOrder memory order = _orders[ctx & 0xFFFFFFFF];
+            int sigmaSQ = int(tokenConfig.sigmaSQ);
+            int miu = int(tokenConfig.miu);
+            int t0 = int(uint(order.openBlock));
+            int t = (int(block.number) - t0) * BLOCK_TIME / 1000;
+
+            v = St * St / exp((miu * 2 + sigmaSQ * t) / int(DECIMALS));
+        }
+        // Not support
+        else {
+            revert("PVM:operation error");
+        }
+    }
+
+    function m3(uint ctx, int pairIndex) public view returns (int v) {
+        uint operation = ctx >> 248;
+        int St = op(pairIndex);
+
+        // Buy
+        if (operation == OP_BUY) {
+            v = int(DECIMALS) / St;
+        } 
+        // Sell
+        else if (operation == OP_SELL) {
+            TokenConfig memory tokenConfig = _tokenConfigs[uint(pairIndex / int(DECIMALS))];
+            PVMOrder memory order = _orders[ctx & 0xFFFFFFFF];
+            int sigmaSQ = int(tokenConfig.sigmaSQ);
+            int miu = int(tokenConfig.miu);
+            int t0 = int(uint(order.openBlock));
+            int t = (int(block.number) - t0) * BLOCK_TIME / 1000;
+
+            v = exp((miu - sigmaSQ) * t / int(DECIMALS)) / St;
+        }
+        // Not support
+        else {
+            revert("PVM:operation error");
+        }
+    }
+
+    function m4(uint ctx, int pairIndex) public view returns (int v) {
+        uint operation = ctx >> 248;
+        int St = op(pairIndex);
+
+        // Buy
+        if (operation == OP_BUY) {
+            v = sqrt(St);
+        } 
+        // Sell
+        else if (operation == OP_SELL) {
+            TokenConfig memory tokenConfig = _tokenConfigs[uint(pairIndex / int(DECIMALS))];
+            PVMOrder memory order = _orders[ctx & 0xFFFFFFFF];
+            int sigmaSQ = int(tokenConfig.sigmaSQ);
+            int miu = int(tokenConfig.miu);
+            int t0 = int(uint(order.openBlock));
+            int t = (int(block.number) - t0) * BLOCK_TIME / 1000;
+
+            v = sqrt(St) * exp((sigmaSQ / 8 - miu / 2) * t / int(DECIMALS)) / int(DECIMALS);
+        }
+        // Not support
+        else {
+            revert("PVM:operation error");
+        }
+    }
+
+    function m5(uint ctx, int pairIndex) public view returns (int v) {
+        uint operation = ctx >> 248;
+        int St = op(pairIndex);
+
+        // Buy
+        if (operation == OP_BUY) {
+            v = ln(St);
+        } 
+        // Sell
+        else if (operation == OP_SELL) {
+            TokenConfig memory tokenConfig = _tokenConfigs[uint(pairIndex / int(DECIMALS))];
+            PVMOrder memory order = _orders[ctx & 0xFFFFFFFF];
+            int sigmaSQ = int(tokenConfig.sigmaSQ);
+            int miu = int(tokenConfig.miu);
+            int t0 = int(uint(order.openBlock));
+            int t = (int(block.number) - t0) * BLOCK_TIME / 1000;
+
+            v = ln(St) - miu * t / int(DECIMALS) + sigmaSQ * t / int(DECIMALS) / 2;
+        }
+        // Not support
+        else {
+            revert("PVM:operation error");
         }
     }
 }
