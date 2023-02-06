@@ -119,7 +119,7 @@ describe('36.PVM', function() {
 
         if (true) {
             console.log('4.buy2')
-            let receipt = await nestCraft.buy('op(0) * exp(1 + 60 / bn() ) + log(op(1), PI)');
+            let receipt = await nestCraft.buy('op(0) * exp(1 + 60 / 300 ) + log(op(1), PI)');
             await showReceipt(receipt);
             await listAccounts();
         }
