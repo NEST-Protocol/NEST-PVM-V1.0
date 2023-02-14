@@ -3,34 +3,32 @@
 pragma solidity ^0.8.6;
 
 import "./libs/TransferHelper.sol";
+import "./libs/CommonLib.sol";
 
 import "./interfaces/INestVault.sol";
+import "./interfaces/INestFutures3.sol";
 
-import "./NestFutures2_Simple.sol";
+import "./custom/NestFrequentlyUsed.sol";
 
 /// @dev Nest futures without merger
-contract NestFutures3 is NestFutures2_Simple {
+contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
 
     // TODO: SigmaSQ is no use?
     // TODO: Add view method to get miu
-
-    // Global parameter for trade channel
-    struct ChannelParameter {
-        uint56 sigmaSQ;
-        uint56 Lp;
-        uint56 Sp;
-        int56 Pt;
-        uint32 ts;
-    }
+    // TODO: Will not support order1, need notify users @KT
+    // TODO: μ is a very important information for user, it should be shown for user
+    // TODO: Place orders to global array
+    // TODO: Add balanceOf method
 
     /// @dev Order structure
-    struct Order3 {
+    struct Order {
         // Address index of owner
         uint32 owner;
         // Base price of this order, encoded with encodeFloat56()
         uint56 basePrice;
         // Balance of this order, 4 decimals
         uint48 balance;
+        // TODO: Not used
         // Open block of this order
         uint32 baseBlock;
         // TODO: Remove?
@@ -44,34 +42,38 @@ contract NestFutures3 is NestFutures2_Simple {
         int56 Pt;
     }
 
-    // TODO: Place orders to global array
+    // Registered account address mapping
+    mapping(address=>uint) _accountMapping;
 
-    // Trade channel
-    struct TradeChannel {
-        Order3[] orders;
-        ChannelParameter parameter;
-    }
+    // Registered accounts
+    address[] _accounts;
 
-    // Trade channel array
+    // Global parameters for trade channel
     TradeChannel[] _channels;
 
+    // Array of orders
+    Order[] _orders;
+
     constructor() {
+    }
+    
+    /// @dev To support open-zeppelin/upgrades
+    /// @param governance INestGovernance implementation contract address
+    function initialize(address governance) public override {
+        super.initialize(governance);
+        _accounts.push();
+    }
+
+    function getTimestamp() external view returns (uint) {
+        return block.timestamp;
     }
 
     function openChannel() external onlyGovernance {
         _channels.push();
     }
 
-    function getChannelParameter(uint channelIndex) external view 
-    returns (uint sigmaSQ, uint Lp, uint Sp, int Pt, uint ts) {
-        ChannelParameter memory parameter = _channels[channelIndex].parameter;
-        return (
-            uint(parameter.sigmaSQ), 
-            uint(parameter.Lp), 
-            uint(parameter.Sp), 
-            int(parameter.Pt), 
-            uint(parameter.ts)
-        );
+    function getChannel(uint channelIndex) external view override returns (TradeChannel memory channel) {
+        channel = _channels[channelIndex];
     }
 
     /// @dev Buy futures
@@ -79,67 +81,67 @@ contract NestFutures3 is NestFutures2_Simple {
     /// @param lever Lever of order
     /// @param orientation true: long, false: short
     /// @param amount Amount of paid NEST, 4 decimals
-    function buy3(
+    function buy(
         uint16 channelIndex, 
         uint8 lever, 
         bool orientation, 
         uint amount
-    ) external payable {
+    ) external payable override {
+        // 1. Check arguments
         require(amount > CommonLib.FUTURES_NEST_LB && amount < 0x1000000000000, "NF:amount invalid");
         // TODO: To confirm range of lever
         require(lever > 0 && lever < 30, "NF:lever not allowed");
 
-        // Load target channel
+        // 2. Load target channel
         // channelIndex is increase from 0, if channelIndex out of range, means target channel not exist
-        TradeChannel storage channel = _channels[channelIndex];
-        ChannelParameter memory parameter = channel.parameter;
+        TradeChannel memory channel = _channels[channelIndex];
 
-        // Lp和Sp都是按照初始保证金相加减
-        // 买入时加上初始保证金*杠杆倍数
-        // 卖出时减去初始保证金*杠杆倍数
-        // 初始保证金不包括手续费
+        // Lp and Sp are add(sub) with original bond
+        // When buy, Lp(Sp) += lever * amount
+        // When sell(liquidate), Lp(Sp) -= lever * amount
+        // Original bond not include service fee
 
-        // 顺序：单子出现以后，先更新P（用上一个μ) 。再更新Sp，Lp，根据新的Sp，Lp计算新的一个μ。最后调用Pt的开仓关仓差额计算持仓费。
-        // 第一笔交易P0必然是0，可以理解为之前的mu也是0
-
-        // TODO: μ is a very important information for user, it should be shown for user
-        // Update Pt
-        uint Lp = uint(parameter.Lp);
-        uint Sp = uint(parameter.Sp);
-
+        // 3. Calculate Pt
+        // When order operating, update Pt first (use last miu), 
+        // Then update Sp and Lp (μ can be calculate by Lp and Sp), 
+        // Use the last calculated Pt for order
+        uint Lp = uint(channel.Lp);
+        uint Sp = uint(channel.Sp);
         if (Lp + Sp > 0) 
         {
             // TODO: Confirm unit of miu
             int miu = (int(Lp) - int(Sp)) * 0.02e12 / 86400 / int(Lp + Sp);
             // TODO: Check truncation
-            parameter.Pt = int56(int(parameter.Pt) + miu * int(block.timestamp - uint(parameter.ts)));
+            channel.Pt = int56(int(channel.Pt) + miu * int(block.timestamp - uint(channel.ts)));
         }
 
+        // 4. Calculate Lp and Sp
         // Long
         if (orientation) {
             // TODO: Check truncation
-            parameter.Lp = uint56(Lp + amount * uint(lever));
+            channel.Lp = uint56(Lp + amount * uint(lever));
         }
         // Short
         else {
             // TODO: Check truncation
-            parameter.Sp = uint56(Sp + amount * uint(lever));
+            channel.Sp = uint56(Sp + amount * uint(lever));
         }
 
-        parameter.ts = uint32(block.timestamp);
-        channel.parameter = parameter;
+        // 5. Update parameter for channel
+        channel.ts = uint32(block.timestamp);
+        _channels[channelIndex] = channel;
 
-        // 1. Emit event
-        emit Buy2(channel.orders.length, amount, msg.sender);
+        // 6. Emit event
+        emit Buy(_orders.length, amount, msg.sender);
 
-        // 2. Create order
-        channel.orders.push(Order3(
+        // 7. Create order
+        _orders.push(Order(
             // owner
             uint32(_addressIndex(msg.sender)),
             // basePrice
             // Query oraclePrice
             // TODO: Rewrite queryPrice function
-            CommonLib.encodeFloat56(_queryPrice3(channelIndex)),
+            CommonLib.encodeFloat56(_queryPrice(channelIndex)),
             // balance
             uint48(amount),
             // baseBlock
@@ -151,10 +153,10 @@ contract NestFutures3 is NestFutures2_Simple {
             // orientation
             orientation,
             // Pt
-            parameter.Pt
+            channel.Pt
         ));
 
-        // 4. Transfer NEST from user
+        // 8. Transfer NEST from user
         TransferHelper.safeTransferFrom(
             NEST_TOKEN_ADDRESS, 
             msg.sender, 
@@ -163,104 +165,122 @@ contract NestFutures3 is NestFutures2_Simple {
         );
     }
 
-    // /// @dev Append buy
-    // /// @param channelIndex Index of target channel
-    // /// @param orderIndex Index of target order
-    // /// @param amount Amount of paid NEST
-    // function add3(uint channelIndex, uint orderIndex, uint amount) external payable override {
-        
-    //     // TODO: Confirm the logic of add
-    //     require(amount > CommonLib.FUTURES_NEST_LB, "NF:amount invalid");
+    /// @dev Append buy
+    /// @param orderIndex Index of target order
+    /// @param amount Amount of paid NEST
+    function add(uint orderIndex, uint amount) external payable override {
+        // TODO: Confirm the logic of add
+        // 1. Check arguments
+        require(amount > CommonLib.FUTURES_NEST_LB, "NF:amount invalid");
 
-    //     TradeChannel storage channel = _channels[channelIndex];
-    //     Trade
-    //     // 1. Load the order
-    //     Order memory order = _orders[index];
-
-    //     uint basePrice = CommonLib.decodeFloat(order.basePrice);
-    //     uint balance = uint(order.balance);
-    //     uint newBalance = balance + amount;
-
-    //     require(balance > 0, "NF:order cleared");
-    //     require(newBalance < 0x1000000000000, "NF:balance too big");
-    //     require(msg.sender == _accounts[uint(order.owner)], "NF:not owner");
-
-    //     // 2. Query oracle price
-    //     TokenConfig memory tokenConfig = _tokenConfigs[uint(order.tokenIndex)];
-    //     uint oraclePrice = _queryPrice(tokenConfig);
-
-    //     // 3. Update order
-    //     // Merger price
-    //     order.basePrice = CommonLib.encodeFloat56(newBalance * oraclePrice * basePrice / (
-    //         basePrice * amount + (balance << 64) * oraclePrice / _expMiuT(
-    //             uint(order.orientation ? tokenConfig.miuLong : tokenConfig.miuShort), 
-    //             uint(order.baseBlock)
-    //         )
-    //     ));
-    //     order.balance = uint48(newBalance);
-    //     order.baseBlock = uint32(block.number);
-    //     _orders[index] = order;
-
-    //     // 4. Transfer NEST from user
-    //     TransferHelper.safeTransferFrom(
-    //         NEST_TOKEN_ADDRESS, 
-    //         msg.sender, 
-    //         NEST_VAULT_ADDRESS, 
-    //         amount * CommonLib.NEST_UNIT * (1 ether + CommonLib.FEE_RATE * uint(order.lever)) / 1 ether
-    //     );
-
-    //     // 5. Emit event
-    //     emit Buy2(index, amount, msg.sender);
-    // }
-
-    /// @dev Sell order
-    /// @param channelIndex Index of target channel
-    /// @param orderIndex Index of order
-    function sell3(uint channelIndex, uint orderIndex) external payable {
-        // 1. Load the order
+        // 2. Load the order
+        Order memory order = _orders[orderIndex];
+        uint channelIndex = uint(order.channelIndex);
         TradeChannel storage channel = _channels[channelIndex];
-        ChannelParameter memory parameter = channel.parameter;
-        Order3 memory order = channel.orders[orderIndex];
         
+        uint balance = uint(order.balance);
+        require(balance > 0, "NF:order cleared");
         require(msg.sender == _accounts[uint(order.owner)], "NF:not owner");
 
+        // 3. Calculate miuT
+        int miuT = int(channel.Pt);
+        {
+            // When add, first calculate balance of the order same as sell (include miu),
+            // Then add amount to the balance, and update to order,
+            // Only update balance of the order, 
+            // Pt of the order, and global Lp, Sp, Pt, miu not update
+            uint Lp = uint(channel.Lp);
+            uint Sp = uint(channel.Sp);
+            if (Lp + Sp > 0) {
+                int miu = (int(Lp) - int(Sp)) * 0.02e12 / 86400 / int(Lp + Sp);
+                miuT = miuT + miu * int(block.timestamp - uint(channel.ts));
+            }
+            miuT -= int(order.Pt);
+            if (order.orientation) {
+                if (miuT < 0) miuT = 0;
+            } else {
+                if (miuT > 0) miuT = 0;
+            }
+        }
+
+        // 3. Query oracle price
+        // TODO: Optimize code
+        uint oraclePrice = _queryPrice(channelIndex);
+        uint newBalance = _balanceOf(
+            miuT, 
+            balance,
+            CommonLib.decodeFloat(order.basePrice),
+            oraclePrice,
+            order.orientation,
+            order.lever
+        ) / CommonLib.NEST_UNIT + amount;
+        require(newBalance < 0x1000000000000, "NF:balance too big");
+
+        // 4. Update order
+        order.balance = uint48(newBalance);
+        //order.baseBlock = uint32(block.number);
+        _orders[orderIndex] = order;
+
+        // 5. Transfer NEST from user
+        TransferHelper.safeTransferFrom(
+            NEST_TOKEN_ADDRESS, 
+            msg.sender, 
+            NEST_VAULT_ADDRESS, 
+            amount * CommonLib.NEST_UNIT * (1 ether + CommonLib.FEE_RATE * uint(order.lever)) / 1 ether
+        );
+
+        // 6. Emit event
+        emit Add(orderIndex, amount, msg.sender);
+        // TODO: Emit Add3 event
+    }
+
+    /// @dev Sell order
+    /// @param orderIndex Index of order
+    function sell(uint orderIndex) external payable override {
+        // 1. Load the order
+        Order memory order = _orders[orderIndex];
+        uint channelIndex = uint(order.channelIndex);
+        TradeChannel memory channel = _channels[channelIndex];
+        require(msg.sender == _accounts[uint(order.owner)], "NF:not owner");
         uint basePrice = CommonLib.decodeFloat(uint(order.basePrice));
         uint balance = uint(order.balance);
         uint lever = uint(order.lever);
 
-        // 2. Query oracle price
-        uint oraclePrice = _queryPrice3(channelIndex);
-
-        // 3. Update order
-        order.balance = uint48(0);
-        channel.orders[orderIndex] = order;
-
-        // 顺序：单子出现以后，先更新P（用上一个μ) 。再更新Sp，Lp，根据新的Sp，Lp计算新的一个μ。最后调用Pt的开仓关仓差额计算持仓费。
-        // 第一笔交易P0必然是0，可以理解为之前的mu也是0
-        uint Lp = uint(parameter.Lp);
-        uint Sp = uint(parameter.Sp);
+        // 2. Calculate Pt
+        // When order operating, update Pt first (use last miu), then update Sp and Lp, 
+        // Use the last calculated Pt for order
+        uint Lp = uint(channel.Lp);
+        uint Sp = uint(channel.Sp);
         if (Lp + Sp > 0) {
             int miu = (int(Lp) - int(Sp)) * 0.02e12 / 86400 / int(Lp + Sp);
-            parameter.Pt = int56(int(parameter.Pt) + miu * int(block.timestamp - uint(parameter.ts)));
+            channel.Pt = int56(int(channel.Pt) + miu * int(block.timestamp - uint(channel.ts)));
         }
-        int miuT = int(parameter.Pt) - int(order.Pt);
+        int miuT = int(channel.Pt) - int(order.Pt);
         
+        // 3. Calculate Lp and Sp
         // Long
         if (order.orientation) {
-            parameter.Lp = uint56(Lp - balance * lever);
+            channel.Lp = uint56(Lp - balance * lever);
             if (miuT < 0) miuT = 0;
         } 
         // Short
         else {
-            parameter.Sp = uint56(Sp - balance * lever);
+            channel.Sp = uint56(Sp - balance * lever);
             if (miuT > 0) miuT = 0;
         }
+        // 4. Update parameter for channel
+        channel.ts = uint32(block.timestamp);
+        _channels[channelIndex] = channel;
 
-        parameter.ts = uint32(block.timestamp);
-        channel.parameter = parameter;
+        // 5. Query oracle price
+        uint oraclePrice = _queryPrice(channelIndex);
 
-        // 4. Transfer NEST to user
-        uint value = _balanceOf3(
+        // 6. Update order
+        order.balance = uint48(0);
+        _orders[orderIndex] = order;
+
+        // 7. Transfer NEST to user
+        uint value = _balanceOf(
             miuT,
             // balance
             balance * CommonLib.NEST_UNIT, 
@@ -282,87 +302,113 @@ contract NestFutures3 is NestFutures2_Simple {
             INestVault(NEST_VAULT_ADDRESS).transferTo(msg.sender, value - fee);
         }
 
-        // 5. Emit event
-        //emit Sell2(index, balance, msg.sender, value);
+        // 8. Emit event
+        emit Sell(orderIndex, balance, msg.sender, value);
     }
 
-    // /// @dev Liquidate order
-    // /// @param indices Target order indices
-    // function liquidate3(uint[] calldata indices) external payable override {
-    //     uint reward = 0;
-    //     uint oraclePrice = 0;
-    //     uint tokenIndex = 0x10000;
-    //     TokenConfig memory tokenConfig;
+    /// @dev Liquidate order
+    /// @param indices Target order indices
+    function liquidate(uint[] calldata indices) external payable override {
+        uint reward = 0;
+        uint oraclePrice = 0;
+        uint channelIndex = 0x10000;
+        TradeChannel memory channel;
         
-    //     // 1. Loop and liquidate
-    //     for (uint i = indices.length; i > 0;) {
-    //         uint index = indices[--i];
-    //         Order memory order = _orders[index];
+        // 1. Loop and liquidate
+        for (uint i = indices.length; i > 0;) {
+            uint index = indices[--i];
+            Order memory order = _orders[index];
 
-    //         uint lever = uint(order.lever);
-    //         uint balance = uint(order.balance) * CommonLib.NEST_UNIT;
-    //         if (lever > 1 && balance > 0) {
-    //             // If tokenIndex is not same with previous, need load new tokenConfig and query oracle
-    //             // At first, tokenIndex is 0x10000, this is impossible the same with current tokenIndex
-    //             if (tokenIndex != uint(order.tokenIndex)) {
-    //                 tokenIndex = uint(order.tokenIndex);
-    //                 tokenConfig = _tokenConfigs[tokenIndex];
-    //                 oraclePrice = _queryPrice(tokenConfig);
-    //                 //require(oraclePrice > 0, "NF:price error");
-    //             }
+            uint lever = uint(order.lever);
+            uint balance = uint(order.balance) * CommonLib.NEST_UNIT;
+            if (lever > 1 && balance > 0) {
+                // If channelIndex is not same with previous, need load new channel and query oracle
+                // At first, channelIndex is 0x10000, this is impossible the same with current channelIndex
+                if (channelIndex != uint(order.channelIndex)) {
+                    // Update previous channel
+                    if (channelIndex != 0x10000) {
+                        channel.ts = uint32(block.timestamp);
+                        _channels[channelIndex] = channel;
+                    }
+                    // Load current channel
+                    channelIndex = uint(order.channelIndex);
+                    oraclePrice = _queryPrice(channelIndex);
+                    channel = _channels[channelIndex];
 
-    //             // 3. Calculate order value
-    //             uint basePrice = CommonLib.decodeFloat(order.basePrice);
-    //             uint value = _balanceOf(
-    //                 // tokenConfig
-    //                 tokenConfig,
-    //                 // balance
-    //                 balance, 
-    //                 // basePrice
-    //                 basePrice, 
-    //                 // baseBlock
-    //                 uint(order.baseBlock),
-    //                 // oraclePrice
-    //                 oraclePrice, 
-    //                 // ORIENTATION
-    //                 order.orientation, 
-    //                 // LEVER
-    //                 lever
-    //             );
+                    // Update Pt
+                    uint Lp = uint(channel.Lp);
+                    uint Sp = uint(channel.Sp);
+                    if (Lp + Sp > 0) {
+                        int miu = (int(Lp) - int(Sp)) / 0.02e12 / 86400 / int(Lp + Sp);
+                        channel.Pt = int56(int(channel.Pt) + miu * int(block.timestamp - uint(channel.ts)));
+                    }
+                }
 
-    //             // 4. Liquidate logic
-    //             // lever is great than 1, and balance less than a regular value, can be liquidated
-    //             // the regular value is: Max(M0 * L * St / S0 * c, a)
-    //             if (value < CommonLib.MIN_FUTURE_VALUE || 
-    //                 value < balance * lever * oraclePrice / basePrice * CommonLib.FEE_RATE / 1 ether) {
+                // Calculate miuT
+                int miuT = int(channel.Pt) - int(order.Pt);
+                if (order.orientation) {
+                    // TODO: Optimize code
+                    channel.Lp = uint56(uint(channel.Lp) - balance / CommonLib.NEST_UNIT * lever);
+                    if (miuT < 0) miuT = 0;
+                } else {
+                    // TODO: Optimize code
+                    channel.Sp = uint56(uint(channel.Sp) - balance / CommonLib.NEST_UNIT * lever);
+                    if (miuT > 0) miuT = 0;
+                }
 
-    //                 // Clear all data of order, use this code next time
-    //                 // assembly {
-    //                 //     mstore(0, _orders.slot)
-    //                 //     sstore(add(keccak256(0, 0x20), index), 0)
-    //                 // }
+                // 3. Calculate order value
+                uint basePrice = CommonLib.decodeFloat(order.basePrice);
+                uint value = _balanceOf(
+                    // tokenConfig
+                    miuT,
+                    // balance
+                    balance, 
+                    // basePrice
+                    basePrice, 
+                    // baseBlock
+                    //uint(order.baseBlock),
+                    // oraclePrice
+                    oraclePrice, 
+                    // ORIENTATION
+                    order.orientation, 
+                    // LEVER
+                    lever
+                );
+
+                // 4. Liquidate logic
+                // TODO: The liquidate condition need update
+                // lever is great than 1, and balance less than a regular value, can be liquidated
+                // the regular value is: Max(M0 * L * St / S0 * c, a)
+                if (value < CommonLib.MIN_FUTURE_VALUE || 
+                    value < balance * lever * oraclePrice / basePrice * CommonLib.FEE_RATE / 1 ether) {
+
+                    // Clear all data of order, use this code next time
+                    // assembly {
+                    //     mstore(0, _orders.slot)
+                    //     sstore(add(keccak256(0, 0x20), index), 0)
+                    // }
                     
-    //                 // Clear balance
-    //                 order.balance = uint48(0);
-    //                 // Clear baseBlock
-    //                 order.baseBlock = uint32(0);
-    //                 // Update order
-    //                 _orders[index] = order;
+                    // Clear balance
+                    order.balance = uint48(0);
+                    // Clear baseBlock
+                    order.baseBlock = uint32(0);
+                    // Update order
+                    _orders[index] = order;
 
-    //                 // Add reward
-    //                 reward += value;
+                    // Add reward
+                    reward += value;
 
-    //                 // Emit liquidate event
-    //                 emit Liquidate2(index, msg.sender, value);
-    //             }
-    //         }
-    //     }
+                    // Emit liquidate event
+                    emit Liquidate(index, msg.sender, value);
+                }
+            }
+        }
 
-    //     // 6. Transfer NEST to user
-    //     if (reward > 0) {
-    //         INestVault(NEST_VAULT_ADDRESS).transferTo(msg.sender, reward);
-    //     }
-    // }
+        // 6. Transfer NEST to user
+        if (reward > 0) {
+            INestVault(NEST_VAULT_ADDRESS).transferTo(msg.sender, reward);
+        }
+    }
 
     // /// @dev Buy from NestFuturesPRoxy
     // /// @param tokenIndex Index of token
@@ -403,32 +449,106 @@ contract NestFutures3 is NestFutures2_Simple {
     //     ));
     // }
     
-    // // Convert Order to OrderView
-    // function _toOrderView3(Order memory order, uint index) internal view returns (OrderView memory v) {
-    //     v = OrderView(
-    //         // index
-    //         uint32(index),
-    //         // owner
-    //         _accounts[uint(order.owner)],
-    //         // balance
-    //         order.balance,
-    //         // tokenIndex
-    //         order.tokenIndex,
-    //         // baseBlock
-    //         order.baseBlock,
-    //         // lever
-    //         order.lever,
-    //         // orientation
-    //         order.orientation,
-    //         // basePrice
-    //         CommonLib.decodeFloat(order.basePrice),
-    //         // stopPrice
-    //         CommonLib.decodeFloat(order.stopPrice)
-    //     );
-    // }
+    // Convert Order to OrderView
+    function _toOrderView(Order memory order, uint index) internal view returns (OrderView memory v) {
+        v = OrderView(
+            // index
+            uint32(index),
+            // owner
+            _accounts[uint(order.owner)],
+            // balance
+            order.balance,
+            // channelIndex
+            order.channelIndex,
+            // baseBlock
+            order.baseBlock,
+            // lever
+            order.lever,
+            // orientation
+            order.orientation,
+            // basePrice
+            CommonLib.decodeFloat(order.basePrice),
+            // Pt
+            order.Pt
+        );
+    }
+
+    /// @dev Find the orders of the target address (in reverse order)
+    /// @param start Find forward from the index corresponding to the given owner address 
+    /// (excluding the record corresponding to start)
+    /// @param count Maximum number of records returned
+    /// @param maxFindCount Find records at most
+    /// @param owner Target address
+    /// @return orderArray Matched orders
+    function find(
+        uint start, 
+        uint count, 
+        uint maxFindCount, 
+        address owner
+    ) external view override returns (OrderView[] memory orderArray) {
+        orderArray = new OrderView[](count);
+        // Calculate search region
+        Order[] storage orders = _orders;
+
+        // Loop from start to end
+        uint end = 0;
+        // start is 0 means Loop from the last item
+        if (start == 0) {
+            start = orders.length;
+        }
+        // start > maxFindCount, so end is not 0
+        if (start > maxFindCount) {
+            end = start - maxFindCount;
+        }
+        
+        // Loop lookup to write qualified records to the buffer
+        uint ownerIndex = _accountMapping[owner];
+        for (uint index = 0; index < count && start > end;) {
+            Order memory order = orders[--start];
+            if (uint(order.owner) == ownerIndex) {
+                orderArray[index++] = _toOrderView(order, start);
+            }
+        }
+    }
+
+    /// @dev List orders
+    /// @param offset Skip previous (offset) records
+    /// @param count Return (count) records
+    /// @param order Order. 0 reverse order, non-0 positive order
+    /// @return orderArray List of orders
+    function list(uint offset, uint count, uint order) external view override returns (OrderView[] memory orderArray) {
+        // Load orders
+        Order[] storage orders = _orders;
+        // Create result array
+        orderArray = new OrderView[](count);
+        uint length = orders.length;
+        uint i = 0;
+
+        // Reverse order
+        if (order == 0) {
+            uint index = length - offset;
+            uint end = index > count ? index - count : 0;
+            while (index > end) {
+                Order memory o = orders[--index];
+                orderArray[i++] = _toOrderView(o, index);
+            }
+        } 
+        // Positive order
+        else {
+            uint index = offset;
+            uint end = index + count;
+            if (end > length) {
+                end = length;
+            }
+            while (index < end) {
+                orderArray[i++] = _toOrderView(orders[index], index);
+                ++index;
+            }
+        }
+    }
 
     // Query price
-    function _queryPrice3(uint channelIndex) internal view returns (uint oraclePrice) {
+    function _queryPrice(uint channelIndex) internal view returns (uint oraclePrice) {
         // Query price from oracle
         (uint period, uint height, uint price) = _decodePrice(_lastPrices, channelIndex);
         require(block.number < height + period, "NFWP:price expired");
@@ -436,14 +556,14 @@ contract NestFutures3 is NestFutures2_Simple {
     }
 
     // Calculate net worth
-    function _balanceOf3(
+    function _balanceOf(
         int miuT,
         uint balance,
         uint basePrice,
         uint oraclePrice, 
         bool ORIENTATION, 
         uint LEVER
-    ) internal view returns (uint) {
+    ) internal pure returns (uint) {
 
         if (balance > 0) {
             uint left;
@@ -451,14 +571,14 @@ contract NestFutures3 is NestFutures2_Simple {
             // Call
             if (ORIENTATION) {
                 left = balance + (LEVER << 64) * balance * oraclePrice / basePrice
-                        / _expMiuT3(miuT);
+                        / _expMiuT(miuT);
                 right = balance * LEVER;
             } 
             // Put
             else {
                 left = balance * (1 + LEVER);
                 right = (LEVER << 64) * balance * oraclePrice / basePrice 
-                        / _expMiuT3(miuT);
+                        / _expMiuT(miuT);
             }
 
             if (left > right) {
@@ -472,7 +592,7 @@ contract NestFutures3 is NestFutures2_Simple {
     }
 
     // Calculate e^μT
-    function _expMiuT3(int miuT) internal view returns (uint) {
+    function _expMiuT(int miuT) internal pure returns (uint) {
         // return _toUInt(ABDKMath64x64.exp(
         //     _toInt128((orientation ? MIU_LONG : MIU_SHORT) * (block.number - baseBlock) * BLOCK_TIME)
         // ));
@@ -486,7 +606,7 @@ contract NestFutures3 is NestFutures2_Simple {
     /// @dev Direct post price
     /// @param period Term of validity
     // @param equivalents Price array, one to one with pairs
-    function directPost3(uint period, uint[3] calldata /*equivalents*/) external {
+    function directPost(uint period, uint[3] calldata /*equivalents*/) external {
         //require(msg.sender == DIRECT_POSTER, "NFWP:not directPoster");
 
         assembly {
@@ -526,7 +646,31 @@ contract NestFutures3 is NestFutures2_Simple {
 
     /// @dev List prices
     /// @param channelIndex index of target channel
-    function lastPrice(uint channelIndex) external view returns (uint period, uint height, uint price) {
+    function lastPrice(uint channelIndex) external view override returns (uint period, uint height, uint price) {
         (period, height, price) = _decodePrice(_lastPrices, channelIndex);
+    }
+
+    // Decode composed price
+    function _decodePrice(uint rawPrice, uint pairIndex) internal pure returns (uint period, uint height, uint price) {
+        return (
+            rawPrice >> 240,
+            (rawPrice >> 192) & 0xFFFFFFFFFFFF,
+            CommonLib.decodeFloat(uint64(rawPrice >> (pairIndex << 6)))
+        );
+    }
+
+    /// @dev Gets the index number of the specified address. If it does not exist, register
+    /// @param addr Destination address
+    /// @return The index number of the specified address
+    function _addressIndex(address addr) internal returns (uint) {
+        uint index = _accountMapping[addr];
+        if (index == 0) {
+            // If it exceeds the maximum number that 32 bits can store, you can't continue to register a new account.
+            // If you need to support a new account, you need to update the contract
+            require((_accountMapping[addr] = index = _accounts.length) < 0x100000000, "NO:!accounts");
+            _accounts.push(addr);
+        }
+
+        return index;
     }
 }

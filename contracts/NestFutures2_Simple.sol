@@ -183,40 +183,41 @@ contract NestFutures2_Simple is NestFuturesWithPrice_Simple, INestFutures2 {
         uint amount, 
         uint stopPrice
     ) external payable override {
-        require(amount > CommonLib.FUTURES_NEST_LB && amount < 0x1000000000000, "NF:amount invalid");
-        require(lever > 0 && lever < 21, "NF:lever not allowed");
+        revert("NF:not support");
+        // require(amount > CommonLib.FUTURES_NEST_LB && amount < 0x1000000000000, "NF:amount invalid");
+        // require(lever > 0 && lever < 21, "NF:lever not allowed");
 
-        // 1. Emit event
-        emit Buy2(_orders.length, amount, msg.sender);
+        // // 1. Emit event
+        // emit Buy2(_orders.length, amount, msg.sender);
 
-        // 2. Create order
-        _orders.push(Order(
-            // owner
-            uint32(_addressIndex(msg.sender)),
-            // basePrice
-            // Query oraclePrice
-            CommonLib.encodeFloat56(_queryPrice(_tokenConfigs[tokenIndex])),
-            // balance
-            uint48(amount),
-            // baseBlock
-            uint32(block.number),
-            // tokenIndex
-            tokenIndex,
-            // lever
-            lever,
-            // orientation
-            orientation,
-            // stopPrice
-            stopPrice > 0 ? CommonLib.encodeFloat56(stopPrice) : uint56(0)
-        ));
+        // // 2. Create order
+        // _orders.push(Order(
+        //     // owner
+        //     uint32(_addressIndex(msg.sender)),
+        //     // basePrice
+        //     // Query oraclePrice
+        //     CommonLib.encodeFloat56(_queryPrice(_tokenConfigs[tokenIndex])),
+        //     // balance
+        //     uint48(amount),
+        //     // baseBlock
+        //     uint32(block.number),
+        //     // tokenIndex
+        //     tokenIndex,
+        //     // lever
+        //     lever,
+        //     // orientation
+        //     orientation,
+        //     // stopPrice
+        //     stopPrice > 0 ? CommonLib.encodeFloat56(stopPrice) : uint56(0)
+        // ));
 
-        // 4. Transfer NEST from user
-        TransferHelper.safeTransferFrom(
-            NEST_TOKEN_ADDRESS, 
-            msg.sender, 
-            NEST_VAULT_ADDRESS, 
-            amount * CommonLib.NEST_UNIT * (1 ether + CommonLib.FEE_RATE * uint(lever)) / 1 ether
-        );
+        // // 4. Transfer NEST from user
+        // TransferHelper.safeTransferFrom(
+        //     NEST_TOKEN_ADDRESS, 
+        //     msg.sender, 
+        //     NEST_VAULT_ADDRESS, 
+        //     amount * CommonLib.NEST_UNIT * (1 ether + CommonLib.FEE_RATE * uint(lever)) / 1 ether
+        // );
     }
 
     /// @dev Set stop price for stop order
@@ -231,45 +232,46 @@ contract NestFutures2_Simple is NestFuturesWithPrice_Simple, INestFutures2 {
     /// @param index Index of future
     /// @param amount Amount of paid NEST
     function add2(uint index, uint amount) external payable override {
-        require(amount > CommonLib.FUTURES_NEST_LB, "NF:amount invalid");
+        revert("NF:not support");
+        // require(amount > CommonLib.FUTURES_NEST_LB, "NF:amount invalid");
 
-        // 1. Load the order
-        Order memory order = _orders[index];
+        // // 1. Load the order
+        // Order memory order = _orders[index];
 
-        uint basePrice = CommonLib.decodeFloat(order.basePrice);
-        uint balance = uint(order.balance);
-        uint newBalance = balance + amount;
+        // uint basePrice = CommonLib.decodeFloat(order.basePrice);
+        // uint balance = uint(order.balance);
+        // uint newBalance = balance + amount;
 
-        require(balance > 0, "NF:order cleared");
-        require(newBalance < 0x1000000000000, "NF:balance too big");
-        require(msg.sender == _accounts[uint(order.owner)], "NF:not owner");
+        // require(balance > 0, "NF:order cleared");
+        // require(newBalance < 0x1000000000000, "NF:balance too big");
+        // require(msg.sender == _accounts[uint(order.owner)], "NF:not owner");
 
-        // 2. Query oracle price
-        TokenConfig memory tokenConfig = _tokenConfigs[uint(order.tokenIndex)];
-        uint oraclePrice = _queryPrice(tokenConfig);
+        // // 2. Query oracle price
+        // TokenConfig memory tokenConfig = _tokenConfigs[uint(order.tokenIndex)];
+        // uint oraclePrice = _queryPrice(tokenConfig);
 
-        // 3. Update order
-        // Merger price
-        order.basePrice = CommonLib.encodeFloat56(newBalance * oraclePrice * basePrice / (
-            basePrice * amount + (balance << 64) * oraclePrice / _expMiuT(
-                uint(order.orientation ? tokenConfig.miuLong : tokenConfig.miuShort), 
-                uint(order.baseBlock)
-            )
-        ));
-        order.balance = uint48(newBalance);
-        order.baseBlock = uint32(block.number);
-        _orders[index] = order;
+        // // 3. Update order
+        // // Merger price
+        // order.basePrice = CommonLib.encodeFloat56(newBalance * oraclePrice * basePrice / (
+        //     basePrice * amount + (balance << 64) * oraclePrice / _expMiuT(
+        //         uint(order.orientation ? tokenConfig.miuLong : tokenConfig.miuShort), 
+        //         uint(order.baseBlock)
+        //     )
+        // ));
+        // order.balance = uint48(newBalance);
+        // order.baseBlock = uint32(block.number);
+        // _orders[index] = order;
 
-        // 4. Transfer NEST from user
-        TransferHelper.safeTransferFrom(
-            NEST_TOKEN_ADDRESS, 
-            msg.sender, 
-            NEST_VAULT_ADDRESS, 
-            amount * CommonLib.NEST_UNIT * (1 ether + CommonLib.FEE_RATE * uint(order.lever)) / 1 ether
-        );
+        // // 4. Transfer NEST from user
+        // TransferHelper.safeTransferFrom(
+        //     NEST_TOKEN_ADDRESS, 
+        //     msg.sender, 
+        //     NEST_VAULT_ADDRESS, 
+        //     amount * CommonLib.NEST_UNIT * (1 ether + CommonLib.FEE_RATE * uint(order.lever)) / 1 ether
+        // );
 
-        // 5. Emit event
-        emit Buy2(index, amount, msg.sender);
+        // // 5. Emit event
+        // emit Buy2(index, amount, msg.sender);
     }
 
     /// @dev Sell order

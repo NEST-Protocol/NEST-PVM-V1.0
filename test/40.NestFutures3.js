@@ -20,6 +20,7 @@ describe('40.NestFutures3', function() {
             previous = accounts;
             accounts = {
                 height: await ethers.provider.getBlockNumber(),
+                ts: (await nestFutures3.getTimestamp()).toString(),
                 owner: await listBalances(owner, tokens),
                 nestVault: await listBalances(nestVault, tokens),
                 addr2: await listBalances(addr2, tokens)
@@ -36,43 +37,46 @@ describe('40.NestFutures3', function() {
         const ownerNestBalance = 100000000000000000000000000n;
 
         await nest.transfer(owner.address, ownerNestBalance);
-        await nestFutures3.init();
+        //await nestFutures3.init();
         await listAccounts();
 
-        await nestFutures3.directPost3(200, [toBigInt(2000/1250), toBigInt(2000/250), toBigInt(2000/16000)]);
+        await nestFutures3.directPost(200, [toBigInt(2000/1250), toBigInt(2000/250), toBigInt(2000/16000)]);
         if (true) {
-            console.log('1. buy3');
-            console.log(UI(await nestFutures3.getChannelParameter(0)));
-            await nestFutures3.buy3(0, 7, true, 1000 * NEST_BASE);
-            console.log(UI(await nestFutures3.getChannelParameter(0)));
+            console.log('1. buy');
+            console.log(UI(await nestFutures3.getChannel(0)));
+            await nestFutures3.buy(0, 7, true, 1000 * NEST_BASE);
+            console.log(UI(await nestFutures3.getChannel(0)));
             await listAccounts();
-            await nestFutures3.buy3(0, 7, true, 1000 * NEST_BASE);
-            console.log(UI(await nestFutures3.getChannelParameter(0)));
+            await nestFutures3.buy(0, 7, true, 1000 * NEST_BASE);
+            console.log(UI(await nestFutures3.getChannel(0)));
             await listAccounts();
-            await nestFutures3.buy3(0, 7, false, 10000 * NEST_BASE);
-            console.log(UI(await nestFutures3.getChannelParameter(0)));
+            await nestFutures3.buy(0, 7, false, 10000 * NEST_BASE);
+            console.log(UI(await nestFutures3.getChannel(0)));
             await listAccounts();
             for (var i = 0; i < 3; i++) {
                 await nest.transfer(owner.address, 0);
             }
-            await nestFutures3.buy3(0, 7, true, 1000 * NEST_BASE);
-            console.log(UI(await nestFutures3.getChannelParameter(0)));
+            await nestFutures3.buy(0, 7, true, 1000 * NEST_BASE);
+            console.log(UI(await nestFutures3.getChannel(0)));
             await listAccounts();
+
+            console.log(UI(await nestFutures3.list(0, 4, 1)));
+            return;
         }
 
         if (true) {
-            console.log('2. sell3');
-            await nestFutures3.sell3(0, 0);
-            console.log(UI(await nestFutures3.getChannelParameter(0)));
+            console.log('2. sell');
+            await nestFutures3.sell(0);
+            console.log(UI(await nestFutures3.getChannel(0)));
             await listAccounts();
-            await nestFutures3.sell3(0, 1);
-            console.log(UI(await nestFutures3.getChannelParameter(0)));
+            await nestFutures3.sell(1);
+            console.log(UI(await nestFutures3.getChannel(0)));
             await listAccounts();
-            await nestFutures3.sell3(0, 2);
-            console.log(UI(await nestFutures3.getChannelParameter(0)));
+            await nestFutures3.sell(2);
+            console.log(UI(await nestFutures3.getChannel(0)));
             await listAccounts();
-            await nestFutures3.sell3(0, 3);
-            console.log(UI(await nestFutures3.getChannelParameter(0)));
+            await nestFutures3.sell(3);
+            console.log(UI(await nestFutures3.getChannel(0)));
             await listAccounts();
             return;
         }

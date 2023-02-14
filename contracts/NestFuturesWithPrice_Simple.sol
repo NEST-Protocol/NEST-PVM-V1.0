@@ -205,26 +205,26 @@ contract NestFuturesWithPrice_Simple is NestFrequentlyUsed, INestFuturesWithPric
     //     (,blockNumber, price) = _decodePrice(_prices[index], pairIndex);
     // }
 
-    /// @dev Register token configuration
-    /// @param tokenAddress Target token address, 0 means eth
-    /// @param tokenConfig token configuration
-    function register(address tokenAddress, TokenConfig calldata tokenConfig) external onlyGovernance {
-        // Get registered tokenIndex by tokenAddress
-        uint index = _tokenMapping[tokenAddress];
+    // /// @dev Register token configuration
+    // /// @param tokenAddress Target token address, 0 means eth
+    // /// @param tokenConfig token configuration
+    // function register(address tokenAddress, TokenConfig calldata tokenConfig) external onlyGovernance {
+    //     // Get registered tokenIndex by tokenAddress
+    //     uint index = _tokenMapping[tokenAddress];
         
-        // index == 0 means token not registered, add
-        if (index == 0) {
-            // Add tokenConfig to array
-            _tokenConfigs.push(tokenConfig);
-            // Record index + 1
-            index = _tokenConfigs.length;
-            require(index < 0x10000, "NF:too much tokenConfigs");
-            _tokenMapping[tokenAddress] = index;
-        } else {
-            // Update tokenConfig
-            _tokenConfigs[index - 1] = tokenConfig;
-        }
-    }
+    //     // index == 0 means token not registered, add
+    //     if (index == 0) {
+    //         // Add tokenConfig to array
+    //         _tokenConfigs.push(tokenConfig);
+    //         // Record index + 1
+    //         index = _tokenConfigs.length;
+    //         require(index < 0x10000, "NF:too much tokenConfigs");
+    //         _tokenMapping[tokenAddress] = index;
+    //     } else {
+    //         // Update tokenConfig
+    //         _tokenConfigs[index - 1] = tokenConfig;
+    //     }
+    // }
 
     /// @dev Returns the current value of target address in the specified future
     /// @param index Index of future
@@ -257,28 +257,29 @@ contract NestFuturesWithPrice_Simple is NestFrequentlyUsed, INestFuturesWithPric
         uint maxFindCount, 
         address owner
     ) external view override returns (FutureView[] memory futureArray) {
-        futureArray = new FutureView[](count);
-        // Calculate search region
-        FutureInfo[] storage futures = _futures;
+        revert("NF:not support");
+        // futureArray = new FutureView[](count);
+        // // Calculate search region
+        // FutureInfo[] storage futures = _futures;
 
-        // Loop from start to end
-        uint end = 0;
-        // start is 0 means Loop from the last item
-        if (start == 0) {
-            start = futures.length;
-        }
-        // start > maxFindCount, so end is not 0
-        if (start > maxFindCount) {
-            end = start - maxFindCount;
-        }
+        // // Loop from start to end
+        // uint end = 0;
+        // // start is 0 means Loop from the last item
+        // if (start == 0) {
+        //     start = futures.length;
+        // }
+        // // start > maxFindCount, so end is not 0
+        // if (start > maxFindCount) {
+        //     end = start - maxFindCount;
+        // }
         
-        // Loop lookup to write qualified records to the buffer
-        for (uint index = 0; index < count && start > end;) {
-            FutureInfo storage fi = futures[--start];
-            if (uint(fi.accounts[owner].balance) > 0) {
-                futureArray[index++] = _toFutureView(fi, start, owner);
-            }
-        }
+        // // Loop lookup to write qualified records to the buffer
+        // for (uint index = 0; index < count && start > end;) {
+        //     FutureInfo storage fi = futures[--start];
+        //     if (uint(fi.accounts[owner].balance) > 0) {
+        //         futureArray[index++] = _toFutureView(fi, start, owner);
+        //     }
+        // }
     }
 
     /// @dev List futures
@@ -291,34 +292,35 @@ contract NestFuturesWithPrice_Simple is NestFrequentlyUsed, INestFuturesWithPric
         uint count, 
         uint order
     ) external view override returns (FutureView[] memory futureArray) {
-        // Load futures
-        FutureInfo[] storage futures = _futures;
-        // Create result array
-        futureArray = new FutureView[](count);
-        uint length = futures.length;
-        uint i = 0;
+        revert("NF:not support");
+        // // Load futures
+        // FutureInfo[] storage futures = _futures;
+        // // Create result array
+        // futureArray = new FutureView[](count);
+        // uint length = futures.length;
+        // uint i = 0;
 
-        // Reverse order
-        if (order == 0) {
-            uint index = length - offset;
-            uint end = index > count ? index - count : 0;
-            while (index > end) {
-                FutureInfo storage fi = futures[--index];
-                futureArray[i++] = _toFutureView(fi, index, msg.sender);
-            }
-        } 
-        // Positive order
-        else {
-            uint index = offset;
-            uint end = index + count;
-            if (end > length) {
-                end = length;
-            }
-            while (index < end) {
-                futureArray[i++] = _toFutureView(futures[index], index, msg.sender);
-                ++index;
-            }
-        }
+        // // Reverse order
+        // if (order == 0) {
+        //     uint index = length - offset;
+        //     uint end = index > count ? index - count : 0;
+        //     while (index > end) {
+        //         FutureInfo storage fi = futures[--index];
+        //         futureArray[i++] = _toFutureView(fi, index, msg.sender);
+        //     }
+        // } 
+        // // Positive order
+        // else {
+        //     uint index = offset;
+        //     uint end = index + count;
+        //     if (end > length) {
+        //         end = length;
+        //     }
+        //     while (index < end) {
+        //         futureArray[i++] = _toFutureView(futures[index], index, msg.sender);
+        //         ++index;
+        //     }
+        // }
     }
 
     /// @dev Obtain the number of futures that have been created
@@ -337,8 +339,9 @@ contract NestFuturesWithPrice_Simple is NestFrequentlyUsed, INestFuturesWithPric
         uint lever,
         bool orientation
     ) external view override returns (FutureView memory) {
-        uint index = _futureMapping[_getKey(tokenAddress, lever, orientation)];
-        return _toFutureView(_futures[index], index, msg.sender);
+        revert("NF:not support");
+        // uint index = _futureMapping[_getKey(tokenAddress, lever, orientation)];
+        // return _toFutureView(_futures[index], index, msg.sender);
     }
 
     // @dev Buy future
@@ -581,19 +584,19 @@ contract NestFuturesWithPrice_Simple is NestFrequentlyUsed, INestFuturesWithPric
         return miu * (block.number - baseBlock) * CommonLib.BLOCK_TIME / 1000 + 0x10000000000000000;
     }
 
-    // Convert FutureInfo to FutureView
-    function _toFutureView(FutureInfo storage fi, uint index, address owner) private view returns (FutureView memory) {
-        Account memory account = fi.accounts[owner];
-        return FutureView(
-            index,
-            fi.tokenAddress,
-            uint(fi.lever),
-            fi.orientation,
-            uint(account.balance),
-            CommonLib.decodeFloat(account.basePrice),
-            uint(account.baseBlock)
-        );
-    }
+    // // Convert FutureInfo to FutureView
+    // function _toFutureView(FutureInfo storage fi, uint index, address owner) private view returns (FutureView memory) {
+    //     Account memory account = fi.accounts[owner];
+    //     return FutureView(
+    //         index,
+    //         fi.tokenAddress,
+    //         uint(fi.lever),
+    //         fi.orientation,
+    //         uint(account.balance),
+    //         CommonLib.decodeFloat(account.basePrice),
+    //         uint(account.baseBlock)
+    //     );
+    // }
 
     // Decode composed price
     function _decodePrice(uint rawPrice, uint pairIndex) internal pure returns (uint period, uint height, uint price) {
