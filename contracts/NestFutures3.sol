@@ -126,6 +126,9 @@ contract NestFutures3 is NestFutures2_Simple {
             parameter.Sp = uint56(Sp + amount * uint(lever));
         }
 
+        parameter.ts = uint32(block.timestamp);
+        channel.parameter = parameter;
+
         // 1. Emit event
         emit Buy2(channel.orders.length, amount, msg.sender);
 
@@ -150,11 +153,6 @@ contract NestFutures3 is NestFutures2_Simple {
             // Pt
             parameter.Pt
         ));
-
-
-        parameter.ts = uint32(block.timestamp);
-
-        channel.parameter = parameter;
 
         // 4. Transfer NEST from user
         TransferHelper.safeTransferFrom(
@@ -237,25 +235,6 @@ contract NestFutures3 is NestFutures2_Simple {
         order.balance = uint48(0);
         channel.orders[orderIndex] = order;
 
-        // // Update Pt
-        // if (uint(parameter.Lp) + uint(parameter.Sp) > 0) {
-        //     int miu = (int(uint(parameter.Lp)) - int(uint(parameter.Sp)))
-        //             * 0.02e12 / 86400
-        //             / int(uint(parameter.Lp) + uint(parameter.Sp));
-       
-        //     parameter.Pt = int56(int(parameter.Pt) + miu * int(block.timestamp - parameter.ts));
-        // }
-
-        // int miuT = int(parameter.Pt - order.Pt);
-        // if (order.orientation) {
-        //     parameter.Lp = uint56(uint(parameter.Lp) - balance);
-        //     if (miuT < 0) miuT = 0;
-        // } else {
-        //     parameter.Sp = uint56(uint(parameter.Sp) - balance);
-        //     if (miuT > 0) miuT = 0;
-        // }
-        // parameter.ts = uint32(block.timestamp);
-
         // 顺序：单子出现以后，先更新P（用上一个μ) 。再更新Sp，Lp，根据新的Sp，Lp计算新的一个μ。最后调用Pt的开仓关仓差额计算持仓费。
         // 第一笔交易P0必然是0，可以理解为之前的mu也是0
         uint Lp = uint(parameter.Lp);
@@ -265,6 +244,7 @@ contract NestFutures3 is NestFutures2_Simple {
             parameter.Pt = int56(int(parameter.Pt) + miu * int(block.timestamp - uint(parameter.ts)));
         }
         int miuT = int(parameter.Pt) - int(order.Pt);
+        
         // Long
         if (order.orientation) {
             parameter.Lp = uint56(Lp - balance * lever);
@@ -275,7 +255,9 @@ contract NestFutures3 is NestFutures2_Simple {
             parameter.Sp = uint56(Sp - balance * lever);
             if (miuT > 0) miuT = 0;
         }
+
         parameter.ts = uint32(block.timestamp);
+        channel.parameter = parameter;
 
         // 4. Transfer NEST to user
         uint value = _balanceOf3(
