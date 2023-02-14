@@ -19,7 +19,10 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
     // TODO: μ is a very important information for user, it should be shown for user
     // TODO: Place orders to global array
     // TODO: Add balanceOf method
-
+    // TODO: Ask KT, wll, and lyk to open some orders in NestFutures2 on bsc test net before deploy testing contract
+    // TODO: Modify NestFutures2, _queryOracle use price in NestFutures3, and remove useless method in NestFutures2
+    // TODO: Add new proxy contract for NestFutures3
+    
     /// @dev Order structure
     struct Order {
         // Address index of owner
