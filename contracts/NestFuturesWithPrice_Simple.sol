@@ -11,7 +11,7 @@ import "./interfaces/INestVault.sol";
 import "./custom/NestFrequentlyUsed.sol";
 
 /// @dev Futures
-contract NestFuturesWithPrice is NestFrequentlyUsed, INestFuturesWithPrice {
+contract NestFuturesWithPrice_Simple is NestFrequentlyUsed, INestFuturesWithPrice {
 
     /// @dev Future information
     struct FutureInfo {
