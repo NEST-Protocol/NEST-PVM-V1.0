@@ -125,22 +125,22 @@ interface INestFuturesWithPrice {
         bool orientation
     ) external view returns (FutureView memory);
 
-    /// @dev Buy future
-    /// @param tokenAddress Target token address, 0 means eth
-    /// @param lever Lever of future
-    /// @param orientation true: call, false: put
-    /// @param nestAmount Amount of paid NEST
-    function buy(
-        address tokenAddress,
-        uint lever,
-        bool orientation,
-        uint nestAmount
-    ) external payable;
+    // /// @dev Buy future
+    // /// @param tokenAddress Target token address, 0 means eth
+    // /// @param lever Lever of future
+    // /// @param orientation true: call, false: put
+    // /// @param nestAmount Amount of paid NEST
+    // function buy(
+    //     address tokenAddress,
+    //     uint lever,
+    //     bool orientation,
+    //     uint nestAmount
+    // ) external payable;
 
-    /// @dev Buy future direct
-    /// @param index Index of future
-    /// @param nestAmount Amount of paid NEST
-    function buyDirect(uint index, uint nestAmount) external payable;
+    // /// @dev Buy future direct
+    // /// @param index Index of future
+    // /// @param nestAmount Amount of paid NEST
+    // function buyDirect(uint index, uint nestAmount) external payable;
 
     /// @dev Sell future
     /// @param index Index of future

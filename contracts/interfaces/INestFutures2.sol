@@ -85,23 +85,23 @@ interface INestFutures2 {
     /// @return orderArray List of orders
     function list2(uint offset, uint count, uint order) external view returns (OrderView[] memory orderArray);
 
-    /// @dev Buy futures
-    /// @param tokenIndex Index of token
-    /// @param lever Lever of order
-    /// @param orientation true: long, false: short
-    /// @param amount Amount of paid NEST, 4 decimals
-    /// @param stopPrice Stop price for trigger sell, 0 means not stop order
-    function buy2(uint16 tokenIndex, uint8 lever, bool orientation, uint amount, uint stopPrice) external payable;
+    // /// @dev Buy futures
+    // /// @param tokenIndex Index of token
+    // /// @param lever Lever of order
+    // /// @param orientation true: long, false: short
+    // /// @param amount Amount of paid NEST, 4 decimals
+    // /// @param stopPrice Stop price for trigger sell, 0 means not stop order
+    // function buy2(uint16 tokenIndex, uint8 lever, bool orientation, uint amount, uint stopPrice) external payable;
 
     /// @dev Set stop price for stop order
     /// @param index Index of order
     /// @param stopPrice Stop price for trigger sell
     function setStopPrice(uint index, uint stopPrice) external;
 
-    /// @dev Append buy
-    /// @param index Index of future
-    /// @param amount Amount of paid NEST
-    function add2(uint index, uint amount) external payable;
+    // /// @dev Append buy
+    // /// @param index Index of future
+    // /// @param amount Amount of paid NEST
+    // function add2(uint index, uint amount) external payable;
 
     /// @dev Sell order
     /// @param index Index of order

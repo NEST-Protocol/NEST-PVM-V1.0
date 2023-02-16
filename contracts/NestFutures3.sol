@@ -143,8 +143,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
     ) external payable override {
         // 1. Check arguments
         require(amount > CommonLib.FUTURES_NEST_LB && amount < 0x1000000000000, "NF:amount invalid");
-        // TODO: To confirm range of lever
-        require(lever > 0 && lever < 30, "NF:lever not allowed");
+        require(lever > CommonLib.LEVER_LB && lever < CommonLib.LEVER_RB, "NF:lever not allowed");
 
         // 2. Load target channel
         // channelIndex is increase from 0, if channelIndex out of range, means target channel not exist
@@ -402,7 +401,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
                 // At first, channelIndex is 0x10000, this is impossible the same with current channelIndex
                 if (channelIndex != uint(order.channelIndex)) {
                     // Update previous channel
-                    if (channelIndex != 0x10000) {
+                    if (channelIndex < 0x10000) {
                         channel.bn = uint32(block.number);
                         _channels[channelIndex] = channel;
                     }

@@ -11,7 +11,7 @@ import "./interfaces/INestVault.sol";
 import "./custom/NestFrequentlyUsed.sol";
 
 /// @dev Futures
-contract NestFuturesWithPrice is NestFrequentlyUsed, INestFuturesWithPrice {
+abstract contract NestFuturesWithPrice is NestFrequentlyUsed, INestFuturesWithPrice {
 
     /// @dev Future information
     struct FutureInfo {
@@ -72,54 +72,54 @@ contract NestFuturesWithPrice is NestFrequentlyUsed, INestFuturesWithPrice {
     constructor() {
     }
 
-    // TODO: Can remove if there is an exists proxy contract
-    /// @dev To support open-zeppelin/upgrades
-    /// @param governance INestGovernance implementation contract address
-    function initialize(address governance) public override {
-        super.initialize(governance);
-        _futures.push();
-    }
+    // // TODO: Can remove if there is an exists proxy contract
+    // /// @dev To support open-zeppelin/upgrades
+    // /// @param governance INestGovernance implementation contract address
+    // function initialize(address governance) public override {
+    //     super.initialize(governance);
+    //     _futures.push();
+    // }
 
-    /// @dev Direct post price
-    /// @param period Term of validity
-    // @param equivalents Price array, one to one with pairs
-    function directPost(uint period, uint[3] calldata /*equivalents*/) external {
-        require(msg.sender == DIRECT_POSTER, "NFWP:not directPoster");
+    // /// @dev Direct post price
+    // /// @param period Term of validity
+    // // @param equivalents Price array, one to one with pairs
+    // function directPost(uint period, uint[3] calldata /*equivalents*/) external {
+    //     require(msg.sender == DIRECT_POSTER, "NFWP:not directPoster");
 
-        assembly {
-            // Encode value at position indicated by value to float
-            function encode(value) -> v {
-                v := 0
-                // Load value from calldata
-                // Encode logic
-                for { value := calldataload(value) } gt(value, 0x3FFFFFFFFFFFFFF) { value := shr(4, value) } {
-                    v := add(v, 1)
-                }
-                v := or(v, shl(6, value))
-            }
+    //     assembly {
+    //         // Encode value at position indicated by value to float
+    //         function encode(value) -> v {
+    //             v := 0
+    //             // Load value from calldata
+    //             // Encode logic
+    //             for { value := calldataload(value) } gt(value, 0x3FFFFFFFFFFFFFF) { value := shr(4, value) } {
+    //                 v := add(v, 1)
+    //             }
+    //             v := or(v, shl(6, value))
+    //         }
 
-            period := 
-            or(
-                or(
-                    or(
-                        or(
-                            // period
-                            shl(240, period), 
-                            // block.number
-                            shl(192, number())
-                        ), 
-                        // equivalents[2]
-                        shl(128, encode(0x64))
-                    ), 
-                    // equivalents[1]
-                    shl(64, encode(0x44))
-                ), 
-                // equivalents[0]
-                encode(0x24)
-            )
-        }
-        _prices.push(period);
-    }
+    //         period := 
+    //         or(
+    //             or(
+    //                 or(
+    //                     or(
+    //                         // period
+    //                         shl(240, period), 
+    //                         // block.number
+    //                         shl(192, number())
+    //                     ), 
+    //                     // equivalents[2]
+    //                     shl(128, encode(0x64))
+    //                 ), 
+    //                 // equivalents[1]
+    //                 shl(64, encode(0x44))
+    //             ), 
+    //             // equivalents[0]
+    //             encode(0x24)
+    //         )
+    //     }
+    //     _prices.push(period);
+    // }
 
     /// @dev List prices
     /// @param pairIndex index of token in channel 0 on NEST Oracle
@@ -205,26 +205,26 @@ contract NestFuturesWithPrice is NestFrequentlyUsed, INestFuturesWithPrice {
     //     (,blockNumber, price) = _decodePrice(_prices[index], pairIndex);
     // }
 
-    /// @dev Register token configuration
-    /// @param tokenAddress Target token address, 0 means eth
-    /// @param tokenConfig token configuration
-    function register(address tokenAddress, TokenConfig calldata tokenConfig) external onlyGovernance {
-        // Get registered tokenIndex by tokenAddress
-        uint index = _tokenMapping[tokenAddress];
+    // /// @dev Register token configuration
+    // /// @param tokenAddress Target token address, 0 means eth
+    // /// @param tokenConfig token configuration
+    // function register(address tokenAddress, TokenConfig calldata tokenConfig) external onlyGovernance {
+    //     // Get registered tokenIndex by tokenAddress
+    //     uint index = _tokenMapping[tokenAddress];
         
-        // index == 0 means token not registered, add
-        if (index == 0) {
-            // Add tokenConfig to array
-            _tokenConfigs.push(tokenConfig);
-            // Record index + 1
-            index = _tokenConfigs.length;
-            require(index < 0x10000, "NF:too much tokenConfigs");
-            _tokenMapping[tokenAddress] = index;
-        } else {
-            // Update tokenConfig
-            _tokenConfigs[index - 1] = tokenConfig;
-        }
-    }
+    //     // index == 0 means token not registered, add
+    //     if (index == 0) {
+    //         // Add tokenConfig to array
+    //         _tokenConfigs.push(tokenConfig);
+    //         // Record index + 1
+    //         index = _tokenConfigs.length;
+    //         require(index < 0x10000, "NF:too much tokenConfigs");
+    //         _tokenMapping[tokenAddress] = index;
+    //     } else {
+    //         // Update tokenConfig
+    //         _tokenConfigs[index - 1] = tokenConfig;
+    //     }
+    // }
 
     /// @dev Returns the current value of target address in the specified future
     /// @param index Index of future
@@ -341,67 +341,67 @@ contract NestFuturesWithPrice is NestFrequentlyUsed, INestFuturesWithPrice {
         return _toFutureView(_futures[index], index, msg.sender);
     }
 
-    // @dev Buy future
-    // @param tokenAddress Target token address, 0 means eth
-    // @param lever Lever of future
-    // @param orientation true: call, false: put
-    // @param nestAmount Amount of paid NEST
-    function buy(
-        address,// tokenAddress,
-        uint,// lever,
-        bool,// orientation,
-        uint// nestAmount
-    ) external payable override {
-        revert("NF:please use buy2");
-        // return buyDirect(_futureMapping[_getKey(tokenAddress, lever, orientation)], nestAmount);
-    }
+    // // @dev Buy future
+    // // @param tokenAddress Target token address, 0 means eth
+    // // @param lever Lever of future
+    // // @param orientation true: call, false: put
+    // // @param nestAmount Amount of paid NEST
+    // function buy(
+    //     address,// tokenAddress,
+    //     uint,// lever,
+    //     bool,// orientation,
+    //     uint// nestAmount
+    // ) external payable override {
+    //     revert("NF:please use buy2");
+    //     // return buyDirect(_futureMapping[_getKey(tokenAddress, lever, orientation)], nestAmount);
+    // }
 
-    // @dev Buy future direct
-    // @param index Index of future
-    // @param nestAmount Amount of paid NEST
-    function buyDirect(uint /*index*/, uint /*nestAmount*/) public payable override {
-        revert("NF:please use buy2");
-        // require(index != 0, "NF:not exist");
-        // require(nestAmount >= 50 ether, "NF:at least 50 NEST");
+    // // @dev Buy future direct
+    // // @param index Index of future
+    // // @param nestAmount Amount of paid NEST
+    // function buyDirect(uint /*index*/, uint /*nestAmount*/) public payable override {
+    //     revert("NF:please use buy2");
+    //     // require(index != 0, "NF:not exist");
+    //     // require(nestAmount >= 50 ether, "NF:at least 50 NEST");
 
-        // // 1. Transfer NEST from user
-        // TransferHelper.safeTransferFrom(
-        //     NEST_TOKEN_ADDRESS, 
-        //     msg.sender, 
-        //     NEST_VAULT_ADDRESS, 
-        //     nestAmount * (1 ether + CommonLib.FEE_RATE) / 1 ether
-        // );
+    //     // // 1. Transfer NEST from user
+    //     // TransferHelper.safeTransferFrom(
+    //     //     NEST_TOKEN_ADDRESS, 
+    //     //     msg.sender, 
+    //     //     NEST_VAULT_ADDRESS, 
+    //     //     nestAmount * (1 ether + CommonLib.FEE_RATE) / 1 ether
+    //     // );
 
-        // FutureInfo storage fi = _futures[index];
-        // bool orientation = fi.orientation;
+    //     // FutureInfo storage fi = _futures[index];
+    //     // bool orientation = fi.orientation;
         
-        // // 2. Query oracle price
-        // TokenConfig memory tokenConfig = _tokenConfigs[uint(fi.tokenIndex)];
-        // uint oraclePrice = _queryPrice(tokenConfig);
+    //     // // 2. Query oracle price
+    //     // TokenConfig memory tokenConfig = _tokenConfigs[uint(fi.tokenIndex)];
+    //     // uint oraclePrice = _queryPrice(tokenConfig);
 
-        // // 3. Merger price
-        // Account memory account = fi.accounts[msg.sender];
-        // uint basePrice = CommonLib.decodeFloat(account.basePrice);
-        // uint balance = uint(account.balance);
-        // uint newPrice = oraclePrice;
-        // if (uint(account.baseBlock) > 0) {
-        //     newPrice = (balance + nestAmount) * oraclePrice * basePrice / (
-        //         basePrice * nestAmount + (balance << 64) * oraclePrice / _expMiuT(
-        //             uint(orientation ? tokenConfig.miuLong : tokenConfig.miuShort), 
-        //             uint(account.baseBlock)
-        //         )
-        //     );
-        // }
+    //     // // 3. Merger price
+    //     // Account memory account = fi.accounts[msg.sender];
+    //     // uint basePrice = CommonLib.decodeFloat(account.basePrice);
+    //     // uint balance = uint(account.balance);
+    //     // uint newPrice = oraclePrice;
+    //     // if (uint(account.baseBlock) > 0) {
+    //     //     newPrice = (balance + nestAmount) * oraclePrice * basePrice / (
+    //     //         basePrice * nestAmount + (balance << 64) * oraclePrice / _expMiuT(
+    //     //             uint(orientation ? tokenConfig.miuLong : tokenConfig.miuShort), 
+    //     //             uint(account.baseBlock)
+    //     //         )
+    //     //     );
+    //     // }
         
-        // // 4. Update account
-        // account.balance = _toUInt128(balance + nestAmount);
-        // account.basePrice = CommonLib.encodeFloat64(newPrice);
-        // account.baseBlock = uint32(block.number);
-        // fi.accounts[msg.sender] = account;
+    //     // // 4. Update account
+    //     // account.balance = _toUInt128(balance + nestAmount);
+    //     // account.basePrice = CommonLib.encodeFloat64(newPrice);
+    //     // account.baseBlock = uint32(block.number);
+    //     // fi.accounts[msg.sender] = account;
 
-        // // emit Buy event
-        // emit Buy(index, nestAmount, msg.sender);
-    }
+    //     // // emit Buy event
+    //     // emit Buy(index, nestAmount, msg.sender);
+    // }
 
     /// @dev Sell future
     /// @param index Index of future
@@ -415,7 +415,7 @@ contract NestFuturesWithPrice is NestFrequentlyUsed, INestFuturesWithPrice {
 
         // 2. Query oracle price
         TokenConfig memory tokenConfig = _tokenConfigs[uint(fi.tokenIndex)];
-        uint oraclePrice = _queryPrice(tokenConfig);
+        uint oraclePrice = _queryPrice(uint(fi.tokenIndex));
 
         // 3. Update account
         Account memory account = fi.accounts[msg.sender];
@@ -460,7 +460,7 @@ contract NestFuturesWithPrice is NestFrequentlyUsed, INestFuturesWithPrice {
             
         // 2. Query oracle price
         TokenConfig memory tokenConfig = _tokenConfigs[uint(fi.tokenIndex)];
-        uint oraclePrice = _queryPrice(tokenConfig);
+        uint oraclePrice = _queryPrice(uint(fi.tokenIndex));
 
         // 3. Loop and settle
         uint reward = 0;
@@ -509,12 +509,7 @@ contract NestFuturesWithPrice is NestFrequentlyUsed, INestFuturesWithPrice {
     }
     
     // Query price
-    function _queryPrice(TokenConfig memory tokenConfig) internal view returns (uint oraclePrice) {
-        // Query price from oracle
-        (uint period, uint height, uint price) = _decodePrice(_prices[_prices.length - 1], uint(tokenConfig.pairIndex));
-        require(block.number < height + period, "NFWP:price expired");
-        oraclePrice = CommonLib.toUSDTPrice(price);
-    }
+    function _queryPrice(uint tokenIndex) internal view virtual returns (uint oraclePrice);
 
     // Convert uint to uint128
     function _toUInt128(uint value) private pure returns (uint128) {

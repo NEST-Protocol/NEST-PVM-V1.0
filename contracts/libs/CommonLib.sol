@@ -64,6 +64,14 @@ library CommonLib {
     // Fee for execute limit order or stop order in nest values, 18 decimals
     uint constant EXECUTE_FEE_NEST = EXECUTE_FEE * NEST_UNIT;
 
+    // TODO: To confirm range of lever
+
+    // Range of lever, (LEVER_LB, LEVER_RB)
+    uint constant LEVER_LB = 0;
+
+    // Range of lever, (LEVER_LB, LEVER_RB)
+    uint constant LEVER_RB = 51;
+
     /// @dev Encode the uint value as a floating-point representation in the form of fraction * 16 ^ exponent
     /// @param value Destination uint value
     /// @return v float format
