@@ -47,7 +47,7 @@ library CommonLib {
     uint constant POST_UNIT = 2000 * USDT_BASE;
 
     // Minimum value quantity. If the balance is less than this value, it will be liquidated
-    uint constant MIN_FUTURE_VALUE = 10 ether;
+    uint constant MIN_FUTURE_VALUE = 15 ether;
 
     // Unit of nest, 4 decimals
     uint constant NEST_UNIT = 0.0001 ether;

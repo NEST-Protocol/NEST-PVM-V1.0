@@ -31,8 +31,8 @@ interface INestFutures3 {
     struct TradeChannel {
         uint56 Lp;
         uint56 Sp;
-        uint32 ts;
-        int56 Pt;
+        int56  Pt;
+        uint32 bn;
     }
 
     /// @dev Buy order event

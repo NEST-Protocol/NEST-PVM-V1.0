@@ -25,8 +25,8 @@ contract NestFuturesProxy is NestFrequentlyUsed {
         address owner;
         // Limit price for trigger buy, encode by encodeFloat56()
         uint56 limitPrice;
-        // Index of target token, support eth and btc
-        uint16 tokenIndex;
+        // Index of target channel, support eth(0), btc(1) and bnb(2)
+        uint16 channelIndex /* tokenIndex */;
         // Leverage of this order
         uint8 lever;
         // Orientation of this order, long or short
@@ -45,14 +45,28 @@ contract NestFuturesProxy is NestFrequentlyUsed {
         uint8 status;
     }
 
+    struct TrustOrder {
+        address owner;              // 160
+        uint56 limitPrice;          // 56
+        uint16 channelIndex;        // 16
+        uint8 lever;                // 8
+        bool orientation;           // 8
+        uint48 balance;             // 48
+        uint48 fee;                 // 48
+        uint48 limitFee;            // 48
+        uint56 stopProfitPrice;     // 56
+        uint56 stopLossPrice;       // 56
+        uint8 status;               // 8
+    }
+
     /// @dev Limit order information for view methods
     struct LimitOrderView {
         // Index of this order
         uint32 index;
         // Owner of this order
         address owner;
-        // Index of target token, support eth and btc
-        uint16 tokenIndex;
+        // Index of target channel, support eth(0), btc(1) and bnb(2)
+        uint16 channelIndex /* tokenIndex */;
         // Leverage of this order
         uint8 lever;
         // Orientation of this order, long or short
@@ -259,8 +273,8 @@ contract NestFuturesProxy is NestFrequentlyUsed {
                 INestFutures2(NEST_FUTURES_ADDRESS).proxyBuy2(
                     // owner
                     order.owner, 
-                    // tokenIndex
-                    order.tokenIndex, 
+                    // channelIndex
+                    order.channelIndex, 
                     // lever
                     order.lever, 
                     // orientation
@@ -294,8 +308,8 @@ contract NestFuturesProxy is NestFrequentlyUsed {
             uint32(index),
             // owner
             order.owner,
-            // tokenIndex
-            order.tokenIndex,
+            // channelIndex
+            order.channelIndex,
             // lever
             order.lever,
             // orientation

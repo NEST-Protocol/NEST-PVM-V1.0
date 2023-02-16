@@ -14,15 +14,26 @@ import "./custom/NestFrequentlyUsed.sol";
 contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
 
     // TODO: SigmaSQ is no use?
-    // TODO: Add view method to get miu
-    // TODO: Will not support order1, need notify users @KT
-    // TODO: μ is a very important information for user, it should be shown for user
-    // TODO: Place orders to global array
     // TODO: Add balanceOf method
-    // TODO: Ask KT, wll, and lyk to open some orders in NestFutures2 on bsc test net before deploy testing contract
+    // TODO: Add view method to get miu
+    // TODO: Add method to check liquidate information
+    // TODO: Place orders to global array √
     // TODO: Modify NestFutures2, _queryOracle use price in NestFutures3, and remove useless method in NestFutures2
     // TODO: Add new proxy contract for NestFutures3
-    
+
+    // TODO: Will not support order1, need notify users @KT
+    // TODO: μ is a very important information for user, it should be shown for user @KT
+    // TODO: Ask KT, wll, and lyk to open some orders in NestFutures2 on bsc test net before deploy testing contract
+    // TODO: After this update, limit order and stop order in v2 will not support, buy2, add2, setStopPrice 
+    //       in NestFutures2 will be removed, New limit order will not executed. @KT, @wll
+    // TODO: Min value of Liquidate line of NestFutures2 is updated from 10nest to 15nest
+
+    // TASK:
+    // 1. Develop new futures contract: NestFutures3
+    // 2. Develop new futures proxy contract: NestFuturesProxy
+    // 3. Remove buy2, add2, setStopPrice from NestFutures2
+    // 4. Update _queryPrice in NestFutures2, to query price from 
+
     /// @dev Order structure
     struct Order {
         // Address index of owner
@@ -67,16 +78,56 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
         _accounts.push();
     }
 
+    // TODO: Only for test
     function getTimestamp() external view returns (uint) {
         return block.timestamp;
     }
 
-    function openChannel() external onlyGovernance {
+    /// @dev Open a new trade channel
+    /// @param channelIndex Index of target channel
+    function openChannel(uint channelIndex) external onlyGovernance {
+        require(channelIndex == _channels.length, "NF:index error");
         _channels.push();
     }
 
+    /// @dev Get channel information
+    /// @param channelIndex Index of target channel
     function getChannel(uint channelIndex) external view override returns (TradeChannel memory channel) {
         channel = _channels[channelIndex];
+    }
+
+    /// @dev Returns the current value of target order
+    /// @param orderIndex Index of order
+    /// @param oraclePrice Current price from oracle, usd based, 18 decimals
+    function valueOf(uint orderIndex, uint oraclePrice) external view returns (uint value) {
+        Order memory order = _orders[orderIndex];
+        TradeChannel memory channel = _channels[uint(order.channelIndex)];
+        
+        // 2. Calculate Pt by μ from last order
+        uint Lp = uint(channel.Lp);
+        uint Sp = uint(channel.Sp);
+        if (Lp + Sp > 0) {
+            // μ is not saved, and calculate it by Lp and Sp always
+            // TODO: Confirm unit of miu
+            int miu = (int(Lp) - int(Sp)) * 0.02e12 / 86400 / int(Lp + Sp);
+            // TODO: Check truncation
+            channel.Pt = int56(
+                int(channel.Pt) + 
+                miu * int((block.number - uint(channel.bn)) * CommonLib.BLOCK_TIME / 1000)
+            );
+        }
+
+        // μt = P1 - P0
+        int miuT = int(channel.Pt) - int(order.Pt);
+
+        value = _valueOf(
+            miuT,
+            uint(order.balance) * CommonLib.NEST_UNIT, 
+            CommonLib.decodeFloat(uint(order.basePrice)),
+            oraclePrice,
+            order.orientation,
+            uint(order.lever)
+        );
     }
 
     /// @dev Buy futures
@@ -99,26 +150,29 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
         // channelIndex is increase from 0, if channelIndex out of range, means target channel not exist
         TradeChannel memory channel = _channels[channelIndex];
 
-        // Lp and Sp are add(sub) with original bond
-        // When buy, Lp(Sp) += lever * amount
-        // When sell(liquidate), Lp(Sp) -= lever * amount
-        // Original bond not include service fee
-
-        // 3. Calculate Pt
         // When order operating, update Pt first (use last miu), 
         // Then update Sp and Lp (μ can be calculate by Lp and Sp), 
         // Use the last calculated Pt for order
+        // 3. Calculate Pt by μ from last order
         uint Lp = uint(channel.Lp);
         uint Sp = uint(channel.Sp);
         if (Lp + Sp > 0) 
         {
+            // μ is not saved, and calculate it by Lp and Sp always
             // TODO: Confirm unit of miu
             int miu = (int(Lp) - int(Sp)) * 0.02e12 / 86400 / int(Lp + Sp);
             // TODO: Check truncation
-            channel.Pt = int56(int(channel.Pt) + miu * int(block.timestamp - uint(channel.ts)));
+            channel.Pt = int56(
+                int(channel.Pt) + 
+                miu * int((block.number - uint(channel.bn)) * CommonLib.BLOCK_TIME / 1000)
+            );
         }
 
-        // 4. Calculate Lp and Sp
+        // 4. Update Lp and Sp, for calculate next μ
+        // Lp and Sp are add(sub) with original bond
+        // When buy, Lp(Sp) += lever * amount
+        // When sell(liquidate), Lp(Sp) -= lever * amount
+        // Original bond not include service fee
         // Long
         if (orientation) {
             // TODO: Check truncation
@@ -131,7 +185,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
         }
 
         // 5. Update parameter for channel
-        channel.ts = uint32(block.timestamp);
+        channel.bn = uint32(block.number);
         _channels[channelIndex] = channel;
 
         // 6. Emit event
@@ -179,7 +233,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
         // 2. Load the order
         Order memory order = _orders[orderIndex];
         uint channelIndex = uint(order.channelIndex);
-        TradeChannel storage channel = _channels[channelIndex];
+        TradeChannel memory channel = _channels[channelIndex];
         
         uint balance = uint(order.balance);
         require(balance > 0, "NF:order cleared");
@@ -188,28 +242,35 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
         // 3. Calculate miuT
         int miuT = int(channel.Pt);
         {
-            // When add, first calculate balance of the order same as sell (include miu),
-            // Then add amount to the balance, and update to order,
-            // Only update balance of the order, 
-            // Pt of the order, and global Lp, Sp, Pt, miu not update
+            // Calculate Pt by μ from last order
             uint Lp = uint(channel.Lp);
             uint Sp = uint(channel.Sp);
             if (Lp + Sp > 0) {
+                // μ is not saved, and calculate it by Lp and Sp always
+                // TODO: Confirm unit of miu
                 int miu = (int(Lp) - int(Sp)) * 0.02e12 / 86400 / int(Lp + Sp);
-                miuT = miuT + miu * int(block.timestamp - uint(channel.ts));
+                miuT = miuT + miu * int((block.number - uint(channel.bn)) * CommonLib.BLOCK_TIME / 1000);
             }
+
+            // μt = P1 - P0
             miuT -= int(order.Pt);
-            if (order.orientation) {
-                if (miuT < 0) miuT = 0;
-            } else {
-                if (miuT > 0) miuT = 0;
-            }
+            
+            // // TODO: Move to balanceOf
+            // if (order.orientation) {
+            //     if (miuT < 0) miuT = 0;
+            // } else {
+            //     if (miuT > 0) miuT = 0;
+            // }
         }
 
+        // When add, first calculate balance of the order same as sell (include miu),
+        // Then add amount to the balance, and update to order,
+        // Only update balance of the order, 
+        // Pt of the order, and global Lp, Sp, Pt, miu not update
         // 3. Query oracle price
         // TODO: Optimize code
         uint oraclePrice = _queryPrice(channelIndex);
-        uint newBalance = _balanceOf(
+        uint newBalance = _valueOf(
             miuT, 
             balance,
             CommonLib.decodeFloat(order.basePrice),
@@ -234,7 +295,6 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
 
         // 6. Emit event
         emit Add(orderIndex, amount, msg.sender);
-        // TODO: Emit Add3 event
     }
 
     /// @dev Sell order
@@ -249,18 +309,31 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
         uint balance = uint(order.balance);
         uint lever = uint(order.lever);
 
-        // 2. Calculate Pt
         // When order operating, update Pt first (use last miu), then update Sp and Lp, 
         // Use the last calculated Pt for order
+
+        // 2. Calculate Pt by μ from last order
         uint Lp = uint(channel.Lp);
         uint Sp = uint(channel.Sp);
         if (Lp + Sp > 0) {
+            // μ is not saved, and calculate it by Lp and Sp always
+            // TODO: Confirm unit of miu
             int miu = (int(Lp) - int(Sp)) * 0.02e12 / 86400 / int(Lp + Sp);
-            channel.Pt = int56(int(channel.Pt) + miu * int(block.timestamp - uint(channel.ts)));
+            // TODO: Check truncation
+            channel.Pt = int56(
+                int(channel.Pt) + 
+                miu * int((block.number - uint(channel.bn)) * CommonLib.BLOCK_TIME / 1000)
+            );
         }
+
+        // μt = P1 - P0
         int miuT = int(channel.Pt) - int(order.Pt);
         
-        // 3. Calculate Lp and Sp
+        // 3. Update Lp and Sp, for calculate next μ
+        // Lp and Sp are add(sub) with original bond
+        // When buy, Lp(Sp) += lever * amount
+        // When sell(liquidate), Lp(Sp) -= lever * amount
+        // Original bond not include service fee
         // Long
         if (order.orientation) {
             channel.Lp = uint56(Lp - balance * lever);
@@ -272,7 +345,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
             if (miuT > 0) miuT = 0;
         }
         // 4. Update parameter for channel
-        channel.ts = uint32(block.timestamp);
+        channel.bn = uint32(block.number);
         _channels[channelIndex] = channel;
 
         // 5. Query oracle price
@@ -283,7 +356,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
         _orders[orderIndex] = order;
 
         // 7. Transfer NEST to user
-        uint value = _balanceOf(
+        uint value = _valueOf(
             miuT,
             // balance
             balance * CommonLib.NEST_UNIT, 
@@ -323,14 +396,14 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
             Order memory order = _orders[index];
 
             uint lever = uint(order.lever);
-            uint balance = uint(order.balance) * CommonLib.NEST_UNIT;
+            uint balance = uint(order.balance);
             if (lever > 1 && balance > 0) {
                 // If channelIndex is not same with previous, need load new channel and query oracle
                 // At first, channelIndex is 0x10000, this is impossible the same with current channelIndex
                 if (channelIndex != uint(order.channelIndex)) {
                     // Update previous channel
                     if (channelIndex != 0x10000) {
-                        channel.ts = uint32(block.timestamp);
+                        channel.bn = uint32(block.number);
                         _channels[channelIndex] = channel;
                     }
                     // Load current channel
@@ -338,30 +411,40 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
                     oraclePrice = _queryPrice(channelIndex);
                     channel = _channels[channelIndex];
 
-                    // Update Pt
+                    // Update Lp and Sp, for calculate next μ
+                    // Lp and Sp are add(sub) with original bond
+                    // When buy, Lp(Sp) += lever * amount
+                    // When sell(liquidate), Lp(Sp) -= lever * amount
+                    // Original bond not include service fee
                     uint Lp = uint(channel.Lp);
                     uint Sp = uint(channel.Sp);
                     if (Lp + Sp > 0) {
-                        int miu = (int(Lp) - int(Sp)) / 0.02e12 / 86400 / int(Lp + Sp);
-                        channel.Pt = int56(int(channel.Pt) + miu * int(block.timestamp - uint(channel.ts)));
+                        // μ is not saved, and calculate it by Lp and Sp always
+                        // TODO: Confirm unit of miu
+                        int miu = (int(Lp) - int(Sp)) * 0.02e12 / 86400 / int(Lp + Sp);
+                        // TODO: Check truncation
+                        channel.Pt = int56(
+                            int(channel.Pt) + 
+                            miu * int((block.number - uint(channel.bn)) * CommonLib.BLOCK_TIME / 1000)
+                        );
                     }
                 }
 
-                // Calculate miuT
+                // μt = P1 - P0
                 int miuT = int(channel.Pt) - int(order.Pt);
                 if (order.orientation) {
                     // TODO: Optimize code
-                    channel.Lp = uint56(uint(channel.Lp) - balance / CommonLib.NEST_UNIT * lever);
+                    channel.Lp = uint56(uint(channel.Lp) - balance * lever);
                     if (miuT < 0) miuT = 0;
                 } else {
                     // TODO: Optimize code
-                    channel.Sp = uint56(uint(channel.Sp) - balance / CommonLib.NEST_UNIT * lever);
+                    channel.Sp = uint56(uint(channel.Sp) - balance * lever);
                     if (miuT > 0) miuT = 0;
                 }
 
                 // 3. Calculate order value
                 uint basePrice = CommonLib.decodeFloat(order.basePrice);
-                uint value = _balanceOf(
+                uint value = _valueOf(
                     // tokenConfig
                     miuT,
                     // balance
@@ -381,10 +464,14 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
                 // 4. Liquidate logic
                 // TODO: The liquidate condition need update
                 // lever is great than 1, and balance less than a regular value, can be liquidated
-                // the regular value is: Max(M0 * L * St / S0 * c, a)
-                if (value < CommonLib.MIN_FUTURE_VALUE || 
-                    value < balance * lever * oraclePrice / basePrice * CommonLib.FEE_RATE / 1 ether) {
-
+                // the regular value is: Max(M0 * L * St / S0 * c, a) | expired
+                // the regular value is: Max(M0 * L * St / S0 * c + a, M0 * L * 0.5%)
+                balance = balance * CommonLib.NEST_UNIT * lever;
+                if (value < balance * 5 / 1000 ||
+                    value < balance * oraclePrice / basePrice * CommonLib.FEE_RATE / 1 ether
+                            + CommonLib.MIN_FUTURE_VALUE
+                ) {
+                    // TODO: Use this code
                     // Clear all data of order, use this code next time
                     // assembly {
                     //     mstore(0, _orders.slot)
@@ -554,12 +641,12 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
     function _queryPrice(uint channelIndex) internal view returns (uint oraclePrice) {
         // Query price from oracle
         (uint period, uint height, uint price) = _decodePrice(_lastPrices, channelIndex);
-        require(block.number < height + period, "NFWP:price expired");
+        require(block.number < height + period, "NF:price expired");
         oraclePrice = CommonLib.toUSDTPrice(price);
     }
 
     // Calculate net worth
-    function _balanceOf(
+    function _valueOf(
         int miuT,
         uint balance,
         uint basePrice,
@@ -567,21 +654,19 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
         bool ORIENTATION, 
         uint LEVER
     ) internal pure returns (uint) {
-
         if (balance > 0) {
             uint left;
             uint right;
-            // Call
+            uint base = (LEVER << 64) * balance * oraclePrice / basePrice;
+            // Long
             if (ORIENTATION) {
-                left = balance + (LEVER << 64) * balance * oraclePrice / basePrice
-                        / _expMiuT(miuT);
+                left = balance + (miuT > 0 ? base / _expMiuT(miuT) : base);
                 right = balance * LEVER;
             } 
-            // Put
+            // Short
             else {
                 left = balance * (1 + LEVER);
-                right = (LEVER << 64) * balance * oraclePrice / basePrice 
-                        / _expMiuT(miuT);
+                right = miuT < 0 ? base / _expMiuT(miuT) : base;
             }
 
             if (left > right) {
@@ -601,6 +686,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
         // ));
 
         // Using approximate algorithm: x*(1+rt)
+        // TODO: This may be 0, or negative!
         return uint((miuT * 0x10000000000000000) / 1e12 + 0x10000000000000000);
     }
 

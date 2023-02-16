@@ -188,9 +188,9 @@ exports.deploy = async function() {
     console.log('14. create hbtc short lever');
     await nestFutures.create(hbtc.address, [1, 2, 3, 4, 5], false);
 
-    await nestFutures3.openChannel();
-    await nestFutures3.openChannel();
-    await nestFutures3.openChannel();
+    await nestFutures3.openChannel(0);
+    await nestFutures3.openChannel(1);
+    await nestFutures3.openChannel(2);
 
     await nestVault.approve(nestOptions.address, 100000000000000000000000000n);
     await nestVault.approve(nestFutures.address, 100000000000000000000000000n);
