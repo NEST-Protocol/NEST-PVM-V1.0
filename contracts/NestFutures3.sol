@@ -16,14 +16,15 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
     int constant MIU_DECIMALS = 1e12;
     int constant MIU_LAMBDA = 0.02e12;
 
-    // TODO: SigmaSQ is no use?
-    // TODO: Add balanceOf method
-    // TODO: Add view method to get miu
+    // TODO: SigmaSQ is no use? √
+    // TODO: Add valueOf method √
+    // TODO: Add view method to get miu √
     // TODO: Add method to check liquidate information
     // TODO: Place orders to global array √
     // TODO: Modify NestFutures2, _queryOracle use price in NestFutures3, and remove useless method in NestFutures2
     // TODO: Add new proxy contract for NestFutures3
     // TODO: Need make sure each tokenIndex(eth&btc) in NestFutures2 is equals to channelIndex in NestFutures3
+    // TODO: Add a field at Order to store appended amount, Correct logic of add(), sell(), liquidate, valueOf()
 
     // TODO: Will not support order1, need notify users @KT
     // TODO: μ is a very important information for user, it should be shown for user @KT
@@ -31,6 +32,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
     // TODO: After this update, limit order and stop order in v2 will not support, buy2, add2, setStopPrice 
     //       in NestFutures2 will be removed, New limit order will not executed. @KT, @wll
     // TODO: Min value of Liquidate line of NestFutures2 is updated from 10nest to 15nest
+    // TODO: 
 
     // TASK:
     // 1. Develop new futures contract: NestFutures3
@@ -150,7 +152,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
     /// @dev Returns the current value of target order
     /// @param orderIndex Index of order
     /// @param oraclePrice Current price from oracle, usd based, 18 decimals
-    function valueOf(uint orderIndex, uint oraclePrice) external view returns (uint value) {
+    function valueOf1(uint orderIndex, uint oraclePrice) external view returns (uint value) {
         Order memory order = _orders[orderIndex];
         TradeChannel memory channel = _channels[uint(order.channelIndex)];
         
@@ -520,7 +522,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
             Order memory order = _orders[index];
 
             uint lever = uint(order.lever);
-            uint balance = uint(order.balance);
+            uint balance = uint(order.balance) * CommonLib.NEST_UNIT * lever;
             if (lever > 1 && balance > 0) {
                 // If channelIndex is not same with previous, need load new channel and query oracle
                 // At first, channelIndex is 0x10000, this is impossible the same with current channelIndex
@@ -563,8 +565,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
                     // tokenConfig
                     miuT,
                     // balance
-                    // TODO: Need multiply with CommonLib.NEST_UNIT
-                    balance * CommonLib.NEST_UNIT, 
+                    balance / lever, 
                     // basePrice
                     basePrice, 
                     // baseBlock
@@ -582,7 +583,6 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
                 // lever is great than 1, and balance less than a regular value, can be liquidated
                 // the regular value is: Max(M0 * L * St / S0 * c, a) | expired
                 // the regular value is: Max(M0 * L * St / S0 * c + a, M0 * L * 0.5%)
-                balance = balance * CommonLib.NEST_UNIT * lever;
                 if (value < balance * 5 / 1000 ||
                     value < balance * oraclePrice / basePrice * CommonLib.FEE_RATE / 1 ether
                             + CommonLib.MIN_FUTURE_VALUE
@@ -616,6 +616,13 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
                     emit Liquidate(index, msg.sender, value);
                 }
             }
+        }
+
+        // TODO: Test if no this code
+        // Update previous channel
+        if (channelIndex < 0x10000) {
+            channel.bn = uint32(block.number);
+            _channels[channelIndex] = channel;
         }
 
         // 6. Transfer NEST to user

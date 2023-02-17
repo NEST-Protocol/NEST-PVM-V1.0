@@ -275,6 +275,13 @@ contract NestFuturesProxy3 is NestFutures3 {
             _orders[orderIndex] = order;
         }
 
+        // TODO: Test if no this code
+        // Update previous channel
+        if (channelIndex < 0x10000) {
+            channel.bn = uint32(block.number);
+            _channels[channelIndex] = channel;
+        }
+
         // Transfer NEST to NestVault
         TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, NEST_VAULT_ADDRESS, totalNest * CommonLib.NEST_UNIT);
     }
@@ -349,7 +356,14 @@ contract NestFuturesProxy3 is NestFutures3 {
                     lever
                 );
 
-                uint fee = balance * CommonLib.NEST_UNIT * lever * oraclePrice / basePrice * CommonLib.FEE_RATE / 1 ether;
+                uint fee = balance 
+                         * CommonLib.NEST_UNIT 
+                         * lever 
+                         * oraclePrice 
+                         / basePrice 
+                         * CommonLib.FEE_RATE 
+                         / 1 ether;
+                         
                 // Newest value of order is greater than fee + EXECUTE_FEE, deduct and transfer NEST to owner
                 if (value > fee + CommonLib.EXECUTE_FEE_NEST) {
                     INestVault(NEST_VAULT_ADDRESS).transferTo(owner, value - fee - CommonLib.EXECUTE_FEE_NEST);
@@ -360,6 +374,13 @@ contract NestFuturesProxy3 is NestFutures3 {
             }
         }
         
+        // TODO: Test if no this code
+        // Update previous channel
+        if (channelIndex < 0x10000) {
+            channel.bn = uint32(block.number);
+            _channels[channelIndex] = channel;
+        }
+
         // Transfer EXECUTE_FEE to proxy address
         INestVault(NEST_VAULT_ADDRESS).transferTo(address(this), executeFee);
     }

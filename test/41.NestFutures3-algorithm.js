@@ -259,16 +259,18 @@ describe('41.NestFutures3-algorithm.js', function() {
                     }
                 }
 
-                compareOrder(index);
+                await compareOrder(index);
             }
 
             FEQ({
                a: reward,
-               b: parseFloat(accounts.owner.NEST) - parseFloat(previous.owner.NEST)
+               b: parseFloat(accounts.owner.NEST) - parseFloat(previous.owner.NEST),
+               d: 0.00000001
             });
             FEQ({
                 a: reward,
-                b: parseFloat(previous.nestVault.NEST) - parseFloat(accounts.nestVault.NEST)
+                b: parseFloat(previous.nestVault.NEST) - parseFloat(accounts.nestVault.NEST),
+                d: 0.00000001
             });
         }
 
@@ -299,7 +301,10 @@ describe('41.NestFutures3-algorithm.js', function() {
 
         if (true) {
             console.log('4. liquidate');
+            console.log((await nestFutures3.valueOf1(2, toBigInt(queryPrice(0)) * 132n / 100n)).toString());
+            await directPost(200, [1.203007, 2000/250, 2000/16000]);
             await liquidate(owner, [0, 1, 2, 3]);
+            await updateChannel(0, 0, false);
         }
     });
 });
