@@ -20,7 +20,6 @@ describe('40.NestFutures3', function() {
             previous = accounts;
             accounts = {
                 height: await ethers.provider.getBlockNumber(),
-                ts: (await nestFutures3.getTimestamp()).toString(),
                 owner: await listBalances(owner, tokens),
                 nestVault: await listBalances(nestVault, tokens),
                 addr2: await listBalances(addr2, tokens)

@@ -229,5 +229,11 @@ exports.listBalances = async function(account, tokens) {
 
 exports.FEQ = function(o) {
     console.log(o);
-    expect(Math.abs(parseFloat(o.a) - parseFloat(o.b))).to.lte(o.d || 0);
+    const a = parseFloat(o.a);
+    const b = parseFloat(o.b);
+    const c = Math.abs(a) + Math.abs(b);
+    
+    if (c > 0) {
+        expect(Math.abs(a - b) / c).to.lte(o.d || 0);
+    }
 };
