@@ -5,12 +5,12 @@ pragma solidity ^0.8.6;
 import "./libs/TransferHelper.sol";
 import "./libs/CommonLib.sol";
 
-import "./interfaces/INestFutures2.sol";
+import "./interfaces/INestTrustFutures.sol";
 
 import "./NestFutures3.sol";
 
 /// @dev Futures proxy
-contract NestFuturesProxy3 is NestFutures3 {
+contract NestTrustFutures is NestFutures3, INestTrustFutures {
 
     // TODO: Add list and find method
 
@@ -20,35 +20,6 @@ contract NestFuturesProxy3 is NestFutures3 {
     uint constant S_NORMAL = 1;
     // Status of limit order: canceled
     uint constant S_CANCELED = 2;
-
-    /// @dev TrustOrder information for view methods
-    struct TrustOrderView {
-        // Index of this TrustOrder
-        uint32 index;
-        // Owner of this order
-        address owner;
-        // Index of target Order
-        uint32 orderIndex;
-        // Index of target channel, support eth(0), btc(1) and bnb(2)
-        uint16 channelIndex;
-        // Leverage of this order
-        uint8 lever;
-        // Orientation of this order, long or short
-        bool orientation;
-
-        // Limit price for trigger buy
-        uint limitPrice;
-        // Stop price for trigger sell
-        uint stopProfitPrice;
-        uint stopLossPrice;
-
-        // Balance of nest, 4 decimals
-        uint40 balance;
-        // Service fee, 4 decimals
-        uint40 fee;
-        // Status of order, 0: executed, 1: normal, 2: canceled
-        uint8 status;
-    }
 
     // TrustOrder, include limit order and stop order
     struct TrustOrder {
@@ -96,7 +67,7 @@ contract NestFuturesProxy3 is NestFutures3 {
         uint count, 
         uint maxFindCount, 
         address owner
-    ) external view returns (TrustOrderView[] memory orderArray) {
+    ) external view override returns (TrustOrderView[] memory orderArray) {
         orderArray = new TrustOrderView[](count);
         // Calculate search region
         TrustOrder[] storage orders = _trustOrders;
@@ -131,7 +102,7 @@ contract NestFuturesProxy3 is NestFutures3 {
         uint offset, 
         uint count, 
         uint order
-    ) external view returns (TrustOrderView[] memory orderArray) {
+    ) external view override returns (TrustOrderView[] memory orderArray) {
         // Load orders
         TrustOrder[] storage orders = _trustOrders;
         // Create result array
@@ -178,7 +149,7 @@ contract NestFuturesProxy3 is NestFutures3 {
         uint limitPrice,
         uint stopProfitPrice,
         uint stopLossPrice
-    ) external {
+    ) external override {
         // 1. Check arguments
         require(amount > CommonLib.FUTURES_NEST_LB && amount < 0x10000000000, "NF:amount invalid");
         require(lever > CommonLib.LEVER_LB && lever < CommonLib.LEVER_RB, "NF:lever not allowed");
@@ -236,7 +207,7 @@ contract NestFuturesProxy3 is NestFutures3 {
     /// @dev Update limitPrice for TrustOrder
     /// @param trustOrderIndex Index of TrustOrder
     /// @param limitPrice Limit price for trigger buy
-    function updateLimitPrice(uint trustOrderIndex, uint limitPrice) external {
+    function updateLimitPrice(uint trustOrderIndex, uint limitPrice) external override {
         // Load TrustOrder
         TrustOrder memory trustOrder = _trustOrders[trustOrderIndex];
 
@@ -259,7 +230,7 @@ contract NestFuturesProxy3 is NestFutures3 {
     /// @param trustOrderIndex Index of target TrustOrder
     /// @param stopProfitPrice If not 0, will open a stop order
     /// @param stopLossPrice If not 0, will open a stop order
-    function updateStopPrice(uint trustOrderIndex, uint stopProfitPrice, uint stopLossPrice) external {
+    function updateStopPrice(uint trustOrderIndex, uint stopProfitPrice, uint stopLossPrice) external override {
         // Load TrustOrder
         TrustOrder memory trustOrder = _trustOrders[trustOrderIndex];
 
@@ -283,7 +254,7 @@ contract NestFuturesProxy3 is NestFutures3 {
     /// @param orderIndex Index of target Order
     /// @param stopProfitPrice If not 0, will open a stop order
     /// @param stopLossPrice If not 0, will open a stop order
-    function newStopOrder(uint orderIndex, uint stopProfitPrice, uint stopLossPrice) external {
+    function newStopOrder(uint orderIndex, uint stopProfitPrice, uint stopLossPrice) external override {
         Order memory order = _orders[orderIndex];
         require(uint(order.balance) > 0, "NF:order cleared");
         require(msg.sender == _accounts[uint(order.owner)], "NF:not owner");
@@ -300,7 +271,7 @@ contract NestFuturesProxy3 is NestFutures3 {
 
     /// @dev Cancel TrustOrder, for everyone
     /// @param trustOrderIndex Index of TrustOrder
-    function cancelLimitOrder(uint trustOrderIndex) external {
+    function cancelLimitOrder(uint trustOrderIndex) external override {
         // Load TrustOrder
         TrustOrder memory trustOrder = _trustOrders[trustOrderIndex];
         // Check status
@@ -320,7 +291,7 @@ contract NestFuturesProxy3 is NestFutures3 {
 
     /// @dev Execute limit order, only maintains account
     /// @param trustOrderIndices Array of TrustOrder index
-    function executeLimitOrder(uint[] calldata trustOrderIndices) external onlyMaintains {
+    function executeLimitOrder(uint[] calldata trustOrderIndices) external override onlyMaintains {
         uint totalNest = 0;
         uint oraclePrice = 0;
         uint channelIndex = 0x10000;
@@ -403,7 +374,7 @@ contract NestFuturesProxy3 is NestFutures3 {
 
     /// @dev Execute stop order, only maintains account
     /// @param trustOrderIndices Array of TrustOrder index
-    function executeStopOrder(uint[] calldata trustOrderIndices) external {
+    function executeStopOrder(uint[] calldata trustOrderIndices) external override onlyMaintains {
         uint executeFee = 0;
         uint oraclePrice = 0;
         uint channelIndex = 0x10000;
