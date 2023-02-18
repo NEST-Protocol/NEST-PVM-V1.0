@@ -22,17 +22,17 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
     // TODO: Add method to check liquidate information
     // TODO: Place orders to global array √
     // TODO: Modify NestFutures2, _queryOracle use price in NestFutures3, and remove useless method in NestFutures2
-    // TODO: Add new proxy contract for NestFutures3
+    // TODO: Add new proxy contract for NestFutures3 √
     // TODO: Need make sure each tokenIndex(eth&btc) in NestFutures2 is equals to channelIndex in NestFutures3
     // TODO: Add a field at Order to store appended amount, Correct logic of add(), sell(), liquidate, valueOf()
 
-    // TODO: Will not support order1, need notify users @KT
+    // TODO: Will not support order1, need notify users @KT ×
     // TODO: μ is a very important information for user, it should be shown for user @KT
     // TODO: Ask KT, wll, and lyk to open some orders in NestFutures2 on bsc test net before deploy testing contract
     // TODO: After this update, limit order and stop order in v2 will not support, buy2, add2, setStopPrice 
     //       in NestFutures2 will be removed, New limit order will not executed. @KT, @wll
     // TODO: Min value of Liquidate line of NestFutures2 is updated from 10nest to 15nest
-    // TODO: 
+    // TODO: The order data will cleared when liquidate, notify @wll
 
     // TASK:
     // 1. Develop new futures contract: NestFutures3
@@ -90,8 +90,9 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
 
     /// @dev Direct post price
     /// @param period Term of validity
-    // @param equivalents Price array, one to one with pairs
-    function directPost(uint period, uint[3] calldata /*equivalents*/) external {
+    // @param prices Price array, direct price, eth&btc&bnb, eg: 1700e18, 25000e18, 300e18
+    // Please note that the price is no longer relative to 2000 USD
+    function post(uint period, uint[3] calldata /*prices*/) external {
         // TODO: Restore this code
         //require(msg.sender == DIRECT_POSTER, "NF:not directPoster");
 
@@ -149,6 +150,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
         channel = _channels[channelIndex];
     }
 
+    // TODO: Give an other name
     /// @dev Returns the current value of target order
     /// @param orderIndex Index of order
     /// @param oraclePrice Current price from oracle, usd based, 18 decimals
@@ -324,7 +326,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
             // basePrice
             // Query oraclePrice
             // TODO: Rewrite queryPrice function
-            CommonLib.encodeFloat56(_queryPrice(channelIndex)),
+            CommonLib.encodeFloat56(_lastPrice(channelIndex)),
             // balance
             uint48(amount),
             // baseBlock
@@ -395,7 +397,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
         // Pt of the order, and global Lp, Sp, Pt, miu not update
         // 3. Query oracle price
         // TODO: Optimize code
-        uint oraclePrice = _queryPrice(channelIndex);
+        uint oraclePrice = _lastPrice(channelIndex);
         uint newBalance = _valueOf(
             miuT, 
             balance * CommonLib.NEST_UNIT,
@@ -475,7 +477,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
         _channels[channelIndex] = channel;
 
         // 5. Query oracle price
-        uint oraclePrice = _queryPrice(channelIndex);
+        uint oraclePrice = _lastPrice(channelIndex);
 
         // 6. Update order
         order.balance = uint48(0);
@@ -534,7 +536,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
                     }
                     // Load current channel
                     channelIndex = uint(order.channelIndex);
-                    oraclePrice = _queryPrice(channelIndex);
+                    oraclePrice = _lastPrice(channelIndex);
                     channel = _channels[channelIndex];
 
                     // Update Lp and Sp, for calculate next μ
@@ -639,7 +641,9 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
 
         // Using approximate algorithm: x*(1+rt)
         // TODO: This may be 0, or negative!
-        return uint((miuT * 0x10000000000000000) / MIU_DECIMALS + 0x10000000000000000);
+        int v = (miuT * 0x10000000000000000) / MIU_DECIMALS + 0x10000000000000000;
+        if (v < 1) return 1;
+        return uint(v);
     }
 
     // Calculate net worth
@@ -677,11 +681,11 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
     }
 
     // Query price
-    function _queryPrice(uint channelIndex) internal view returns (uint oraclePrice) {
+    function _lastPrice(uint channelIndex) internal view returns (uint oraclePrice) {
         // Query price from oracle
         (uint period, uint height, uint price) = _decodePrice(_lastPrices, channelIndex);
         require(block.number < height + period, "NF:price expired");
-        oraclePrice = CommonLib.toUSDTPrice(price);
+        oraclePrice = price;
     }
 
     // Decode composed price

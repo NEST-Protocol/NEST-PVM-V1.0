@@ -227,8 +227,8 @@ exports.listBalances = async function(account, tokens) {
     return balances;
 };
 
-exports.FEQ = function(o) {
-    console.log(o);
+exports.FEQ = function(o, silent) {
+    if (!silent) console.log(o);
     const a = parseFloat(o.a);
     const b = parseFloat(o.b);
     const c = Math.abs(a) + Math.abs(b);

@@ -564,6 +564,6 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
     function _queryPrice(uint tokenIndex) internal view override returns (uint oraclePrice) {
         (uint period, uint height, uint price) = INestFutures3(NEST_FUTURES3_ADDRESS).lastPrice(tokenIndex);
         require(block.number < height + period, "NF:price expired");
-        oraclePrice = CommonLib.toUSDTPrice(price);
+        oraclePrice = price;
     }
 }

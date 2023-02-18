@@ -230,7 +230,7 @@ contract NestFuturesProxy3 is NestFutures3 {
                 }
                 // Load current channel
                 channelIndex = uint(order.channelIndex);
-                oraclePrice = _queryPrice(channelIndex);
+                oraclePrice = _lastPrice(channelIndex);
                 channel = _channels[channelIndex];
 
                 // Update Lp and Sp, for calculate next μ
@@ -317,7 +317,7 @@ contract NestFuturesProxy3 is NestFutures3 {
                     }
                     // Load current channel
                     channelIndex = uint(order.channelIndex);
-                    oraclePrice = _queryPrice(channelIndex);
+                    oraclePrice = _lastPrice(channelIndex);
                     channel = _channels[channelIndex];
 
                     // Update Lp and Sp, for calculate next μ
