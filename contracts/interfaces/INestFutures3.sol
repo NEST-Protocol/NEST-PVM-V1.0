@@ -12,13 +12,13 @@ interface INestFutures3 {
         // Owner of this order
         address owner;
         // Balance of this order, 4 decimals
-        uint48 balance;
+        uint40 balance;
         // Index of target channel, support eth, btc and bnb
         uint16 channelIndex;
-        // Open block of this order
-        uint32 baseBlock;
         // Leverage of this order
         uint8 lever;
+        // Append amount of this order
+        uint40 append;
         // Orientation of this order, long or short
         bool orientation;
         // Base price of this order

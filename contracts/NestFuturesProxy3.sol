@@ -12,6 +12,8 @@ import "./NestFutures3.sol";
 /// @dev Futures proxy
 contract NestFuturesProxy3 is NestFutures3 {
 
+    // TODO: Add list and find method
+
     // Status of limit order: executed
     uint constant S_EXECUTED = 0;
     // Status of limit order: normal
@@ -19,25 +21,59 @@ contract NestFuturesProxy3 is NestFutures3 {
     // Status of limit order: canceled
     uint constant S_CANCELED = 2;
 
+    /// @dev TrustOrder information for view methods
+    struct TrustOrderView {
+        // Index of this TrustOrder
+        uint32 index;
+        // Owner of this order
+        address owner;
+        // Index of target Order
+        uint32 orderIndex;
+        // Index of target channel, support eth(0), btc(1) and bnb(2)
+        uint16 channelIndex;
+        // Leverage of this order
+        uint8 lever;
+        // Orientation of this order, long or short
+        bool orientation;
+
+        // Limit price for trigger buy
+        uint limitPrice;
+        // Stop price for trigger sell
+        uint stopProfitPrice;
+        uint stopLossPrice;
+
+        // Balance of nest, 4 decimals
+        uint40 balance;
+        // Service fee, 4 decimals
+        uint40 fee;
+        // Status of order, 0: executed, 1: normal, 2: canceled
+        uint8 status;
+    }
+
     // TrustOrder, include limit order and stop order
     struct TrustOrder {
-        uint32 orderIndex;            // 32
-        //uint56 limitPrice;          // 56
-        //uint16 channelIndex;        // 16
-        //uint8 lever;                // 8
-        //bool orientation;           // 8
-        uint48 balance;             // 48
-        uint48 fee;                 // 48
-        //uint48 limitFee;            // 48
-        uint56 stopProfitPrice;     // 56
-        uint56 stopLossPrice;       // 56
-        uint8 status;               // 8
+        uint32 orderIndex;              // 32
+        uint40 balance;                 // 48
+        uint40 fee;                     // 48
+        //uint48 limitFee;              // 48
+        uint56 stopProfitPrice;         // 56
+        uint56 stopLossPrice;           // 56
+        uint8 status;                   // 8
     }
 
     // Array of TrustOrders
     TrustOrder[] _trustOrders;
 
-    address constant MAINTAINS_ADDRESS = 0x029972C516c4F248c5B066DA07DbAC955bbb5E7F;
+    // TODO: 
+    // address constant MAINTAINS_ADDRESS = 0x029972C516c4F248c5B066DA07DbAC955bbb5E7F;
+    address MAINTAINS_ADDRESS;
+    /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
+    ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
+    /// @param newGovernance INestGovernance implementation contract address
+    function update(address newGovernance) public virtual override {
+        super.update(newGovernance);
+        MAINTAINS_ADDRESS = INestGovernance(newGovernance).checkAddress("nest.app.maintains");
+    }
 
     modifier onlyMaintains {
         require(msg.sender == MAINTAINS_ADDRESS, "NFP:not maintains");
@@ -45,7 +81,85 @@ contract NestFuturesProxy3 is NestFutures3 {
     }
 
     constructor() {
+    }
 
+    
+    /// @dev Find the orders of the target address (in reverse order)
+    /// @param start Find forward from the index corresponding to the given owner address 
+    /// (excluding the record corresponding to start)
+    /// @param count Maximum number of records returned
+    /// @param maxFindCount Find records at most
+    /// @param owner Target address
+    /// @return orderArray Matched orders
+    function findTrustOrder(
+        uint start, 
+        uint count, 
+        uint maxFindCount, 
+        address owner
+    ) external view returns (TrustOrderView[] memory orderArray) {
+        orderArray = new TrustOrderView[](count);
+        // Calculate search region
+        TrustOrder[] storage orders = _trustOrders;
+
+        // Loop from start to end
+        uint end = 0;
+        // start is 0 means Loop from the last item
+        if (start == 0) {
+            start = orders.length;
+        }
+        // start > maxFindCount, so end is not 0
+        if (start > maxFindCount) {
+            end = start - maxFindCount;
+        }
+        
+        // Loop lookup to write qualified records to the buffer
+        uint ownerIndex = _accountMapping[owner];
+        for (uint index = 0; index < count && start > end;) {
+            TrustOrder memory order = orders[--start];
+            if (_orders[uint(order.orderIndex)].owner == ownerIndex) {
+                orderArray[index++] = _toTrustOrderView(order, start);
+            }
+        }
+    }
+
+    /// @dev List TrustOrder
+    /// @param offset Skip previous (offset) records
+    /// @param count Return (count) records
+    /// @param order Order. 0 reverse order, non-0 positive order
+    /// @return orderArray List of orders
+    function listTrustOrder(
+        uint offset, 
+        uint count, 
+        uint order
+    ) external view returns (TrustOrderView[] memory orderArray) {
+        // Load orders
+        TrustOrder[] storage orders = _trustOrders;
+        // Create result array
+        orderArray = new TrustOrderView[](count);
+        uint length = orders.length;
+        uint i = 0;
+
+        // Reverse order
+        if (order == 0) {
+            uint index = length - offset;
+            uint end = index > count ? index - count : 0;
+            while (index > end) {
+                TrustOrder memory o = orders[--index];
+                orderArray[i++] = _toTrustOrderView(o, index);
+            }
+        } 
+        // Positive order
+        else {
+            uint index = offset;
+            uint end = index + count;
+            if (end > length) {
+                end = length;
+            }
+            while (index < end) {
+                orderArray[i++] = _toTrustOrderView(orders[index], index);
+                ++index;
+            }
+        }
     }
 
     /// @dev Create TrustOrder, for everyone
@@ -66,7 +180,7 @@ contract NestFuturesProxy3 is NestFutures3 {
         uint stopLossPrice
     ) external {
         // 1. Check arguments
-        require(amount > CommonLib.FUTURES_NEST_LB && amount < 0x1000000000000, "NF:amount invalid");
+        require(amount > CommonLib.FUTURES_NEST_LB && amount < 0x10000000000, "NF:amount invalid");
         require(lever > CommonLib.LEVER_LB && lever < CommonLib.LEVER_RB, "NF:lever not allowed");
         
         // 2. Service fee, 4 decimals
@@ -77,9 +191,9 @@ contract NestFuturesProxy3 is NestFutures3 {
             // orderIndex
             uint32(_orders.length),
             // balance
-            uint48(amount),
+            uint40(amount),
             // fee
-            uint48(fee),
+            uint40(fee),
             // stopProfitPrice
             stopProfitPrice > 0 ? CommonLib.encodeFloat56(stopProfitPrice) : uint56(0),
             // stopLossPrice
@@ -97,9 +211,9 @@ contract NestFuturesProxy3 is NestFutures3 {
             // TODO: Rewrite queryPrice function
             CommonLib.encodeFloat56(limitPrice),
             // balance
-            uint48(0),
-            // baseBlock
-            uint32(block.number),
+            uint40(0),
+            // appends
+            uint40(0),
             // channelIndex
             channelIndex,
             // lever
@@ -126,6 +240,7 @@ contract NestFuturesProxy3 is NestFutures3 {
         // Load TrustOrder
         TrustOrder memory trustOrder = _trustOrders[trustOrderIndex];
 
+        // TODO: Can user create an TrustOrder then change Order.basePrice to attack?
         // Check status
         require(uint(trustOrder.status) == S_NORMAL, "NF:status error");
         
@@ -144,7 +259,7 @@ contract NestFuturesProxy3 is NestFutures3 {
     /// @param trustOrderIndex Index of target TrustOrder
     /// @param stopProfitPrice If not 0, will open a stop order
     /// @param stopLossPrice If not 0, will open a stop order
-    function changeStopPrice(uint trustOrderIndex, uint stopProfitPrice, uint stopLossPrice) external {
+    function updateStopPrice(uint trustOrderIndex, uint stopProfitPrice, uint stopLossPrice) external {
         // Load TrustOrder
         TrustOrder memory trustOrder = _trustOrders[trustOrderIndex];
 
@@ -175,8 +290,8 @@ contract NestFuturesProxy3 is NestFutures3 {
 
         _trustOrders.push(TrustOrder(
             uint32(orderIndex),
-            uint48(0),
-            uint48(0),
+            uint40(0),
+            uint40(0),
             stopProfitPrice > 0 ? CommonLib.encodeFloat56(stopProfitPrice) : uint56(stopProfitPrice),
             stopLossPrice > 0 ? CommonLib.encodeFloat56(stopLossPrice) : uint56(stopLossPrice),
             uint8(S_EXECUTED)
@@ -262,12 +377,12 @@ contract NestFuturesProxy3 is NestFutures3 {
 
             // Update Order: basePrice, baseBlock, balance, Pt
             order.basePrice = CommonLib.encodeFloat56(oraclePrice);
-            order.baseBlock = uint32(block.number);
-            order.balance = uint48(balance);
+            order.balance = uint40(balance);
             order.Pt = channel.Pt;
 
             // Update TrustOrder: balance, status
-            trustOrder.balance = 0;
+            trustOrder.balance = uint40(0);
+            trustOrder.fee = uint40(0);
             trustOrder.status = uint8(S_EXECUTED);
 
             // Update TrustOrder and Order
@@ -298,8 +413,7 @@ contract NestFuturesProxy3 is NestFutures3 {
         for (uint i = trustOrderIndices.length; i > 0;) {
             TrustOrder memory trustOrder = _trustOrders[trustOrderIndices[--i]];
             require(uint(trustOrder.status) == S_EXECUTED, "NF:status error");
-            uint orderIndex = uint(trustOrder.orderIndex);
-            Order memory order = _orders[orderIndex];
+            Order memory order = _orders[uint(trustOrder.orderIndex)];
             uint balance = uint(order.balance);
 
             if (balance > 0) {
@@ -344,9 +458,6 @@ contract NestFuturesProxy3 is NestFutures3 {
                     channel.Sp = uint56(uint(channel.Sp) - balance * lever);
                 }
 
-                order.balance = uint48(0);
-                _orders[orderIndex] = order;
-
                 uint value = _valueOf(
                     int(channel.Pt) - int(order.Pt),
                     balance * CommonLib.NEST_UNIT,
@@ -354,7 +465,11 @@ contract NestFuturesProxy3 is NestFutures3 {
                     oraclePrice,
                     order.orientation,
                     lever
-                );
+                ) + uint(order.appends) * CommonLib.NEST_UNIT;
+
+                order.balance = uint40(0);
+                order.appends = uint40(0);
+                _orders[uint(trustOrder.orderIndex)] = order;
 
                 uint fee = balance 
                          * CommonLib.NEST_UNIT 
@@ -370,7 +485,7 @@ contract NestFuturesProxy3 is NestFutures3 {
                 }
                 executeFee += CommonLib.EXECUTE_FEE_NEST;
 
-                emit Sell(orderIndex, balance, owner, value);
+                emit Sell(uint(trustOrder.orderIndex), balance, owner, value);
             }
         }
         
@@ -383,5 +498,43 @@ contract NestFuturesProxy3 is NestFutures3 {
 
         // Transfer EXECUTE_FEE to proxy address
         INestVault(NEST_VAULT_ADDRESS).transferTo(address(this), executeFee);
+    }
+
+    /// @dev Settle execute fee to MAINTAINS_ADDRESS
+    /// @param value Value of total execute fee
+    function settleExecuteFee(uint value) external onlyGovernance {
+        TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, MAINTAINS_ADDRESS, value);
+    }
+
+    // Convert TrustOrder to TrustOrderView
+    function _toTrustOrderView(TrustOrder memory trustOrder, uint index) internal view returns (TrustOrderView memory v) {
+        Order memory order = _orders[uint(trustOrder.orderIndex)];
+        v = TrustOrderView(
+            // Index of this TrustOrder
+            uint32(index),
+            // Owner of this order
+            _accounts[order.owner],
+            // Index of target Order
+            trustOrder.orderIndex,
+            // Index of target channel, support eth(0), btc(1) and bnb(2)
+            order.channelIndex,
+            // Leverage of this order
+            order.lever,
+            // Orientation of this order, long or short
+            order.orientation,
+
+            // Limit price for trigger buy
+            CommonLib.decodeFloat(order.basePrice),
+            // Stop price for trigger sell
+            CommonLib.decodeFloat(trustOrder.stopProfitPrice),
+            CommonLib.decodeFloat(trustOrder.stopLossPrice),
+
+            // Balance of nest, 4 decimals
+            trustOrder.balance,
+            // Service fee, 4 decimals
+            trustOrder.fee,
+            // Status of order, 0: executed, 1: normal, 2: canceled
+            trustOrder.status
+        );
     }
 }

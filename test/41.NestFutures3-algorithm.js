@@ -90,6 +90,11 @@ describe('41.NestFutures3-algorithm.js', function() {
                 b: po.balance,
                 d: 0.000001
             }, true);
+            FEQ({
+                a: jo.appends,
+                b: po.appends,
+                d: 0.0000000001
+            }, true);
         };
         const currentPt = async function(channel) {
             if (channel.Lp + channel.Sp > 0) {
@@ -149,6 +154,7 @@ describe('41.NestFutures3-algorithm.js', function() {
                 index: index, 
                 owner: sender.address,
                 balance: amount,
+                appends: 0,
                 channelIndex: channelIndex,
                 baseBlock: await bn(),
                 lever: lever,
@@ -200,6 +206,7 @@ describe('41.NestFutures3-algorithm.js', function() {
             let miuT = channel.Pt - order.Pt;
             let oraclePrice = lastPrice(order.channelIndex);
             let value = valueOf(miuT, order.balance, order.lever, order.orientation, order.basePrice, oraclePrice);
+            value += order.appends;
             let fee = order.balance * order.lever * oraclePrice / order.basePrice * 0.002;
             order.balance = 0;
 
@@ -222,13 +229,7 @@ describe('41.NestFutures3-algorithm.js', function() {
             await nestFutures3.add(index, amount * NEST_BASE);
             await listAccounts();
 
-            let order = ctx.orders[index];
-            let channel = ctx.channels[order.channelIndex];
-
-            let miuT = await currentPt(channel) - order.Pt;
-            let oraclePrice = lastPrice(order.channelIndex);
-            let value = valueOf(miuT, order.balance, order.lever, order.orientation, order.basePrice, oraclePrice);
-            order.balance = value + amount;
+            ctx.orders[index].appends += amount;
 
             await compareOrder(index);
         };
@@ -248,6 +249,7 @@ describe('41.NestFutures3-algorithm.js', function() {
                 if (order.lever > 1 && order.balance > 0) {
                     let miuT = await currentPt(channel) - order.Pt;
                     let value = valueOf(miuT, order.balance, order.lever, order.orientation, order.basePrice, oraclePrice);
+                    value += order.appends;
                     if (value < order.balance * order.lever * oraclePrice / order.basePrice * 0.002 + 15 ||
                         value < order.balance * order.lever * 0.5 / 100
                     ) {
@@ -294,7 +296,7 @@ describe('41.NestFutures3-algorithm.js', function() {
             await sell(owner, 3);
         }
 
-        if (false) {
+        if (true) {
             console.log('3. add');
             await add(owner, 2, 9527);
         }
@@ -305,6 +307,32 @@ describe('41.NestFutures3-algorithm.js', function() {
             await post(200, [1662.500717, 250, 16000]);
             await liquidate(owner, [0, 1, 2, 3]);
             await updateChannel(0, 0, false);
+        }
+
+        console.log('------------------------- Trust Order ----------------------------');
+
+        if (true) {
+            console.log('5. New TrustOrder');
+            console.log(UI(await nestFutures3.listTrustOrder(0, 2, 0)));
+
+            await nestFutures3.newTrustOrder(0, 9, false, 9989 * NEST_BASE, toBigInt(1900), toBigInt(1200), toBigInt(2500));
+            console.log(UI(await nestFutures3.listTrustOrder(0, 2, 0)));
+
+            await console.log(UI(await nestFutures3.list(0, 2, 0)));
+
+            await nestFutures3.updateLimitPrice(0, toBigInt(1999));
+            await nestFutures3.updateStopPrice(0, toBigInt(1000), toBigInt(2000));
+            await nestFutures3.executeLimitOrder([0]);
+            await nestFutures3.newStopOrder(4, toBigInt(1111), toBigInt(2222));
+            //await nestFutures3.cancelLimitOrder(0);
+            await console.log(UI(await nestFutures3.list(0, 2, 0)));
+            console.log(UI(await nestFutures3.listTrustOrder(0, 2, 0)));
+            
+            console.log('6. Execute StopOrder');
+            await listAccounts();
+            await nestFutures3.executeStopOrder([0]);
+            await listAccounts();
+            await console.log(UI(await nestFutures3.list(0, 2, 0)));
         }
     });
 });

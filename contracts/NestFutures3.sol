@@ -47,10 +47,9 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
         // Base price of this order, encoded with encodeFloat56()
         uint56 basePrice;
         // Balance of this order, 4 decimals
-        uint48 balance;
-        // TODO: Not used
-        // Open block of this order
-        uint32 baseBlock;
+        uint40 balance;
+        // Append amount of this order
+        uint40 appends;
         // TODO: Remove?
         // Index of target channel, support eth, btc and bnb
         uint16 channelIndex;
@@ -182,7 +181,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
             oraclePrice,
             order.orientation,
             uint(order.lever)
-        );
+        ) + uint(order.appends) * CommonLib.NEST_UNIT;
     }
 
     /// @dev Find the orders of the target address (in reverse order)
@@ -271,7 +270,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
         uint amount
     ) external payable override {
         // 1. Check arguments
-        require(amount > CommonLib.FUTURES_NEST_LB && amount < 0x1000000000000, "NF:amount invalid");
+        require(amount > CommonLib.FUTURES_NEST_LB && amount < 0x10000000000, "NF:amount invalid");
         require(lever > CommonLib.LEVER_LB && lever < CommonLib.LEVER_RB, "NF:lever not allowed");
 
         // 2. Load target channel
@@ -328,9 +327,9 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
             // TODO: Rewrite queryPrice function
             CommonLib.encodeFloat56(_lastPrice(channelIndex)),
             // balance
-            uint48(amount),
-            // baseBlock
-            uint32(block.number),
+            uint40(amount),
+            // append
+            uint40(0),
             // channelIndex
             channelIndex,
             // lever
@@ -354,74 +353,11 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
     /// @param orderIndex Index of target order
     /// @param amount Amount of paid NEST
     function add(uint orderIndex, uint amount) external payable override {
-        // TODO: Confirm the logic of add
         // 1. Check arguments
-        require(amount > CommonLib.FUTURES_NEST_LB, "NF:amount invalid");
+        require(amount > CommonLib.FUTURES_NEST_LB && amount < 0x10000000000, "NF:amount invalid");
+        _orders[orderIndex].appends += uint40(amount);
 
-        // 2. Load the order
-        Order memory order = _orders[orderIndex];
-        uint channelIndex = uint(order.channelIndex);
-        TradeChannel memory channel = _channels[channelIndex];
-        
-        uint balance = uint(order.balance);
-        require(balance > 0, "NF:order cleared");
-        require(msg.sender == _accounts[uint(order.owner)], "NF:not owner");
-
-        // 3. Calculate miuT
-        int miuT = int(channel.Pt);
-        {
-            // Calculate Pt by μ from last order
-            uint Lp = uint(channel.Lp);
-            uint Sp = uint(channel.Sp);
-            if (Lp + Sp > 0) {
-                // μ is not saved, and calculate it by Lp and Sp always
-                // TODO: Confirm unit of miu
-                int miu = (int(Lp) - int(Sp)) * MIU_LAMBDA / 86400 / int(Lp + Sp);
-                miuT = miuT + miu * int((block.number - uint(channel.bn)) * CommonLib.BLOCK_TIME / 1000);
-            }
-
-            // μt = P1 - P0
-            miuT -= int(order.Pt);
-            
-            // // TODO: Move to balanceOf
-            // if (order.orientation) {
-            //     if (miuT < 0) miuT = 0;
-            // } else {
-            //     if (miuT > 0) miuT = 0;
-            // }
-        }
-
-        // When add, first calculate balance of the order same as sell (include miu),
-        // Then add amount to the balance, and update to order,
-        // Only update balance of the order, 
-        // Pt of the order, and global Lp, Sp, Pt, miu not update
-        // 3. Query oracle price
-        // TODO: Optimize code
-        uint oraclePrice = _lastPrice(channelIndex);
-        uint newBalance = _valueOf(
-            miuT, 
-            balance * CommonLib.NEST_UNIT,
-            CommonLib.decodeFloat(order.basePrice),
-            oraclePrice,
-            order.orientation,
-            order.lever
-        ) / CommonLib.NEST_UNIT + amount;
-        require(newBalance < 0x1000000000000, "NF:balance too big");
-
-        // 4. Update order
-        order.balance = uint48(newBalance);
-        //order.baseBlock = uint32(block.number);
-        _orders[orderIndex] = order;
-
-        // 5. Transfer NEST from user
-        TransferHelper.safeTransferFrom(
-            NEST_TOKEN_ADDRESS, 
-            msg.sender, 
-            NEST_VAULT_ADDRESS, 
-            amount * CommonLib.NEST_UNIT * (1 ether + CommonLib.FEE_RATE * uint(order.lever)) / 1 ether
-        );
-
-        // 6. Emit event
+        // 2. Emit event
         emit Add(orderIndex, amount, msg.sender);
     }
 
@@ -441,72 +377,73 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
         // Use the last calculated Pt for order
 
         // 2. Calculate Pt by μ from last order
-        uint Lp = uint(channel.Lp);
-        uint Sp = uint(channel.Sp);
-        if (Lp + Sp > 0) {
-            // μ is not saved, and calculate it by Lp and Sp always
-            // TODO: Confirm unit of miu
-            int miu = (int(Lp) - int(Sp)) * MIU_LAMBDA / 86400 / int(Lp + Sp);
-            // TODO: Check truncation
-            channel.Pt = int56(
-                int(channel.Pt) + 
-                miu * int((block.number - uint(channel.bn)) * CommonLib.BLOCK_TIME / 1000)
-            );
+        {
+            uint Lp = uint(channel.Lp);
+            uint Sp = uint(channel.Sp);
+            if (Lp + Sp > 0) {
+                // μ is not saved, and calculate it by Lp and Sp always
+                // TODO: Confirm unit of miu
+                int miu = (int(Lp) - int(Sp)) * MIU_LAMBDA / 86400 / int(Lp + Sp);
+                // TODO: Check truncation
+                channel.Pt = int56(
+                    int(channel.Pt) + 
+                    miu * int((block.number - uint(channel.bn)) * CommonLib.BLOCK_TIME / 1000)
+                );
+            }
+            
+            // 3. Update Lp and Sp, for calculate next μ
+            // Lp and Sp are add(sub) with original bond
+            // When buy, Lp(Sp) += lever * amount
+            // When sell(liquidate), Lp(Sp) -= lever * amount
+            // Original bond not include service fee
+            // Long
+            if (order.orientation) {
+                channel.Lp = uint56(Lp - balance * lever);
+            } 
+            // Short
+            else {
+                channel.Sp = uint56(Sp - balance * lever);
+            }
+                    
+            // 4. Update parameter for channel
+            channel.bn = uint32(block.number);
+            _channels[channelIndex] = channel;
         }
 
         // μt = P1 - P0
         int miuT = int(channel.Pt) - int(order.Pt);
-        
-        // 3. Update Lp and Sp, for calculate next μ
-        // Lp and Sp are add(sub) with original bond
-        // When buy, Lp(Sp) += lever * amount
-        // When sell(liquidate), Lp(Sp) -= lever * amount
-        // Original bond not include service fee
-        // Long
-        if (order.orientation) {
-            channel.Lp = uint56(Lp - balance * lever);
-            if (miuT < 0) miuT = 0;
-        } 
-        // Short
-        else {
-            channel.Sp = uint56(Sp - balance * lever);
-            if (miuT > 0) miuT = 0;
-        }
-        // 4. Update parameter for channel
-        channel.bn = uint32(block.number);
-        _channels[channelIndex] = channel;
 
         // 5. Query oracle price
         uint oraclePrice = _lastPrice(channelIndex);
 
-        // 6. Update order
-        order.balance = uint48(0);
-        _orders[orderIndex] = order;
-
-        // 7. Transfer NEST to user
+        // 6. Calculate value of order
         uint value = _valueOf(
             miuT,
             // balance
             balance * CommonLib.NEST_UNIT, 
             // basePrice
             basePrice, 
-            // baseBlock
-            //uint(order.baseBlock),
             // oraclePrice
             oraclePrice, 
             // ORIENTATION
             order.orientation, 
             // LEVER
             lever
-        );
-        
+        ) + uint(order.appends) * CommonLib.NEST_UNIT;
+
+        // 7. Update order
+        order.balance = uint40(0);
+        order.appends = uint40(0);
+        _orders[orderIndex] = order;
+
+        // 8. Transfer NEST to user
         uint fee = balance * CommonLib.NEST_UNIT * lever * oraclePrice / basePrice * CommonLib.FEE_RATE / 1 ether;
         // If value grater than fee, deduct and transfer NEST to owner
         if (value > fee) {
             INestVault(NEST_VAULT_ADDRESS).transferTo(msg.sender, value - fee);
         }
 
-        // 8. Emit event
+        // 9. Emit event
         emit Sell(orderIndex, balance, msg.sender, value);
     }
 
@@ -578,7 +515,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
                     order.orientation, 
                     // LEVER
                     lever
-                );
+                ) + uint(order.appends) * CommonLib.NEST_UNIT;
 
                 // 4. Liquidate logic
                 // TODO: The liquidate condition need update
@@ -605,9 +542,8 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
                     // }
                     
                     // Clear balance
-                    order.balance = uint48(0);
-                    // Clear baseBlock
-                    order.baseBlock = uint32(0);
+                    order.balance = uint40(0);
+                    order.appends = uint40(0);
                     // Update order
                     _orders[index] = order;
 
@@ -723,10 +659,10 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
             order.balance,
             // channelIndex
             order.channelIndex,
-            // baseBlock
-            order.baseBlock,
             // lever
             order.lever,
+            // appends
+            order.appends,
             // orientation
             order.orientation,
             // basePrice
