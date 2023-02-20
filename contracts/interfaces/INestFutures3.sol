@@ -18,7 +18,7 @@ interface INestFutures3 {
         // Leverage of this order
         uint8 lever;
         // Append amount of this order
-        uint40 append;
+        uint40 appends;
         // Orientation of this order, long or short
         bool orientation;
         // Base price of this order

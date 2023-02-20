@@ -53,7 +53,6 @@ contract NestTrustFutures is NestFutures3, INestTrustFutures {
 
     constructor() {
     }
-
     
     /// @dev Find the orders of the target address (in reverse order)
     /// @param start Find forward from the index corresponding to the given owner address 
