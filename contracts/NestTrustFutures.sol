@@ -253,7 +253,7 @@ contract NestTrustFutures is NestFutures3, INestTrustFutures {
     /// @param orderIndex Index of target Order
     /// @param stopProfitPrice If not 0, will open a stop order
     /// @param stopLossPrice If not 0, will open a stop order
-    function newStopOrder(uint orderIndex, uint stopProfitPrice, uint stopLossPrice) external override {
+    function newStopOrder(uint orderIndex, uint stopProfitPrice, uint stopLossPrice) public override {
         Order memory order = _orders[orderIndex];
         require(uint(order.balance) > 0, "NF:order cleared");
         require(msg.sender == _accounts[uint(order.owner)], "NF:not owner");
@@ -266,6 +266,25 @@ contract NestTrustFutures is NestFutures3, INestTrustFutures {
             stopLossPrice > 0 ? CommonLib.encodeFloat56(stopLossPrice) : uint56(stopLossPrice),
             uint8(S_EXECUTED)
         ));
+    }
+
+    /// @dev Buy futures with StopOrder
+    /// @param channelIndex Index of target channel
+    /// @param lever Lever of order
+    /// @param orientation true: long, false: short
+    /// @param amount Amount of paid NEST, 4 decimals
+    /// @param stopProfitPrice If not 0, will open a stop order
+    /// @param stopLossPrice If not 0, will open a stop order
+    function buyWithStopOrder(
+        uint16 channelIndex, 
+        uint8 lever, 
+        bool orientation, 
+        uint amount,
+        uint stopProfitPrice, 
+        uint stopLossPrice
+    ) external payable {
+        buy(channelIndex, lever, orientation, amount);
+        newStopOrder(_orders.length - 1, stopProfitPrice, stopLossPrice);
     }
 
     /// @dev Cancel TrustOrder, for everyone
@@ -434,8 +453,9 @@ contract NestTrustFutures is NestFutures3, INestTrustFutures {
                     basePrice,
                     oraclePrice,
                     order.orientation,
-                    lever
-                ) + uint(order.appends) * CommonLib.NEST_UNIT;
+                    lever,
+                    uint(order.appends)
+                );
 
                 order.balance = uint40(0);
                 order.appends = uint40(0);

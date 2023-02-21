@@ -153,7 +153,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
     /// @dev Returns the current value of target order
     /// @param orderIndex Index of order
     /// @param oraclePrice Current price from oracle, usd based, 18 decimals
-    function valueOf1(uint orderIndex, uint oraclePrice) external view returns (uint value) {
+    function balanceOf(uint orderIndex, uint oraclePrice) external view returns (uint value) {
         Order memory order = _orders[orderIndex];
         TradeChannel memory channel = _channels[uint(order.channelIndex)];
         
@@ -180,8 +180,9 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
             CommonLib.decodeFloat(uint(order.basePrice)),
             oraclePrice,
             order.orientation,
-            uint(order.lever)
-        ) + uint(order.appends) * CommonLib.NEST_UNIT;
+            uint(order.lever),
+            uint(order.appends)
+        );
     }
 
     /// @dev Find the orders of the target address (in reverse order)
@@ -268,7 +269,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
         uint8 lever, 
         bool orientation, 
         uint amount
-    ) external payable override {
+    ) public payable override {
         // 1. Check arguments
         require(amount > CommonLib.FUTURES_NEST_LB && amount < 0x10000000000, "NF:amount invalid");
         require(lever > CommonLib.LEVER_LB && lever < CommonLib.LEVER_RB, "NF:lever not allowed");
@@ -354,11 +355,20 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
     /// @param amount Amount of paid NEST
     function add(uint orderIndex, uint amount) external payable override {
         // 1. Check arguments
-        require(amount > CommonLib.FUTURES_NEST_LB && amount < 0x10000000000, "NF:amount invalid");
+        // TODO: Need min amount?
+        require(/*amount > CommonLib.FUTURES_NEST_LB && */amount < 0x10000000000, "NF:amount invalid");
         _orders[orderIndex].appends += uint40(amount);
 
         // 2. Emit event
         emit Add(orderIndex, amount, msg.sender);
+
+        // 3. Transfer NEST from user
+        TransferHelper.safeTransferFrom(
+            NEST_TOKEN_ADDRESS, 
+            msg.sender, 
+            NEST_VAULT_ADDRESS, 
+            amount * CommonLib.NEST_UNIT
+        );
     }
 
     /// @dev Sell order
@@ -428,8 +438,9 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
             // ORIENTATION
             order.orientation, 
             // LEVER
-            lever
-        ) + uint(order.appends) * CommonLib.NEST_UNIT;
+            lever,
+            uint(order.appends)
+        );
 
         // 7. Update order
         order.balance = uint40(0);
@@ -514,8 +525,9 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
                     // ORIENTATION
                     order.orientation, 
                     // LEVER
-                    lever
-                ) + uint(order.appends) * CommonLib.NEST_UNIT;
+                    lever,
+                    uint(order.appends)
+                );
 
                 // 4. Liquidate logic
                 // TODO: The liquidate condition need update
@@ -589,28 +601,28 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
         uint basePrice,
         uint oraclePrice, 
         bool ORIENTATION, 
-        uint LEVER
+        uint LEVER,
+        uint appends
     ) internal pure returns (uint) {
-        if (balance > 0) {
-            uint left;
-            uint right;
-            uint base = LEVER * balance * oraclePrice / basePrice;
-            // Long
-            if (ORIENTATION) {
-                left = balance + (miuT > 0 ? base * 0x10000000000000000 / _expMiuT(miuT) : base);
-                right = balance * LEVER;
-            } 
-            // Short
-            else {
-                left = balance * (1 + LEVER);
-                right = miuT < 0 ? base * 0x10000000000000000 / _expMiuT(miuT) : base;
-            }
+        uint left;
+        uint right;
+        uint base = LEVER * balance * oraclePrice / basePrice;
+        // Long
+        if (ORIENTATION) {
+            left = balance + (miuT > 0 ? base * 0x10000000000000000 / _expMiuT(miuT) : base) 
+                 + appends * CommonLib.NEST_UNIT;
+            right = balance * LEVER;
+        } 
+        // Short
+        else {
+            left = balance * (1 + LEVER) + appends * CommonLib.NEST_UNIT;
+            right = miuT < 0 ? base * 0x10000000000000000 / _expMiuT(miuT) : base;
+        }
 
-            if (left > right) {
-                balance = left - right;
-            } else {
-                balance = 0;
-            }
+        if (left > right) {
+            balance = left - right;
+        } else {
+            balance = 0;
         }
 
         return balance;

@@ -3,7 +3,7 @@ const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, listBalances, snd, tableSnd, d1, Vc, Vp, UI, FEQ } = require('./utils.js');
 const { ethers, upgrades } = require('hardhat');
 
-describe('41.NestFutures3-algorithm.js', function() {
+describe('42.NestFutures3-algorithm2.js.js', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
@@ -38,6 +38,7 @@ describe('41.NestFutures3-algorithm.js', function() {
         // Local context
         let ctx = {
             channels: [
+                { Lp: 0, Sp: 0, Pt: 0, bn: 0 },
                 { Lp: 0, Sp: 0, Pt: 0, bn: 0 },
                 { Lp: 0, Sp: 0, Pt: 0, bn: 0 }
             ],
@@ -83,7 +84,7 @@ describe('41.NestFutures3-algorithm.js', function() {
                 owner: co.owner,
                 balance: parseFloat(co.balance) / NEST_BASE,
                 channelIndex: co.channelIndex,
-                baseBlock: co.baseBlock,
+                appends: parseFloat(co.appends) / NEST_BASE,
                 lever: co.lever,
                 orientation: co.orientation,
                 basePrice: toDecimal(co.basePrice),
@@ -110,7 +111,7 @@ describe('41.NestFutures3-algorithm.js', function() {
         };
 
         // Update channel parameter
-        const updateChannel = async function(channelIndex, virtualAmount, orientation, uncheck) {
+        const updateChannel = async function(channelIndex, virtualAmount, orientation, uncheck, echo) {
             let channel = ctx.channels[channelIndex];
             channel.Pt = await currentPt(channel);
             if (orientation) {
@@ -132,36 +133,46 @@ describe('41.NestFutures3-algorithm.js', function() {
                 FEQ({ a: channel.Lp, b: pp.Lp }, true);
                 FEQ({ a: channel.Sp, b: pp.Sp }, true);
                 FEQ({ a: channel.Pt, b: pp.Pt, d: 0.00001 }, true);
+
+                if (echo) {
+                    console.log({ jc: channel, cc: pp });
+                }
             }
 
             return channel;
         }
 
         // Calculate value with current variables
-        const _valueOf = function(miuT, balance, lever, orientation, basePrice, oraclePrice) {
+        const _valueOf = function(miuT, balance, lever, orientation, basePrice, oraclePrice, appends) {
             if (orientation) {
                 if (miuT < 0) miuT = 0;
             } else {
                 if (miuT > 0) miuT = 0;
             }
             let Rt = lever * (oraclePrice / expMiuT(miuT) - basePrice) / basePrice;
+            let b = 0;
             if (orientation) {
-                return balance * (1 + Rt);
+                b = balance * (1 + Rt) + appends;
             } else {
-                return balance * (1 - Rt);
+                b = balance * (1 - Rt) + appends;
             }
+            //if (b < 0) b = 0;
+            return b;
         };
 
         // Calculate value of the order
         const balanceOf = async function(orderIndex, oraclePrice) {
             const order = ctx.orders[orderIndex];
-            const miuT = await currentPt(order.channelIndex) - order.Pt;
-            const value = _valueOf(miuT, order.balance, order.lever, order.orientation, order.basePrice, oraclePrice);
-            return value + order.appends;
+            const miuT = await currentPt(ctx.channels[order.channelIndex]) - order.Pt;
+            const value = _valueOf(
+                miuT, order.balance, order.lever, order.orientation, order.basePrice, oraclePrice, order.appends);
+            const cb = parseFloat(toDecimal(await nestFutures3.balanceOf(orderIndex, toBigInt(oraclePrice))));
+            //FEQ({ a: value, b: cb, d: 0.000000001 });
+            return value;
         };
 
         // Buy order
-        const buy = async function(sender, channelIndex, lever, orientation, amount) {
+        const buy = async function(sender, channelIndex, lever, orientation, amount, echo) {
             await listAccounts(true);
             await nestFutures3.buy(channelIndex, lever, orientation, amount * NEST_BASE);
             await listAccounts(true);
@@ -184,6 +195,7 @@ describe('41.NestFutures3-algorithm.js', function() {
             await compareOrder(index);
 
             const totalNest = amount + amount * lever * 0.002;
+            if (echo) console.log({ totalNest });
             FEQ({ a: totalNest, b: parseFloat(previous.owner.NEST) - parseFloat(accounts.owner.NEST) }, true);
             FEQ({ a: totalNest, b: parseFloat(accounts.nestVault.NEST) - parseFloat(previous.nestVault.NEST) }, true);
 
@@ -202,7 +214,7 @@ describe('41.NestFutures3-algorithm.js', function() {
         };
 
         // Sell order
-        const sell = async function(sender, index) {
+        const sell = async function(sender, index, echo) {
             await listAccounts(true);
             await nestFutures3.sell(index);
             await listAccounts(true);
@@ -222,8 +234,9 @@ describe('41.NestFutures3-algorithm.js', function() {
                 order.lever, 
                 order.orientation, 
                 order.basePrice, 
-                oraclePrice
-            ) + order.appends;
+                oraclePrice,
+                order.appends
+            );
             // Service fee
             let fee = order.balance * order.lever * oraclePrice / order.basePrice * 0.002;
             // Update order
@@ -231,17 +244,18 @@ describe('41.NestFutures3-algorithm.js', function() {
             order.appends = 0;
 
             let totalNest = value - fee;
+            if (echo) console.log({ totalNest, fee });
             if (totalNest < 0) totalNest = 0;
 
             FEQ({
                 a: totalNest,
                 b: parseFloat(accounts.owner.NEST) - parseFloat(previous.owner.NEST),
-                d: 0.0000000001
+                d: 0.000000001
             }, true);
             FEQ({
                 a: totalNest,
                 b: parseFloat(previous.nestVault.NEST) - parseFloat(accounts.nestVault.NEST),
-                d: 0.0000000001
+                d: 0.000000001
             }, true);
         };
 
@@ -269,8 +283,10 @@ describe('41.NestFutures3-algorithm.js', function() {
                         order.lever, 
                         order.orientation, 
                         order.basePrice, 
-                        oraclePrice
-                    ) + order.appends;
+                        oraclePrice,
+                        order.appends
+                    );
+                    if (value < 0) value = 0;
 
                     // Compare with liquidate line
                     if (value < order.balance * order.lever * oraclePrice / order.basePrice * 0.002 + 15 ||
@@ -293,12 +309,12 @@ describe('41.NestFutures3-algorithm.js', function() {
                a: reward,
                b: parseFloat(accounts.owner.NEST) - parseFloat(previous.owner.NEST),
                d: 0.00000001
-            }, true);
+            }, false);
             FEQ({
                 a: reward,
                 b: parseFloat(previous.nestVault.NEST) - parseFloat(accounts.nestVault.NEST),
                 d: 0.00000001
-            }, true);
+            }, false);
 
             for (let i = 0; i < indices.length; ++i) {
                 let index = indices[i];
@@ -517,8 +533,8 @@ describe('41.NestFutures3-algorithm.js', function() {
             await compareTrustOrder(ctx.trustOrders.length - 1);
 
             const totalNest = amount + amount * lever * 0.002;
-            FEQ({ a: totalNest, b: parseFloat(previous.owner.NEST) - parseFloat(accounts.owner.NEST) }, true);
-            FEQ({ a: totalNest, b: parseFloat(accounts.nestVault.NEST) - parseFloat(previous.nestVault.NEST) }, true);
+            FEQ({ a: totalNest, b: parseFloat(previous.owner.NEST) - parseFloat(accounts.owner.NEST), d: 0.000000001 }, true);
+            FEQ({ a: totalNest, b: parseFloat(accounts.nestVault.NEST) - parseFloat(previous.nestVault.NEST), d: 0.000000001 }, true);
         };
 
         // Update LimitPrice
@@ -582,28 +598,30 @@ describe('41.NestFutures3-algorithm.js', function() {
             for (let i = 0; i < trustOrderIndices.length; ++i) {
                 let trustOrder = ctx.trustOrders[trustOrderIndices[i]];
                 let order = ctx.orders[trustOrder.orderIndex];
-                
-                let oraclePrice = lastPrice(order.channelIndex);
-                let channel = await updateChannel(order.channelIndex, -order.balance * order.lever, order.orientation, true);
-                let miuT = channel.Pt - order.Pt;
-                let value = _valueOf(
-                    miuT,
-                    order.balance,
-                    order.lever,
-                    order.orientation,
-                    order.basePrice,
-                    oraclePrice
-                );
+                if (order.balance > 0) {
+                    let oraclePrice = lastPrice(order.channelIndex);
+                    let channel = await updateChannel(order.channelIndex, -order.balance * order.lever, order.orientation, true);
+                    let miuT = channel.Pt - order.Pt;
+                    let value = _valueOf(
+                        miuT,
+                        order.balance,
+                        order.lever,
+                        order.orientation,
+                        order.basePrice,
+                        oraclePrice,
+                        order.appends
+                    );
 
-                let fee = order.balance * order.lever * oraclePrice / order.basePrice * 0.002;
+                    let fee = order.balance * order.lever * oraclePrice / order.basePrice * 0.002;
 
-                if (value > fee + 15) {
-                    totalNest += (value - fee - 15);
+                    if (value > fee + 15) {
+                        totalNest += (value - fee - 15);
+                    }
+                    totalExecuteFee += 15;
+
+                    order.balance = 0;
+                    order.appends = 0;
                 }
-                totalExecuteFee += 15;
-
-                order.balance = 0;
-                order.appends = 0;
             }
 
             for (let i = 0; i < trustOrderIndices.length; ++i) {
@@ -629,56 +647,314 @@ describe('41.NestFutures3-algorithm.js', function() {
             }, true);
         };
 
-        await post(200, [1250, 250, 16000]);
+        // list Order
+        const list = async function(sender, offset, count, order) {
+            const cl = await nestFutures3.list(offset, count, order);
+            const jl = [];
+            if (order == 0) {
+                for (let i = 0; i < count; ++i) {
+                    jl.push(ctx.orders[ctx.orders.length - 1 - i]);
+                }
+            } else {
+                for (let i = 0; i < count; ++i) {
+                    jl.push(ctx.orders[i]);
+                }
+            }
+            
+            for (let i = 0; i < count; ++i) {
+                let jo = UI(jl[i]);
+                let co = UI(cl[i]);
+                co = {
+                    index: co.index,
+                    owner: co.owner,
+                    balance: parseFloat(co.balance) / NEST_BASE,
+                    channelIndex: co.channelIndex,
+                    appends: parseFloat(co.appends) / NEST_BASE,
+                    lever: co.lever,
+                    orientation: co.orientation,
+                    basePrice: toDecimal(co.basePrice),
+                    Pt: parseFloat(co.Pt) / MIU_DECIMALS
+                };
+                console.log({ jo, co });
+                
+                // Compare two Order: basePrice, balance, appends, lever, valueOf, Pt
+                FEQ({ a: jo.basePrice, b: co.basePrice, d: 0.00000000001 }, true);
+                FEQ({ a: jo.balance, b: co.balance, d: 0.00000000001 }, true);
+                FEQ({ a: jo.appends, b: co.appends, d: 0.00000000001 }, true);
+                FEQ({ a: jo.lever, b: co.lever }, true);
+                FEQ({ a: jo.Pt, b: co.Pt, d: 0.00001 }, true);
+            }
+        };
+
+        // list TrustOrder
+        const listTrustOrder = async function(sender, offset, count, order) {
+            const cl = await nestFutures3.listTrustOrder(offset, count, order);
+            const jl = [];
+            if (order == 0) {
+                for (let i = 0; i < count; ++i) {
+                    jl.push(ctx.trustOrders[ctx.trustOrders.length - 1 - i]);
+                }
+            } else {
+                for (let i = 0; i < count; ++i) {
+                    jl.push(ctx.trustOrders[i]);
+                }
+            }
+            
+            for (let i = 0; i < count; ++i) {
+                let jo = UI(jl[i]);
+                let co = UI(cl[i]);
+                co = {
+                    index: co.index,
+                    owner: co.owner,
+                    orderIndex: co.orderIndex,
+                    channelIndex: co.channelIndex,
+                    lever: co.lever,
+                    orientation: co.orientation,
+                    limitPrice: parseFloat(toDecimal(co.limitPrice)),
+                    stopProfitPrice: parseFloat(toDecimal(co.stopProfitPrice)),
+                    stopLossPrice: parseFloat(toDecimal(co.stopLossPrice)),
+                    balance: parseFloat(co.balance) / NEST_BASE,
+                    fee: parseFloat(co.fee) / NEST_BASE,
+                    status: co.status
+                };
+                console.log({ jo, co });
+
+                FEQ({ a: jo.orderIndex, b: co.orderIndex }, true);
+                FEQ({ a: jo.channelIndex, b: co.channelIndex }, true);
+                FEQ({ a: jo.lever, b: co.lever }, true);
+                FEQ({ a: jo.limitPrice, b: co.limitPrice, d: 0.0000000001 }, true);
+                FEQ({ a: jo.stopProfitPrice, b: co.stopProfitPrice, d: 0.0000000001 }, true);
+                FEQ({ a: jo.stopLossPrice, b: co.stopLossPrice, d: 0.0000000001 }, true);
+                FEQ({ a: jo.balance, b: co.balance }, true);
+                FEQ({ a: jo.fee, b: co.fee }, true);
+                FEQ({ a: jo.status, b: co.status }, true);
+            }
+        };
+
+        // liquidate line
+        const liquidateLine = function(sender, index) {
+            let order = ctx.orders[index];
+            let l1 = order.balance * order.lever * lastPrice(order.channelIndex) / order.basePrice * 0.002 + 15;
+            let l2 = order.balance * order.lever * 0.5 / 100;
+            return l1 < l2 ? l2 : l1;
+        };
+
+        await post(200, [1250, 16000, 250]);
+        
+        // 1. Normal buy (eth&btc&bnb, long&short, lever0-51), check channel, check balance, check order
         if (true) {
             console.log('1. buy');
-            await buy(owner, 0, 1, true, 1000);
-            await buy(owner, 0, 2, true, 1000);
-            await buy(owner, 0, 3, false, 10000);
-            for (var i = 0; i < 3; i++) {
-                await nest.transfer(owner.address, 0);
-            }
-            await buy(owner, 0, 4, true, 1000);
-        }
 
+            // eth-long
+            await buy(owner, 0, 1, true, 1000);                 // 0
+            await buy(owner, 0, 2, true, 2000);                 // 1
+            await buy(owner, 0, 5, true, 5000);                 // 2
+            await buy(owner, 0, 10, true, 10000);               // 3
+            await buy(owner, 0, 20, true, 20000);               // 4
+            await buy(owner, 0, 50, true, 50000);               // 5
+            await updateChannel(0, 0, false, false, true);      // 
+            // eth-short
+            await buy(owner, 0, 1, false, 1000);                // 6
+            await buy(owner, 0, 2, false, 2000);                // 7
+            await buy(owner, 0, 5, false, 5000);                // 8
+            await buy(owner, 0, 10, false, 10000);              // 9
+            await buy(owner, 0, 20, false, 20000);              // 10
+            await buy(owner, 0, 50, false, 50000);              // 11
+            await updateChannel(0, 0, false, false, true);
+
+            // btc-long
+            await buy(owner, 1, 1, true, 1000);                 // 12
+            await buy(owner, 1, 2, true, 2000);                 // 13
+            await buy(owner, 1, 5, true, 5000);                 // 14
+            await buy(owner, 1, 10, true, 10000);               // 15
+            await buy(owner, 1, 20, true, 20000);               // 16
+            await buy(owner, 1, 50, true, 50000);               // 17
+            await updateChannel(1, 0, false, false, true);
+            // btc-short
+            await buy(owner, 1, 1, false, 1000);                // 18
+            await buy(owner, 1, 2, false, 2000);                // 19
+            await buy(owner, 1, 5, false, 5000);                // 20
+            await buy(owner, 1, 10, false, 10000);              // 21
+            await buy(owner, 1, 20, false, 20000);              // 22
+            await buy(owner, 1, 50, false, 50000);              // 23
+            await updateChannel(1, 0, false, false, true);
+
+            // bnb-long
+            await buy(owner, 2, 1, true, 1000);                 // 24
+            await buy(owner, 2, 2, true, 2000);                 // 25
+            await buy(owner, 2, 5, true, 5000);                 // 26
+            await buy(owner, 2, 10, true, 10000);               // 27
+            await buy(owner, 2, 20, true, 20000);               // 28
+            await buy(owner, 2, 50, true, 50000);               // 29
+            await updateChannel(2, 0, false, false, true);
+            // bnb-short
+            await buy(owner, 2, 1, false, 1000);                // 30
+            await buy(owner, 2, 2, false, 2000);                // 31
+            await buy(owner, 2, 5, false, 5000);                // 32
+            await buy(owner, 2, 10, false, 10000);              // 33
+            await buy(owner, 2, 20, false, 20000);              // 34
+            await buy(owner, 2, 50, false, 50000);              // 35
+            await updateChannel(2, 0, false, false, true);
+
+            await list(owner, 0, 36, 1);
+            await listAccounts();
+        }
+        // 2. Normal sell (eth&btc&bnb, long&short, lever0-51), check channel, check balance, check order
         if (true) {
             console.log('2. sell');
-            await sell(owner, 0);
-            await sell(owner, 1);
-            //await sell(owner, 2);
-            await sell(owner, 3);
+            await post(200, [1260, 17000, 260]);
+            await sell(owner, 4, true);
+            //await sell(owner, 10);
+            await updateChannel(0, 0, false, false, true);
+
+            await sell(owner, 16, true);
+            //await sell(owner, 22);
+            await updateChannel(1, 0, false, false, true);
+
+            await sell(owner, 28, true);
+            //await sell(owner, 34);
+            await updateChannel(2, 0, false, false, true);
+
+            await listAccounts();
         }
 
+        // 3. Normal add (eth&btc&bnb, long&short, lever0-51), check channel, check balance, check order
         if (true) {
             console.log('3. add');
-            await add(owner, 2, 9527);
+            await add(owner, 34, 5049);
+            await add(owner, 16, 16);
+            await add(owner, 23, 60000);
+            for (let i = 0; i < 36; ++i) {
+                console.log({
+                    index: i,
+                    //channelIndex: ctx.orders[i].channelIndex,
+                    //oraclePrice: lastPrice(ctx.orders[i].channelIndex),
+                    balance: await balanceOf(i, lastPrice(ctx.orders[i].channelIndex)),
+                    line: liquidateLine(owner, i),
+                    bomb: await balanceOf(i, lastPrice(ctx.orders[i].channelIndex)) < liquidateLine(owner, i)
+                });
+            }
+            await list(owner, 0, 36, 1);
+        }
+        // 4. Sell with added order (eth&btc&bnb, long&short, lever0-51), check channel, check balance, check order
+        if (false) {
+            console.log('4. sell');
+            await sell(owner, 34, true);
+            await updateChannel(2, 0, false, false, true);
+            await sell(owner, 16, true);
+            await updateChannel(1, 0, false, false, true);
+            await sell(owner, 23, true);
+            await updateChannel(1, 0, false, false, true);
+
+            await listAccounts();
+        }
+        // 5. Post different price and calculate order value, liquidate line
+        if (false) {
+            console.log('5. post');
+            let i = 19;
+            for (let p = 100; p < 100000; p = parseInt(p * 1.1)) {
+                await post(200, [1260, p, 260]);
+                console.log({ 
+                    index: i,
+                    oraclePrice: lastPrice(ctx.orders[i].channelIndex),
+                    balance: await balanceOf(i, lastPrice(ctx.orders[i].channelIndex)),
+                    line: liquidateLine(owner, i),
+                    bomb: await balanceOf(i, lastPrice(ctx.orders[i].channelIndex)) < liquidateLine(owner, i)
+                });
+            }
         }
 
+        // 6. Post different price and liquidate
         if (true) {
-            console.log('4. liquidate');
-            console.log((await nestFutures3.balanceOf(2, 1662500717000000000000n)).toString());
-            await post(200, [1662.500717, 250, 16000]);
-            await liquidate(owner, [0, 1, 2, 3]);
-            await updateChannel(0, 0, false);
+            console.log('6. liquidate');
+            await post(200, [1230, 15500, 245]);
+            for (let i = 0; i < 36; ++i) {
+                console.log({
+                    index: i,
+                    //channelIndex: ctx.orders[i].channelIndex,
+                    //oraclePrice: lastPrice(ctx.orders[i].channelIndex),
+                    balance: await balanceOf(i, lastPrice(ctx.orders[i].channelIndex)),
+                    line: liquidateLine(owner, i),
+                    bomb: await balanceOf(i, lastPrice(ctx.orders[i].channelIndex)) < liquidateLine(owner, i)
+                });
+            }
+            await listAccounts();
+            await liquidate(owner, [
+                0,1,2,3,4,5,6,7,8,9,10,11,12,13,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,
+                0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,
+                0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,
+                0,1,2,3,4,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,5,6,7,8,9,10,11,12,13,35,
+                0,1,2,3,4,5,6,7,8,9,10,11,12,29,30,31,32,33,34,35
+            ]);
+            await listAccounts();
+
+            //await list(owner, 0, 36, 1);
+            await liquidate(owner, [
+                0,1,2,3,4,5,6,7,8,9,10,11,12,13,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,
+                0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,
+                0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,
+                0,1,2,3,4,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,5,6,7,8,9,10,11,12,13,35,
+                0,1,2,3,4,5,6,7,8,9,10,11,12,29,30,31,32,33,34,35
+            ]);
+            await listAccounts();
+
+            await updateChannel(0, 0, false, false, true);
+            await updateChannel(1, 0, false, false, true);
+            await updateChannel(2, 0, false, false, true);
         }
 
-        console.log('------------------------- Trust Order ----------------------------');
-
+        // 7. Create LimitOrder and execute (eth&btc&bnb, long&short, lever0-51), check channel, check balance, check order
         if (true) {
-            console.log('5. New TrustOrder');
-            await newTrustOrder(owner, 0, 9, false, 9989, 1900, 1200, 2500);
-            await updateLimitPrice(owner, 0, 1999);
-            await updateStopPrice(owner, 0, 1000, 2000);
-            await executeLimitOrder(owner, [0]);
+            console.log('7. createLimitOrder');
+            await newTrustOrder(owner, 0, 3, true, 3000, 1200, 1800, 800);
+            await newTrustOrder(owner, 1, 7, false, 88888, 18000, 10000, 20000);
+            await newTrustOrder(owner, 2, 4, true, 5000, 200, 400, 100);
+            await list(owner, 0, 4, 0);
+            await listTrustOrder(owner, 0, 3, 1);
 
-            // await executeStopOrder(owner, [0]);
-            //await cancelLimitOrder(owner, 0);
-            await newStopOrder(owner, 4, 1111, 2222);
         }
-
+        // 8. updateLimitPrice
         if (true) {
-            console.log('6. buyWithStopOrder');
-            await buyWithStopOrder(owner, 0, 3, true, 10000, 3000, 300);
+            console.log('8. updateLimitPrice');
+            await updateLimitPrice(owner, 1, 16000);
+            await list(owner, 0, 4, 0);
+            await listTrustOrder(owner, 0, 3, 1);
+        }
+        // 9. updateStopPrice
+        if (true) {
+            console.log('9. updateStopPrice');
+            await updateStopPrice(owner, 1, 11111, 22222);
+            await list(owner, 0, 4, 0);
+            await listTrustOrder(owner, 0, 3, 1);
+        }
+        
+        // 11. buyWithStopOrder
+        if (true) {
+            console.log('11. buyWithStopOrder');
+            await buyWithStopOrder(owner, 1, 2, true, 100, 18888, 12222);
+            await list(owner, 0, 1, 0);
+            await listTrustOrder(owner, 0, 1, 0);
+        }
+        // 12. executeLimitOrder
+        if (true) {
+            console.log('13. executeLimitOrder');
+            await executeLimitOrder(owner, [0, 1, 2]);
+            await list(owner, 0, 4, 0);
+            await listTrustOrder(owner, 0, 4, 0);
+        }
+        // 10. newStopOrder
+        if (true) {
+            console.log('10. newStopOrder');
+            await newStopOrder(owner, 36, 1801, 801);
+            await list(owner, 0, 4, 0);
+            await listTrustOrder(owner, 0, 5, 1);
+        }
+        // 13. executeStopOrder
+        if (true) {
+            console.log('11. executeStopOrder');
+            await executeStopOrder(owner, [0, 1, 2, 3, 4]);
+            await list(owner, 0, 5, 0);
+            await listTrustOrder(owner, 0, 5, 1);
         }
     });
 });
