@@ -438,14 +438,15 @@ describe('42.NestFutures3-algorithm2.js.js', function() {
                 trustOrder.fee = 0;
                 trustOrder.status = 0;
 
-                compareOrder(order.index);
-                compareTrustOrder(trustOrderIndices[i]);
+                await compareOrder(order.index);
+                await compareTrustOrder(trustOrderIndices[i]);
             }
 
             for (let i = 0; i < trustOrderIndices.length; ++i) {
                 let trustOrder = ctx.trustOrders[trustOrderIndices[i]];
-                compareOrder(trustOrder.orderIndex);
-                compareTrustOrder(trustOrderIndices[i]);
+                await compareOrder(trustOrder.orderIndex);
+                await compareTrustOrder(trustOrderIndices[i]);
+                await updateChannel(ctx.orders[trustOrder.orderIndex].channelIndex, 0, false);
             }
 
             FEQ({
@@ -628,6 +629,8 @@ describe('42.NestFutures3-algorithm2.js.js', function() {
                 let trustOrder = ctx.trustOrders[trustOrderIndices[i]];
                 await compareOrder(trustOrder.orderIndex);
                 await compareTrustOrder(trustOrderIndices[i]);
+
+                await updateChannel(ctx.orders[trustOrder.orderIndex].channelIndex, 0, false);
             }
 
             FEQ({
@@ -880,20 +883,24 @@ describe('42.NestFutures3-algorithm2.js.js', function() {
             }
             await listAccounts();
             await liquidate(owner, [
-                0,1,2,3,4,5,6,7,8,9,10,11,12,13,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,
+                0,1,2,3,4,5,6,7,8,9,10,11,12,13,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,14,15,16,17,18,19,20,
+                21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,
                 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,
                 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,
-                0,1,2,3,4,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,5,6,7,8,9,10,11,12,13,35,
+                0,1,2,3,4,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,14,15,16,17,18,19,20,21,22,
+                23,24,25,26,27,28,29,30,31,32,33,34,5,6,7,8,9,10,11,12,13,35,
                 0,1,2,3,4,5,6,7,8,9,10,11,12,29,30,31,32,33,34,35
             ]);
             await listAccounts();
 
             //await list(owner, 0, 36, 1);
             await liquidate(owner, [
-                0,1,2,3,4,5,6,7,8,9,10,11,12,13,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,
+                0,1,2,3,4,5,6,7,8,9,10,11,12,13,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,14,15,16,17,18,19,20,
+                21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,
                 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,
                 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,
-                0,1,2,3,4,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,5,6,7,8,9,10,11,12,13,35,
+                0,1,2,3,4,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,14,15,16,17,18,19,20,21,22,
+                23,24,25,26,27,28,29,30,31,32,33,34,5,6,7,8,9,10,11,12,13,35,
                 0,1,2,3,4,5,6,7,8,9,10,11,12,29,30,31,32,33,34,35
             ]);
             await listAccounts();
@@ -935,8 +942,13 @@ describe('42.NestFutures3-algorithm2.js.js', function() {
             await list(owner, 0, 1, 0);
             await listTrustOrder(owner, 0, 1, 0);
         }
+        // 14. cancelLimitOrder
+        if (false) {
+            console.log('14. cancelLimitOrder');
+            await cancelLimitOrder(owner, [1]);
+        }
         // 12. executeLimitOrder
-        if (true) {
+        else if (true) {
             console.log('13. executeLimitOrder');
             await executeLimitOrder(owner, [0, 1, 2]);
             await list(owner, 0, 4, 0);
