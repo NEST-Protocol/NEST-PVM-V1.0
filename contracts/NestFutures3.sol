@@ -13,9 +13,6 @@ import "./custom/NestFrequentlyUsed.sol";
 /// @dev Nest futures with dynamic miu
 contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
 
-    int constant MIU_DECIMALS = 1e12;
-    int constant MIU_LAMBDA = 0.02e12;
-
     // TODO: SigmaSQ is no use? √
     // TODO: Add valueOf method √
     // TODO: Add view method to get miu √
@@ -147,7 +144,6 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
         channel = _channels[channelIndex];
     }
 
-    // TODO: Give an other name
     /// @dev Returns the current value of target order
     /// @param orderIndex Index of order
     /// @param oraclePrice Current price from oracle, usd based, 18 decimals
@@ -163,7 +159,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
             // [-36028.797018963968, 36028.797018963967], assume the earn rate is 0.9% per day,
             // and it continues 100 years, Pt may reach to 328.725, this is far less than 
             // 36028.797018963967, so Pt is impossible out of [-36028.797018963968, 36028.797018963967].
-            // And even so, Pt is truncated, the consequences are not serious, so we don't check truncation here
+            // And even so, Pt is truncated, the consequences are not serious, so we don't check truncation
             channel.Pt = int56(
                 int(channel.Pt) + 
                 // μ is not saved, and calculate it by Lp and Sp always
@@ -288,7 +284,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
             // [-36028.797018963968, 36028.797018963967], assume the earn rate is 0.9% per day,
             // and it continues 100 years, Pt may reach to 328.725, this is far less than 
             // 36028.797018963967, so Pt is impossible out of [-36028.797018963968, 36028.797018963967].
-            // And even so, Pt is truncated, the consequences are not serious, so we don't check truncation here
+            // And even so, Pt is truncated, the consequences are not serious, so we don't check truncation
             channel.Pt = int56(
                 int(channel.Pt) + 
                 // μ is not saved, and calculate it by Lp and Sp always
@@ -357,8 +353,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
     /// @param amount Amount of paid NEST
     function add(uint orderIndex, uint amount) external payable override {
         // 1. Check arguments
-        // TODO: Need min amount?
-        require(/*amount > CommonLib.FUTURES_NEST_LB && */amount < 0x10000000000, "NF:amount invalid");
+        require(amount < 0x10000000000, "NF:amount invalid");
         _orders[orderIndex].appends += uint40(amount);
 
         // 2. Emit event
@@ -397,7 +392,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
                 // [-36028.797018963968, 36028.797018963967], assume the earn rate is 0.9% per day,
                 // and it continues 100 years, Pt may reach to 328.725, this is far less than 
                 // 36028.797018963967, so Pt is impossible out of [-36028.797018963968, 36028.797018963967].
-                // And even so, Pt is truncated, the consequences are not serious, so we don't check truncation here
+                // And even so, Pt is truncated, the consequences are not serious, so we don't check truncation
                 channel.Pt = int56(
                     int(channel.Pt) + 
                     // μ is not saved, and calculate it by Lp and Sp always
@@ -501,7 +496,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
                         // [-36028.797018963968, 36028.797018963967], assume the earn rate is 0.9% per day,
                         // and it continues 100 years, Pt may reach to 328.725, this is far less than 
                         // 36028.797018963967, so Pt is impossible out of [-36028.797018963968, 36028.797018963967].
-                        // And even so, Pt is truncated, the consequences are not serious, so we don't check truncation here
+                        // And even so, Pt is truncated, the consequences are not serious, so we don't check truncation
                         channel.Pt = int56(
                             int(channel.Pt) + 
                             // μ is not saved, and calculate it by Lp and Sp always
@@ -553,18 +548,17 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
                         channel.Sp = uint56(uint(channel.Sp) - balance / CommonLib.NEST_UNIT);
                     }
 
-                    // TODO: Use this code
                     // Clear all data of order, use this code next time
-                    // assembly {
-                    //     mstore(0, _orders.slot)
-                    //     sstore(add(keccak256(0, 0x20), index), 0)
-                    // }
+                    assembly {
+                        mstore(0, _orders.slot)
+                        sstore(add(keccak256(0, 0x20), index), 0)
+                    }
                     
-                    // Clear balance
-                    order.balance = uint40(0);
-                    order.appends = uint40(0);
-                    // Update order
-                    _orders[index] = order;
+                    // // Clear balance
+                    // order.balance = uint40(0);
+                    // order.appends = uint40(0);
+                    // // Update order
+                    // _orders[index] = order;
 
                     // Add reward
                     reward += value;
@@ -575,8 +569,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
             }
         }
 
-        // TODO: Test if no this code
-        // Update previous channel
+        // Update last channel
         if (channelIndex < 0x10000) {
             channel.bn = uint32(block.number);
             _channels[channelIndex] = channel;
@@ -596,7 +589,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
 
         // Using approximate algorithm: x*(1+rt)
         // TODO: This may be 0, or negative!
-        int v = (miuT * 0x10000000000000000) / MIU_DECIMALS + 0x10000000000000000;
+        int v = (miuT * 0x10000000000000000) / 1e12 + 0x10000000000000000;
         if (v < 1) return 1;
         return uint(v);
     }

@@ -156,7 +156,7 @@ describe('42.NestFutures3-algorithm2.js.js', function() {
             } else {
                 b = balance * (1 - Rt) + appends;
             }
-            //if (b < 0) b = 0;
+            if (b < 0) b = 0;
             return b;
         };
 
@@ -167,7 +167,7 @@ describe('42.NestFutures3-algorithm2.js.js', function() {
             const value = _valueOf(
                 miuT, order.balance, order.lever, order.orientation, order.basePrice, oraclePrice, order.appends);
             const cb = parseFloat(toDecimal(await nestFutures3.balanceOf(orderIndex, toBigInt(oraclePrice))));
-            //FEQ({ a: value, b: cb, d: 0.000000001 });
+            FEQ({ a: value, b: cb, d: 0.000000001 });
             return value;
         };
 
@@ -298,7 +298,14 @@ describe('42.NestFutures3-algorithm2.js.js', function() {
                         reward += value;
                         order.balance = 0;
                         order.appends = 0;
-                        order.baseBlock = 0;
+
+                        order.index = 0;
+                        order.owner = '0x0000000000000000000000000000000000000000';
+                        order.channelIndex = 0;
+                        order.lever = 0;
+                        order.orientation = false;
+                        order.basePrice = 0;
+                        order.Pt = 0;
                     }
                 }
 
@@ -570,6 +577,8 @@ describe('42.NestFutures3-algorithm2.js.js', function() {
 
             let trustOrder = ctx.trustOrders[trustOrderIndex];
             const totalNest = trustOrder.balance + trustOrder.fee + 15;
+            trustOrder.balance = 0;
+            trustOrder.fee = 0;
             trustOrder.status = 2;
 
             await compareOrder(trustOrder.orderIndex);
@@ -946,6 +955,7 @@ describe('42.NestFutures3-algorithm2.js.js', function() {
         if (false) {
             console.log('14. cancelLimitOrder');
             await cancelLimitOrder(owner, [1]);
+            return;
         }
         // 12. executeLimitOrder
         else if (true) {

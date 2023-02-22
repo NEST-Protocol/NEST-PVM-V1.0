@@ -72,14 +72,6 @@ abstract contract NestFuturesWithPrice is NestFrequentlyUsed, INestFuturesWithPr
     constructor() {
     }
 
-    // // TODO: Can remove if there is an exists proxy contract
-    // /// @dev To support open-zeppelin/upgrades
-    // /// @param governance INestGovernance implementation contract address
-    // function initialize(address governance) public override {
-    //     super.initialize(governance);
-    //     _futures.push();
-    // }
-
     // /// @dev Direct post price
     // /// @param period Term of validity
     // // @param equivalents Price array, one to one with pairs
@@ -162,69 +154,6 @@ abstract contract NestFuturesWithPrice is NestFrequentlyUsed, INestFuturesWithPr
             }
         }
     }
-
-    // /// @dev Find the price at block number
-    // /// @param pairIndex index of token in channel 0 on NEST Oracle
-    // /// @param height Destination block number
-    // /// @return blockNumber The block number of price
-    // /// @return price The token price. (1eth equivalent to (price) token)
-    // function findPrice(
-    //     uint pairIndex,
-    //     uint height
-    // ) external view returns (uint blockNumber, uint price) {
-
-    //     uint length = _prices.length;
-    //     uint index = 0;
-    //     uint sheetHeight;
-    //     {
-    //         // If there is no sheet in this channel, length is 0, length - 1 will overflow,
-    //         uint right = length - 1;
-    //         uint left = 0;
-    //         // Find the index use Binary Search
-    //         while (left < right) {
-
-    //             index = (left + right) >> 1;
-    //             sheetHeight = (_prices[index] >> 192) & 0xFFFFFFFFFFFF;
-    //             if (height > sheetHeight) {
-    //                 left = ++index;
-    //             } else if (height < sheetHeight) {
-    //                 // When index = 0, this statement will have an underflow exception, which usually 
-    //                 // indicates that the effective block height passed during the call is lower than 
-    //                 // the block height of the first quotation
-    //                 right = --index;
-    //             } else {
-    //                 break;
-    //             }
-    //         }
-    //     }
-
-    //     while (((_prices[index] >> 192) & 0xFFFFFFFFFFFF) > height) {
-    //         --index;
-    //     }
-
-    //     (,blockNumber, price) = _decodePrice(_prices[index], pairIndex);
-    // }
-
-    // /// @dev Register token configuration
-    // /// @param tokenAddress Target token address, 0 means eth
-    // /// @param tokenConfig token configuration
-    // function register(address tokenAddress, TokenConfig calldata tokenConfig) external onlyGovernance {
-    //     // Get registered tokenIndex by tokenAddress
-    //     uint index = _tokenMapping[tokenAddress];
-        
-    //     // index == 0 means token not registered, add
-    //     if (index == 0) {
-    //         // Add tokenConfig to array
-    //         _tokenConfigs.push(tokenConfig);
-    //         // Record index + 1
-    //         index = _tokenConfigs.length;
-    //         require(index < 0x10000, "NF:too much tokenConfigs");
-    //         _tokenMapping[tokenAddress] = index;
-    //     } else {
-    //         // Update tokenConfig
-    //         _tokenConfigs[index - 1] = tokenConfig;
-    //     }
-    // }
 
     /// @dev Returns the current value of target address in the specified future
     /// @param index Index of future

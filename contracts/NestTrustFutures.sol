@@ -26,7 +26,6 @@ contract NestTrustFutures is NestFutures3, INestTrustFutures {
         uint32 orderIndex;              // 32
         uint40 balance;                 // 48
         uint40 fee;                     // 48
-        //uint48 limitFee;              // 48
         uint56 stopProfitPrice;         // 56
         uint56 stopLossPrice;           // 56
         uint8 status;                   // 8
@@ -167,7 +166,7 @@ contract NestTrustFutures is NestFutures3, INestTrustFutures {
             // stopProfitPrice
             stopProfitPrice > 0 ? CommonLib.encodeFloat56(stopProfitPrice) : uint56(0),
             // stopLossPrice
-            stopLossPrice > 0 ? CommonLib.encodeFloat56(stopLossPrice) : uint56(0),
+            stopLossPrice   > 0 ? CommonLib.encodeFloat56(stopLossPrice  ) : uint56(0),
             // status
             uint8(S_NORMAL)
         ));
@@ -209,7 +208,6 @@ contract NestTrustFutures is NestFutures3, INestTrustFutures {
         // Load TrustOrder
         TrustOrder memory trustOrder = _trustOrders[trustOrderIndex];
 
-        // TODO: Can user create an TrustOrder then change Order.basePrice to attack?
         // Check status
         require(uint(trustOrder.status) == S_NORMAL, "NF:status error");
         
@@ -242,8 +240,9 @@ contract NestTrustFutures is NestFutures3, INestTrustFutures {
         require(msg.sender == _accounts[_orders[uint(trustOrder.orderIndex)].owner], "NF:not owner");
 
         // Update stopPrice
-        trustOrder.stopProfitPrice = stopProfitPrice > 0 ? CommonLib.encodeFloat56(stopProfitPrice) : uint56(0);
-        trustOrder.stopLossPrice   = stopLossPrice   > 0 ? CommonLib.encodeFloat56(stopLossPrice)   : uint56(0);
+        // When user updateStopPrice, stopProfitPrice and stopLossPrice are not 0 general, so we don't consider 0
+        trustOrder.stopProfitPrice = CommonLib.encodeFloat56(stopProfitPrice);
+        trustOrder.stopLossPrice   = CommonLib.encodeFloat56(stopLossPrice  );
 
         _trustOrders[trustOrderIndex] = trustOrder;
     }
@@ -254,6 +253,8 @@ contract NestTrustFutures is NestFutures3, INestTrustFutures {
     /// @param stopLossPrice If not 0, will open a stop order
     function newStopOrder(uint orderIndex, uint stopProfitPrice, uint stopLossPrice) public override {
         Order memory order = _orders[orderIndex];
+
+        // The balance of the order is 0, means order cleared, or a LimitOrder haven't executed
         require(uint(order.balance) > 0, "NF:order cleared");
         require(msg.sender == _accounts[uint(order.owner)], "NF:not owner");
 
@@ -261,8 +262,9 @@ contract NestTrustFutures is NestFutures3, INestTrustFutures {
             uint32(orderIndex),
             uint40(0),
             uint40(0),
-            stopProfitPrice > 0 ? CommonLib.encodeFloat56(stopProfitPrice) : uint56(stopProfitPrice),
-            stopLossPrice > 0 ? CommonLib.encodeFloat56(stopLossPrice) : uint56(stopLossPrice),
+            // When user newStopOrder, stopProfitPrice and stopLossPrice are not 0 general, so we don't consider 0
+            CommonLib.encodeFloat56(stopProfitPrice),
+            CommonLib.encodeFloat56(stopLossPrice),
             uint8(S_EXECUTED)
         ));
     }
@@ -296,14 +298,16 @@ contract NestTrustFutures is NestFutures3, INestTrustFutures {
         // Check owner
         require(msg.sender == _accounts[uint(_orders[uint(trustOrder.orderIndex)].owner)], "NF:not owner");
 
-        trustOrder.status = uint8(S_CANCELED);
-        _trustOrders[trustOrderIndex] = trustOrder;
-
         TransferHelper.safeTransfer(
             NEST_TOKEN_ADDRESS,
             msg.sender,
             (uint(trustOrder.balance) + uint(trustOrder.fee) + CommonLib.EXECUTE_FEE) * CommonLib.NEST_UNIT
         );
+
+        trustOrder.balance = uint40(0);
+        trustOrder.fee = uint40(0);
+        trustOrder.status = uint8(S_CANCELED);
+        _trustOrders[trustOrderIndex] = trustOrder;
     }
 
     /// @dev Execute limit order, only maintains account
@@ -344,7 +348,7 @@ contract NestTrustFutures is NestFutures3, INestTrustFutures {
                     // [-36028.797018963968, 36028.797018963967], assume the earn rate is 0.9% per day,
                     // and it continues 100 years, Pt may reach to 328.725, this is far less than 
                     // 36028.797018963967, so Pt is impossible out of [-36028.797018963968, 36028.797018963967].
-                    // And even so, Pt is truncated, the consequences are not serious, so we don't check truncation here
+                    // And even so, Pt is truncated, the consequences are not serious, so we don't check truncation
                     channel.Pt = int56(
                         int(channel.Pt) + 
                         // μ is not saved, and calculate it by Lp and Sp always
@@ -390,8 +394,7 @@ contract NestTrustFutures is NestFutures3, INestTrustFutures {
             _orders[orderIndex] = order;
         }
 
-        // TODO: Test if no this code
-        // Update previous channel
+        // Update last channel
         if (channelIndex < 0x10000) {
             channel.bn = uint32(block.number);
             _channels[channelIndex] = channel;
@@ -441,7 +444,7 @@ contract NestTrustFutures is NestFutures3, INestTrustFutures {
                         // [-36028.797018963968, 36028.797018963967], assume the earn rate is 0.9% per day,
                         // and it continues 100 years, Pt may reach to 328.725, this is far less than 
                         // 36028.797018963967, so Pt is impossible out of [-36028.797018963968, 36028.797018963967].
-                        // And even so, Pt is truncated, the consequences are not serious, so we don't check truncation here
+                        // And even so, Pt is truncated, the consequences are not serious, so we don't check truncation
                         channel.Pt = int56(
                             int(channel.Pt) + 
                             // μ is not saved, and calculate it by Lp and Sp always
@@ -499,8 +502,7 @@ contract NestTrustFutures is NestFutures3, INestTrustFutures {
             }
         }
         
-        // TODO: Test if no this code
-        // Update previous channel
+        // Update last channel
         if (channelIndex < 0x10000) {
             channel.bn = uint32(block.number);
             _channels[channelIndex] = channel;
