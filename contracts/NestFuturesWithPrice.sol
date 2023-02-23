@@ -69,49 +69,19 @@ abstract contract NestFuturesWithPrice is NestFrequentlyUsed, INestFuturesWithPr
     // price array, period(16)|height(48)|price3(64)|price2(64)|price1(64)
     uint[] _prices;
 
-    constructor() {
+    // TODO:
+    // Direct poster
+    address DIRECT_POSTER;
+    /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
+    ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
+    /// @param newGovernance INestGovernance implementation contract address
+    function update(address newGovernance) public virtual override {
+        super.update(newGovernance);
+        DIRECT_POSTER = INestGovernance(newGovernance).checkAddress("nest.app.directPoster");
     }
 
-    // /// @dev Direct post price
-    // /// @param period Term of validity
-    // // @param equivalents Price array, one to one with pairs
-    // function directPost(uint period, uint[3] calldata /*equivalents*/) external {
-    //     require(msg.sender == DIRECT_POSTER, "NFWP:not directPoster");
-
-    //     assembly {
-    //         // Encode value at position indicated by value to float
-    //         function encode(value) -> v {
-    //             v := 0
-    //             // Load value from calldata
-    //             // Encode logic
-    //             for { value := calldataload(value) } gt(value, 0x3FFFFFFFFFFFFFF) { value := shr(4, value) } {
-    //                 v := add(v, 1)
-    //             }
-    //             v := or(v, shl(6, value))
-    //         }
-
-    //         period := 
-    //         or(
-    //             or(
-    //                 or(
-    //                     or(
-    //                         // period
-    //                         shl(240, period), 
-    //                         // block.number
-    //                         shl(192, number())
-    //                     ), 
-    //                     // equivalents[2]
-    //                     shl(128, encode(0x64))
-    //                 ), 
-    //                 // equivalents[1]
-    //                 shl(64, encode(0x44))
-    //             ), 
-    //             // equivalents[0]
-    //             encode(0x24)
-    //         )
-    //     }
-    //     _prices.push(period);
-    // }
+    constructor() {
+    }
 
     /// @dev List prices
     /// @param pairIndex index of token in channel 0 on NEST Oracle
@@ -269,68 +239,6 @@ abstract contract NestFuturesWithPrice is NestFrequentlyUsed, INestFuturesWithPr
         uint index = _futureMapping[_getKey(tokenAddress, lever, orientation)];
         return _toFutureView(_futures[index], index, msg.sender);
     }
-
-    // // @dev Buy future
-    // // @param tokenAddress Target token address, 0 means eth
-    // // @param lever Lever of future
-    // // @param orientation true: call, false: put
-    // // @param nestAmount Amount of paid NEST
-    // function buy(
-    //     address,// tokenAddress,
-    //     uint,// lever,
-    //     bool,// orientation,
-    //     uint// nestAmount
-    // ) external payable override {
-    //     revert("NF:please use buy2");
-    //     // return buyDirect(_futureMapping[_getKey(tokenAddress, lever, orientation)], nestAmount);
-    // }
-
-    // // @dev Buy future direct
-    // // @param index Index of future
-    // // @param nestAmount Amount of paid NEST
-    // function buyDirect(uint /*index*/, uint /*nestAmount*/) public payable override {
-    //     revert("NF:please use buy2");
-    //     // require(index != 0, "NF:not exist");
-    //     // require(nestAmount >= 50 ether, "NF:at least 50 NEST");
-
-    //     // // 1. Transfer NEST from user
-    //     // TransferHelper.safeTransferFrom(
-    //     //     NEST_TOKEN_ADDRESS, 
-    //     //     msg.sender, 
-    //     //     NEST_VAULT_ADDRESS, 
-    //     //     nestAmount * (1 ether + CommonLib.FEE_RATE) / 1 ether
-    //     // );
-
-    //     // FutureInfo storage fi = _futures[index];
-    //     // bool orientation = fi.orientation;
-        
-    //     // // 2. Query oracle price
-    //     // TokenConfig memory tokenConfig = _tokenConfigs[uint(fi.tokenIndex)];
-    //     // uint oraclePrice = _queryPrice(tokenConfig);
-
-    //     // // 3. Merger price
-    //     // Account memory account = fi.accounts[msg.sender];
-    //     // uint basePrice = CommonLib.decodeFloat(account.basePrice);
-    //     // uint balance = uint(account.balance);
-    //     // uint newPrice = oraclePrice;
-    //     // if (uint(account.baseBlock) > 0) {
-    //     //     newPrice = (balance + nestAmount) * oraclePrice * basePrice / (
-    //     //         basePrice * nestAmount + (balance << 64) * oraclePrice / _expMiuT(
-    //     //             uint(orientation ? tokenConfig.miuLong : tokenConfig.miuShort), 
-    //     //             uint(account.baseBlock)
-    //     //         )
-    //     //     );
-    //     // }
-        
-    //     // // 4. Update account
-    //     // account.balance = _toUInt128(balance + nestAmount);
-    //     // account.basePrice = CommonLib.encodeFloat64(newPrice);
-    //     // account.baseBlock = uint32(block.number);
-    //     // fi.accounts[msg.sender] = account;
-
-    //     // // emit Buy event
-    //     // emit Buy(index, nestAmount, msg.sender);
-    // }
 
     /// @dev Sell future
     /// @param index Index of future

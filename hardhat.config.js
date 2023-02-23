@@ -26,7 +26,7 @@ module.exports = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 200
+        runs: 2000
       }
     }
   },
@@ -46,7 +46,7 @@ module.exports = {
     },
     bsc_test: {
       url: 
-      'http://localhost:50000/bsc_test_getblock/',
+      'http://localhost:50001/bsc_test_getblock/',
       //'https://bsc.getblock.io/33a5ac19-a33e-40c9-aa06-33e32c18b459/testnet/',
       //'https://bsc-testnet.s.chainbase.online/v1/2IACpoXYkHcgiWwSB4l2VmdWizr',
       chainId: 97,

@@ -33,6 +33,9 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
         uint56 stopPrice;
     }
 
+    // TODO: place holder
+    uint[3] _placeHolder;
+    
     // Array of orders
     Order[] _orders;
 

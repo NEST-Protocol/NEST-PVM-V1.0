@@ -47,6 +47,7 @@ import "../NestBase.sol";
 //     uint constant USDT_BASE = 1 ether;
 // }
 
+// TODO:
 import "../interfaces/INestGovernance.sol";
 
 /// @dev This contract include frequently used data
@@ -59,9 +60,9 @@ contract NestFrequentlyUsed is NestBase {
     // Address of nest vault
     address NEST_VAULT_ADDRESS;
     // Address of CyberInk
-    address CYBER_INK_ADDRESS;
+    address constant CYBER_INK_ADDRESS = address(0);
     // Address of direct poster
-    address DIRECT_POSTER;  // 0x06Ca5C8eFf273009C94D963e0AB8A8B9b09082eF;
+    //address DIRECT_POSTER;  // 0x06Ca5C8eFf273009C94D963e0AB8A8B9b09082eF;
 
     // USDT base
     uint constant USDT_BASE = 1 ether;
@@ -74,7 +75,7 @@ contract NestFrequentlyUsed is NestBase {
         NEST_TOKEN_ADDRESS = INestGovernance(newGovernance).getNestTokenAddress();
         NEST_OPEN_PRICE = INestGovernance(newGovernance).checkAddress("nest.v4.openPrice");
         NEST_VAULT_ADDRESS = INestGovernance(newGovernance).checkAddress("nest.app.vault");
-        DIRECT_POSTER = INestGovernance(newGovernance).checkAddress("nest.app.directPoster");
-        CYBER_INK_ADDRESS = INestGovernance(newGovernance).checkAddress("nest.app.cyberink");
+        //DIRECT_POSTER = INestGovernance(newGovernance).checkAddress("nest.app.directPoster");
+        //CYBER_INK_ADDRESS = INestGovernance(newGovernance).checkAddress("nest.app.cyberink");
     }
 }

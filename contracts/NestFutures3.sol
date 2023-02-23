@@ -72,6 +72,20 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
     // The prices of (eth, btc and bnb) posted by directPost() method is stored in this field
     // Bits explain: period(16)|height(48)|price3(64)|price2(64)|price1(64)
     uint _lastPrices;
+    
+    // Address of direct poster
+    // TODO:
+    //address constant DIRECT_POSTER = 0x06Ca5C8eFf273009C94D963e0AB8A8B9b09082eF;
+    //address constant DIRECT_POSTER = 0xd9f3aA57576a6da995fb4B7e7272b4F16f04e681;
+    // Direct poster
+    address DIRECT_POSTER;
+    /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
+    ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
+    /// @param newGovernance INestGovernance implementation contract address
+    function update(address newGovernance) public virtual override {
+        super.update(newGovernance);
+        DIRECT_POSTER = INestGovernance(newGovernance).checkAddress("nest.app.directPoster");
+    }
 
     constructor() {
     }
