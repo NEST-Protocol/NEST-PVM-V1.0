@@ -3,15 +3,38 @@ const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, listBalances, snd, tableSnd, d1, Vc, Vp, UI, FEQ } = require('./utils.js');
 const { ethers, upgrades } = require('hardhat');
 
-describe('42.NestFutures3-algorithm2.js', function() {
+describe('43.NestFutures2-update.js', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
-        
+        const NestFutures2_Test = await ethers.getContractFactory('NestFutures2_Test');
+        const nestFutures2Test = await NestFutures2_Test.deploy();
         const { 
             eth, usdt, hbtc, nest, dcu, nestOptions, nestFutures, nestLPGuarantee, nestProbability, nestCyberInk,
-            nestNFTAuction, nestFutures3, nestVault,
+            nestNFTAuction, nestFutures3, nestVault, nestGovernance,
             nestPriceFacade, nestBuybackPool, BLOCK_TIME, USDT_DECIMALS
         } = await deploy();
+        await nestFutures2Test.initialize(nestGovernance.address);
+        await nestFutures2Test.update(nestGovernance.address);
+        await nestFutures2Test.init();
+        // 3.4. Register ETH and HBTC
+        console.log('9. nestFutures2Test.register(eth.address)');
+        await nestFutures2Test.register(eth.address, {
+            channelId: 0,
+            pairIndex: 0,
+            
+            sigmaSQ: 45659142400n,
+            miuLong: 64051194700n,
+            miuShort: 0n
+        });
+        console.log('10. nestFutures2Test.register(hbtc.address)');
+        await nestFutures2Test.register(hbtc.address, {
+            channelId: 0,
+            pairIndex: 2,
+            
+            sigmaSQ: 31708924900n,
+            miuLong: 64051194700n,
+            miuShort: 0n
+        });
 
         const tokens = [eth, nest, dcu];
         let previous;
@@ -751,232 +774,36 @@ describe('42.NestFutures3-algorithm2.js', function() {
             return l1 < l2 ? l2 : l1;
         };
 
-        await post(200, [1250, 16000, 250]);
+        await post(200, [1250, 19000, 250]);
         
-        // 1. Normal buy (eth&btc&bnb, long&short, lever0-51), check channel, check balance, check order
+        await nest.approve(nestFutures2Test.address, 100000000000000000000000000n);
+        await nestVault.approve(nestFutures2Test.address, 100000000000000000000000000n);
+        await nestFutures2Test.directPost(200, [toBigInt(2000/1250), toBigInt(2000/250), toBigInt(2000/16000)]);
         if (true) {
-            console.log('1. buy');
-
-            // eth-long
-            await buy(owner, 0, 1, true, 1000);                 // 0
-            await buy(owner, 0, 2, true, 2000);                 // 1
-            await buy(owner, 0, 5, true, 5000);                 // 2
-            await buy(owner, 0, 10, true, 10000);               // 3
-            await buy(owner, 0, 20, true, 20000);               // 4
-            await buy(owner, 0, 50, true, 50000);               // 5
-            await updateChannel(0, 0, false, false, true);      // 
-            // eth-short
-            await buy(owner, 0, 1, false, 1000);                // 6
-            await buy(owner, 0, 2, false, 2000);                // 7
-            await buy(owner, 0, 5, false, 5000);                // 8
-            await buy(owner, 0, 10, false, 10000);              // 9
-            await buy(owner, 0, 20, false, 20000);              // 10
-            await buy(owner, 0, 50, false, 50000);              // 11
-            await updateChannel(0, 0, false, false, true);
-
-            // btc-long
-            await buy(owner, 1, 1, true, 1000);                 // 12
-            await buy(owner, 1, 2, true, 2000);                 // 13
-            await buy(owner, 1, 5, true, 5000);                 // 14
-            await buy(owner, 1, 10, true, 10000);               // 15
-            await buy(owner, 1, 20, true, 20000);               // 16
-            await buy(owner, 1, 50, true, 50000);               // 17
-            await updateChannel(1, 0, false, false, true);
-            // btc-short
-            await buy(owner, 1, 1, false, 1000);                // 18
-            await buy(owner, 1, 2, false, 2000);                // 19
-            await buy(owner, 1, 5, false, 5000);                // 20
-            await buy(owner, 1, 10, false, 10000);              // 21
-            await buy(owner, 1, 20, false, 20000);              // 22
-            await buy(owner, 1, 50, false, 50000);              // 23
-            await updateChannel(1, 0, false, false, true);
-
-            // bnb-long
-            await buy(owner, 2, 1, true, 1000);                 // 24
-            await buy(owner, 2, 2, true, 2000);                 // 25
-            await buy(owner, 2, 5, true, 5000);                 // 26
-            await buy(owner, 2, 10, true, 10000);               // 27
-            await buy(owner, 2, 20, true, 20000);               // 28
-            await buy(owner, 2, 50, true, 50000);               // 29
-            await updateChannel(2, 0, false, false, true);
-            // bnb-short
-            await buy(owner, 2, 1, false, 1000);                // 30
-            await buy(owner, 2, 2, false, 2000);                // 31
-            await buy(owner, 2, 5, false, 5000);                // 32
-            await buy(owner, 2, 10, false, 10000);              // 33
-            await buy(owner, 2, 20, false, 20000);              // 34
-            await buy(owner, 2, 50, false, 50000);              // 35
-            await updateChannel(2, 0, false, false, true);
-
-            await list(owner, 0, 36, 1);
-            await listAccounts();
-        }
-        // 2. Normal sell (eth&btc&bnb, long&short, lever0-51), check channel, check balance, check order
-        if (true) {
-            console.log('2. sell');
-            await post(200, [1260, 17000, 260]);
-            await sell(owner, 4, true);
-            //await sell(owner, 10);
-            await updateChannel(0, 0, false, false, true);
-
-            await sell(owner, 16, true);
-            //await sell(owner, 22);
-            await updateChannel(1, 0, false, false, true);
-
-            await sell(owner, 28, true);
-            //await sell(owner, 34);
-            await updateChannel(2, 0, false, false, true);
-
-            await listAccounts();
-        }
-
-        // 3. Normal add (eth&btc&bnb, long&short, lever0-51), check channel, check balance, check order
-        if (true) {
-            console.log('3. add');
-            await add(owner, 34, 5049);
-            await add(owner, 16, 16);
-            await add(owner, 23, 60000);
-            for (let i = 0; i < 36; ++i) {
-                console.log({
-                    index: i,
-                    //channelIndex: ctx.orders[i].channelIndex,
-                    //oraclePrice: lastPrice(ctx.orders[i].channelIndex),
-                    balance: await balanceOf(i, lastPrice(ctx.orders[i].channelIndex)),
-                    line: liquidateLine(owner, i),
-                    bomb: await balanceOf(i, lastPrice(ctx.orders[i].channelIndex)) < liquidateLine(owner, i)
-                });
-            }
-            await list(owner, 0, 36, 1);
-        }
-        // 4. Sell with added order (eth&btc&bnb, long&short, lever0-51), check channel, check balance, check order
-        if (false) {
-            console.log('4. sell');
-            await sell(owner, 34, true);
-            await updateChannel(2, 0, false, false, true);
-            await sell(owner, 16, true);
-            await updateChannel(1, 0, false, false, true);
-            await sell(owner, 23, true);
-            await updateChannel(1, 0, false, false, true);
-
-            await listAccounts();
-        }
-        // 5. Post different price and calculate order value, liquidate line
-        if (false) {
-            console.log('5. post');
-            let i = 19;
-            for (let p = 100; p < 100000; p = parseInt(p * 1.1)) {
-                await post(200, [1260, p, 260]);
-                console.log({ 
-                    index: i,
-                    oraclePrice: lastPrice(ctx.orders[i].channelIndex),
-                    balance: await balanceOf(i, lastPrice(ctx.orders[i].channelIndex)),
-                    line: liquidateLine(owner, i),
-                    bomb: await balanceOf(i, lastPrice(ctx.orders[i].channelIndex)) < liquidateLine(owner, i)
-                });
-            }
-        }
-
-        // 6. Post different price and liquidate
-        if (true) {
-            console.log('6. liquidate');
-            await post(200, [1230, 15500, 245]);
-            for (let i = 0; i < 36; ++i) {
-                console.log({
-                    index: i,
-                    //channelIndex: ctx.orders[i].channelIndex,
-                    //oraclePrice: lastPrice(ctx.orders[i].channelIndex),
-                    balance: await balanceOf(i, lastPrice(ctx.orders[i].channelIndex)),
-                    line: liquidateLine(owner, i),
-                    bomb: await balanceOf(i, lastPrice(ctx.orders[i].channelIndex)) < liquidateLine(owner, i)
-                });
-            }
-            await listAccounts();
-            await liquidate(owner, [
-                0,1,2,3,4,5,6,7,8,9,10,11,12,13,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,14,15,16,17,18,19,20,
-                21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,
-                0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,
-                0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,
-                0,1,2,3,4,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,14,15,16,17,18,19,20,21,22,
-                23,24,25,26,27,28,29,30,31,32,33,34,5,6,7,8,9,10,11,12,13,35,
-                0,1,2,3,4,5,6,7,8,9,10,11,12,29,30,31,32,33,34,35
-            ]);
+            console.log('1. buy2');
+            await nestFutures2Test.buy2(0, 7, true, 1000 * NEST_BASE, toBigInt(1200));
             await listAccounts();
 
-            //await list(owner, 0, 36, 1);
-            await liquidate(owner, [
-                0,1,2,3,4,5,6,7,8,9,10,11,12,13,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,14,15,16,17,18,19,20,
-                21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,
-                0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,
-                0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,
-                0,1,2,3,4,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,14,15,16,17,18,19,20,21,22,
-                23,24,25,26,27,28,29,30,31,32,33,34,5,6,7,8,9,10,11,12,13,35,
-                0,1,2,3,4,5,6,7,8,9,10,11,12,29,30,31,32,33,34,35
-            ]);
+            const totalNest = 1000 + 1000 * 7 * 0.002;
+            FEQ({ 
+                a: parseFloat(previous.owner.NEST) - totalNest,
+                b: parseFloat(accounts.owner.NEST)
+            });
+            FEQ({
+                a: parseFloat(previous.nestVault.NEST) + totalNest,
+                b: parseFloat(accounts.nestVault.NEST)
+            })
+
+            console.log(await nestFutures2Test.list2(0, 1, 0));
+            await nestFutures2Test.buy2(1, 2, true, 8000 * NEST_BASE, toBigInt(12000));
+            //await nestFutures2Test.buy2(0, 7, true, 5000 * NEST_BASE, toBigInt(1200));
             await listAccounts();
-
-            await updateChannel(0, 0, false, false, true);
-            await updateChannel(1, 0, false, false, true);
-            await updateChannel(2, 0, false, false, true);
         }
-
-        // 7. Create LimitOrder and execute (eth&btc&bnb, long&short, lever0-51), check channel, check balance, check order
         if (true) {
-            console.log('7. createLimitOrder');
-            await newTrustOrder(owner, 0, 3, true, 3000, 1200, 1800, 800);
-            await newTrustOrder(owner, 1, 7, false, 88888, 18000, 10000, 20000);
-            await newTrustOrder(owner, 2, 4, true, 5000, 200, 400, 100);
-            await list(owner, 0, 4, 0);
-            await listTrustOrder(owner, 0, 3, 1);
-
-        }
-        // 8. updateLimitPrice
-        if (true) {
-            console.log('8. updateLimitPrice');
-            await updateLimitPrice(owner, 1, 16000);
-            await list(owner, 0, 4, 0);
-            await listTrustOrder(owner, 0, 3, 1);
-        }
-        // 9. updateStopPrice
-        if (true) {
-            console.log('9. updateStopPrice');
-            await updateStopPrice(owner, 1, 11111, 22222);
-            await list(owner, 0, 4, 0);
-            await listTrustOrder(owner, 0, 3, 1);
-        }
-        
-        // 11. buyWithStopOrder
-        if (true) {
-            console.log('11. buyWithStopOrder');
-            await buyWithStopOrder(owner, 1, 2, true, 100, 18888, 12222);
-            await list(owner, 0, 1, 0);
-            await listTrustOrder(owner, 0, 1, 0);
-        }
-        // 14. cancelLimitOrder
-        if (false) {
-            console.log('14. cancelLimitOrder');
-            await cancelLimitOrder(owner, [1]);
-            return;
-        }
-        // 12. executeLimitOrder
-        else if (true) {
-            console.log('13. executeLimitOrder');
-            await executeLimitOrder(owner, [0, 1, 2]);
-            await list(owner, 0, 4, 0);
-            await listTrustOrder(owner, 0, 4, 0);
-        }
-        // 10. newStopOrder
-        if (true) {
-            console.log('10. newStopOrder');
-            await newStopOrder(owner, 36, 1801, 801);
-            await list(owner, 0, 4, 0);
-            await listTrustOrder(owner, 0, 5, 1);
-        }
-        // 13. executeStopOrder
-        if (true) {
-            console.log('11. executeStopOrder');
-            await executeStopOrder(owner, [0, 1, 2, 3, 4]);
-            await list(owner, 0, 5, 0);
-            await listTrustOrder(owner, 0, 5, 1);
+            console.log('2. sell2');
+            await nestFutures2Test.sell2(0);
+            await nestFutures2Test.sell2(1);            
+            await listAccounts();
         }
     });
 });

@@ -270,9 +270,12 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
 
                 // 4. Liquidate logic
                 // lever is great than 1, and balance less than a regular value, can be liquidated
-                // the regular value is: Max(M0 * L * St / S0 * c, a)
-                if (value < CommonLib.MIN_FUTURE_VALUE || 
-                    value < balance * lever * oraclePrice / basePrice * CommonLib.FEE_RATE / 1 ether) {
+                // the regular value is: Max(M0 * L * St / S0 * c, a) | expired
+                // the regular value is: Max(M0 * L * St / S0 * c + a, M0 * L * 0.5%)
+                if (value < balance * lever / 200 || 
+                    value < balance * lever * oraclePrice / basePrice * CommonLib.FEE_RATE / 1 ether 
+                            + CommonLib.MIN_FUTURE_VALUE
+                ) {
 
                     // Clear all data of order, use this code next time
                     // assembly {
@@ -423,7 +426,7 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
     /// @dev Gets the index number of the specified address. If it does not exist, register
     /// @param addr Destination address
     /// @return The index number of the specified address
-    function _addressIndex(address addr) private returns (uint) {
+    function _addressIndex(address addr) internal returns (uint) {
         uint index = _accountMapping[addr];
         if (index == 0) {
             // If it exceeds the maximum number that 32 bits can store, you can't continue to register a new account.

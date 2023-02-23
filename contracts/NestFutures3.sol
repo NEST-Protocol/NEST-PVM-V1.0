@@ -528,7 +528,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
                 // lever is great than 1, and balance less than a regular value, can be liquidated
                 // the regular value is: Max(M0 * L * St / S0 * c, a) | expired
                 // the regular value is: Max(M0 * L * St / S0 * c + a, M0 * L * 0.5%)
-                if (value < balance * 5 / 1000 ||
+                if (value < balance / 200 ||
                     value < balance * oraclePrice / basePrice * CommonLib.FEE_RATE / 1 ether
                             + CommonLib.MIN_FUTURE_VALUE
                 ) {
