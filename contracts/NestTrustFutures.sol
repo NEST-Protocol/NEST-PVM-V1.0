@@ -230,12 +230,6 @@ contract NestTrustFutures is NestFutures3, INestTrustFutures {
         // Load TrustOrder
         TrustOrder memory trustOrder = _trustOrders[trustOrderIndex];
 
-        // Check status
-        // require(uint(trustOrder.status) != S_EXECUTED, "NF:");
-
-        // Load Order
-        //Order memory order = _orders[uint(trustOrder.orderIndex)];
-
         // Check owner
         require(msg.sender == _accounts[_orders[uint(trustOrder.orderIndex)].owner], "NF:not owner");
 

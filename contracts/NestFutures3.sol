@@ -28,13 +28,13 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
     // TODO: Ask KT, wll, and lyk to open some orders in NestFutures2 on bsc test net before deploy testing contract √
     // TODO: After this update, limit order and stop order in v2 will not support, buy2, add2, setStopPrice 
     //       in NestFutures2 will be removed, New limit order will not executed. @KT, @wll
-    // TODO: Min value of Liquidate line of NestFutures2 is updated from 10nest to 15nest
+    // TODO: Min value of Liquidate line of NestFutures2 is updated from 10nest to 15nest √
     // TODO: The order data will cleared when liquidate, notify @wll
 
     // TASK:
     // 1. Develop new futures contract: NestFutures3 √
     // 2. Develop new futures proxy contract: NestFuturesProxy √
-    // 3. Remove buy2, add2, setStopPrice from NestFutures2
+    // 3. Remove buy2, add2, setStopPrice from NestFutures2 √
     // 4. Update _queryPrice in NestFutures2, to query price from NestFutures3 √
 
     /// @dev Order structure
@@ -103,7 +103,6 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
     // Please note that the price is no longer relative to 2000 USD
     function post(uint period, uint[3] calldata /*prices*/) external {
         require(msg.sender == DIRECT_POSTER, "NF:not directPoster");
-
         assembly {
             // Encode value at position indicated by value to float
             function encode(value) -> v {
