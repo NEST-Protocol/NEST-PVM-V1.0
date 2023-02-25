@@ -3,7 +3,7 @@ const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, listBalances, snd, tableSnd, d1, Vc, Vp, UI, FEQ } = require('./utils.js');
 const { ethers, upgrades } = require('hardhat');
 
-describe('42.NestFutures3-algorithm2.js', function() {
+describe('42.NestFutures3V1-algorithm2.js', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         

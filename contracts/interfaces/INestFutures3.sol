@@ -4,6 +4,26 @@ pragma solidity ^0.8.6;
 
 /// @dev Nest futures without merger
 interface INestFutures3 {
+    
+    /// @dev Order structure
+    struct Order {
+        // Address index of owner
+        uint32 owner;
+        // Base price of this order, encoded with encodeFloat56()
+        uint56 basePrice;
+        // Balance of this order, 4 decimals
+        uint40 balance;
+        // Append amount of this order
+        uint40 appends;
+        // Index of target channel, support eth, btc and bnb
+        uint16 channelIndex;
+        // Leverage of this order
+        uint8 lever;
+        // Orientation of this order, long or short
+        bool orientation;
+        // Pt, use this to calculate miuT
+        int56 Pt;
+    }
 
     /// @dev Order for view methods
     struct OrderView {
@@ -25,14 +45,6 @@ interface INestFutures3 {
         uint basePrice;
         // Pt, use this to calculate miuT
         int Pt;
-    }
-
-    // Global parameter for trade channel
-    struct TradeChannel {
-        uint56 Lp;
-        uint56 Sp;
-        int56  Pt;
-        uint32 bn;
     }
 
     /// @dev Buy order event
@@ -77,8 +89,11 @@ interface INestFutures3 {
         uint reward
     );
 
-    function getChannel(uint channelIndex) external view returns (TradeChannel memory channel);
-
+    /// @dev Returns the current value of target order
+    /// @param orderIndex Index of order
+    /// @param oraclePrice Current price from oracle, usd based, 18 decimals
+    function balanceOf(uint orderIndex, uint oraclePrice) external view returns (uint value);
+    
     /// @dev Buy futures
     /// @param channelIndex Index of target channel
     /// @param lever Lever of order
