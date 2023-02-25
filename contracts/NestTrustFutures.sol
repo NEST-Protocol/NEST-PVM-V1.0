@@ -326,51 +326,15 @@ contract NestTrustFutures is NestFutures3, INestTrustFutures {
                 // If channelIndex is not same with previous, need load new channel and query oracle
                 // At first, channelIndex is 0x10000, this is impossible the same with current channelIndex
                 if (channelIndex < 0x10000) {
-                    channel.bn = uint32(block.number);
                     _channels[channelIndex] = channel;
                 }
                 // Load current channel
                 channelIndex = uint(order.channelIndex);
                 oraclePrice = _lastPrice(channelIndex);
-                channel = _channels[channelIndex];
-
-                // Calculate Pt by μ from last order
-                uint Lp = uint(channel.Lp);
-                uint Sp = uint(channel.Sp);
-                if (Lp + Sp > 0) {
-                    // Pt is expressed as 56-bits integer, which 12 decimals, representable range is
-                    // [-36028.797018963968, 36028.797018963967], assume the earn rate is 0.9% per day,
-                    // and it continues 100 years, Pt may reach to 328.725, this is far less than 
-                    // 36028.797018963967, so Pt is impossible out of [-36028.797018963968, 36028.797018963967].
-                    // And even so, Pt is truncated, the consequences are not serious, so we don't check truncation
-                    channel.Pt = int56(
-                        int(channel.Pt) + 
-                        // μ is not saved, and calculate it by Lp and Sp always
-                        // 694444 = 0.02e12 / 86400 * CommonLib.BLOCK_TIME / 1000
-                        694444 * (int(Lp) - int(Sp)) * int((block.number - uint(channel.bn))) / int(Lp + Sp)
-                    );
-                }
+                channel = _updateChannel(channelIndex, oraclePrice);
             }
 
             uint balance = uint(trustOrder.balance);
-            uint lever = uint(order.lever);
-
-            // Update Lp and Sp, for calculate next μ
-            // Lp and Sp are add(sub) with original bond
-            // When buy, Lp(Sp) += lever * amount
-            // When sell(liquidate), Lp(Sp) -= lever * amount
-            // Original bond not include service fee
-
-            // Lp ans Sp are 56-bits unsigned integer, defined as 4 decimals, which representable range is
-            // [0, 7205759403792.7935], total supply of NEST is 10000000000, with max leverage 50, the 
-            // maximum value is 500000000000, Lp ans Sp is impossible to reach 7205759403792.7935,
-            // so we don't check truncation here
-            if (order.orientation) {
-                channel.Lp = uint56(uint(channel.Lp) + balance * lever);
-            } 
-            else {
-                channel.Sp = uint56(uint(channel.Sp) + balance * lever);
-            }
             totalNest += balance + uint(trustOrder.fee);
 
             // Update Order: basePrice, baseBlock, balance, Pt
@@ -390,7 +354,6 @@ contract NestTrustFutures is NestFutures3, INestTrustFutures {
 
         // Update last channel
         if (channelIndex < 0x10000) {
-            channel.bn = uint32(block.number);
             _channels[channelIndex] = channel;
         }
 
@@ -422,46 +385,12 @@ contract NestTrustFutures is NestFutures3, INestTrustFutures {
                     // If channelIndex is not same with previous, need load new channel and query oracle
                     // At first, channelIndex is 0x10000, this is impossible the same with current channelIndex
                     if (channelIndex < 0x10000) {
-                        channel.bn = uint32(block.number);
                         _channels[channelIndex] = channel;
                     }
                     // Load current channel
                     channelIndex = uint(order.channelIndex);
                     oraclePrice = _lastPrice(channelIndex);
-                    channel = _channels[channelIndex];
-
-                    // Calculate Pt by μ from last order
-                    uint Lp = uint(channel.Lp);
-                    uint Sp = uint(channel.Sp);
-                    if (Lp + Sp > 0) {
-                        // Pt is expressed as 56-bits integer, which 12 decimals, representable range is
-                        // [-36028.797018963968, 36028.797018963967], assume the earn rate is 0.9% per day,
-                        // and it continues 100 years, Pt may reach to 328.725, this is far less than 
-                        // 36028.797018963967, so Pt is impossible out of [-36028.797018963968, 36028.797018963967].
-                        // And even so, Pt is truncated, the consequences are not serious, so we don't check truncation
-                        channel.Pt = int56(
-                            int(channel.Pt) + 
-                            // μ is not saved, and calculate it by Lp and Sp always
-                            // 694444 = 0.02e12 / 86400 * CommonLib.BLOCK_TIME / 1000
-                            694444 * (int(Lp) - int(Sp)) * int((block.number - uint(channel.bn))) / int(Lp + Sp)
-                        );
-                    }
-                }
-
-                // Update Lp and Sp, for calculate next μ
-                // Lp and Sp are add(sub) with original bond
-                // When buy, Lp(Sp) += lever * amount
-                // When sell(liquidate), Lp(Sp) -= lever * amount
-                // Original bond not include service fee
-
-                // Lp ans Sp are 56-bits unsigned integer, defined as 4 decimals, which representable range is
-                // [0, 7205759403792.7935], total supply of NEST is 10000000000, with max leverage 50, the 
-                // maximum value is 500000000000, Lp ans Sp is impossible to reach 7205759403792.7935,
-                // so we don't check truncation here
-                if (order.orientation) {
-                    channel.Lp = uint56(uint(channel.Lp) - balance * lever);
-                } else {
-                    channel.Sp = uint56(uint(channel.Sp) - balance * lever);
+                    channel = _updateChannel(channelIndex, oraclePrice);
                 }
 
                 uint value = _valueOf(
@@ -498,7 +427,6 @@ contract NestTrustFutures is NestFutures3, INestTrustFutures {
         
         // Update last channel
         if (channelIndex < 0x10000) {
-            channel.bn = uint32(block.number);
             _channels[channelIndex] = channel;
         }
 

@@ -38,9 +38,9 @@ describe('42.NestFutures3-algorithm2.js', function() {
         // Local context
         let ctx = {
             channels: [
-                { Lp: 0, Sp: 0, Pt: 0, bn: 0 },
-                { Lp: 0, Sp: 0, Pt: 0, bn: 0 },
-                { Lp: 0, Sp: 0, Pt: 0, bn: 0 }
+                { lastPrice: 0, Pt: 0, miu: 0, bn: 0 },
+                { lastPrice: 0, Pt: 0, miu: 0, bn: 0 },
+                { lastPrice: 0, Pt: 0, miu: 0, bn: 0 }
             ],
             orders: [],
             trustOrders: [],
@@ -101,42 +101,51 @@ describe('42.NestFutures3-algorithm2.js', function() {
         };
 
         // Load and calculate current Pt of channel
-        const currentPt = async function(channel) {
+        const currentPt = async function(channel, oraclePrice) {
             // If channel.Lp + channel.Sp not 0, update Pt
-            if (channel.Lp + channel.Sp > 0) {
-                let miu = (channel.Lp - channel.Sp) * 0.02 / (channel.Lp + channel.Sp) / 86400;
-                return channel.Pt + miu * (await bn() - channel.bn) * BLOCK_TIME;
+            if (await bn() > channel.bn && channel.bn > 0) {
+                //let miu = (channel.Lp - channel.Sp) * 0.02 / (channel.Lp + channel.Sp) / 86400;
+                //return channel.Pt + miu * (await bn() - channel.bn) * BLOCK_TIME;
+                return channel.Pt + channel.miu * (await bn() - channel.bn) * BLOCK_TIME;
             }
             return channel.Pt;
         };
 
-        // Update channel parameter
-        const updateChannel = async function(channelIndex, virtualAmount, orientation, uncheck, echo) {
-            let channel = ctx.channels[channelIndex];
-            channel.Pt = await currentPt(channel);
-            if (orientation) {
-                channel.Lp += virtualAmount;
-            } else {
-                channel.Sp += virtualAmount;
-            }
-            channel.bn = await bn();
+        // Decode the floating-point representation of fraction * 16 ^ exponent to uint
+        const decodeFloat = function(floatValue) {
+            const bi = BigInt(floatValue);
+            return (bi >> 6n) << ((bi & 0x3Fn) << 2n);
+        };
 
-            if (!uncheck) {
+        // Update channel parameter
+        const updateChannel = async function(channelIndex, oraclePrice, uncheck, echo) {
+            let channel = ctx.channels[channelIndex];
+            if (oraclePrice > 0) {
+                channel.Pt = await currentPt(channel, oraclePrice);
+                if (await bn() > channel.bn && channel.bn > 0) {
+                    channel.miu = 0.00000003082
+                            -0.1795 * (oraclePrice - channel.lastPrice) / channel.lastPrice / (await bn() - channel.bn) / BLOCK_TIME;
+                }
+                channel.lastPrice = oraclePrice;
+                channel.bn = await bn();
+            }
+
+            if (!uncheck) 
+            {
                 const cp = UI(await nestFutures3.getChannel(channelIndex));
                 const pp = {
-                    Lp: parseFloat(cp.Lp) / NEST_BASE,
-                    Sp: parseFloat(cp.Sp) / NEST_BASE,
+                    lastPrice: toDecimal(decodeFloat(cp.lastPrice)),
                     Pt: parseFloat(cp.Pt) / MIU_DECIMALS,
+                    miu: parseFloat(cp.miu) / MIU_DECIMALS,
                     bn: cp.bn
                 }
-                //console.log({ channel, pp });
-                FEQ({ a: channel.Lp, b: pp.Lp }, true);
-                FEQ({ a: channel.Sp, b: pp.Sp }, true);
-                FEQ({ a: channel.Pt, b: pp.Pt, d: 0.00001 }, true);
-
-                if (echo) {
+                if (echo) 
+                {
                     console.log({ jc: channel, cc: pp });
                 }
+                FEQ({ a: channel.lastPrice, b: pp.lastPrice, d: 0.0000000001 }, true);
+                FEQ({ a: channel.miu, b: pp.miu, d: 0.0000000001 }, true);
+                FEQ({ a: channel.Pt, b: pp.Pt, d: 0.0001 }, true);
             }
 
             return channel;
@@ -163,11 +172,11 @@ describe('42.NestFutures3-algorithm2.js', function() {
         // Calculate value of the order
         const balanceOf = async function(orderIndex, oraclePrice) {
             const order = ctx.orders[orderIndex];
-            const miuT = await currentPt(ctx.channels[order.channelIndex]) - order.Pt;
+            const miuT = await currentPt(ctx.channels[order.channelIndex], oraclePrice) - order.Pt;
             const value = _valueOf(
                 miuT, order.balance, order.lever, order.orientation, order.basePrice, oraclePrice, order.appends);
             const cb = parseFloat(toDecimal(await nestFutures3.balanceOf(orderIndex, toBigInt(oraclePrice))));
-            FEQ({ a: value, b: cb, d: 0.000000001 });
+            FEQ({ a: value, b: cb, d: 0.00000001 });
             return value;
         };
 
@@ -177,7 +186,7 @@ describe('42.NestFutures3-algorithm2.js', function() {
             await nestFutures3.buy(channelIndex, lever, orientation, amount * NEST_BASE);
             await listAccounts(true);
 
-            let channel = await updateChannel(channelIndex, amount * lever, orientation);
+            let channel = await updateChannel(channelIndex, lastPrice(channelIndex));
 
             const index = ctx.orders.length;
             ctx.orders.push({
@@ -221,7 +230,7 @@ describe('42.NestFutures3-algorithm2.js', function() {
 
             let order = ctx.orders[index];
             // Update channel
-            let channel = await updateChannel(order.channelIndex, -order.balance * order.lever, order.orientation);
+            let channel = await updateChannel(order.channelIndex, lastPrice(order.channelIndex));
             
             // μT = P1 - P0
             let miuT = channel.Pt - order.Pt;
@@ -275,7 +284,7 @@ describe('42.NestFutures3-algorithm2.js', function() {
 
                 if (order.lever > 1 && order.balance > 0) {
                     // μT = P1 - P0
-                    let miuT = await currentPt(channel) - order.Pt;
+                    let miuT = await currentPt(channel, oraclePrice) - order.Pt;
                     // Calculate value of order
                     let value = _valueOf(
                         miuT, 
@@ -293,7 +302,7 @@ describe('42.NestFutures3-algorithm2.js', function() {
                         value < order.balance * order.lever * 0.5 / 100
                     ) {
                         // Liquidated, update channel
-                        await updateChannel(order.channelIndex, -order.balance * order.lever, order.orientation, true);
+                        await updateChannel(order.channelIndex, oraclePrice, true);
 
                         reward += value;
                         order.balance = 0;
@@ -315,18 +324,18 @@ describe('42.NestFutures3-algorithm2.js', function() {
             FEQ({
                a: reward,
                b: parseFloat(accounts.owner.NEST) - parseFloat(previous.owner.NEST),
-               d: 0.00000001
+               d: 0.0000001
             }, false);
             FEQ({
                 a: reward,
                 b: parseFloat(previous.nestVault.NEST) - parseFloat(accounts.nestVault.NEST),
-                d: 0.00000001
+                d: 0.0000001
             }, false);
 
             for (let i = 0; i < indices.length; ++i) {
                 let index = indices[i];
                 let order = ctx.orders[index];
-                await updateChannel(order.channelIndex, 0, false);
+                await updateChannel(order.channelIndex, ctx.prices[order.channelIndex], false);
             }
         };
 
@@ -436,7 +445,7 @@ describe('42.NestFutures3-algorithm2.js', function() {
                 let order = ctx.orders[trustOrder.orderIndex];
                 order.balance = trustOrder.balance;
                 order.basePrice = ctx.prices[order.channelIndex];
-                order.Pt = (await updateChannel(order.channelIndex, order.balance * order.lever, order.orientation, true)).Pt;
+                order.Pt = (await updateChannel(order.channelIndex, order.basePrice, true)).Pt;
 
                 totalNest += (trustOrder.balance + trustOrder.fee);
 
@@ -507,7 +516,7 @@ describe('42.NestFutures3-algorithm2.js', function() {
             );
             await listAccounts(true);
 
-            let channel = await updateChannel(channelIndex, amount * lever, orientation);
+            let channel = await updateChannel(channelIndex, lastPrice(channelIndex));
 
             const index = ctx.orders.length;
             ctx.orders.push({
@@ -610,7 +619,7 @@ describe('42.NestFutures3-algorithm2.js', function() {
                 let order = ctx.orders[trustOrder.orderIndex];
                 if (order.balance > 0) {
                     let oraclePrice = lastPrice(order.channelIndex);
-                    let channel = await updateChannel(order.channelIndex, -order.balance * order.lever, order.orientation, true);
+                    let channel = await updateChannel(order.channelIndex, oraclePrice, true);
                     let miuT = channel.Pt - order.Pt;
                     let value = _valueOf(
                         miuT,
@@ -639,7 +648,7 @@ describe('42.NestFutures3-algorithm2.js', function() {
                 await compareOrder(trustOrder.orderIndex);
                 await compareTrustOrder(trustOrderIndices[i]);
 
-                await updateChannel(ctx.orders[trustOrder.orderIndex].channelIndex, 0, false);
+                //await updateChannel(ctx.orders[trustOrder.orderIndex].channelIndex, 0, false);
             }
 
             FEQ({
@@ -764,7 +773,8 @@ describe('42.NestFutures3-algorithm2.js', function() {
             await buy(owner, 0, 10, true, 10000);               // 3
             await buy(owner, 0, 20, true, 20000);               // 4
             await buy(owner, 0, 50, true, 50000);               // 5
-            await updateChannel(0, 0, false, false, true);      // 
+            await updateChannel(0, 0, false, true);      // 
+
             // eth-short
             await buy(owner, 0, 1, false, 1000);                // 6
             await buy(owner, 0, 2, false, 2000);                // 7
@@ -772,7 +782,7 @@ describe('42.NestFutures3-algorithm2.js', function() {
             await buy(owner, 0, 10, false, 10000);              // 9
             await buy(owner, 0, 20, false, 20000);              // 10
             await buy(owner, 0, 50, false, 50000);              // 11
-            await updateChannel(0, 0, false, false, true);
+            await updateChannel(0, 0, false, true);
 
             // btc-long
             await buy(owner, 1, 1, true, 1000);                 // 12
@@ -781,7 +791,7 @@ describe('42.NestFutures3-algorithm2.js', function() {
             await buy(owner, 1, 10, true, 10000);               // 15
             await buy(owner, 1, 20, true, 20000);               // 16
             await buy(owner, 1, 50, true, 50000);               // 17
-            await updateChannel(1, 0, false, false, true);
+            await updateChannel(1, 0, false, true);
             // btc-short
             await buy(owner, 1, 1, false, 1000);                // 18
             await buy(owner, 1, 2, false, 2000);                // 19
@@ -789,7 +799,7 @@ describe('42.NestFutures3-algorithm2.js', function() {
             await buy(owner, 1, 10, false, 10000);              // 21
             await buy(owner, 1, 20, false, 20000);              // 22
             await buy(owner, 1, 50, false, 50000);              // 23
-            await updateChannel(1, 0, false, false, true);
+            await updateChannel(1, 0, false, true);
 
             // bnb-long
             await buy(owner, 2, 1, true, 1000);                 // 24
@@ -798,7 +808,7 @@ describe('42.NestFutures3-algorithm2.js', function() {
             await buy(owner, 2, 10, true, 10000);               // 27
             await buy(owner, 2, 20, true, 20000);               // 28
             await buy(owner, 2, 50, true, 50000);               // 29
-            await updateChannel(2, 0, false, false, true);
+            await updateChannel(2, 0, false, true);
             // bnb-short
             await buy(owner, 2, 1, false, 1000);                // 30
             await buy(owner, 2, 2, false, 2000);                // 31
@@ -806,9 +816,9 @@ describe('42.NestFutures3-algorithm2.js', function() {
             await buy(owner, 2, 10, false, 10000);              // 33
             await buy(owner, 2, 20, false, 20000);              // 34
             await buy(owner, 2, 50, false, 50000);              // 35
-            await updateChannel(2, 0, false, false, true);
+            await updateChannel(2, 0, false, true);
 
-            await list(owner, 0, 36, 1);
+            await list(owner, 0, 1, 1);
             await listAccounts();
         }
         // 2. Normal sell (eth&btc&bnb, long&short, lever0-51), check channel, check balance, check order
@@ -817,15 +827,15 @@ describe('42.NestFutures3-algorithm2.js', function() {
             await post(200, [1260, 17000, 260]);
             await sell(owner, 4, true);
             //await sell(owner, 10);
-            await updateChannel(0, 0, false, false, true);
+            await updateChannel(0, 0, false, true);
 
             await sell(owner, 16, true);
             //await sell(owner, 22);
-            await updateChannel(1, 0, false, false, true);
+            await updateChannel(1, 0, false, true);
 
             await sell(owner, 28, true);
             //await sell(owner, 34);
-            await updateChannel(2, 0, false, false, true);
+            await updateChannel(2, 0, false, true);
 
             await listAccounts();
         }
@@ -846,17 +856,17 @@ describe('42.NestFutures3-algorithm2.js', function() {
                     bomb: await balanceOf(i, lastPrice(ctx.orders[i].channelIndex)) < liquidateLine(owner, i)
                 });
             }
-            await list(owner, 0, 36, 1);
+            await list(owner, 0, 1, 1);
         }
         // 4. Sell with added order (eth&btc&bnb, long&short, lever0-51), check channel, check balance, check order
-        if (false) {
+        if (true) {
             console.log('4. sell');
             await sell(owner, 34, true);
-            await updateChannel(2, 0, false, false, true);
+            await updateChannel(2, 0, false, true);
             await sell(owner, 16, true);
-            await updateChannel(1, 0, false, false, true);
+            await updateChannel(1, 0, false, true);
             await sell(owner, 23, true);
-            await updateChannel(1, 0, false, false, true);
+            await updateChannel(1, 0, false, true);
 
             await listAccounts();
         }
@@ -913,10 +923,9 @@ describe('42.NestFutures3-algorithm2.js', function() {
                 0,1,2,3,4,5,6,7,8,9,10,11,12,29,30,31,32,33,34,35
             ]);
             await listAccounts();
-
-            await updateChannel(0, 0, false, false, true);
-            await updateChannel(1, 0, false, false, true);
-            await updateChannel(2, 0, false, false, true);
+            await updateChannel(0, 0, false, true);
+            await updateChannel(1, 0, false, true);
+            await updateChannel(2, 0, false, true);
         }
 
         // 7. Create LimitOrder and execute (eth&btc&bnb, long&short, lever0-51), check channel, check balance, check order

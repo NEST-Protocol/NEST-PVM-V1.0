@@ -29,11 +29,19 @@ interface INestFutures3 {
 
     // Global parameter for trade channel
     struct TradeChannel {
-        uint56 Lp;
-        uint56 Sp;
+        // Last price of this channel, encoded with encodeFloat56()
+        uint56 lastPrice;
         int56  Pt;
+        int56  miu;
         uint32 bn;
     }
+
+    // struct TradeChannelView {
+    //     uint lastPrice;
+    //     int56  Pt;
+    //     int56  miu;
+    //     uint32 bn;
+    // }
 
     /// @dev Buy order event
     /// @param index Index of order
@@ -77,8 +85,15 @@ interface INestFutures3 {
         uint reward
     );
 
+    /// @dev Get channel information
+    /// @param channelIndex Index of target channel
     function getChannel(uint channelIndex) external view returns (TradeChannel memory channel);
 
+    /// @dev Returns the current value of target order
+    /// @param orderIndex Index of order
+    /// @param oraclePrice Current price from oracle, usd based, 18 decimals
+    function balanceOf(uint orderIndex, uint oraclePrice) external view returns (uint value);
+    
     /// @dev Buy futures
     /// @param channelIndex Index of target channel
     /// @param lever Lever of order

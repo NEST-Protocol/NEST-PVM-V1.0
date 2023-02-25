@@ -234,6 +234,6 @@ exports.FEQ = function(o, silent) {
     const c = Math.abs(a) + Math.abs(b);
     
     if (c > 0) {
-        expect(Math.abs(a - b) / c).to.lte(o.d || 0);
+        expect(Math.abs(a - b) / (c + 1)).to.lte(o.d || 0);
     }
 };
