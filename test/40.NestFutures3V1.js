@@ -3,13 +3,13 @@ const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, listBalances, snd, tableSnd, d1, Vc, Vp, UI, FEQ } = require('./utils.js');
 const { ethers, upgrades } = require('hardhat');
 
-describe('40.NestFutures3', function() {
+describe('40.NestFutures3V1', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
         const { 
             eth, usdt, hbtc, nest, dcu, nestOptions, nestFutures, nestLPGuarantee, nestProbability, nestCyberInk,
-            nestNFTAuction, nestFutures3, nestVault,
+            nestNFTAuction, nestTrustFuturesV1, nestVault,
             nestPriceFacade, nestBuybackPool, BLOCK_TIME, USDT_DECIMALS
         } = await deploy();
 
@@ -36,46 +36,46 @@ describe('40.NestFutures3', function() {
         const ownerNestBalance = 100000000000000000000000000n;
 
         await nest.transfer(owner.address, ownerNestBalance);
-        //await nestFutures3.init();
+        //await nestTrustFuturesV1.init();
         await listAccounts();
 
-        await nestFutures3.directPost(200, [toBigInt(2000/1250), toBigInt(2000/250), toBigInt(2000/16000)]);
+        await nestTrustFuturesV1.post(200, [toBigInt(2000/1250), toBigInt(2000/250), toBigInt(2000/16000)]);
         if (true) {
             console.log('1. buy');
-            console.log(UI(await nestFutures3.getChannel(0)));
-            await nestFutures3.buy(0, 7, true, 1000 * NEST_BASE);
-            console.log(UI(await nestFutures3.getChannel(0)));
+            console.log(UI(await nestTrustFuturesV1.getChannel(0)));
+            await nestTrustFuturesV1.buy(0, 7, true, 1000 * NEST_BASE);
+            console.log(UI(await nestTrustFuturesV1.getChannel(0)));
             await listAccounts();
-            await nestFutures3.buy(0, 7, true, 1000 * NEST_BASE);
-            console.log(UI(await nestFutures3.getChannel(0)));
+            await nestTrustFuturesV1.buy(0, 7, true, 1000 * NEST_BASE);
+            console.log(UI(await nestTrustFuturesV1.getChannel(0)));
             await listAccounts();
-            await nestFutures3.buy(0, 7, false, 10000 * NEST_BASE);
-            console.log(UI(await nestFutures3.getChannel(0)));
+            await nestTrustFuturesV1.buy(0, 7, false, 10000 * NEST_BASE);
+            console.log(UI(await nestTrustFuturesV1.getChannel(0)));
             await listAccounts();
             for (var i = 0; i < 3; i++) {
                 await nest.transfer(owner.address, 0);
             }
-            await nestFutures3.buy(0, 7, true, 1000 * NEST_BASE);
-            console.log(UI(await nestFutures3.getChannel(0)));
+            await nestTrustFuturesV1.buy(0, 7, true, 1000 * NEST_BASE);
+            console.log(UI(await nestTrustFuturesV1.getChannel(0)));
             await listAccounts();
 
-            console.log(UI(await nestFutures3.list(0, 4, 1)));
+            console.log(UI(await nestTrustFuturesV1.list(0, 4, 1)));
             return;
         }
 
         if (true) {
             console.log('2. sell');
-            await nestFutures3.sell(0);
-            console.log(UI(await nestFutures3.getChannel(0)));
+            await nestTrustFuturesV1.sell(0);
+            console.log(UI(await nestTrustFuturesV1.getChannel(0)));
             await listAccounts();
-            await nestFutures3.sell(1);
-            console.log(UI(await nestFutures3.getChannel(0)));
+            await nestTrustFuturesV1.sell(1);
+            console.log(UI(await nestTrustFuturesV1.getChannel(0)));
             await listAccounts();
-            await nestFutures3.sell(2);
-            console.log(UI(await nestFutures3.getChannel(0)));
+            await nestTrustFuturesV1.sell(2);
+            console.log(UI(await nestTrustFuturesV1.getChannel(0)));
             await listAccounts();
-            await nestFutures3.sell(3);
-            console.log(UI(await nestFutures3.getChannel(0)));
+            await nestTrustFuturesV1.sell(3);
+            console.log(UI(await nestTrustFuturesV1.getChannel(0)));
             await listAccounts();
             return;
         }

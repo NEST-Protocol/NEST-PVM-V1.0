@@ -18,6 +18,7 @@ exports.deploy = async function() {
     const NestBuybackPool = await ethers.getContractFactory('NestBuybackPool');
     const NestCyberInk = await ethers.getContractFactory('NestCyberInk');
     const NestNFTAuction = await ethers.getContractFactory('NestNFTAuction');
+    const NestTrustFuturesV1 = await ethers.getContractFactory('NestTrustFuturesV1');
     const NestTrustFuturesV2 = await ethers.getContractFactory('NestTrustFuturesV2');
     const NestMarket = await ethers.getContractFactory('NestMarket');
     const NestFuturesProxy = await ethers.getContractFactory('NestFuturesProxy');
@@ -59,6 +60,10 @@ exports.deploy = async function() {
     const nestFutures = await upgrades.deployProxy(NestFutures, [nestGovernance.address], { initializer: 'initialize' });
     //const nestFutures = await NestFutures.attach('0x0000000000000000000000000000000000000000');
     console.log('nestFutures: ' + nestFutures.address);
+
+    const nestTrustFuturesV1 = await upgrades.deployProxy(NestTrustFuturesV1, [nestGovernance.address], { initializer: 'initialize' });
+    //const nestTrustFuturesV1 = await NestTrustFuturesV1.attach('0x0000000000000000000000000000000000000000');
+    console.log('nestTrustFuturesV1: ' + nestTrustFuturesV1.address);
 
     const nestTrustFuturesV2 = await upgrades.deployProxy(NestTrustFuturesV2, [nestGovernance.address], { initializer: 'initialize' });
     //const nestTrustFuturesV2 = await NestTrustFuturesV2.attach('0x0000000000000000000000000000000000000000');
@@ -103,7 +108,7 @@ exports.deploy = async function() {
     );
     await nestGovernance.registerAddress('nest.v4.openPrice', nestPriceFacade.address);
     await nestGovernance.registerAddress('nest.app.vault', nestVault.address);
-    await nestGovernance.registerAddress('nest.app.futures', nestTrustFuturesV2.address);
+    await nestGovernance.registerAddress('nest.app.futures', nestTrustFuturesV1.address);
     await nestGovernance.registerAddress('nest.app.futuresProxy', nestFuturesProxy.address);
     await nestGovernance.registerAddress('nest.app.dcu', dcu.address);
     await nestGovernance.registerAddress('nest.app.prc', nestProbability.address);
@@ -117,6 +122,8 @@ exports.deploy = async function() {
     await nestOptions.update(nestGovernance.address);
     console.log('6. nestFutures.update()');
     await nestFutures.update(nestGovernance.address);
+    console.log('7. nestTrustFuturesV1.update()');
+    await nestTrustFuturesV1.update(nestGovernance.address);
     console.log('7. nestTrustFuturesV2.update()');
     await nestTrustFuturesV2.update(nestGovernance.address);
     console.log('8. nestProbability.update()');
@@ -188,18 +195,23 @@ exports.deploy = async function() {
     console.log('14. create hbtc short lever');
     await nestFutures.create(hbtc.address, [1, 2, 3, 4, 5], false);
 
+    await nestTrustFuturesV1.openChannel(0);
+    await nestTrustFuturesV1.openChannel(1);
+    await nestTrustFuturesV1.openChannel(2);
     await nestTrustFuturesV2.openChannel(0);
     await nestTrustFuturesV2.openChannel(1);
     await nestTrustFuturesV2.openChannel(2);
 
     await nestVault.approve(nestOptions.address, 100000000000000000000000000n);
     await nestVault.approve(nestFutures.address, 100000000000000000000000000n);
+    await nestVault.approve(nestTrustFuturesV1.address, 100000000000000000000000000n);
     await nestVault.approve(nestTrustFuturesV2.address, 100000000000000000000000000n);
     await nestVault.approve(nestProbability.address, 100000000000000000000000000n);
     
     await nest.transfer(nestVault.address, 100000000000000000000000000n);
     await nest.approve(nestOptions.address, 100000000000000000000000000n);
     await nest.approve(nestFutures.address, 100000000000000000000000000n);
+    await nest.approve(nestTrustFuturesV1.address, 100000000000000000000000000n);
     await nest.approve(nestTrustFuturesV2.address, 100000000000000000000000000n);
     await nest.approve(nestProbability.address, 100000000000000000000000000n);
 
@@ -224,6 +236,7 @@ exports.deploy = async function() {
         nestBuybackPool: nestBuybackPool,
         nestCyberInk: nestCyberInk,
         nestNFTAuction: nestNFTAuction,
+        nestTrustFuturesV1: nestTrustFuturesV1,
         nestTrustFuturesV2: nestTrustFuturesV2,
         nestMarket: nestMarket,
         nestVault: nestVault,
