@@ -7,10 +7,10 @@ import "./libs/CommonLib.sol";
 
 import "./interfaces/INestTrustFutures.sol";
 
-import "./NestFutures3.sol";
+import "./NestFutures3V2.sol";
 
 /// @dev Futures proxy
-contract NestTrustFutures is NestFutures3, INestTrustFutures {
+contract NestTrustFuturesV2 is NestFutures3V2, INestTrustFutures {
 
     // Status of limit order: executed
     uint constant S_EXECUTED = 0;

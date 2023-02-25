@@ -11,7 +11,7 @@ import "./interfaces/INestFutures3.sol";
 import "./custom/NestFrequentlyUsed.sol";
 
 /// @dev Nest futures with dynamic miu
-contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
+contract NestFutures3V2 is NestFrequentlyUsed, INestFutures3 {
 
     // TODO: SigmaSQ is no use? √
     // TODO: Add valueOf method √
@@ -36,25 +36,14 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
     // 2. Develop new futures proxy contract: NestFuturesProxy √
     // 3. Remove buy2, add2, setStopPrice from NestFutures2 √
     // 4. Update _queryPrice in NestFutures2, to query price from NestFutures3 √
-
-    /// @dev Order structure
-    struct Order {
-        // Address index of owner
-        uint32 owner;
-        // Base price of this order, encoded with encodeFloat56()
-        uint56 basePrice;
-        // Balance of this order, 4 decimals
-        uint40 balance;
-        // Append amount of this order
-        uint40 appends;
-        // Index of target channel, support eth, btc and bnb
-        uint16 channelIndex;
-        // Leverage of this order
-        uint8 lever;
-        // Orientation of this order, long or short
-        bool orientation;
-        // Pt, use this to calculate miuT
-        int56 Pt;
+    
+    // Global parameter for trade channel
+    struct TradeChannel {
+        // Last price of this channel, encoded with encodeFloat56()
+        uint56 lastPrice;
+        int56  Pt;
+        int56  miu;
+        uint32 bn;
     }
 
     // Registered account address mapping
@@ -153,7 +142,7 @@ contract NestFutures3 is NestFrequentlyUsed, INestFutures3 {
 
     /// @dev Get channel information
     /// @param channelIndex Index of target channel
-    function getChannel(uint channelIndex) external view override returns (TradeChannel memory channel) {
+    function getChannel(uint channelIndex) external view returns (TradeChannel memory channel) {
         channel = _channels[channelIndex];
     }
 
