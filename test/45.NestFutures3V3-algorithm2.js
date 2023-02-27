@@ -3,13 +3,13 @@ const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, listBalances, snd, tableSnd, d1, Vc, Vp, UI, FEQ } = require('./utils.js');
 const { ethers, upgrades } = require('hardhat');
 
-describe('44.NestFutures3V2-algorithm2.js', function() {
+describe('45.NestFutures3V3-algorithm2.js', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
         const { 
             eth, usdt, hbtc, nest, dcu, nestOptions, nestFutures, nestLPGuarantee, nestProbability, nestCyberInk,
-            nestNFTAuction, nestTrustFuturesV2, nestVault,
+            nestNFTAuction, nestTrustFuturesV3, nestVault,
             nestPriceFacade, nestBuybackPool, BLOCK_TIME, USDT_DECIMALS
         } = await deploy();
 
@@ -22,7 +22,7 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
                 height: await ethers.provider.getBlockNumber(),
                 owner: await listBalances(owner, tokens),
                 nestVault: await listBalances(nestVault, tokens),
-                nestTrustFuturesV2: await listBalances(nestTrustFuturesV2, tokens)
+                nestTrustFuturesV3: await listBalances(nestTrustFuturesV3, tokens)
             };
             if (!silent) console.log(accounts);
             return accounts;
@@ -38,9 +38,9 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
         // Local context
         let ctx = {
             channels: [
-                { lastPrice: 0, miu: 0, Pt: 0, bn: 0 },
-                { lastPrice: 0, miu: 0, Pt: 0, bn: 0 },
-                { lastPrice: 0, miu: 0, Pt: 0, bn: 0 }
+                { lastPrice: 0, miu: 0, PtL: 0, PtS: 0, bn: 0 },
+                { lastPrice: 0, miu: 0, PtL: 0, PtS: 0, bn: 0 },
+                { lastPrice: 0, miu: 0, PtL: 0, PtS: 0, bn: 0 }
             ],
             orders: [],
             trustOrders: [],
@@ -60,7 +60,7 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
         // Post price
         const post = async function(period, prices) {
             // Post price to the contract
-            await nestTrustFuturesV2.post(period, [toBigInt(prices[0]), toBigInt(prices[1]), toBigInt(prices[2])]);
+            await nestTrustFuturesV3.post(period, [toBigInt(prices[0]), toBigInt(prices[1]), toBigInt(prices[2])]);
             // Update price to context
             ctx.prices[0] = prices[0],
             ctx.prices[1] = prices[1],
@@ -77,7 +77,7 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
             // Local Order
             const jo = UI(ctx.orders[index]);
             // Order from contract
-            const co = UI((await nestTrustFuturesV2.list(index, 1, 1))[0]);
+            const co = UI((await nestTrustFuturesV3.list(index, 1, 1))[0]);
             // Parse Order to local format
             const po = {
                 index: co.index,
@@ -106,9 +106,14 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
             if (await bn() > channel.bn && channel.bn > 0) {
                 //let miu = (channel.Lp - channel.Sp) * 0.02 / (channel.Lp + channel.Sp) / 86400;
                 //return channel.Pt + miu * (await bn() - channel.bn) * BLOCK_TIME;
-                return channel.Pt + channel.miu * (await bn() - channel.bn) * BLOCK_TIME;
+                let miuL = channel.miu > 0 ? channel.miu : 0;
+                let miuS = channel.miu < 0 ? channel.miu : 0;
+                return {
+                    PtL: channel.PtL + miuL * (await bn() - channel.bn) * BLOCK_TIME,
+                    PtS: channel.PtS + miuS * (await bn() - channel.bn) * BLOCK_TIME
+                };
             }
-            return channel.Pt;
+            return { PtL: channel.PtL, PtS: channel.PtS };
         };
 
         // Decode the floating-point representation of fraction * 16 ^ exponent to uint
@@ -121,10 +126,12 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
         const updateChannel = async function(channelIndex, oraclePrice, uncheck, echo) {
             let channel = ctx.channels[channelIndex];
             if (oraclePrice > 0) {
-                channel.Pt = await currentPt(channel, oraclePrice);
+                let pt = await currentPt(channel, oraclePrice);
+                channel.PtL = pt.PtL;
+                channel.PtS = pt.PtS;
                 if (await bn() > channel.bn && channel.bn > 0) {
-                    channel.miu = 0.00000003082
-                                - 0.1795 
+                    channel.miu = 0.00000001027
+                                + 0.0578 
                                 * (oraclePrice - channel.lastPrice) 
                                 / channel.lastPrice 
                                 / (await bn() - channel.bn) 
@@ -136,10 +143,11 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
 
             if (!uncheck) 
             {
-                const cp = UI(await nestTrustFuturesV2.getChannel(channelIndex));
+                const cp = UI(await nestTrustFuturesV3.getChannel(channelIndex));
                 const pp = {
                     lastPrice: toDecimal(decodeFloat(cp.lastPrice)),
-                    Pt: parseFloat(cp.Pt) / MIU_DECIMALS,
+                    PtL: parseFloat(cp.PtL) / MIU_DECIMALS,
+                    PtS: parseFloat(cp.PtS) / MIU_DECIMALS,
                     miu: parseFloat(cp.miu) / MIU_DECIMALS,
                     bn: cp.bn
                 }
@@ -149,7 +157,8 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
                 }
                 FEQ({ a: channel.lastPrice, b: pp.lastPrice, d: 0.0000000001 }, true);
                 FEQ({ a: channel.miu, b: pp.miu, d: 0.0000000001 }, true);
-                FEQ({ a: channel.Pt, b: pp.Pt, d: 0.0001 }, true);
+                FEQ({ a: channel.PtL, b: pp.PtL, d: 0.0001 }, true);
+                FEQ({ a: channel.PtS, b: pp.PtS, d: 0.0001 }, true);
             }
 
             return channel;
@@ -176,10 +185,11 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
         // Calculate value of the order
         const balanceOf = async function(orderIndex, oraclePrice) {
             const order = ctx.orders[orderIndex];
-            const miuT = await currentPt(ctx.channels[order.channelIndex], oraclePrice) - order.Pt;
+            const pt = await currentPt(ctx.channels[order.channelIndex], oraclePrice);
+            const miuT = (order.orientation ? pt.PtL : pt.PtS) - order.Pt;
             const value = _valueOf(
                 miuT, order.balance, order.lever, order.orientation, order.basePrice, oraclePrice, order.appends);
-            const cb = parseFloat(toDecimal(await nestTrustFuturesV2.balanceOf(orderIndex, toBigInt(oraclePrice))));
+            const cb = parseFloat(toDecimal(await nestTrustFuturesV3.balanceOf(orderIndex, toBigInt(oraclePrice))));
             FEQ({ a: value, b: cb, d: 0.00000001 });
             return value;
         };
@@ -187,7 +197,7 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
         // Buy order
         const buy = async function(sender, channelIndex, lever, orientation, amount, echo) {
             await listAccounts(true);
-            await nestTrustFuturesV2.buy(channelIndex, lever, orientation, amount * NEST_BASE);
+            await nestTrustFuturesV3.buy(channelIndex, lever, orientation, amount * NEST_BASE);
             await listAccounts(true);
 
             let channel = await updateChannel(channelIndex, lastPrice(channelIndex));
@@ -202,7 +212,7 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
                 lever: lever,
                 orientation: orientation,
                 basePrice: lastPrice(channelIndex),
-                Pt: channel.Pt
+                Pt: orientation ? channel.PtL : channel.PtS
             });
 
             await compareOrder(index);
@@ -218,7 +228,7 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
         // Append order
         const add = async function(sender, index, amount) {
             await listAccounts(true);
-            await nestTrustFuturesV2.add(index, amount * NEST_BASE);
+            await nestTrustFuturesV3.add(index, amount * NEST_BASE);
             await listAccounts(true);
 
             ctx.orders[index].appends += amount;
@@ -229,7 +239,7 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
         // Sell order
         const sell = async function(sender, index, echo) {
             await listAccounts(true);
-            await nestTrustFuturesV2.sell(index);
+            await nestTrustFuturesV3.sell(index);
             await listAccounts(true);
 
             let order = ctx.orders[index];
@@ -237,7 +247,7 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
             let channel = await updateChannel(order.channelIndex, lastPrice(order.channelIndex));
             
             // μT = P1 - P0
-            let miuT = channel.Pt - order.Pt;
+            let miuT = (order.orientation ? channel.PtL : channel.PtS) - order.Pt;
             // Query last price
             let oraclePrice = lastPrice(order.channelIndex);
             // Calculate value of order
@@ -275,7 +285,7 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
         // Liquidate orders
         const liquidate = async function(sender, indices) {
             await listAccounts(true);
-            await nestTrustFuturesV2.liquidate(indices);
+            await nestTrustFuturesV3.liquidate(indices);
             await listAccounts(true);
 
             let reward = 0;
@@ -288,7 +298,8 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
 
                 if (order.lever > 1 && order.balance > 0) {
                     // μT = P1 - P0
-                    let miuT = await currentPt(channel, oraclePrice) - order.Pt;
+                    const pt = await currentPt(channel, oraclePrice);
+                    let miuT = (order.orientation ? pt.PtL : pt.PtS) - order.Pt;
                     // Calculate value of order
                     let value = _valueOf(
                         miuT, 
@@ -345,7 +356,7 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
 
         // Compare TrustOrder
         const compareTrustOrder = async function(index) {
-            const to = UI((await nestTrustFuturesV2.listTrustOrder(index, 1, 1))[0]);
+            const to = UI((await nestTrustFuturesV3.listTrustOrder(index, 1, 1))[0]);
             const po = {
                 index: to.index,
                 owner: to.owner,
@@ -379,7 +390,7 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
         const newTrustOrder = async function(
             sender, channelIndex, lever, orientation, amount, limitPrice, stopProfitPrice, stopLossPrice) {
             await listAccounts(true);
-            await nestTrustFuturesV2.newTrustOrder(
+            await nestTrustFuturesV3.newTrustOrder(
                 channelIndex,
                 lever,
                 orientation,
@@ -430,7 +441,7 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
             }, true);
             FEQ({
                 a: totalNest,
-                b: parseFloat(accounts.nestTrustFuturesV2.NEST) - parseFloat(previous.nestTrustFuturesV2.NEST),
+                b: parseFloat(accounts.nestTrustFuturesV3.NEST) - parseFloat(previous.nestTrustFuturesV3.NEST),
                 d: 0.000000001
             }, true);
         };
@@ -438,7 +449,7 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
         // Execute LimitOrder
         const executeLimitOrder = async function(sender, trustOrderIndices) {
             await listAccounts(true);
-            await nestTrustFuturesV2.executeLimitOrder(trustOrderIndices);
+            await nestTrustFuturesV3.executeLimitOrder(trustOrderIndices);
             await listAccounts(true);
 
             let totalNest = 0;
@@ -449,7 +460,8 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
                 let order = ctx.orders[trustOrder.orderIndex];
                 order.balance = trustOrder.balance;
                 order.basePrice = ctx.prices[order.channelIndex];
-                order.Pt = (await updateChannel(order.channelIndex, order.basePrice, true)).Pt;
+                const pt = (await updateChannel(order.channelIndex, order.basePrice, true));
+                order.Pt = order.orientation ? pt.PtL : pt.PtS;
 
                 totalNest += (trustOrder.balance + trustOrder.fee);
 
@@ -471,7 +483,7 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
 
             FEQ({
                 a: totalNest,
-                b: parseFloat(previous.nestTrustFuturesV2.NEST) - parseFloat(accounts.nestTrustFuturesV2.NEST),
+                b: parseFloat(previous.nestTrustFuturesV3.NEST) - parseFloat(accounts.nestTrustFuturesV3.NEST),
                 d: 0.0000000001
             }, true);
             FEQ({
@@ -483,7 +495,7 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
 
         // New StopOrder
         const newStopOrder = async function(sender, orderIndex, stopProfitPrice, stopLossPrice) {
-            await nestTrustFuturesV2.newStopOrder(orderIndex, toBigInt(stopProfitPrice), toBigInt(stopLossPrice));
+            await nestTrustFuturesV3.newStopOrder(orderIndex, toBigInt(stopProfitPrice), toBigInt(stopLossPrice));
 
             const order = ctx.orders[orderIndex];
             const index = ctx.trustOrders.length;
@@ -510,7 +522,7 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
         const buyWithStopOrder = async function(
             sender, channelIndex, lever, orientation, amount, stopProfitPrice, stopLossPrice) {
             await listAccounts(true);
-            await nestTrustFuturesV2.buyWithStopOrder(
+            await nestTrustFuturesV3.buyWithStopOrder(
                 channelIndex, 
                 lever, 
                 orientation, 
@@ -532,7 +544,7 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
                 lever: lever,
                 orientation: orientation,
                 basePrice: lastPrice(channelIndex),
-                Pt: channel.Pt
+                Pt: orientation ? channel.PtL : channel.PtS
             });
 
             ctx.trustOrders.push({
@@ -560,7 +572,7 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
 
         // Update LimitPrice
         const updateLimitPrice = async function(sender, trustOrderIndex, limitPrice) {
-            await nestTrustFuturesV2.updateLimitPrice(trustOrderIndex, toBigInt(limitPrice));
+            await nestTrustFuturesV3.updateLimitPrice(trustOrderIndex, toBigInt(limitPrice));
             let trustOrder = ctx.trustOrders[trustOrderIndex];
             let order = ctx.orders[trustOrder.orderIndex];
             order.basePrice = limitPrice;
@@ -572,7 +584,7 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
 
         // Update StopPrice
         const updateStopPrice = async function(sender, trustOrderIndex, stopProfitPrice, stopLossPrice) {
-            await nestTrustFuturesV2.updateStopPrice(trustOrderIndex, toBigInt(stopProfitPrice), toBigInt(stopLossPrice));
+            await nestTrustFuturesV3.updateStopPrice(trustOrderIndex, toBigInt(stopProfitPrice), toBigInt(stopLossPrice));
 
             let trustOrder = ctx.trustOrders[trustOrderIndex];
             trustOrder.stopProfitPrice = stopProfitPrice;
@@ -585,7 +597,7 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
         // Cancel LimitOrder
         const cancelLimitOrder = async function(sender, trustOrderIndex) {
             await listAccounts(true);
-            await nestTrustFuturesV2.cancelLimitOrder(trustOrderIndex);
+            await nestTrustFuturesV3.cancelLimitOrder(trustOrderIndex);
             await listAccounts(true);
 
             let trustOrder = ctx.trustOrders[trustOrderIndex];
@@ -604,7 +616,7 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
             }, true);
             FEQ({
                 a: totalNest,
-                b: parseFloat(previous.nestTrustFuturesV2.NEST) - parseFloat(accounts.nestTrustFuturesV2.NEST),
+                b: parseFloat(previous.nestTrustFuturesV3.NEST) - parseFloat(accounts.nestTrustFuturesV3.NEST),
                 d: 0.0000000001
             }, true);
         };
@@ -612,7 +624,7 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
         // Execute StopOrder
         const executeStopOrder = async function(sender, trustOrderIndices) {
             await listAccounts(true);
-            await nestTrustFuturesV2.executeStopOrder(trustOrderIndices);
+            await nestTrustFuturesV3.executeStopOrder(trustOrderIndices);
             await listAccounts(true);
 
             let totalNest = 0;
@@ -624,7 +636,7 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
                 if (order.balance > 0) {
                     let oraclePrice = lastPrice(order.channelIndex);
                     let channel = await updateChannel(order.channelIndex, oraclePrice, true);
-                    let miuT = channel.Pt - order.Pt;
+                    let miuT = (order.orientation ? channel.PtL : channel.PtS) - order.Pt;
                     let value = _valueOf(
                         miuT,
                         order.balance,
@@ -662,7 +674,7 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
             }, true);
             FEQ({
                 a: totalExecuteFee,
-                b: parseFloat(accounts.nestTrustFuturesV2.NEST) - parseFloat(previous.nestTrustFuturesV2.NEST),
+                b: parseFloat(accounts.nestTrustFuturesV3.NEST) - parseFloat(previous.nestTrustFuturesV3.NEST),
                 d: 0.0000000001
             }, true);
             FEQ({
@@ -674,7 +686,7 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
 
         // list Order
         const list = async function(sender, offset, count, order) {
-            const cl = await nestTrustFuturesV2.list(offset, count, order);
+            const cl = await nestTrustFuturesV3.list(offset, count, order);
             const jl = [];
             if (order == 0) {
                 for (let i = 0; i < count; ++i) {
@@ -713,7 +725,7 @@ describe('44.NestFutures3V2-algorithm2.js', function() {
 
         // list TrustOrder
         const listTrustOrder = async function(sender, offset, count, order) {
-            const cl = await nestTrustFuturesV2.listTrustOrder(offset, count, order);
+            const cl = await nestTrustFuturesV3.listTrustOrder(offset, count, order);
             const jl = [];
             if (order == 0) {
                 for (let i = 0; i < count; ++i) {

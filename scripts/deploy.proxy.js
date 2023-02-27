@@ -20,6 +20,7 @@ exports.deploy = async function() {
     const NestNFTAuction = await ethers.getContractFactory('NestNFTAuction');
     const NestTrustFuturesV1 = await ethers.getContractFactory('NestTrustFuturesV1');
     const NestTrustFuturesV2 = await ethers.getContractFactory('NestTrustFuturesV2');
+    const NestTrustFuturesV3 = await ethers.getContractFactory('NestTrustFuturesV3');
     const NestMarket = await ethers.getContractFactory('NestMarket');
     const NestFuturesProxy = await ethers.getContractFactory('NestFuturesProxy');
 
@@ -68,6 +69,10 @@ exports.deploy = async function() {
     const nestTrustFuturesV2 = await upgrades.deployProxy(NestTrustFuturesV2, [nestGovernance.address], { initializer: 'initialize' });
     //const nestTrustFuturesV2 = await NestTrustFuturesV2.attach('0x0000000000000000000000000000000000000000');
     console.log('nestTrustFuturesV2: ' + nestTrustFuturesV2.address);
+
+    const nestTrustFuturesV3 = await upgrades.deployProxy(NestTrustFuturesV3, [nestGovernance.address], { initializer: 'initialize' });
+    //const nestTrustFuturesV3 = await NestTrustFuturesV3.attach('0x0000000000000000000000000000000000000000');
+    console.log('nestTrustFuturesV3: ' + nestTrustFuturesV3.address);
 
     const nestProbability = await upgrades.deployProxy(NestProbability, [nestGovernance.address], { initializer: 'initialize' });
     //const nestProbability = await NestProbability.attach('0x0000000000000000000000000000000000000000');
@@ -126,6 +131,8 @@ exports.deploy = async function() {
     await nestTrustFuturesV1.update(nestGovernance.address);
     console.log('7. nestTrustFuturesV2.update()');
     await nestTrustFuturesV2.update(nestGovernance.address);
+    console.log('7. nestTrustFuturesV3.update()');
+    await nestTrustFuturesV3.update(nestGovernance.address);
     console.log('8. nestProbability.update()');
     await nestProbability.update(nestGovernance.address);
     console.log('8. nestBuybackPool.update()');
@@ -201,11 +208,15 @@ exports.deploy = async function() {
     await nestTrustFuturesV2.openChannel(0);
     await nestTrustFuturesV2.openChannel(1);
     await nestTrustFuturesV2.openChannel(2);
+    await nestTrustFuturesV3.openChannel(0);
+    await nestTrustFuturesV3.openChannel(1);
+    await nestTrustFuturesV3.openChannel(2);
 
     await nestVault.approve(nestOptions.address, 100000000000000000000000000n);
     await nestVault.approve(nestFutures.address, 100000000000000000000000000n);
     await nestVault.approve(nestTrustFuturesV1.address, 100000000000000000000000000n);
     await nestVault.approve(nestTrustFuturesV2.address, 100000000000000000000000000n);
+    await nestVault.approve(nestTrustFuturesV3.address, 100000000000000000000000000n);
     await nestVault.approve(nestProbability.address, 100000000000000000000000000n);
     
     await nest.transfer(nestVault.address, 100000000000000000000000000n);
@@ -213,6 +224,7 @@ exports.deploy = async function() {
     await nest.approve(nestFutures.address, 100000000000000000000000000n);
     await nest.approve(nestTrustFuturesV1.address, 100000000000000000000000000n);
     await nest.approve(nestTrustFuturesV2.address, 100000000000000000000000000n);
+    await nest.approve(nestTrustFuturesV3.address, 100000000000000000000000000n);
     await nest.approve(nestProbability.address, 100000000000000000000000000n);
 
     console.log('---------- OK ----------');
@@ -238,6 +250,7 @@ exports.deploy = async function() {
         nestNFTAuction: nestNFTAuction,
         nestTrustFuturesV1: nestTrustFuturesV1,
         nestTrustFuturesV2: nestTrustFuturesV2,
+        nestTrustFuturesV3: nestTrustFuturesV3,
         nestMarket: nestMarket,
         nestVault: nestVault,
         nestFuturesProxy: nestFuturesProxy,

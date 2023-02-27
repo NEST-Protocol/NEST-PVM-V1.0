@@ -11,7 +11,7 @@ import "./interfaces/INestFutures3.sol";
 import "./custom/NestFrequentlyUsed.sol";
 
 /// @dev Nest futures with dynamic miu
-contract NestFutures3V2 is NestFrequentlyUsed, INestFutures3 {
+contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
 
     // TODO: SigmaSQ is no use? √
     // TODO: Add valueOf method √
@@ -42,7 +42,8 @@ contract NestFutures3V2 is NestFrequentlyUsed, INestFutures3 {
         // Last price of this channel, encoded with encodeFloat56()
         uint56 lastPrice;
         int56  miu;
-        int56  Pt;
+        int56  PtL;
+        int56  PtS;
         uint32 bn;
     }
 
@@ -52,6 +53,7 @@ contract NestFutures3V2 is NestFrequentlyUsed, INestFutures3 {
     // Registered accounts
     address[] _accounts;
 
+    // TODO: Use Fixed-length array to reduce gas
     // Global parameters for trade channel
     TradeChannel[] _channels;
 
@@ -151,9 +153,10 @@ contract NestFutures3V2 is NestFrequentlyUsed, INestFutures3 {
     /// @param oraclePrice Current price from oracle, usd based, 18 decimals
     function balanceOf(uint orderIndex, uint oraclePrice) external view override returns (uint value) {
         Order memory order = _orders[orderIndex];
+        TradeChannel memory channel = _updateChannel(uint(order.channelIndex), oraclePrice);
         value = _valueOf(
             // μt = P1 - P0
-            int(_updateChannel(uint(order.channelIndex), oraclePrice).Pt) - int(order.Pt),
+            int(order.orientation ? channel.PtL : channel.PtS) - int(order.Pt),
             uint(order.balance) * CommonLib.NEST_UNIT, 
             CommonLib.decodeFloat(uint(order.basePrice)),
             oraclePrice,
@@ -281,7 +284,7 @@ contract NestFutures3V2 is NestFrequentlyUsed, INestFutures3 {
             // orientation
             orientation,
             // Pt
-            channel.Pt
+            orientation ? channel.PtL : channel.PtS
         ));
 
         // 6. Transfer NEST from user
@@ -332,7 +335,7 @@ contract NestFutures3V2 is NestFrequentlyUsed, INestFutures3 {
         // 5. Calculate value of order
         uint value = _valueOf(
             // μt = P1 - P0
-            int(channel.Pt) - int(order.Pt),
+            int(order.orientation ? channel.PtL : channel.PtS) - int(order.Pt),
             // balance
             balance * CommonLib.NEST_UNIT, 
             // basePrice
@@ -395,7 +398,7 @@ contract NestFutures3V2 is NestFrequentlyUsed, INestFutures3 {
                 uint basePrice = CommonLib.decodeFloat(order.basePrice);
                 uint value = _valueOf(
                     // μt = P1 - P0
-                    int(channel.Pt) - int(order.Pt),
+                    int(order.orientation ? channel.PtL : channel.PtS) - int(order.Pt),
                     // balance
                     balance / lever, 
                     // basePrice
@@ -541,8 +544,13 @@ contract NestFutures3V2 is NestFrequentlyUsed, INestFutures3 {
             // and it continues 100 years, Pt may reach to 328.725, this is far less than 
             // 36028.797018963967, so Pt is impossible out of [-36028.797018963968, 36028.797018963967].
             // And even so, Pt is truncated, the consequences are not serious, so we don't check truncation
-            channel.Pt = int56(int(channel.Pt) + int(channel.miu) * dt);
-            channel.miu =int56(0.00000003082e12 - 0.1795e12 * (int(S1) - S0) / S0 / dt);
+            int miu = int(channel.miu);
+            if (miu > 0) {
+                channel.PtL = int56(int(channel.PtL) + miu * dt);
+            } else {
+                channel.PtS = int56(int(channel.PtS) + miu * dt);
+            }
+            channel.miu =int56(0.00000001027e12 + 0.0578e12 * (int(S1) - S0) / S0 / dt);
         }
 
         channel.lastPrice = CommonLib.encodeFloat56(S1);
