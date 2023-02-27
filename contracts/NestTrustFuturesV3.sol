@@ -393,15 +393,7 @@ contract NestTrustFuturesV3 is NestFutures3V3, INestTrustFutures {
                     channel = _updateChannel(channelIndex, oraclePrice);
                 }
 
-                uint value = _valueOf(
-                    int(order.orientation ? channel.PtL : channel.PtS) - int(order.Pt),
-                    balance * CommonLib.NEST_UNIT,
-                    basePrice,
-                    oraclePrice,
-                    order.orientation,
-                    lever,
-                    uint(order.appends)
-                );
+                uint value = _valueOf(channel, order, basePrice, oraclePrice);
 
                 order.balance = uint40(0);
                 order.appends = uint40(0);

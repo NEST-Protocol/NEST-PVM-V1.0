@@ -53,10 +53,6 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
     // Registered accounts
     address[] _accounts;
 
-    // TODO: Use Fixed-length array to reduce gas
-    // Global parameters for trade channel
-    TradeChannel[] _channels;
-
     // Array of orders
     Order[] _orders;
 
@@ -64,6 +60,10 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
     // Bits explain: period(16)|height(48)|price3(64)|price2(64)|price1(64)
     uint _lastPrices;
     
+    // TODO: Use Fixed-length array to reduce gas
+    // Global parameters for trade channel
+    TradeChannel[3] _channels;
+
     // Address of direct poster
     // TODO:
     //address constant DIRECT_POSTER = 0x06Ca5C8eFf273009C94D963e0AB8A8B9b09082eF;
@@ -135,12 +135,12 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
         (period, height, price) = _decodePrice(_lastPrices, channelIndex);
     }
 
-    /// @dev Open a new trade channel
-    /// @param channelIndex Index of target channel
-    function openChannel(uint channelIndex) external onlyGovernance {
-        require(channelIndex == _channels.length, "NF:index error");
-        _channels.push();
-    }
+    // /// @dev Open a new trade channel
+    // /// @param channelIndex Index of target channel
+    // function openChannel(uint channelIndex) external onlyGovernance {
+    //     require(channelIndex == _channels.length, "NF:index error");
+    //     _channels.push();
+    // }
 
     /// @dev Get channel information
     /// @param channelIndex Index of target channel
@@ -153,16 +153,11 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
     /// @param oraclePrice Current price from oracle, usd based, 18 decimals
     function balanceOf(uint orderIndex, uint oraclePrice) external view override returns (uint value) {
         Order memory order = _orders[orderIndex];
-        TradeChannel memory channel = _updateChannel(uint(order.channelIndex), oraclePrice);
         value = _valueOf(
-            // μt = P1 - P0
-            int(order.orientation ? channel.PtL : channel.PtS) - int(order.Pt),
-            uint(order.balance) * CommonLib.NEST_UNIT, 
+            _updateChannel(uint(order.channelIndex), oraclePrice),
+            order, 
             CommonLib.decodeFloat(uint(order.basePrice)),
-            oraclePrice,
-            order.orientation,
-            uint(order.lever),
-            uint(order.appends)
+            oraclePrice
         );
     }
 
@@ -329,25 +324,11 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
         // 4. Update parameter for channel
         uint channelIndex = uint(order.channelIndex);
         uint oraclePrice = _lastPrice(channelIndex);
-        TradeChannel memory channel = _updateChannel(channelIndex, oraclePrice);
-        _channels[channelIndex] = channel;
 
         // 5. Calculate value of order
-        uint value = _valueOf(
-            // μt = P1 - P0
-            int(order.orientation ? channel.PtL : channel.PtS) - int(order.Pt),
-            // balance
-            balance * CommonLib.NEST_UNIT, 
-            // basePrice
-            basePrice, 
-            // oraclePrice
-            oraclePrice, 
-            // ORIENTATION
-            order.orientation, 
-            // LEVER
-            lever,
-            uint(order.appends)
-        );
+        TradeChannel memory channel = _updateChannel(uint(order.channelIndex), oraclePrice);
+        uint value = _valueOf(channel, order, basePrice, oraclePrice);
+        _channels[channelIndex] = channel;
 
         // 6. Update order
         order.balance = uint40(0);
@@ -396,21 +377,7 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
 
                 // 3. Calculate order value
                 uint basePrice = CommonLib.decodeFloat(order.basePrice);
-                uint value = _valueOf(
-                    // μt = P1 - P0
-                    int(order.orientation ? channel.PtL : channel.PtS) - int(order.Pt),
-                    // balance
-                    balance / lever, 
-                    // basePrice
-                    basePrice, 
-                    // oraclePrice
-                    oraclePrice, 
-                    // ORIENTATION
-                    order.orientation, 
-                    // LEVER
-                    lever,
-                    uint(order.appends)
-                );
+                uint value = _valueOf(channel, order, basePrice, oraclePrice);
 
                 // 4. Liquidate logic
                 // lever is great than 1, and balance less than a regular value, can be liquidated
@@ -467,36 +434,38 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
 
     // Calculate net worth
     function _valueOf(
-        int miuT,
-        uint balance,
+        TradeChannel memory channel,
+        Order memory order, 
         uint basePrice,
-        uint oraclePrice, 
-        bool ORIENTATION, 
-        uint LEVER,
-        uint appends
-    ) internal pure returns (uint) {
-        uint left;
-        uint right;
-        uint base = LEVER * balance * oraclePrice / basePrice;
+        uint oraclePrice
+    ) internal pure returns (uint value) {
+        value = uint(order.balance) * CommonLib.NEST_UNIT;
+        uint LEVER = uint(order.lever);
+        uint base = LEVER * value * oraclePrice / basePrice;
+        uint negative;
+
         // Long
-        if (ORIENTATION) {
-            left = balance + (miuT > 0 ? base * 0x10000000000000000 / _expMiuT(miuT) : base) 
-                 + appends * CommonLib.NEST_UNIT;
-            right = balance * LEVER;
+        if (order.orientation) {
+            negative = value * LEVER;
+            value = value + (
+                channel.PtL > order.Pt 
+                ? base * 0x10000000000000000 / _expMiuT(int(channel.PtL) - int(order.Pt)) 
+                : base
+            ) + uint(order.appends) * CommonLib.NEST_UNIT;
         } 
         // Short
         else {
-            left = balance * (1 + LEVER) + appends * CommonLib.NEST_UNIT;
-            right = miuT < 0 ? base * 0x10000000000000000 / _expMiuT(miuT) : base;
+            negative = channel.PtS < order.Pt 
+                     ? base * 0x10000000000000000 / _expMiuT(int(channel.PtS) - int(order.Pt)) 
+                     : base;
+            value = value * (1 + LEVER) + uint(order.appends) * CommonLib.NEST_UNIT;
         }
 
-        if (left > right) {
-            balance = left - right;
-        } else {
-            balance = 0;
+        assembly {
+            switch gt(value, negative) 
+            case true { value := sub(value, negative) }
+            case false { value := 0 }
         }
-
-        return balance;
     }
 
     // Query price
@@ -509,10 +478,11 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
 
     // Decode composed price
     function _decodePrice(uint rawPrice, uint pairIndex) internal pure returns (uint period, uint height, uint price) {
+        // Bits explain: period(16)|height(48)|price3(64)|price2(64)|price1(64)
         return (
             rawPrice >> 240,
             (rawPrice >> 192) & 0xFFFFFFFFFFFF,
-            CommonLib.decodeFloat(uint64(rawPrice >> (pairIndex << 6)))
+            CommonLib.decodeFloat((rawPrice >> (pairIndex << 6)) & 0xFFFFFFFFFFFFFFFF)
         );
     }
 
