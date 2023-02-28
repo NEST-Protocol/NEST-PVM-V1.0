@@ -208,9 +208,9 @@ exports.deploy = async function() {
     await nestTrustFuturesV2.openChannel(0);
     await nestTrustFuturesV2.openChannel(1);
     await nestTrustFuturesV2.openChannel(2);
-    await nestTrustFuturesV3.openChannel(0);
-    await nestTrustFuturesV3.openChannel(1);
-    await nestTrustFuturesV3.openChannel(2);
+    // await nestTrustFuturesV3.openChannel(0);
+    // await nestTrustFuturesV3.openChannel(1);
+    // await nestTrustFuturesV3.openChannel(2);
 
     await nestVault.approve(nestOptions.address, 100000000000000000000000000n);
     await nestVault.approve(nestFutures.address, 100000000000000000000000000n);

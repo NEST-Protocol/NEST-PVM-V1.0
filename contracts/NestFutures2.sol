@@ -11,7 +11,7 @@ import "./interfaces/INestFutures2.sol";
 import "./NestFuturesWithPrice.sol";
 
 /// @dev Nest futures without merger
-contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
+abstract contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
 
     /// @dev Order structure
     struct Order {
@@ -306,45 +306,6 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
         if (reward > 0) {
             INestVault(NEST_VAULT_ADDRESS).transferTo(msg.sender, reward);
         }
-    }
-
-    /// @dev Buy from NestFuturesPRoxy
-    /// @param tokenIndex Index of token
-    /// @param lever Lever of order
-    /// @param orientation true: call, false: put
-    /// @param amount Amount of paid NEST, 4 decimals
-    /// @param stopPrice Stop price for stop order
-    function proxyBuy2(
-        address owner, 
-        uint16 tokenIndex, 
-        uint8 lever, 
-        bool orientation, 
-        uint48 amount,
-        uint56 stopPrice
-    ) external payable onlyProxy {
-        // 1. Emit event
-        emit Buy2(_orders.length, uint(amount), owner);
-
-        // 2. Create order
-        _orders.push(Order(
-            // owner
-            uint32(_addressIndex(owner)),
-            // basePrice
-            // Query oraclePrice
-            CommonLib.encodeFloat56(_queryPrice(tokenIndex)),
-            // balance
-            amount,
-            // baseBlock
-            uint32(block.number),
-            // tokenIndex
-            tokenIndex,
-            // lever
-            lever,
-            // orientation
-            orientation,
-            // stopPrice
-            stopPrice
-        ));
     }
 
     /// @dev Execute stop order, only for maintains account

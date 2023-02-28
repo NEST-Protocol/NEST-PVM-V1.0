@@ -183,4 +183,43 @@ contract NestFutures2_Test is NestFutures2 {
         require(block.number < height + period, "NFWP:price expired");
         oraclePrice = CommonLib.toUSDTPrice(price);
     }
+
+    /// @dev Buy from NestFuturesPRoxy
+    /// @param tokenIndex Index of token
+    /// @param lever Lever of order
+    /// @param orientation true: call, false: put
+    /// @param amount Amount of paid NEST, 4 decimals
+    /// @param stopPrice Stop price for stop order
+    function proxyBuy2(
+        address owner, 
+        uint16 tokenIndex, 
+        uint8 lever, 
+        bool orientation, 
+        uint48 amount,
+        uint56 stopPrice
+    ) external payable onlyProxy {
+        // 1. Emit event
+        emit Buy2(_orders.length, uint(amount), owner);
+
+        // 2. Create order
+        _orders.push(Order(
+            // owner
+            uint32(_addressIndex(owner)),
+            // basePrice
+            // Query oraclePrice
+            CommonLib.encodeFloat56(_queryPrice(tokenIndex)),
+            // balance
+            amount,
+            // baseBlock
+            uint32(block.number),
+            // tokenIndex
+            tokenIndex,
+            // lever
+            lever,
+            // orientation
+            orientation,
+            // stopPrice
+            stopPrice
+        ));
+    }
 }

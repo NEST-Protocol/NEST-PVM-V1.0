@@ -13,30 +13,6 @@ import "./custom/NestFrequentlyUsed.sol";
 /// @dev Nest futures with dynamic miu
 contract NestFutures3V1 is NestFrequentlyUsed, INestFutures3 {
 
-    // TODO: SigmaSQ is no use? √
-    // TODO: Add valueOf method √
-    // TODO: Add view method to get miu √
-    // TODO: Add method to check liquidate information ×
-    // TODO: Place orders to global array √
-    // TODO: Modify NestFutures2, _queryOracle use price in NestFutures3, and remove useless method in NestFutures2 √
-    // TODO: Add new proxy contract for NestFutures3 √
-    // TODO: Need make sure each tokenIndex(eth&btc) in NestFutures2 is equals to channelIndex in NestFutures3 √
-    // TODO: Add a field at Order to store appended amount, Correct logic of add(), sell(), liquidate, valueOf() √
-
-    // TODO: Will not support order1, need notify users @KT ×
-    // TODO: μ is a very important information for user, it should be shown for user @KT √
-    // TODO: Ask KT, wll, and lyk to open some orders in NestFutures2 on bsc test net before deploy testing contract √
-    // TODO: After this update, limit order and stop order in v2 will not support, buy2, add2, setStopPrice 
-    //       in NestFutures2 will be removed, New limit order will not executed. @KT, @wll
-    // TODO: Min value of Liquidate line of NestFutures2 is updated from 10nest to 15nest √
-    // TODO: The order data will cleared when liquidate, notify @wll
-
-    // TASK:
-    // 1. Develop new futures contract: NestFutures3 √
-    // 2. Develop new futures proxy contract: NestFuturesProxy √
-    // 3. Remove buy2, add2, setStopPrice from NestFutures2 √
-    // 4. Update _queryPrice in NestFutures2, to query price from NestFutures3 √
-
     // Global parameter for trade channel
     struct TradeChannel {
         uint56 Lp;
