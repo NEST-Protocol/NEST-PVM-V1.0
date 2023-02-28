@@ -94,6 +94,22 @@ interface INestTrustFutures {
     /// @param stopLossPrice If not 0, will open a stop order
     function newStopOrder(uint orderIndex, uint stopProfitPrice, uint stopLossPrice) external;
 
+    /// @dev Buy futures with StopOrder
+    /// @param channelIndex Index of target channel
+    /// @param lever Lever of order
+    /// @param orientation true: long, false: short
+    /// @param amount Amount of paid NEST, 4 decimals
+    /// @param stopProfitPrice If not 0, will open a stop order
+    /// @param stopLossPrice If not 0, will open a stop order
+    function buyWithStopOrder(
+        uint channelIndex, 
+        uint lever, 
+        bool orientation, 
+        uint amount,
+        uint stopProfitPrice, 
+        uint stopLossPrice
+    ) external payable;
+    
     /// @dev Cancel TrustOrder, for everyone
     /// @param trustOrderIndex Index of TrustOrder
     function cancelLimitOrder(uint trustOrderIndex) external;

@@ -202,12 +202,12 @@ exports.deploy = async function() {
     console.log('14. create hbtc short lever');
     await nestFutures.create(hbtc.address, [1, 2, 3, 4, 5], false);
 
-    await nestTrustFuturesV1.openChannel(0);
-    await nestTrustFuturesV1.openChannel(1);
-    await nestTrustFuturesV1.openChannel(2);
-    await nestTrustFuturesV2.openChannel(0);
-    await nestTrustFuturesV2.openChannel(1);
-    await nestTrustFuturesV2.openChannel(2);
+    // await nestTrustFuturesV1.openChannel(0);
+    // await nestTrustFuturesV1.openChannel(1);
+    // await nestTrustFuturesV1.openChannel(2);
+    // await nestTrustFuturesV2.openChannel(0);
+    // await nestTrustFuturesV2.openChannel(1);
+    // await nestTrustFuturesV2.openChannel(2);
     // await nestTrustFuturesV3.openChannel(0);
     // await nestTrustFuturesV3.openChannel(1);
     // await nestTrustFuturesV3.openChannel(2);

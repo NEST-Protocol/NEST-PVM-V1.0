@@ -13,7 +13,6 @@ import "./NestFutures2.sol";
 /// @dev Nest futures without merger
 contract NestFutures2_Test is NestFutures2 {
     
-    // TODO: Don't forget init after upgrade
     // Initialize account array, execute once
     function init() external {
         require(_accounts.length == 0, "NF:initialized");
@@ -25,7 +24,6 @@ contract NestFutures2_Test is NestFutures2 {
     // @param equivalents Price array, one to one with pairs
     function directPost(uint period, uint[3] calldata /*equivalents*/) external {
         require(msg.sender == DIRECT_POSTER, "NFWP:not directPoster");
-
         assembly {
             // Encode value at position indicated by value to float
             function encode(value) -> v {

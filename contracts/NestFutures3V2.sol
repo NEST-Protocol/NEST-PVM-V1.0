@@ -28,16 +28,16 @@ contract NestFutures3V2 is NestFrequentlyUsed, INestFutures3 {
     // Registered accounts
     address[] _accounts;
 
-    // Global parameters for trade channel
-    TradeChannel[] _channels;
-
     // Array of orders
     Order[] _orders;
 
     // The prices of (eth, btc and bnb) posted by directPost() method is stored in this field
     // Bits explain: period(16)|height(48)|price3(64)|price2(64)|price1(64)
-    uint _lastPrices;
+    uint _lastPrices;    
     
+    // Global parameters for trade channel
+    TradeChannel[3] _channels;
+
     // Address of direct poster
     // TODO:
     //address constant DIRECT_POSTER = 0x06Ca5C8eFf273009C94D963e0AB8A8B9b09082eF;
@@ -109,13 +109,6 @@ contract NestFutures3V2 is NestFrequentlyUsed, INestFutures3 {
         (period, height, price) = _decodePrice(_lastPrices, channelIndex);
     }
 
-    /// @dev Open a new trade channel
-    /// @param channelIndex Index of target channel
-    function openChannel(uint channelIndex) external onlyGovernance {
-        require(channelIndex == _channels.length, "NF:index error");
-        _channels.push();
-    }
-
     /// @dev Get channel information
     /// @param channelIndex Index of target channel
     function getChannel(uint channelIndex) external view returns (TradeChannel memory channel) {
@@ -152,27 +145,29 @@ contract NestFutures3V2 is NestFrequentlyUsed, INestFutures3 {
         uint maxFindCount, 
         address owner
     ) external view override returns (OrderView[] memory orderArray) {
-        orderArray = new OrderView[](count);
-        // Calculate search region
-        Order[] storage orders = _orders;
+        unchecked {
+            orderArray = new OrderView[](count);
+            // Calculate search region
+            Order[] storage orders = _orders;
 
-        // Loop from start to end
-        uint end = 0;
-        // start is 0 means Loop from the last item
-        if (start == 0) {
-            start = orders.length;
-        }
-        // start > maxFindCount, so end is not 0
-        if (start > maxFindCount) {
-            end = start - maxFindCount;
-        }
-        
-        // Loop lookup to write qualified records to the buffer
-        uint ownerIndex = _accountMapping[owner];
-        for (uint index = 0; index < count && start > end;) {
-            Order memory order = orders[--start];
-            if (uint(order.owner) == ownerIndex) {
-                orderArray[index++] = _toOrderView(order, start);
+            // Loop from start to end
+            uint end = 0;
+            // start is 0 means Loop from the last item
+            if (start == 0) {
+                start = orders.length;
+            }
+            // start > maxFindCount, so end is not 0
+            if (start > maxFindCount) {
+                end = start - maxFindCount;
+            }
+            
+            // Loop lookup to write qualified records to the buffer
+            uint ownerIndex = _accountMapping[owner];
+            for (uint index = 0; index < count && start > end;) {
+                Order memory order = orders[--start];
+                if (uint(order.owner) == ownerIndex) {
+                    orderArray[index++] = _toOrderView(order, start);
+                }
             }
         }
     }
@@ -183,32 +178,34 @@ contract NestFutures3V2 is NestFrequentlyUsed, INestFutures3 {
     /// @param order Order. 0 reverse order, non-0 positive order
     /// @return orderArray List of orders
     function list(uint offset, uint count, uint order) external view override returns (OrderView[] memory orderArray) {
-        // Load orders
-        Order[] storage orders = _orders;
-        // Create result array
-        orderArray = new OrderView[](count);
-        uint length = orders.length;
-        uint i = 0;
+        unchecked {
+            // Load orders
+            Order[] storage orders = _orders;
+            // Create result array
+            orderArray = new OrderView[](count);
+            uint length = orders.length;
+            uint i = 0;
 
-        // Reverse order
-        if (order == 0) {
-            uint index = length - offset;
-            uint end = index > count ? index - count : 0;
-            while (index > end) {
-                Order memory o = orders[--index];
-                orderArray[i++] = _toOrderView(o, index);
-            }
-        } 
-        // Positive order
-        else {
-            uint index = offset;
-            uint end = index + count;
-            if (end > length) {
-                end = length;
-            }
-            while (index < end) {
-                orderArray[i++] = _toOrderView(orders[index], index);
-                ++index;
+            // Reverse order
+            if (order == 0) {
+                uint index = length - offset;
+                uint end = index > count ? index - count : 0;
+                while (index > end) {
+                    Order memory o = orders[--index];
+                    orderArray[i++] = _toOrderView(o, index);
+                }
+            } 
+            // Positive order
+            else {
+                uint index = offset;
+                uint end = index + count;
+                if (end > length) {
+                    end = length;
+                }
+                while (index < end) {
+                    orderArray[i++] = _toOrderView(orders[index], index);
+                    ++index;
+                }
             }
         }
     }
@@ -219,8 +216,8 @@ contract NestFutures3V2 is NestFrequentlyUsed, INestFutures3 {
     /// @param orientation true: long, false: short
     /// @param amount Amount of paid NEST, 4 decimals
     function buy(
-        uint16 channelIndex, 
-        uint8 lever, 
+        uint channelIndex, 
+        uint lever, 
         bool orientation, 
         uint amount
     ) public payable override {
@@ -251,9 +248,9 @@ contract NestFutures3V2 is NestFrequentlyUsed, INestFutures3 {
             // append
             uint40(0),
             // channelIndex
-            channelIndex,
+            uint16(channelIndex),
             // lever
-            lever,
+            uint8(lever),
             // orientation
             orientation,
             // Pt
@@ -265,7 +262,7 @@ contract NestFutures3V2 is NestFrequentlyUsed, INestFutures3 {
             NEST_TOKEN_ADDRESS, 
             msg.sender, 
             NEST_VAULT_ADDRESS, 
-            amount * CommonLib.NEST_UNIT * (1 ether + CommonLib.FEE_RATE * uint(lever)) / 1 ether
+            amount * CommonLib.NEST_UNIT * (1 ether + CommonLib.FEE_RATE * lever) / 1 ether
         );
     }
 
@@ -347,10 +344,17 @@ contract NestFutures3V2 is NestFrequentlyUsed, INestFutures3 {
         TradeChannel memory channel;
         
         // 1. Loop and liquidate
-        for (uint i = indices.length; i > 0;) {
-            uint index = indices[--i];
-            Order memory order = _orders[index];
+        uint index = 0;
+        uint i = indices.length << 5;
+        while (i > 0) {
+            // Load Order
+            //uint index = indices[--i];
+            assembly {
+                i := sub(i, 0x20)
+                index := calldataload(add(indices.offset, i))
+            }
 
+            Order memory order = _orders[index];
             uint lever = uint(order.lever);
             uint balance = uint(order.balance) * CommonLib.NEST_UNIT * lever;
             if (lever > 1 && balance > 0) {
@@ -389,27 +393,23 @@ contract NestFutures3V2 is NestFrequentlyUsed, INestFutures3 {
                 // lever is great than 1, and balance less than a regular value, can be liquidated
                 // the regular value is: Max(M0 * L * St / S0 * c, a) | expired
                 // the regular value is: Max(M0 * L * St / S0 * c + a, M0 * L * 0.5%)
-                if (value < balance / 200 ||
-                    value < balance * oraclePrice / basePrice * CommonLib.FEE_RATE / 1 ether
-                            + CommonLib.MIN_FUTURE_VALUE
-                ) {
-                    // Clear all data of order, use this code next time
-                    assembly {
-                        mstore(0, _orders.slot)
-                        sstore(add(keccak256(0, 0x20), index), 0)
+                unchecked {
+                    if (value < balance / 200 ||
+                        value < balance * oraclePrice / basePrice * CommonLib.FEE_RATE / 1 ether
+                                + CommonLib.MIN_FUTURE_VALUE
+                    ) {
+                        // Clear all data of order, use this code next time
+                        assembly {
+                            mstore(0, _orders.slot)
+                            sstore(add(keccak256(0, 0x20), index), 0)
+                        }
+
+                        // Add reward
+                        reward += value;
+
+                        // Emit liquidate event
+                        emit Liquidate(index, msg.sender, value);
                     }
-                    
-                    // // Clear balance
-                    // order.balance = uint40(0);
-                    // order.appends = uint40(0);
-                    // // Update order
-                    // _orders[index] = order;
-
-                    // Add reward
-                    reward += value;
-
-                    // Emit liquidate event
-                    emit Liquidate(index, msg.sender, value);
                 }
             }
         }
@@ -432,7 +432,7 @@ contract NestFutures3V2 is NestFrequentlyUsed, INestFutures3 {
         // ));
 
         // Using approximate algorithm: x*(1+rt)
-        // TODO: This may be 0, or negative!
+        // This may be 0, or negative!
         int v = (miuT * 0x10000000000000000) / 1e12 + 0x10000000000000000;
         if (v < 1) return 1;
         return uint(v);
@@ -476,16 +476,17 @@ contract NestFutures3V2 is NestFrequentlyUsed, INestFutures3 {
     function _lastPrice(uint channelIndex) internal view returns (uint oraclePrice) {
         // Query price from oracle
         (uint period, uint height, uint price) = _decodePrice(_lastPrices, channelIndex);
-        require(block.number < height + period, "NF:price expired");
+        unchecked { require(block.number < height + period, "NF:price expired"); }
         oraclePrice = price;
     }
 
     // Decode composed price
-    function _decodePrice(uint rawPrice, uint pairIndex) internal pure returns (uint period, uint height, uint price) {
+    function _decodePrice(uint rawPrice, uint channelIndex) internal pure returns (uint period, uint height, uint price) {
+        // Bits explain: period(16)|height(48)|price3(64)|price2(64)|price1(64)
         return (
             rawPrice >> 240,
             (rawPrice >> 192) & 0xFFFFFFFFFFFF,
-            CommonLib.decodeFloat(uint64(rawPrice >> (pairIndex << 6)))
+            CommonLib.decodeFloat((rawPrice >> (channelIndex << 6)) & 0xFFFFFFFFFFFFFFFF)
         );
     }
 
@@ -510,15 +511,17 @@ contract NestFutures3V2 is NestFrequentlyUsed, INestFutures3 {
         uint bn = uint(channel.bn);
         if (block.number > bn && bn > 0) 
         {
-            int S0 = int(CommonLib.decodeFloat(channel.lastPrice));
-            int dt = int(block.number - bn) * 3;
             // Pt is expressed as 56-bits integer, which 12 decimals, representable range is
             // [-36028.797018963968, 36028.797018963967], assume the earn rate is 0.9% per day,
             // and it continues 100 years, Pt may reach to 328.725, this is far less than 
             // 36028.797018963967, so Pt is impossible out of [-36028.797018963968, 36028.797018963967].
             // And even so, Pt is truncated, the consequences are not serious, so we don't check truncation
-            channel.Pt = int56(int(channel.Pt) + int(channel.miu) * dt);
-            channel.miu =int56(0.00000003082e12 - 0.1795e12 * (int(S1) - S0) / S0 / dt);
+            unchecked {
+                int S0 = int(CommonLib.decodeFloat(channel.lastPrice));
+                int dt = int(block.number - bn) * 3;
+                channel.Pt = int56(int(channel.Pt) + int(channel.miu) * dt);
+                channel.miu =int56(0.00000003082e12 - 0.1795e12 * (int(S1) - S0) / S0 / dt);
+            }
         }
 
         channel.lastPrice = CommonLib.encodeFloat56(S1);

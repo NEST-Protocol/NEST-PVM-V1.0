@@ -95,32 +95,34 @@ abstract contract NestFuturesWithPrice is NestFrequentlyUsed, INestFuturesWithPr
         uint count, 
         uint order
     ) external view override returns (uint[] memory priceArray) {
-        // Load prices
-        uint[] storage prices = _prices;
-        // Create result array
-        priceArray = new uint[](count * 3);
-        uint length = prices.length;
-        uint i = 0;
+        unchecked {
+            // Load prices
+            uint[] storage prices = _prices;
+            // Create result array
+            priceArray = new uint[](count * 3);
+            uint length = prices.length;
+            uint i = 0;
 
-        // Reverse order
-        if (order == 0) {
-            uint index = length - offset;
-            uint end = index > count ? index - count : 0;
-            while (index > end) {
-                (priceArray[i], priceArray[i + 1], priceArray[i + 2]) = _decodePrice(prices[--index], pairIndex);
-                i += 3;
-            }
-        } 
-        // Positive order
-        else {
-            uint index = offset;
-            uint end = index + count;
-            if (end > length) {
-                end = length;
-            }
-            while (index < end) {
-                (priceArray[i], priceArray[i + 1], priceArray[i + 2]) = _decodePrice(prices[index++], pairIndex);
-                i += 3;
+            // Reverse order
+            if (order == 0) {
+                uint index = length - offset;
+                uint end = index > count ? index - count : 0;
+                while (index > end) {
+                    (priceArray[i], priceArray[i + 1], priceArray[i + 2]) = _decodePrice(prices[--index], pairIndex);
+                    i += 3;
+                }
+            } 
+            // Positive order
+            else {
+                uint index = offset;
+                uint end = index + count;
+                if (end > length) {
+                    end = length;
+                }
+                while (index < end) {
+                    (priceArray[i], priceArray[i + 1], priceArray[i + 2]) = _decodePrice(prices[index++], pairIndex);
+                    i += 3;
+                }
             }
         }
     }
@@ -156,26 +158,28 @@ abstract contract NestFuturesWithPrice is NestFrequentlyUsed, INestFuturesWithPr
         uint maxFindCount, 
         address owner
     ) external view override returns (FutureView[] memory futureArray) {
-        futureArray = new FutureView[](count);
-        // Calculate search region
-        FutureInfo[] storage futures = _futures;
+        unchecked {
+            futureArray = new FutureView[](count);
+            // Calculate search region
+            FutureInfo[] storage futures = _futures;
 
-        // Loop from start to end
-        uint end = 0;
-        // start is 0 means Loop from the last item
-        if (start == 0) {
-            start = futures.length;
-        }
-        // start > maxFindCount, so end is not 0
-        if (start > maxFindCount) {
-            end = start - maxFindCount;
-        }
-        
-        // Loop lookup to write qualified records to the buffer
-        for (uint index = 0; index < count && start > end;) {
-            FutureInfo storage fi = futures[--start];
-            if (uint(fi.accounts[owner].balance) > 0) {
-                futureArray[index++] = _toFutureView(fi, start, owner);
+            // Loop from start to end
+            uint end = 0;
+            // start is 0 means Loop from the last item
+            if (start == 0) {
+                start = futures.length;
+            }
+            // start > maxFindCount, so end is not 0
+            if (start > maxFindCount) {
+                end = start - maxFindCount;
+            }
+            
+            // Loop lookup to write qualified records to the buffer
+            for (uint index = 0; index < count && start > end;) {
+                FutureInfo storage fi = futures[--start];
+                if (uint(fi.accounts[owner].balance) > 0) {
+                    futureArray[index++] = _toFutureView(fi, start, owner);
+                }
             }
         }
     }
@@ -190,32 +194,34 @@ abstract contract NestFuturesWithPrice is NestFrequentlyUsed, INestFuturesWithPr
         uint count, 
         uint order
     ) external view override returns (FutureView[] memory futureArray) {
-        // Load futures
-        FutureInfo[] storage futures = _futures;
-        // Create result array
-        futureArray = new FutureView[](count);
-        uint length = futures.length;
-        uint i = 0;
+        unchecked {
+            // Load futures
+            FutureInfo[] storage futures = _futures;
+            // Create result array
+            futureArray = new FutureView[](count);
+            uint length = futures.length;
+            uint i = 0;
 
-        // Reverse order
-        if (order == 0) {
-            uint index = length - offset;
-            uint end = index > count ? index - count : 0;
-            while (index > end) {
-                FutureInfo storage fi = futures[--index];
-                futureArray[i++] = _toFutureView(fi, index, msg.sender);
-            }
-        } 
-        // Positive order
-        else {
-            uint index = offset;
-            uint end = index + count;
-            if (end > length) {
-                end = length;
-            }
-            while (index < end) {
-                futureArray[i++] = _toFutureView(futures[index], index, msg.sender);
-                ++index;
+            // Reverse order
+            if (order == 0) {
+                uint index = length - offset;
+                uint end = index > count ? index - count : 0;
+                while (index > end) {
+                    FutureInfo storage fi = futures[--index];
+                    futureArray[i++] = _toFutureView(fi, index, msg.sender);
+                }
+            } 
+            // Positive order
+            else {
+                uint index = offset;
+                uint end = index + count;
+                if (end > length) {
+                    end = length;
+                }
+                while (index < end) {
+                    futureArray[i++] = _toFutureView(futures[index], index, msg.sender);
+                    ++index;
+                }
             }
         }
     }

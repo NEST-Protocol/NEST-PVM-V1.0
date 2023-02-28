@@ -66,27 +66,29 @@ contract NestTrustFuturesV2 is NestFutures3V2, INestTrustFutures {
         uint maxFindCount, 
         address owner
     ) external view override returns (TrustOrderView[] memory orderArray) {
-        orderArray = new TrustOrderView[](count);
-        // Calculate search region
-        TrustOrder[] storage orders = _trustOrders;
+        unchecked {
+            orderArray = new TrustOrderView[](count);
+            // Calculate search region
+            TrustOrder[] storage orders = _trustOrders;
 
-        // Loop from start to end
-        uint end = 0;
-        // start is 0 means Loop from the last item
-        if (start == 0) {
-            start = orders.length;
-        }
-        // start > maxFindCount, so end is not 0
-        if (start > maxFindCount) {
-            end = start - maxFindCount;
-        }
-        
-        // Loop lookup to write qualified records to the buffer
-        uint ownerIndex = _accountMapping[owner];
-        for (uint index = 0; index < count && start > end;) {
-            TrustOrder memory order = orders[--start];
-            if (_orders[uint(order.orderIndex)].owner == ownerIndex) {
-                orderArray[index++] = _toTrustOrderView(order, start);
+            // Loop from start to end
+            uint end = 0;
+            // start is 0 means Loop from the last item
+            if (start == 0) {
+                start = orders.length;
+            }
+            // start > maxFindCount, so end is not 0
+            if (start > maxFindCount) {
+                end = start - maxFindCount;
+            }
+            
+            // Loop lookup to write qualified records to the buffer
+            uint ownerIndex = _accountMapping[owner];
+            for (uint index = 0; index < count && start > end;) {
+                TrustOrder memory order = orders[--start];
+                if (_orders[uint(order.orderIndex)].owner == ownerIndex) {
+                    orderArray[index++] = _toTrustOrderView(order, start);
+                }
             }
         }
     }
@@ -101,32 +103,34 @@ contract NestTrustFuturesV2 is NestFutures3V2, INestTrustFutures {
         uint count, 
         uint order
     ) external view override returns (TrustOrderView[] memory orderArray) {
-        // Load orders
-        TrustOrder[] storage orders = _trustOrders;
-        // Create result array
-        orderArray = new TrustOrderView[](count);
-        uint length = orders.length;
-        uint i = 0;
+        unchecked {
+            // Load orders
+            TrustOrder[] storage orders = _trustOrders;
+            // Create result array
+            orderArray = new TrustOrderView[](count);
+            uint length = orders.length;
+            uint i = 0;
 
-        // Reverse order
-        if (order == 0) {
-            uint index = length - offset;
-            uint end = index > count ? index - count : 0;
-            while (index > end) {
-                TrustOrder memory o = orders[--index];
-                orderArray[i++] = _toTrustOrderView(o, index);
-            }
-        } 
-        // Positive order
-        else {
-            uint index = offset;
-            uint end = index + count;
-            if (end > length) {
-                end = length;
-            }
-            while (index < end) {
-                orderArray[i++] = _toTrustOrderView(orders[index], index);
-                ++index;
+            // Reverse order
+            if (order == 0) {
+                uint index = length - offset;
+                uint end = index > count ? index - count : 0;
+                while (index > end) {
+                    TrustOrder memory o = orders[--index];
+                    orderArray[i++] = _toTrustOrderView(o, index);
+                }
+            } 
+            // Positive order
+            else {
+                uint index = offset;
+                uint end = index + count;
+                if (end > length) {
+                    end = length;
+                }
+                while (index < end) {
+                    orderArray[i++] = _toTrustOrderView(orders[index], index);
+                    ++index;
+                }
             }
         }
     }
@@ -271,13 +275,13 @@ contract NestTrustFuturesV2 is NestFutures3V2, INestTrustFutures {
     /// @param stopProfitPrice If not 0, will open a stop order
     /// @param stopLossPrice If not 0, will open a stop order
     function buyWithStopOrder(
-        uint16 channelIndex, 
-        uint8 lever, 
+        uint channelIndex, 
+        uint lever, 
         bool orientation, 
         uint amount,
         uint stopProfitPrice, 
         uint stopLossPrice
-    ) external payable {
+    ) external payable override {
         buy(channelIndex, lever, orientation, amount);
         newStopOrder(_orders.length - 1, stopProfitPrice, stopLossPrice);
     }
@@ -313,9 +317,16 @@ contract NestTrustFuturesV2 is NestFutures3V2, INestTrustFutures {
         TradeChannel memory channel;
 
         // 1. Loop and execute
-        for (uint i = trustOrderIndices.length; i > 0;) {
+        uint index = 0;
+        uint i = trustOrderIndices.length << 5;
+        while (i > 0) {
             // Load TrustOrder and Order
-            uint index = trustOrderIndices[--i];
+            // uint index = trustOrderIndices[--i];
+            assembly {
+                i := sub(i, 0x20)
+                index := calldataload(add(trustOrderIndices.offset, i))
+            }
+
             TrustOrder memory trustOrder = _trustOrders[index];
             // Check status
             require(trustOrder.status == uint8(S_NORMAL), "NF:status error");
@@ -441,7 +452,10 @@ contract NestTrustFuturesV2 is NestFutures3V2, INestTrustFutures {
     }
 
     // Convert TrustOrder to TrustOrderView
-    function _toTrustOrderView(TrustOrder memory trustOrder, uint index) internal view returns (TrustOrderView memory v) {
+    function _toTrustOrderView(
+        TrustOrder memory trustOrder, 
+        uint index
+    ) internal view returns (TrustOrderView memory v) {
         Order memory order = _orders[uint(trustOrder.orderIndex)];
         v = TrustOrderView(
             // Index of this TrustOrder

@@ -5,7 +5,7 @@ pragma solidity ^0.8.6;
 import "./libs/TransferHelper.sol";
 import "./libs/CommonLib.sol";
 
-import "./interfaces/INestFutures2.sol";
+import "./NestFutures2_Test.sol";
 
 import "./custom/NestFrequentlyUsed.sol";
 
@@ -270,7 +270,7 @@ contract NestFuturesProxy is NestFrequentlyUsed {
             // Status of limit order must be S_NORMAL
             if (uint(order.status) == S_NORMAL) {
                 // Create futures order by proxy
-                INestFutures2(NEST_FUTURES_ADDRESS).proxyBuy2(
+                NestFutures2_Test(NEST_FUTURES_ADDRESS).proxyBuy2(
                     // owner
                     order.owner, 
                     // channelIndex

@@ -110,21 +110,6 @@ interface INestFutures2 {
     /// @dev Liquidate order
     /// @param indices Target order indices
     function liquidate2(uint[] calldata indices) external payable;
-    
-    /// @dev Buy from NestFuturesPRoxy
-    /// @param tokenIndex Index of token
-    /// @param lever Lever of order
-    /// @param orientation true: call, false: put
-    /// @param amount Amount of paid NEST, 4 decimals
-    /// @param stopPrice Stop price for stop order
-    function proxyBuy2(
-        address owner, 
-        uint16 tokenIndex, 
-        uint8 lever, 
-        bool orientation, 
-        uint48 amount,
-        uint56 stopPrice
-    ) external payable;
 
     /// @dev Execute stop order, only for maintains account
     /// @param indices Array of futures order index

@@ -56,15 +56,13 @@ library CommonLib {
     uint constant FUTURES_NEST_LB = 499999;
 
     // Service fee for buy, sell, add and liquidate
-    uint constant FEE_RATE = 0.002 ether;
+    uint constant FEE_RATE = 0.001 ether;
     
     // Fee for execute limit order or stop order, 15 nest
     uint constant EXECUTE_FEE = 150000;
 
     // Fee for execute limit order or stop order in nest values, 18 decimals
     uint constant EXECUTE_FEE_NEST = EXECUTE_FEE * NEST_UNIT;
-
-    // TODO: To confirm range of lever
 
     // Range of lever, (LEVER_LB, LEVER_RB)
     uint constant LEVER_LB = 0;

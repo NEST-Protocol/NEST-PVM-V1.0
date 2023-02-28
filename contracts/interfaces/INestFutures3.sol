@@ -100,8 +100,8 @@ interface INestFutures3 {
     /// @param orientation true: long, false: short
     /// @param amount Amount of paid NEST, 4 decimals
     function buy(
-        uint16 channelIndex, 
-        uint8 lever, 
+        uint channelIndex, 
+        uint lever, 
         bool orientation, 
         uint amount
     ) external payable;

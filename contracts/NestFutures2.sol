@@ -11,7 +11,7 @@ import "./interfaces/INestFutures2.sol";
 import "./NestFuturesWithPrice.sol";
 
 /// @dev Nest futures without merger
-abstract contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
+contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
 
     /// @dev Order structure
     struct Order {
@@ -110,27 +110,29 @@ abstract contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
         uint maxFindCount, 
         address owner
     ) external view override returns (OrderView[] memory orderArray) {
-        orderArray = new OrderView[](count);
-        // Calculate search region
-        Order[] storage orders = _orders;
+        unchecked {
+            orderArray = new OrderView[](count);
+            // Calculate search region
+            Order[] storage orders = _orders;
 
-        // Loop from start to end
-        uint end = 0;
-        // start is 0 means Loop from the last item
-        if (start == 0) {
-            start = orders.length;
-        }
-        // start > maxFindCount, so end is not 0
-        if (start > maxFindCount) {
-            end = start - maxFindCount;
-        }
-        
-        // Loop lookup to write qualified records to the buffer
-        uint ownerIndex = _accountMapping[owner];
-        for (uint index = 0; index < count && start > end;) {
-            Order memory order = orders[--start];
-            if (uint(order.owner) == ownerIndex) {
-                orderArray[index++] = _toOrderView(order, start);
+            // Loop from start to end
+            uint end = 0;
+            // start is 0 means Loop from the last item
+            if (start == 0) {
+                start = orders.length;
+            }
+            // start > maxFindCount, so end is not 0
+            if (start > maxFindCount) {
+                end = start - maxFindCount;
+            }
+            
+            // Loop lookup to write qualified records to the buffer
+            uint ownerIndex = _accountMapping[owner];
+            for (uint index = 0; index < count && start > end;) {
+                Order memory order = orders[--start];
+                if (uint(order.owner) == ownerIndex) {
+                    orderArray[index++] = _toOrderView(order, start);
+                }
             }
         }
     }
@@ -141,32 +143,34 @@ abstract contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
     /// @param order Order. 0 reverse order, non-0 positive order
     /// @return orderArray List of orders
     function list2(uint offset, uint count, uint order) external view override returns (OrderView[] memory orderArray) {
-        // Load orders
-        Order[] storage orders = _orders;
-        // Create result array
-        orderArray = new OrderView[](count);
-        uint length = orders.length;
-        uint i = 0;
+        unchecked {
+            // Load orders
+            Order[] storage orders = _orders;
+            // Create result array
+            orderArray = new OrderView[](count);
+            uint length = orders.length;
+            uint i = 0;
 
-        // Reverse order
-        if (order == 0) {
-            uint index = length - offset;
-            uint end = index > count ? index - count : 0;
-            while (index > end) {
-                Order memory o = orders[--index];
-                orderArray[i++] = _toOrderView(o, index);
-            }
-        } 
-        // Positive order
-        else {
-            uint index = offset;
-            uint end = index + count;
-            if (end > length) {
-                end = length;
-            }
-            while (index < end) {
-                orderArray[i++] = _toOrderView(orders[index], index);
-                ++index;
+            // Reverse order
+            if (order == 0) {
+                uint index = length - offset;
+                uint end = index > count ? index - count : 0;
+                while (index > end) {
+                    Order memory o = orders[--index];
+                    orderArray[i++] = _toOrderView(o, index);
+                }
+            } 
+            // Positive order
+            else {
+                uint index = offset;
+                uint end = index + count;
+                if (end > length) {
+                    end = length;
+                }
+                while (index < end) {
+                    orderArray[i++] = _toOrderView(orders[index], index);
+                    ++index;
+                }
             }
         }
     }
