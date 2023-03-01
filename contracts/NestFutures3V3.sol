@@ -292,21 +292,21 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
         uint basePrice = CommonLib.decodeFloat(uint(order.basePrice));
         uint balance = uint(order.balance);
 
-        // 4. Update parameter for channel
+        // 2. Query price
         uint channelIndex = uint(order.channelIndex);
         uint oraclePrice = _lastPrice(channelIndex);
 
-        // 5. Calculate value of order
-        TradeChannel memory channel = _updateChannel(uint(order.channelIndex), oraclePrice);
-        uint value = _valueOf(channel, order, basePrice, oraclePrice);
+        // 3. Update channel
+        TradeChannel memory channel = _updateChannel(channelIndex, oraclePrice);
         _channels[channelIndex] = channel;
 
-        // 6. Update order
+        // 4. Calculate value and update order
+        uint value = _valueOf(channel, order, basePrice, oraclePrice);
         order.balance = uint40(0);
         order.appends = uint40(0);
         _orders[orderIndex] = order;
 
-        // 7. Transfer NEST to user
+        // 5. Transfer NEST to user
         uint fee = balance 
                  * CommonLib.NEST_UNIT 
                  * uint(order.lever) 
@@ -320,23 +320,29 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
             INestVault(NEST_VAULT_ADDRESS).transferTo(msg.sender, value - fee);
         }
 
-        // 8. Emit event
+        // 6. Emit event
         emit Sell(orderIndex, balance, msg.sender, value);
     }
 
     /// @dev Liquidate order
     /// @param indices Target order indices
     function liquidate(uint[] calldata indices) external payable override {
+        // 0. Global variables
+        // Total reward of this transaction
         uint reward = 0;
+        // Last price of current channel
         uint oraclePrice = 0;
+        // Index of current channel
         uint channelIndex = 0x10000;
+        // Current channel
         TradeChannel memory channel;
         
         // 1. Loop and liquidate
+        // Index of Order
         uint index = 0;
         uint i = indices.length << 5;
         while (i > 0) {
-            // Load Order
+            // 2. Load Order
             // uint index = indices[--i];
             assembly {
                 i := sub(i, 0x20)
@@ -347,6 +353,7 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
             uint lever = uint(order.lever);
             uint balance = uint(order.balance) * CommonLib.NEST_UNIT * lever;
             if (lever > 1 && balance > 0) {
+                // 3. Load and update channel
                 // If channelIndex is not same with previous, need load new channel and query oracle
                 // At first, channelIndex is 0x10000, this is impossible the same with current channelIndex
                 if (channelIndex != uint(order.channelIndex)) {
@@ -360,11 +367,11 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
                     channel = _updateChannel(channelIndex, oraclePrice);
                 }
 
-                // 3. Calculate order value
+                // 4. Calculate order value
                 uint basePrice = CommonLib.decodeFloat(order.basePrice);
                 uint value = _valueOf(channel, order, basePrice, oraclePrice);
 
-                // 4. Liquidate logic
+                // 5. Liquidate logic
                 // lever is great than 1, and balance less than a regular value, can be liquidated
                 // the regular value is: Max(M0 * L * St / S0 * c, a) | expired
                 // the regular value is: Max(M0 * L * St / S0 * c + a, M0 * L * 0.5%)

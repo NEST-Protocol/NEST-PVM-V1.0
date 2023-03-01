@@ -23,11 +23,17 @@ contract NestTrustFuturesV3 is NestFutures3V3, INestTrustFutures {
 
     // TrustOrder, include limit order and stop order
     struct TrustOrder {
+        // Index of target Order
         uint32 orderIndex;              // 32
+        // Balance of nest, 4 decimals
         uint40 balance;                 // 48
+        // Service fee, 4 decimals
         uint40 fee;                     // 48
+        // Stop price for trigger sell, encoded by encodeFloat56()
         uint56 stopProfitPrice;         // 56
+        // Stop price for trigger sell, encoded by encodeFloat56()
         uint56 stopLossPrice;           // 56
+        // Status of order, 0: executed, 1: normal, 2: canceled
         uint8 status;                   // 8
     }
 
