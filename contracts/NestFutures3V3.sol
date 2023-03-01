@@ -300,7 +300,7 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
         TradeChannel memory channel = _updateChannel(channelIndex, oraclePrice);
         _channels[channelIndex] = channel;
 
-        // 4. Calculate value and update order
+        // 4. Calculate value and update Order
         uint value = _valueOf(channel, order, basePrice, oraclePrice);
         order.balance = uint40(0);
         order.appends = uint40(0);

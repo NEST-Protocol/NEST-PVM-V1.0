@@ -23,11 +23,17 @@ contract NestTrustFuturesV2 is NestFutures3V2, INestTrustFutures {
 
     // TrustOrder, include limit order and stop order
     struct TrustOrder {
+        // Index of target Order
         uint32 orderIndex;              // 32
+        // Balance of nest, 4 decimals
         uint40 balance;                 // 48
+        // Service fee, 4 decimals
         uint40 fee;                     // 48
+        // Stop price for trigger sell, encoded by encodeFloat56()
         uint56 stopProfitPrice;         // 56
+        // Stop price for trigger sell, encoded by encodeFloat56()
         uint56 stopLossPrice;           // 56
+        // Status of order, 0: executed, 1: normal, 2: canceled
         uint8 status;                   // 8
     }
 
@@ -346,7 +352,7 @@ contract NestTrustFuturesV2 is NestFutures3V2, INestTrustFutures {
             }
 
             uint balance = uint(trustOrder.balance);
-            totalNest += balance + uint(trustOrder.fee);
+            totalNest += (balance + uint(trustOrder.fee));
 
             // Update Order: basePrice, baseBlock, balance, Pt
             order.basePrice = CommonLib.encodeFloat56(oraclePrice);
@@ -404,15 +410,7 @@ contract NestTrustFuturesV2 is NestFutures3V2, INestTrustFutures {
                     channel = _updateChannel(channelIndex, oraclePrice);
                 }
 
-                uint value = _valueOf(
-                    int(channel.Pt) - int(order.Pt),
-                    balance * CommonLib.NEST_UNIT,
-                    basePrice,
-                    oraclePrice,
-                    order.orientation,
-                    lever,
-                    uint(order.appends)
-                );
+                uint value = _valueOf(channel, order, basePrice, oraclePrice);
 
                 order.balance = uint40(0);
                 order.appends = uint40(0);
