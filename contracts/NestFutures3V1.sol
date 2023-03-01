@@ -117,36 +117,13 @@ contract NestFutures3V1 is NestFrequentlyUsed, INestFutures3 {
     /// @dev Returns the current value of target order
     /// @param orderIndex Index of order
     /// @param oraclePrice Current price from oracle, usd based, 18 decimals
-    function balanceOf(uint orderIndex, uint oraclePrice) external view returns (uint value) {
+    function balanceOf(uint orderIndex, uint oraclePrice) external view override returns (uint value) {
         Order memory order = _orders[orderIndex];
-        TradeChannel memory channel = _channels[uint(order.channelIndex)];
-        
-        // 2. Calculate Pt by μ from last order
-        uint Lp = uint(channel.Lp);
-        uint Sp = uint(channel.Sp);
-        if (Lp + Sp > 0) {
-            // Pt is expressed as 56-bits integer, which 12 decimals, representable range is
-            // [-36028.797018963968, 36028.797018963967], assume the earn rate is 0.9% per day,
-            // and it continues 100 years, Pt may reach to 328.725, this is far less than 
-            // 36028.797018963967, so Pt is impossible out of [-36028.797018963968, 36028.797018963967].
-            // And even so, Pt is truncated, the consequences are not serious, so we don't check truncation
-            channel.Pt = int56(
-                int(channel.Pt) + 
-                // μ is not saved, and calculate it by Lp and Sp always
-                // 694444 = 0.02e12 / 86400 * CommonLib.BLOCK_TIME / 1000
-                694444 * (int(Lp) - int(Sp)) * int((block.number - uint(channel.bn))) / int(Lp + Sp)
-            );
-        }
-
         value = _valueOf(
-            // μt = P1 - P0
-            int(channel.Pt) - int(order.Pt),
-            uint(order.balance) * CommonLib.NEST_UNIT, 
+            _updateChannel(uint(order.channelIndex), int(0), true),
+            order,
             CommonLib.decodeFloat(uint(order.basePrice)),
-            oraclePrice,
-            order.orientation,
-            uint(order.lever),
-            uint(order.appends)
+            oraclePrice
         );
     }
 
@@ -245,59 +222,22 @@ contract NestFutures3V1 is NestFrequentlyUsed, INestFutures3 {
 
         // 2. Load target channel
         // channelIndex is increase from 0, if channelIndex out of range, means target channel not exist
-        TradeChannel memory channel = _channels[channelIndex];
+        uint oraclePrice = _lastPrice(channelIndex);
+        TradeChannel memory channel = _updateChannel(channelIndex, int(amount * lever), orientation);
 
-        // When order operating, update Pt first (use last miu), 
-        // Then update Sp and Lp (μ can be calculate by Lp and Sp), 
-        // Use the last calculated Pt for order
-        // 3. Calculate Pt by μ from last order
-        uint Lp = uint(channel.Lp);
-        uint Sp = uint(channel.Sp);
-        if (Lp + Sp > 0) {
-            // Pt is expressed as 56-bits integer, which 12 decimals, representable range is
-            // [-36028.797018963968, 36028.797018963967], assume the earn rate is 0.9% per day,
-            // and it continues 100 years, Pt may reach to 328.725, this is far less than 
-            // 36028.797018963967, so Pt is impossible out of [-36028.797018963968, 36028.797018963967].
-            // And even so, Pt is truncated, the consequences are not serious, so we don't check truncation
-            channel.Pt = int56(
-                int(channel.Pt) + 
-                // μ is not saved, and calculate it by Lp and Sp always
-                // 694444 = 0.02e12 / 86400 * CommonLib.BLOCK_TIME / 1000
-                694444 * (int(Lp) - int(Sp)) * int((block.number - uint(channel.bn))) / int(Lp + Sp)
-            );
-        }
-
-        // 4. Update Lp and Sp, for calculate next μ
-        // Lp and Sp are add(sub) with original bond
-        // When buy, Lp(Sp) += lever * amount
-        // When sell(liquidate), Lp(Sp) -= lever * amount
-        // Original bond not include service fee
-
-        // Lp ans Sp are 56-bits unsigned integer, defined as 4 decimals, which representable range is
-        // [0, 7205759403792.7935], total supply of NEST is 10000000000, with max leverage 50, the 
-        // maximum value is 500000000000, Lp ans Sp is impossible to reach 7205759403792.7935,
-        // so we don't check truncation here
-        if (orientation) {
-            channel.Lp = uint56(Lp + amount * uint(lever));
-        }
-        else {
-            channel.Sp = uint56(Sp + amount * uint(lever));
-        }
-
-        // 5. Update parameter for channel
-        channel.bn = uint32(block.number);
+        // 3. Update parameter for channel
         _channels[channelIndex] = channel;
 
-        // 6. Emit event
+        // 4. Emit event
         emit Buy(_orders.length, amount, msg.sender);
 
-        // 7. Create order
+        // 5. Create order
         _orders.push(Order(
             // owner
             uint32(_addressIndex(msg.sender)),
             // basePrice
             // Query oraclePrice
-            CommonLib.encodeFloat56(_lastPrice(channelIndex)),
+            CommonLib.encodeFloat56(oraclePrice),
             // balance
             uint40(amount),
             // append
@@ -312,7 +252,7 @@ contract NestFutures3V1 is NestFrequentlyUsed, INestFutures3 {
             channel.Pt
         ));
 
-        // 8. Transfer NEST from user
+        // 6. Transfer NEST from user
         TransferHelper.safeTransferFrom(
             NEST_TOKEN_ADDRESS, 
             msg.sender, 
@@ -346,105 +286,61 @@ contract NestFutures3V1 is NestFrequentlyUsed, INestFutures3 {
     function sell(uint orderIndex) external payable override {
         // 1. Load the order
         Order memory order = _orders[orderIndex];
-        uint channelIndex = uint(order.channelIndex);
-        TradeChannel memory channel = _channels[channelIndex];
         require(msg.sender == _accounts[uint(order.owner)], "NF:not owner");
         uint basePrice = CommonLib.decodeFloat(uint(order.basePrice));
         uint balance = uint(order.balance);
-        uint lever = uint(order.lever);
-
-        // When order operating, update Pt first (use last miu), then update Sp and Lp, 
-        // Use the last calculated Pt for order
-
-        // 2. Calculate Pt by μ from last order
-        {
-            uint Lp = uint(channel.Lp);
-            uint Sp = uint(channel.Sp);
-            if (Lp + Sp > 0) {
-                // Pt is expressed as 56-bits integer, which 12 decimals, representable range is
-                // [-36028.797018963968, 36028.797018963967], assume the earn rate is 0.9% per day,
-                // and it continues 100 years, Pt may reach to 328.725, this is far less than 
-                // 36028.797018963967, so Pt is impossible out of [-36028.797018963968, 36028.797018963967].
-                // And even so, Pt is truncated, the consequences are not serious, so we don't check truncation
-                channel.Pt = int56(
-                    int(channel.Pt) + 
-                    // μ is not saved, and calculate it by Lp and Sp always
-                    // 694444 = 0.02e12 / 86400 * CommonLib.BLOCK_TIME / 1000
-                    694444 * (int(Lp) - int(Sp)) * int((block.number - uint(channel.bn))) / int(Lp + Sp)
-                );
-            }
-            
-            // 3. Update Lp and Sp, for calculate next μ
-            // Lp and Sp are add(sub) with original bond
-            // When buy, Lp(Sp) += lever * amount
-            // When sell(liquidate), Lp(Sp) -= lever * amount
-            // Original bond not include service fee
-
-            // Lp ans Sp are 56-bits unsigned integer, defined as 4 decimals, which representable range is
-            // [0, 7205759403792.7935], total supply of NEST is 10000000000, with max leverage 50, the 
-            // maximum value is 500000000000, Lp ans Sp is impossible to reach 7205759403792.7935,
-            // so we don't check truncation here
-            if (order.orientation) {
-                channel.Lp = uint56(Lp - balance * lever);
-            }
-            else {
-                channel.Sp = uint56(Sp - balance * lever);
-            }
-                    
-            // 4. Update parameter for channel
-            channel.bn = uint32(block.number);
-            _channels[channelIndex] = channel;
-        }
-
-        // 5. Query oracle price
+        
+        // 2. Query price
+        uint channelIndex = uint(order.channelIndex);
         uint oraclePrice = _lastPrice(channelIndex);
 
-        // 6. Calculate value of order
-        uint value = _valueOf(
-            // μt = P1 - P0
-            int(channel.Pt) - int(order.Pt),
-            // balance
-            balance * CommonLib.NEST_UNIT, 
-            // basePrice
-            basePrice, 
-            // oraclePrice
-            oraclePrice, 
-            // ORIENTATION
-            order.orientation, 
-            // LEVER
-            lever,
-            uint(order.appends)
-        );
+        // 3. Update channel
+        TradeChannel memory channel = _updateChannel(channelIndex, -int(balance * uint(order.lever)), order.orientation);
+        _channels[channelIndex] = channel;
 
-        // 7. Update order
+        // 4. Calculate value and update Order
+        uint value = _valueOf(channel, order, basePrice, oraclePrice);
         order.balance = uint40(0);
         order.appends = uint40(0);
         _orders[orderIndex] = order;
 
-        // 8. Transfer NEST to user
-        uint fee = balance * CommonLib.NEST_UNIT * lever * oraclePrice / basePrice * CommonLib.FEE_RATE / 1 ether;
+        // 5. Transfer NEST to user
+        uint fee = balance 
+                 * CommonLib.NEST_UNIT 
+                 * uint(order.lever) 
+                 * oraclePrice 
+                 / basePrice 
+                 * CommonLib.FEE_RATE 
+                 / 1 ether;
+        
         // If value grater than fee, deduct and transfer NEST to owner
         if (value > fee) {
             INestVault(NEST_VAULT_ADDRESS).transferTo(msg.sender, value - fee);
         }
 
-        // 9. Emit event
+        // 6. Emit event
         emit Sell(orderIndex, balance, msg.sender, value);
     }
 
     /// @dev Liquidate order
     /// @param indices Target order indices
     function liquidate(uint[] calldata indices) external payable override {
+        // 0. Global variables
+        // Total reward of this transaction
         uint reward = 0;
+        // Last price of current channel
         uint oraclePrice = 0;
+        // Index of current channel
         uint channelIndex = 0x10000;
+        // Current channel
         TradeChannel memory channel;
         
         // 1. Loop and liquidate
+        // Index of Order
         uint index = 0;
         uint i = indices.length << 5;
         while (i > 0) {
-            // Load Order
+            // 2.Load Order
             //uint index = indices[--i];
             assembly {
                 i := sub(i, 0x20)
@@ -455,6 +351,7 @@ contract NestFutures3V1 is NestFrequentlyUsed, INestFutures3 {
             uint lever = uint(order.lever);
             uint balance = uint(order.balance) * CommonLib.NEST_UNIT * lever;
             if (lever > 1 && balance > 0) {
+                // 3. Load and update channel
                 // If channelIndex is not same with previous, need load new channel and query oracle
                 // At first, channelIndex is 0x10000, this is impossible the same with current channelIndex
                 if (channelIndex != uint(order.channelIndex)) {
@@ -465,80 +362,36 @@ contract NestFutures3V1 is NestFrequentlyUsed, INestFutures3 {
                     // Load current channel
                     channelIndex = uint(order.channelIndex);
                     oraclePrice = _lastPrice(channelIndex);
-                    channel = _channels[channelIndex];
-
-                    // Calculate Pt by μ from last order
-                    uint Lp = uint(channel.Lp);
-                    uint Sp = uint(channel.Sp);
-                    if (Lp + Sp > 0) {
-                        // Pt is expressed as 56-bits integer, which 12 decimals, representable range is
-                        // [-36028.797018963968, 36028.797018963967], assume the earn rate is 0.9% per day,
-                        // and it continues 100 years, Pt may reach to 328.725, this is far less than 
-                        // 36028.797018963967, so Pt is impossible out of [-36028.797018963968, 36028.797018963967].
-                        // And even so, Pt is truncated, the consequences are not serious, so we don't check truncation
-                        channel.Pt = int56(
-                            int(channel.Pt) + 
-                            // μ is not saved, and calculate it by Lp and Sp always
-                            // 694444 = 0.02e12 / 86400 * CommonLib.BLOCK_TIME / 1000
-                            694444 * (int(Lp) - int(Sp)) * int((block.number - uint(channel.bn))) / int(Lp + Sp)
-                        );
-                    }
-                    channel.bn = uint32(block.number);
+                    channel = _updateChannel(channelIndex, int(0), true);
                 }
 
-                // 3. Calculate order value
+                // 4. Calculate order value
                 uint basePrice = CommonLib.decodeFloat(order.basePrice);
-                uint value = _valueOf(
-                    // μt = P1 - P0
-                    int(channel.Pt) - int(order.Pt),
-                    // balance
-                    balance / lever, 
-                    // basePrice
-                    basePrice, 
-                    // oraclePrice
-                    oraclePrice, 
-                    // ORIENTATION
-                    order.orientation, 
-                    // LEVER
-                    lever,
-                    uint(order.appends)
-                );
+                uint value = _valueOf(channel, order, basePrice, oraclePrice);
 
-                // 4. Liquidate logic
+                // 5. Liquidate logic
                 // lever is great than 1, and balance less than a regular value, can be liquidated
                 // the regular value is: Max(M0 * L * St / S0 * c, a) | expired
                 // the regular value is: Max(M0 * L * St / S0 * c + a, M0 * L * 0.5%)
-                if (value < balance / 200 ||
-                    value < balance * oraclePrice / basePrice * CommonLib.FEE_RATE / 1 ether
-                            + CommonLib.MIN_FUTURE_VALUE
-                ) {
-                    // Update Lp and Sp, for calculate next μ
-                    // Lp and Sp are add(sub) with original bond
-                    // When buy, Lp(Sp) += lever * amount
-                    // When sell(liquidate), Lp(Sp) -= lever * amount
-                    // Original bond not include service fee
+                unchecked {
+                    if (value < balance / 200 ||
+                        value < balance * oraclePrice / basePrice * CommonLib.FEE_RATE / 1 ether
+                                + CommonLib.MIN_FUTURE_VALUE
+                    ) {
+                        channel = _updateChannel(channelIndex, -int(balance / CommonLib.NEST_UNIT), order.orientation);
 
-                    // Lp ans Sp are 56-bits unsigned integer, defined as 4 decimals, which representable range is
-                    // [0, 7205759403792.7935], total supply of NEST is 10000000000, with max leverage 50, the 
-                    // maximum value is 500000000000, Lp ans Sp is impossible to reach 7205759403792.7935,
-                    // so we don't check truncation here
-                    if (order.orientation) {
-                        channel.Lp = uint56(uint(channel.Lp) - balance / CommonLib.NEST_UNIT);
-                    } else {
-                        channel.Sp = uint56(uint(channel.Sp) - balance / CommonLib.NEST_UNIT);
+                        // Clear all data of order, use this code next time
+                        assembly {
+                            mstore(0, _orders.slot)
+                            sstore(add(keccak256(0, 0x20), index), 0)
+                        }
+                        
+                        // Add reward
+                        reward += value;
+
+                        // Emit liquidate event
+                        emit Liquidate(index, msg.sender, value);
                     }
-
-                    // Clear all data of order, use this code next time
-                    assembly {
-                        mstore(0, _orders.slot)
-                        sstore(add(keccak256(0, 0x20), index), 0)
-                    }
-                    
-                    // Add reward
-                    reward += value;
-
-                    // Emit liquidate event
-                    emit Liquidate(index, msg.sender, value);
                 }
             }
         }
@@ -569,36 +422,38 @@ contract NestFutures3V1 is NestFrequentlyUsed, INestFutures3 {
 
     // Calculate net worth
     function _valueOf(
-        int miuT,
-        uint balance,
+        TradeChannel memory channel,
+        Order memory order,
         uint basePrice,
-        uint oraclePrice, 
-        bool ORIENTATION, 
-        uint LEVER,
-        uint appends
-    ) internal pure returns (uint) {
-        uint left;
-        uint right;
-        uint base = LEVER * balance * oraclePrice / basePrice;
+        uint oraclePrice
+    ) internal pure returns (uint value) {
+        value = uint(order.balance) * CommonLib.NEST_UNIT;
+        uint LEVER = uint(order.lever);
+        uint base = LEVER * value * oraclePrice / basePrice;
+        uint negative;
+
         // Long
-        if (ORIENTATION) {
-            left = balance + (miuT > 0 ? base * 0x10000000000000000 / _expMiuT(miuT) : base) 
-                 + appends * CommonLib.NEST_UNIT;
-            right = balance * LEVER;
+        if (order.orientation) {
+            negative = value * LEVER;
+            value = value + (
+                channel.Pt > order.Pt 
+                ? base * 0x10000000000000000 / _expMiuT(int(channel.Pt) - int(order.Pt)) 
+                : base
+            ) + uint(order.appends) * CommonLib.NEST_UNIT;
         } 
         // Short
         else {
-            left = balance * (1 + LEVER) + appends * CommonLib.NEST_UNIT;
-            right = miuT < 0 ? base * 0x10000000000000000 / _expMiuT(miuT) : base;
+            negative = channel.Pt < order.Pt 
+                     ? base * 0x10000000000000000 / _expMiuT(int(channel.Pt) - int(order.Pt)) 
+                     : base;
+            value = value * (1 + LEVER) + uint(order.appends) * CommonLib.NEST_UNIT;
         }
 
-        if (left > right) {
-            balance = left - right;
-        } else {
-            balance = 0;
+        assembly {
+            switch gt(value, negative)
+            case true { value := sub(value, negative) }
+            case false { value := 0 }
         }
-
-        return balance;
     }
 
     // Query price
@@ -632,6 +487,51 @@ contract NestFutures3V1 is NestFrequentlyUsed, INestFutures3 {
         }
 
         return index;
+    }
+
+    // Update parameters to channel and load
+    function _updateChannel(
+        uint channelIndex, int virtualAmount, bool orientation) internal view returns (TradeChannel memory channel) {
+        channel = _channels[channelIndex];
+        // When order operating, update Pt first (use last miu), 
+        // Then update Sp and Lp (μ can be calculate by Lp and Sp), 
+        // Use the last calculated Pt for order
+        // 3. Calculate Pt by μ from last order
+        uint Lp = uint(channel.Lp);
+        uint Sp = uint(channel.Sp);
+        if (Lp + Sp > 0) {
+            // Pt is expressed as 56-bits integer, which 12 decimals, representable range is
+            // [-36028.797018963968, 36028.797018963967], assume the earn rate is 0.9% per day,
+            // and it continues 100 years, Pt may reach to 328.725, this is far less than 
+            // 36028.797018963967, so Pt is impossible out of [-36028.797018963968, 36028.797018963967].
+            // And even so, Pt is truncated, the consequences are not serious, so we don't check truncation
+            channel.Pt = int56(
+                int(channel.Pt) + 
+                // μ is not saved, and calculate it by Lp and Sp always
+                // 694444 = 0.02e12 / 86400 * CommonLib.BLOCK_TIME / 1000
+                694444 * (int(Lp) - int(Sp)) * int((block.number - uint(channel.bn))) / int(Lp + Sp)
+            );
+        }
+
+        // 4. Update Lp and Sp, for calculate next μ
+        // Lp and Sp are add(sub) with original bond
+        // When buy, Lp(Sp) += lever * amount
+        // When sell(liquidate), Lp(Sp) -= lever * amount
+        // Original bond not include service fee
+
+        // Lp ans Sp are 56-bits unsigned integer, defined as 4 decimals, which representable range is
+        // [0, 7205759403792.7935], total supply of NEST is 10000000000, with max leverage 50, the 
+        // maximum value is 500000000000, Lp ans Sp is impossible to reach 7205759403792.7935,
+        // so we don't check truncation here
+        if (orientation) {
+            channel.Lp = uint56(uint(int(uint(Lp)) + virtualAmount));
+        }
+        else {
+            channel.Sp = uint56(uint(int(uint(Sp)) + virtualAmount));
+        }
+
+        // 5. Update parameter for channel
+        channel.bn = uint32(block.number);
     }
     
     // Convert Order to OrderView
