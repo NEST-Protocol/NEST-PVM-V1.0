@@ -408,16 +408,12 @@ contract NestTrustFuturesV3 is NestFutures3V3, INestTrustFutures {
                     channel = _updateChannel(channelIndex, oraclePrice);
                 }
 
-                uint base = balance * CommonLib.NEST_UNIT * uint(order.lever) * oraclePrice 
-                          / CommonLib.decodeFloat(uint(order.basePrice));
-                uint value = _valueOf(channel, order, base);
+                (uint value, uint fee) = _valueOf(channel, order, oraclePrice);
 
                 order.balance = uint40(0);
                 order.appends = uint40(0);
                 _orders[uint(trustOrder.orderIndex)] = order;
 
-                uint fee = base * CommonLib.FEE_RATE / 1 ether;
-                         
                 // Newest value of order is greater than fee + EXECUTE_FEE, deduct and transfer NEST to owner
                 if (value > fee + CommonLib.EXECUTE_FEE_NEST) {
                     INestVault(NEST_VAULT_ADDRESS).transferTo(owner, value - fee - CommonLib.EXECUTE_FEE_NEST);
