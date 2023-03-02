@@ -394,8 +394,6 @@ contract NestTrustFuturesV2 is NestFutures3V2, INestTrustFutures {
             uint balance = uint(order.balance);
 
             if (balance > 0) {
-                uint lever = uint(order.lever);
-                uint basePrice = CommonLib.decodeFloat(uint(order.basePrice));
                 address owner = _accounts[uint(order.owner)];
 
                 if (channelIndex != uint(order.channelIndex)) {
@@ -410,20 +408,12 @@ contract NestTrustFuturesV2 is NestFutures3V2, INestTrustFutures {
                     channel = _updateChannel(channelIndex, oraclePrice);
                 }
 
-                uint value = _valueOf(channel, order, basePrice, oraclePrice);
+                (uint value, uint fee) = _valueOf(channel, order, oraclePrice);
 
                 order.balance = uint40(0);
                 order.appends = uint40(0);
                 _orders[uint(trustOrder.orderIndex)] = order;
 
-                uint fee = balance 
-                         * CommonLib.NEST_UNIT 
-                         * lever 
-                         * oraclePrice 
-                         / basePrice 
-                         * CommonLib.FEE_RATE 
-                         / 1 ether;
-                         
                 // Newest value of order is greater than fee + EXECUTE_FEE, deduct and transfer NEST to owner
                 if (value > fee + CommonLib.EXECUTE_FEE_NEST) {
                     INestVault(NEST_VAULT_ADDRESS).transferTo(owner, value - fee - CommonLib.EXECUTE_FEE_NEST);
