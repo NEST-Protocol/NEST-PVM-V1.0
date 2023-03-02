@@ -40,16 +40,7 @@ contract NestTrustFuturesV3 is NestFutures3V3, INestTrustFutures {
     // Array of TrustOrders
     TrustOrder[] _trustOrders;
 
-    // TODO: 
-    // address constant MAINTAINS_ADDRESS = 0x029972C516c4F248c5B066DA07DbAC955bbb5E7F;
-    address MAINTAINS_ADDRESS;
-    /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
-    ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
-    /// @param newGovernance INestGovernance implementation contract address
-    function update(address newGovernance) public virtual override {
-        super.update(newGovernance);
-        MAINTAINS_ADDRESS = INestGovernance(newGovernance).checkAddress("nest.app.maintains");
-    }
+    address constant MAINTAINS_ADDRESS = 0x029972C516c4F248c5B066DA07DbAC955bbb5E7F;
 
     modifier onlyMaintains {
         require(msg.sender == MAINTAINS_ADDRESS, "NFP:not maintains");

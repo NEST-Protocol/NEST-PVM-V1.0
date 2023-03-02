@@ -33,9 +33,6 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
         uint56 stopPrice;
     }
 
-    // TODO: place holder
-    uint[3] _placeHolder;
-    
     // Array of orders
     Order[] _orders;
 
@@ -45,23 +42,10 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
     // Registered accounts
     address[] _accounts;
 
-    // TODO: 
-    // address constant FUTURES_PROXY_ADDRESS = 0x8b2A11F6C5cEbB00793dCE502a9B08741eDBcb96;
-    // address constant MAINTAINS_ADDRESS = 0x029972C516c4F248c5B066DA07DbAC955bbb5E7F;
-    // address constant NEST_FUTURES3_ADDRESS = address(0);
-    address FUTURES_PROXY_ADDRESS;
-    address MAINTAINS_ADDRESS;
-    address NEST_FUTURES3_ADDRESS;
-
-    /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
-    ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
-    /// @param newGovernance INestGovernance implementation contract address
-    function update(address newGovernance) public virtual override {
-        super.update(newGovernance);
-        FUTURES_PROXY_ADDRESS = INestGovernance(newGovernance).checkAddress("nest.app.futuresProxy");
-        MAINTAINS_ADDRESS = INestGovernance(newGovernance).checkAddress("nest.app.maintains");
-        NEST_FUTURES3_ADDRESS = INestGovernance(newGovernance).checkAddress("nest.app.futures");
-    }
+    address constant FUTURES_PROXY_ADDRESS = 0x8b2A11F6C5cEbB00793dCE502a9B08741eDBcb96;
+    address constant MAINTAINS_ADDRESS = 0x029972C516c4F248c5B066DA07DbAC955bbb5E7F;
+    // TODO:
+    address constant NEST_FUTURES3_ADDRESS = address(0);
 
     constructor() {
     }
