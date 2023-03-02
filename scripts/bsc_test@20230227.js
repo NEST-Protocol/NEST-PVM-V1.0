@@ -37,6 +37,9 @@ exports.deploy = async function() {
     const nestTrustFuturesV3 = await NestTrustFuturesV3.attach('0xE8b787EdE23997Ff5C64067e2220FBbd13b085A1');
     console.log('nestTrustFuturesV3: ' + nestTrustFuturesV3.address);
 
+    // const newNestTrustFuturesV3 = await NestTrustFuturesV3.deploy();
+    // console.log('newNestTrustFuturesV3: ' + newNestTrustFuturesV3.address);
+
     // await nestGovernance.registerAddress('nest.app.vault', nestVault.address);
     // await nestGovernance.registerAddress('nest.app.futures', nestTrustFutures.address);
     // await nestGovernance.registerAddress('nest.app.directPoster', (await ethers.getSigners())[0].address)
@@ -63,7 +66,7 @@ exports.deploy = async function() {
     已经在bsc测试网上部署了最新版本的期货合约，动态μ算法，看涨和看跌的Pt分别计算，详情见最新版本算法文档，除getChannelInfo()接口
     返回的数据结构有针对性的做了调整外（添加了PtL和PtS），其他接口签名不变。
     
-    开发和测试请连接到最新版本的合约。
+    开发和测试请连接到最新版本的合约。*/
     
     console.log('---------- OK ----------');
     
