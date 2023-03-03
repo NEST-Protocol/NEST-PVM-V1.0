@@ -253,7 +253,7 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
             NEST_TOKEN_ADDRESS, 
             msg.sender, 
             NEST_VAULT_ADDRESS, 
-            amount * CommonLib.NEST_UNIT * (1 ether + CommonLib.FEE_RATE * lever) / 1 ether
+            amount * CommonLib.NEST_UNIT * (1 ether + FEE_RATE * lever) / 1 ether
         );
     }
 

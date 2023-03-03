@@ -57,7 +57,7 @@ module.exports = {
     },
     bsc_main: {
       url: 
-      'http://localhost:50000/bsc_main_getblock/',
+      'http://localhost:50001/bsc_main_getblock/',
       //"https://bsc-dataseed1.defibit.io/",
       // "https://bsc-mainnet.s.chainbase.online/v1/2IACpoXYkHcgiWwSB4l2VmdWizr",
       //"https://bsc.getblock.io/33a5ac19-a33e-40c9-aa06-33e32c18b459/mainnet/",

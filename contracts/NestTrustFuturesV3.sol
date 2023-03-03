@@ -154,7 +154,7 @@ contract NestTrustFuturesV3 is NestFutures3V3, INestTrustFutures {
         require(lever > CommonLib.LEVER_LB && lever < CommonLib.LEVER_RB, "NF:lever not allowed");
         
         // 2. Service fee, 4 decimals
-        uint fee = amount * CommonLib.FEE_RATE * uint(lever) / 1 ether;
+        uint fee = amount * FEE_RATE * uint(lever) / 1 ether;
 
         // 3. Create TrustOrder
         _trustOrders.push(TrustOrder(
