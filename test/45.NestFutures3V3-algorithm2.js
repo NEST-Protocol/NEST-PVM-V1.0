@@ -107,11 +107,11 @@ describe('45.NestFutures3V3-algorithm2.js', function() {
             if (await bn() > channel.bn && channel.bn > 0) {
                 //let miu = (channel.Lp - channel.Sp) * 0.02 / (channel.Lp + channel.Sp) / 86400;
                 //return channel.Pt + miu * (await bn() - channel.bn) * BLOCK_TIME;
-                let miuL = channel.miu > 0 ? channel.miu : 0;
-                let miuS = channel.miu < 0 ? channel.miu : 0;
+                //let miuL = channel.miu > 0 ? channel.miu : 0;
+                //let miuS = channel.miu < 0 ? channel.miu : 0;
                 return {
-                    PtL: channel.PtL + miuL * (await bn() - channel.bn) * BLOCK_TIME,
-                    PtS: channel.PtS + miuS * (await bn() - channel.bn) * BLOCK_TIME
+                    PtL: channel.PtL + (channel.miu + 0.00000001027) * (await bn() - channel.bn) * BLOCK_TIME,
+                    PtS: channel.PtS + channel.miu * (await bn() - channel.bn) * BLOCK_TIME
                 };
             }
             return { PtL: channel.PtL, PtS: channel.PtS };
@@ -131,8 +131,7 @@ describe('45.NestFutures3V3-algorithm2.js', function() {
                 channel.PtL = pt.PtL;
                 channel.PtS = pt.PtS;
                 if (await bn() > channel.bn && channel.bn > 0) {
-                    channel.miu = 0.00000001027
-                                + 0.0578 
+                    channel.miu = 0.0895
                                 * (oraclePrice - channel.lastPrice) 
                                 / channel.lastPrice 
                                 / (await bn() - channel.bn) 

@@ -37,8 +37,8 @@ exports.deploy = async function() {
     const nestTrustFuturesV3 = await NestTrustFuturesV3.attach('0xE8b787EdE23997Ff5C64067e2220FBbd13b085A1');
     console.log('nestTrustFuturesV3: ' + nestTrustFuturesV3.address);
 
-    // const newNestTrustFuturesV3 = await NestTrustFuturesV3.deploy();
-    // console.log('newNestTrustFuturesV3: ' + newNestTrustFuturesV3.address);
+    const newNestTrustFuturesV3 = await NestTrustFuturesV3.deploy();
+    console.log('newNestTrustFuturesV3: ' + newNestTrustFuturesV3.address);
 
     // await nestGovernance.registerAddress('nest.app.vault', nestVault.address);
     // await nestGovernance.registerAddress('nest.app.futures', nestTrustFutures.address);
