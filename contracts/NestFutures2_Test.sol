@@ -135,7 +135,7 @@ contract NestFutures2_Test is NestFutures2 {
             NEST_TOKEN_ADDRESS, 
             msg.sender, 
             NEST_VAULT_ADDRESS, 
-            amount * CommonLib.NEST_UNIT * (1 ether + CommonLib.FEE_RATE * uint(lever)) / 1 ether
+            amount * CommonLib.NEST_UNIT * (1 ether + FEE_RATE * uint(lever)) / 1 ether
         );
     }
 
@@ -177,7 +177,7 @@ contract NestFutures2_Test is NestFutures2 {
             NEST_TOKEN_ADDRESS, 
             msg.sender, 
             NEST_VAULT_ADDRESS, 
-            amount * CommonLib.NEST_UNIT * (1 ether + CommonLib.FEE_RATE * uint(order.lever)) / 1 ether
+            amount * CommonLib.NEST_UNIT * (1 ether + FEE_RATE * uint(order.lever)) / 1 ether
         );
 
         // 5. Emit event

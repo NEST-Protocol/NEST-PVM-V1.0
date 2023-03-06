@@ -13,6 +13,9 @@ import "./custom/NestFrequentlyUsed.sol";
 /// @dev Futures
 abstract contract NestFuturesWithPrice is NestFrequentlyUsed, INestFuturesWithPrice {
 
+    // Service fee for buy, sell, add and liquidate
+    uint constant FEE_RATE = 0.001 ether;
+
     /// @dev Future information
     struct FutureInfo {
         // Target token address
@@ -266,7 +269,7 @@ abstract contract NestFuturesWithPrice is NestFrequentlyUsed, INestFuturesWithPr
             lever
         );
 
-        uint fee = amount * lever * oraclePrice / basePrice * CommonLib.FEE_RATE / 1 ether;
+        uint fee = amount * lever * oraclePrice / basePrice * FEE_RATE / 1 ether;
         // If value grater than fee, deduct and transfer NEST to owner
         if (value > fee) {
             INestVault(NEST_VAULT_ADDRESS).transferTo(msg.sender, value - fee);

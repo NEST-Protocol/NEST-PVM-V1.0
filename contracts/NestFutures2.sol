@@ -204,7 +204,7 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
             lever
         );
         
-        uint fee = balance * CommonLib.NEST_UNIT * lever * oraclePrice / basePrice * CommonLib.FEE_RATE / 1 ether;
+        uint fee = balance * CommonLib.NEST_UNIT * lever * oraclePrice / basePrice * FEE_RATE / 1 ether;
         // If value grater than fee, deduct and transfer NEST to owner
         if (value > fee) {
             INestVault(NEST_VAULT_ADDRESS).transferTo(msg.sender, value - fee);
@@ -263,7 +263,7 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
                 // the regular value is: Max(M0 * L * St / S0 * c, a) | expired
                 // the regular value is: Max(M0 * L * St / S0 * c + a, M0 * L * 0.5%)
                 if (value < balance * lever / 200 || 
-                    value < balance * lever * oraclePrice / basePrice * CommonLib.FEE_RATE / 1 ether 
+                    value < balance * lever * oraclePrice / basePrice * FEE_RATE / 1 ether 
                             + CommonLib.MIN_FUTURE_VALUE
                 ) {
 
@@ -355,7 +355,7 @@ contract NestFutures2 is NestFuturesWithPrice, INestFutures2 {
                          * lever 
                          * oraclePrice 
                          / basePrice 
-                         * CommonLib.FEE_RATE 
+                         * FEE_RATE 
                          / 1 ether;
 
                 // 5. Transfer NEST to owner

@@ -11,7 +11,10 @@ import "./custom/NestFrequentlyUsed.sol";
 
 /// @dev Futures proxy
 contract NestFuturesProxy is NestFrequentlyUsed {
-    
+
+    // Service fee for buy, sell, add and liquidate
+    uint constant FEE_RATE = 0.001 ether;
+
     // Status of limit order: executed
     uint constant S_EXECUTED = 0;
     // Status of limit order: normal
@@ -195,7 +198,7 @@ contract NestFuturesProxy is NestFrequentlyUsed {
         require(lever > 0 && lever < 21, "NF:lever not allowed");
         
         // 2. Service fee, 4 decimals
-        uint fee = amount * CommonLib.FEE_RATE * uint(lever) / 1 ether;
+        uint fee = amount * FEE_RATE * uint(lever) / 1 ether;
 
         // 3. Create limit order
         _limitOrders.push(LimitOrder(

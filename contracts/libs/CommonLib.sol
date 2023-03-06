@@ -55,8 +55,8 @@ library CommonLib {
     // Min amount of buy futures, amount >= 50 nest
     uint constant FUTURES_NEST_LB = 499999;
 
-    // Service fee for buy, sell, add and liquidate
-    uint constant FEE_RATE = 0.001 ether;
+    // // Service fee for buy, sell, add and liquidate
+    // uint constant FEE_RATE = 0.001 ether;
     
     // Fee for execute limit order or stop order, 15 nest
     uint constant EXECUTE_FEE = 150000;
