@@ -480,16 +480,12 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
             // And even so, Pt is truncated, the consequences are not serious, so we don't check truncation
             unchecked {
                 int S0 = int(CommonLib.decodeFloat(channel.lastPrice));
-                int dt = int(block.number - bn) * 3;
-                int miu = int(channel.miu);
-                // if (miu > 0) {
-                //     channel.PtL = int56(int(channel.PtL) + (miu + 0.00000001027e12) * dt);
-                // } else {
-                //     channel.PtS = int56(int(channel.PtS) + miu * dt);
-                // }
+                int dt = int(block.number - bn) * 3;    // BLOCK_TIME / 1000
+                int miu = 0.0895e12 * (int(S1) - S0) / S0 / dt;
                 channel.PtL = int56(int(channel.PtL) + (miu + 0.00000001027e12) * dt);
                 channel.PtS = int56(int(channel.PtS) + miu * dt);
-                channel.miu =int56(0.0895e12 * (int(S1) - S0) / S0 / dt);
+                // miu is no use in this version, but we still store it
+                channel.miu = int56(miu);
             }
         }
 

@@ -109,12 +109,18 @@ describe('45.NestFutures3V3-algorithm2.js', function() {
                 //return channel.Pt + miu * (await bn() - channel.bn) * BLOCK_TIME;
                 //let miuL = channel.miu > 0 ? channel.miu : 0;
                 //let miuS = channel.miu < 0 ? channel.miu : 0;
+                let miu = 0.0895
+                        * (oraclePrice - channel.lastPrice) 
+                        / channel.lastPrice 
+                        / (await bn() - channel.bn) 
+                        / BLOCK_TIME;
                 return {
-                    PtL: channel.PtL + (channel.miu + 0.00000001027) * (await bn() - channel.bn) * BLOCK_TIME,
-                    PtS: channel.PtS + channel.miu * (await bn() - channel.bn) * BLOCK_TIME
+                    PtL: channel.PtL + (miu + 0.00000001027) * (await bn() - channel.bn) * BLOCK_TIME,
+                    PtS: channel.PtS + miu * (await bn() - channel.bn) * BLOCK_TIME,
+                    miu: miu
                 };
             }
-            return { PtL: channel.PtL, PtS: channel.PtS };
+            return { PtL: channel.PtL, PtS: channel.PtS, miu: channel.miu };
         };
 
         // Decode the floating-point representation of fraction * 16 ^ exponent to uint
@@ -130,13 +136,14 @@ describe('45.NestFutures3V3-algorithm2.js', function() {
                 let pt = await currentPt(channel, oraclePrice);
                 channel.PtL = pt.PtL;
                 channel.PtS = pt.PtS;
-                if (await bn() > channel.bn && channel.bn > 0) {
-                    channel.miu = 0.0895
-                                * (oraclePrice - channel.lastPrice) 
-                                / channel.lastPrice 
-                                / (await bn() - channel.bn) 
-                                / BLOCK_TIME;
-                }
+                channel.miu = pt.miu;
+                // if (await bn() > channel.bn && channel.bn > 0) {
+                //     channel.miu = 0.0895
+                //                 * (oraclePrice - channel.lastPrice) 
+                //                 / channel.lastPrice 
+                //                 / (await bn() - channel.bn) 
+                //                 / BLOCK_TIME;
+                // }
                 channel.lastPrice = oraclePrice;
                 channel.bn = await bn();
             }
