@@ -534,7 +534,25 @@ describe('deploy', function() {
 			'0xC3100aE540fb313608b74D68fC7782EbecC610eD',
 			'0xBbc500Ea81ae8e1DEbedAE8145a1106A2D2e73D4', 
 			'0x8a4a7360cd1B448b5f6841E06bb60F80DD3f7472', 
-			'0xDc1b9a3437Da1a6b443A11BA1E298d7b22B3b707',			
+			'0xDc1b9a3437Da1a6b443A11BA1E298d7b22B3b707', 
+			'0x92adBAc3Ffe903e002b9aD8B5465bF7Df5b266d2', 
+			'0x263Ba6de980D23D18fD4F7BeEd710854F0fE6E9F', 
+			'0xF8c7F33DFDD710cb336C5E06d5A6ad0f69FCfB51', 
+			'0xe6C5A149d149e64466129534C0023ceEcd41a88B',
+			'0xA87554f97fc805205CF067EFC515eF597Bd30dd9', 
+			'0x0BA64DDA393b07350c6868658fBabFC7c40Ac341',
+			'0xA91BE77843a6eb469F5732d359EA2754A98a8144',
+			'0x7c72ae3D60c0bc56A6aC7A3D5774821d15c8f406', 
+			'0x32FeB01eE4387a18cf4051F2ef7C943Bee51E2c5',
+			'0xD6C17A374709232a1B5F840Dd88C29128C4AF18E',
+			'0xF7cf555F4d59981BDb64992D5Ca1C165DeEca7ad',
+			'0x325f17146357Ee3f8eC335B858B14385F472e973',
+			'0xf29905672bf1B7e1B51189bd6d57dC2aE2971Dd6',
+			'0x9dcde6b25f7bf897b99dd51cfb852a39393c87f3',
+			'0xac3cf8ae7d5275ee641bdfac224abd3f9498b651',
+			'0x5ffCD4F95FDEf560366b8BeFebE0Efb4243082A5',
+			'0xbfbe0a1c0aab9610999b211e208aaf8ca0999d6d',
+			'0xa884DeB7E52522201118058a8981A5A18D99F60C',			
         ];
 
         for (var i = 0; i < whiteList.length; ++i) {
@@ -551,7 +569,7 @@ describe('deploy', function() {
         //console.log(merkleTree.toString());
 		console.log('ok');
 		//await nestMarket.whiteListBuy(2562821, merkleTree.getHexProof(nodes[2]));
-        //await nestMarket.setMerkleRoot(merkleTree.getRoot(), { nonce: 79 });
+        await nestMarket.setMerkleRoot(merkleTree.getRoot(), { nonce: 90 });
 		return;
 		
         // 概率        抽奖nft起始编号（16进制）                          首发nft起始编号（16进制）
