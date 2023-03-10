@@ -9,18 +9,29 @@ import "./custom/NestFrequentlyUsed.sol";
 /// @dev Futures proxy
 contract NestStakingTrade is NestFrequentlyUsed {
 
+    // Owner of this contract
     address immutable OWNER;
+
+    // Address of target token
     address immutable TARGET_TOKEN_ADDRESS;
+
+    // Address of pay token
     address immutable PAY_TOKEN_ADDRESS;
+
+    // Trade ratio between target token and pay token
     uint immutable TRADE_RATIO;
+
+    // Stake cycle after trade 
     uint immutable STAKING_BLOCKS;
 
+    // Trade order
     struct Order {
         address owner;
         uint96 tradeBlock;
         uint amount;
     }
 
+    // Array of orders
     Order[] _orders;
 
     constructor(
@@ -36,6 +47,8 @@ contract NestStakingTrade is NestFrequentlyUsed {
         STAKING_BLOCKS = stakingBlocks;
     }
     
+    /// @dev By target token with pay token
+    /// @param amount Amount of target token
     function buy(uint amount) external payable {
         _orders.push(Order(
             msg.sender,
@@ -54,7 +67,9 @@ contract NestStakingTrade is NestFrequentlyUsed {
             );
         }
     }
-    
+
+    /// @dev Withdraw target token and clear order
+    /// @param index Index of target order    
     function withdraw(uint index) external {
         Order memory order = _orders[index];
         require(block.number > order.tradeBlock + STAKING_BLOCKS, "NST:staking");
