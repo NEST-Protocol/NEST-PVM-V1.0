@@ -23,10 +23,12 @@ exports.deploy = async function() {
     const NestTrustFuturesV3 = await ethers.getContractFactory('NestTrustFuturesV3');
     const NestMarket = await ethers.getContractFactory('NestMarket');
     const NestFuturesProxy = await ethers.getContractFactory('NestFuturesProxy');
+    const PancakeFactory = await ethers.getContractFactory('PancakeFactory');
+    const PancakeRouter = await ethers.getContractFactory('PancakeRouter');
 
     console.log('** Deploy: deploy.proxy.js **');
     
-    const usdt = await TestERC20.deploy('USDT', 'USDT', 6);
+    const usdt = await TestERC20.deploy('USDT', 'USDT', 18);
     //const usdt = await TestERC20.attach('0x0000000000000000000000000000000000000000');
     console.log('usdt: ' + usdt.address);
 
@@ -98,6 +100,17 @@ exports.deploy = async function() {
     //const nestFuturesProxy = await NestFuturesProxy.attach('0x0000000000000000000000000000000000000000');
     console.log('nestFuturesProxy: ' + nestFuturesProxy.address);
 
+    // -------- TEST --------
+    const pancakeFactory = await PancakeFactory.deploy('0x0000000000000000000000000000000000000000');
+    console.log('pancakeFactory: ' + pancakeFactory.address);
+
+    const pancakeRouter = await PancakeRouter.deploy(pancakeFactory.address, '0x0000000000000000000000000000000000000000');
+    console.log('pancakeRouter: ' + pancakeRouter.address);
+
+    await pancakeFactory.createPair(usdt.address, nest.address);
+
+    // -------- TEST --------
+
     console.log('2. nestGovernance.setBuiltinAddress()');
     await nestGovernance.setBuiltinAddress(
         nest.address,
@@ -120,6 +133,9 @@ exports.deploy = async function() {
     await nestGovernance.registerAddress('nest.app.cyberink', nestCyberInk.address);
     await nestGovernance.registerAddress('nest.app.directPoster', (await ethers.getSigners())[0].address)
     await nestGovernance.registerAddress('nest.app.maintains', (await ethers.getSigners())[0].address);
+    await nestGovernance.registerAddress('pancake.app.router', pancakeRouter.address);
+    await nestGovernance.registerAddress('pancake.pair.nestusdt', await pancakeFactory.getPair(usdt.address, nest.address));
+    await nestGovernance.registerAddress('common.token.usdt', usdt.address);
 
     console.log('4. nestVault.update()');
     await nestVault.update(nestGovernance.address);
@@ -254,6 +270,8 @@ exports.deploy = async function() {
         nestMarket: nestMarket,
         nestVault: nestVault,
         nestFuturesProxy: nestFuturesProxy,
+        pancakeFactory: pancakeFactory,
+        pancakeRouter: pancakeRouter,
 
         BLOCK_TIME: BLOCK_TIME,
         USDT_DECIMALS: 18,

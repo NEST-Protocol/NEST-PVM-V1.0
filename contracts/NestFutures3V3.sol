@@ -221,43 +221,9 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
         bool orientation, 
         uint amount
     ) public payable override {
-        // 1. Check arguments
-        require(amount > CommonLib.FUTURES_NEST_LB && amount < 0x10000000000, "NF:amount invalid");
-        require(lever > CommonLib.LEVER_LB && lever < CommonLib.LEVER_RB, "NF:lever not allowed");
+        _buy(channelIndex, lever, orientation, amount);
 
-        // 2. Load target channel
-        // channelIndex is increase from 0, if channelIndex out of range, means target channel not exist
-        uint oraclePrice = _lastPrice(channelIndex);
-        TradeChannel memory channel = _updateChannel(channelIndex, oraclePrice);
-
-        // 3. Update parameter for channel
-        _channels[channelIndex] = channel;
-
-        // 4. Emit event
-        emit Buy(_orders.length, amount, msg.sender);
-
-        // 5. Create order
-        _orders.push(Order(
-            // owner
-            uint32(_addressIndex(msg.sender)),
-            // basePrice
-            // Query oraclePrice
-            CommonLib.encodeFloat56(oraclePrice),
-            // balance
-            uint40(amount),
-            // append
-            uint40(0),
-            // channelIndex
-            uint16(channelIndex),
-            // lever
-            uint8(lever),
-            // orientation
-            orientation,
-            // Pt
-            orientation ? channel.PtL : channel.PtS
-        ));
-
-        // 6. Transfer NEST from user
+        // Transfer NEST from user
         TransferHelper.safeTransferFrom(
             NEST_TOKEN_ADDRESS, 
             msg.sender, 
@@ -491,6 +457,55 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
 
         channel.lastPrice = CommonLib.encodeFloat56(S1);
         channel.bn = uint32(block.number);
+    }
+
+    /// @dev Buy futures
+    /// @param channelIndex Index of target channel
+    /// @param lever Lever of order
+    /// @param orientation true: long, false: short
+    /// @param amount Amount of paid NEST, 4 decimals
+    function _buy(
+        uint channelIndex, 
+        uint lever, 
+        bool orientation, 
+        uint amount
+    ) internal returns (uint orderIndex) {
+        // 1. Check arguments
+        require(amount > CommonLib.FUTURES_NEST_LB && amount < 0x10000000000, "NF:amount invalid");
+        require(lever > CommonLib.LEVER_LB && lever < CommonLib.LEVER_RB, "NF:lever not allowed");
+
+        // 2. Load target channel
+        // channelIndex is increase from 0, if channelIndex out of range, means target channel not exist
+        uint oraclePrice = _lastPrice(channelIndex);
+        TradeChannel memory channel = _updateChannel(channelIndex, oraclePrice);
+
+        // 3. Update parameter for channel
+        _channels[channelIndex] = channel;
+
+        // 4. Emit event
+        orderIndex = _orders.length;
+        emit Buy(orderIndex, amount, msg.sender);
+
+        // 5. Create order
+        _orders.push(Order(
+            // owner
+            uint32(_addressIndex(msg.sender)),
+            // basePrice
+            // Query oraclePrice
+            CommonLib.encodeFloat56(oraclePrice),
+            // balance
+            uint40(amount),
+            // append
+            uint40(0),
+            // channelIndex
+            uint16(channelIndex),
+            // lever
+            uint8(lever),
+            // orientation
+            orientation,
+            // Pt
+            orientation ? channel.PtL : channel.PtS
+        ));
     }
 
     // Convert Order to OrderView

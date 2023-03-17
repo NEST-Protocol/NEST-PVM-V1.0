@@ -22,13 +22,39 @@ task("accounts", "Prints the list of accounts", async () => {
  */
 module.exports = {
   solidity: {
-    version: '0.8.19',
-    settings: {
-      optimizer: {
-        enabled: true,
-        runs: 8888
+    compilers: [
+      { 
+        version: '0.6.6',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 800,
+          },
+          metadata: {
+            // do not include the metadata hash, since this is machine dependent
+            // and we want all generated code to be deterministic
+            // https://docs.soliditylang.org/en/v0.7.6/metadata.html
+            bytecodeHash: 'none',
+          },
+        }
+      }, { 
+        version: '0.5.16',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 800,
+          }
+        }
+      }, {
+        version: '0.8.19',
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200
+          }
+        }
       }
-    }
+    ]
   },
   networks: {
     mainnet: {
