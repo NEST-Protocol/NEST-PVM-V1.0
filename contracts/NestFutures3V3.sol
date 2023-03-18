@@ -447,7 +447,7 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
             unchecked {
                 int S0 = int(CommonLib.decodeFloat(channel.lastPrice));
                 int dt = int(block.number - bn) * 3;    // BLOCK_TIME / 1000
-                int miu = 0.0895e12 * (int(S1) - S0) / S0 / dt;
+                int miu = 0.05e12 * (int(S1) - S0) / S0 / dt;
                 channel.PtL = int56(int(channel.PtL) + (miu + 0.00000001027e12) * dt);
                 channel.PtS = int56(int(channel.PtS) + miu * dt);
                 // miu is no use in this version, but we still store it

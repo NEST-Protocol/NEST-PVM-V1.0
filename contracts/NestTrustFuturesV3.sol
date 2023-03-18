@@ -8,7 +8,6 @@ import "./libs/PancakeLibrary.sol";
 
 import "./interfaces/INestTrustFutures.sol";
 import "./interfaces/IPancakePair.sol";
-import "./interfaces/IPancakeFactory.sol";
 
 import "./NestFutures3V3.sol";
 
@@ -44,7 +43,9 @@ contract NestTrustFuturesV3 is NestFutures3V3, INestTrustFutures {
     TrustOrder[] _trustOrders;
 
     // TODO:
-    //address constant MAINTAINS_ADDRESS = 0x029972C516c4F248c5B066DA07DbAC955bbb5E7F;
+    // address constant MAINTAINS_ADDRESS = 0x029972C516c4F248c5B066DA07DbAC955bbb5E7F;
+    // address constant USDT_TOKEN_ADDRESS = 0x55d398326f99059fF775485246999027B3197955;
+    // address constant NEST_USDT_PAIR_ADDRESS = 0x04fF0eA8a05F1c75557981e9303568F043B88b4C;
     address MAINTAINS_ADDRESS;
     address NEST_USDT_PAIR_ADDRESS;
     address USDT_TOKEN_ADDRESS;
@@ -420,50 +421,6 @@ contract NestTrustFuturesV3 is NestFutures3V3, INestTrustFutures {
         TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, MAINTAINS_ADDRESS, value);
     }
 
-    // function buyWithUsdt(
-    //     uint usdtAmount,
-    //     uint channelIndex,
-    //     uint lever,
-    //     bool orientation,
-    //     uint minAmount,
-    //     uint stopProfitPrice,
-    //     uint stopLossPrice
-    // ) external {
-    //     address[] memory path = new address[](2);
-    //     path[0] = USDT_TOKEN_ADDRESS;
-    //     path[1] = NEST_TOKEN_ADDRESS;
-
-    //     TransferHelper.safeTransferFrom(USDT_TOKEN_ADDRESS, msg.sender, address(this), usdtAmount);
-    //     SimpleERC20(USDT_TOKEN_ADDRESS).approve(PANCAKE_ROUTER_ADDRESS, usdtAmount);
-    //     uint[] memory amounts = IPancakeRouter02(PANCAKE_ROUTER_ADDRESS).swapExactTokensForTokens(
-    //         usdtAmount,
-    //         minAmount,
-    //         path,
-    //         address(this),
-    //         block.timestamp
-    //     );
-
-    //     uint amount = amounts[amounts.length - 1];
-    //     require(amount > minAmount, 'NF:INSUFFICIENT_OUTPUT_AMOUNT');
-    //     uint orderIndex = _buy(
-    //         channelIndex, 
-    //         lever, 
-    //         orientation, 
-    //         amount * 1 ether / (1 ether + FEE_RATE * lever) / CommonLib.NEST_UNIT
-    //     );
-    //     if (stopProfitPrice > 0 || stopLossPrice > 0) {
-    //         _trustOrders.push(TrustOrder(
-    //             uint32(orderIndex),
-    //             uint40(0),
-    //             uint40(0),
-    //             CommonLib.encodeFloat56(stopProfitPrice),
-    //             CommonLib.encodeFloat56(stopLossPrice),
-    //             uint8(S_EXECUTED)
-    //         ));
-    //     }
-    //     TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, NEST_VAULT_ADDRESS, amount);
-    // }
-
     /// @dev Buy futures use USDT
     /// @param usdtAmount Amount of paid USDT, 18 decimals
     /// @param minNestAmount Minimal amount of  NEST, 18 decimals
@@ -540,13 +497,17 @@ contract NestTrustFuturesV3 is NestFutures3V3, INestTrustFutures {
     }
 
     // Swap USDT to NEST
-    function _swapUsdtForNest(uint usdtAmount, uint minNestAmount, address to) internal returns (uint nestAmount) {
+    function _swapUsdtForNest(uint usdtAmount, uint minNestAmount, address to) internal returns (uint amountOut) {
         // 1. Calculate out nestAmount
+        // Confirm token0 address
         (address token0,) = PancakeLibrary.sortTokens(USDT_TOKEN_ADDRESS, NEST_TOKEN_ADDRESS);
-        (uint reserveIn, uint reserveOut,) = IPancakePair(NEST_USDT_PAIR_ADDRESS).getReserves();
-        (reserveIn, reserveOut) = USDT_TOKEN_ADDRESS == token0 ? (reserveIn, reserveOut) : (reserveOut, reserveIn);
-        nestAmount = PancakeLibrary.getAmountOut(usdtAmount, reserveIn, reserveOut);
-        require(nestAmount > minNestAmount, 'NF:INSUFFICIENT_OUTPUT_AMOUNT');
+        // Get reserves of token0 and token1
+        (uint  reserve0, uint  reserve1,) = IPancakePair(NEST_USDT_PAIR_ADDRESS).getReserves();
+        // Determine reverseIn and reserveOut based on the token0 address
+        (uint reserveIn, uint reserveOut) = USDT_TOKEN_ADDRESS == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
+        // Calculate out amount
+        amountOut = PancakeLibrary.getAmountOut(usdtAmount, reserveIn, reserveOut);
+        require(amountOut > minNestAmount, 'NF:INSUFFICIENT_OUTPUT_AMOUNT');
 
         // 2. Swap with NEST-USDT pair at pancake
         TransferHelper.safeTransferFrom(
@@ -555,7 +516,25 @@ contract NestTrustFuturesV3 is NestFutures3V3, INestTrustFutures {
             NEST_USDT_PAIR_ADDRESS, 
             usdtAmount
         );
-        IPancakePair(NEST_USDT_PAIR_ADDRESS).swap(0, nestAmount, to, new bytes(0)); 
+        (uint amount0Out, uint amount1Out) = USDT_TOKEN_ADDRESS == token0 ? (uint(0), amountOut) : (amountOut, uint(0));
+        IPancakePair(NEST_USDT_PAIR_ADDRESS).swap(amount0Out, amount1Out, to, new bytes(0)); 
+
+        // address[] memory path = new address[](2);
+        // path[0] = USDT_TOKEN_ADDRESS;
+        // path[1] = NEST_TOKEN_ADDRESS;
+
+        // TransferHelper.safeTransferFrom(USDT_TOKEN_ADDRESS, msg.sender, address(this), usdtAmount);
+        // SimpleERC20(USDT_TOKEN_ADDRESS).approve(PANCAKE_ROUTER_ADDRESS, usdtAmount);
+        // uint[] memory amounts = IPancakeRouter02(PANCAKE_ROUTER_ADDRESS).swapExactTokensForTokens(
+        //     usdtAmount,
+        //     minNestAmount,
+        //     path,
+        //     to,
+        //     block.timestamp
+        // );
+
+        // nestAmount = amounts[amounts.length - 1];
+        // require(nestAmount > minNestAmount, 'NF:INSUFFICIENT_OUTPUT_AMOUNT');
     }
 
 

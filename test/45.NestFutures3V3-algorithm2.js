@@ -109,7 +109,7 @@ describe('45.NestFutures3V3-algorithm2.js', function() {
                 //return channel.Pt + miu * (await bn() - channel.bn) * BLOCK_TIME;
                 //let miuL = channel.miu > 0 ? channel.miu : 0;
                 //let miuS = channel.miu < 0 ? channel.miu : 0;
-                let miu = 0.0895
+                let miu = 0.05
                         * (oraclePrice - channel.lastPrice) 
                         / channel.lastPrice 
                         / (await bn() - channel.bn) 
