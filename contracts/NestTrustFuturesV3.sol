@@ -170,7 +170,7 @@ contract NestTrustFuturesV3 is NestFutures3V3, INestTrustFutures {
         // 1. Create TrustOrder
         uint fee = _newTrustOrder(channelIndex, lever, orientation, amount, limitPrice, stopProfitPrice, stopLossPrice);
 
-        // 5. Transfer NEST
+        // 2. Transfer NEST
         TransferHelper.safeTransferFrom(
             NEST_TOKEN_ADDRESS,
             msg.sender, 
@@ -265,6 +265,7 @@ contract NestTrustFuturesV3 is NestFutures3V3, INestTrustFutures {
             CommonLib.encodeFloat56(stopLossPrice),
             uint8(S_EXECUTED)
         ));
+        
         // Transfer NEST from user
         TransferHelper.safeTransferFrom(
             NEST_TOKEN_ADDRESS, 
@@ -481,15 +482,18 @@ contract NestTrustFuturesV3 is NestFutures3V3, INestTrustFutures {
         uint stopProfitPrice,
         uint stopLossPrice
     ) external {
-        // 1. Swap with NEST-USDT pair at pancake
-        uint nestAmount = _swapUsdtForNest(usdtAmount, minNestAmount, address(this));
-
-        // 2. Create TrustOrder
+        // Create TrustOrder
         _newTrustOrder(
             channelIndex,
             lever,
             orientation,
-            (nestAmount / CommonLib.NEST_UNIT - CommonLib.EXECUTE_FEE) * 1 ether / (1 ether + FEE_RATE * uint(lever)),
+            
+            // Swap with NEST-USDT pair at pancake
+            (_swapUsdtForNest(usdtAmount, minNestAmount, address(this)) - CommonLib.EXECUTE_FEE_NEST) 
+                * 1 ether 
+                / (1 ether + FEE_RATE * uint(lever)) 
+                / CommonLib.NEST_UNIT,
+            
             limitPrice,
             stopProfitPrice,
             stopLossPrice
@@ -536,7 +540,6 @@ contract NestTrustFuturesV3 is NestFutures3V3, INestTrustFutures {
         // nestAmount = amounts[amounts.length - 1];
         // require(nestAmount > minNestAmount, 'NF:INSUFFICIENT_OUTPUT_AMOUNT');
     }
-
 
     // Create TrustOrder
     function _newTrustOrder(
