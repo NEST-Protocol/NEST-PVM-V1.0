@@ -418,6 +418,15 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
         oraclePrice = price;
     }
 
+    // Impact cost
+    function _impactCost(uint vol) internal pure returns (uint C) {
+        if (vol < 100000 ether) {
+            C = 0;
+        } else {
+            C = 5.556e7 * vol / 1 ether +  0.0004444e18;
+        }
+    }
+
     /// @dev Gets the index number of the specified address. If it does not exist, register
     /// @param addr Destination address
     /// @return The index number of the specified address
@@ -445,13 +454,13 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
             // 36028.797018963967, so Pt is impossible out of [-36028.797018963968, 36028.797018963967].
             // And even so, Pt is truncated, the consequences are not serious, so we don't check truncation
             unchecked {
-                int S0 = int(CommonLib.decodeFloat(channel.lastPrice));
+                //int S0 = int(CommonLib.decodeFloat(channel.lastPrice));
                 int dt = int(block.number - bn) * 3;    // BLOCK_TIME / 1000
-                int miu = 0.05e12 * (int(S1) - S0) / S0 / dt;
-                channel.PtL = int56(int(channel.PtL) + (miu + 0.00000001027e12) * dt);
-                channel.PtS = int56(int(channel.PtS) + miu * dt);
+                //int miu = 0.05e12 * (int(S1) - S0) / S0 / dt;
+                channel.PtL = int56(int(channel.PtL) + 3.472e3 * dt);
+                channel.PtS = int56(int(channel.PtS) - 3.472e3 * dt);
                 // miu is no use in this version, but we still store it
-                channel.miu = int56(miu);
+                channel.miu = int56(0);
             }
         }
 
@@ -492,7 +501,7 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
             uint32(_addressIndex(msg.sender)),
             // basePrice
             // Query oraclePrice
-            CommonLib.encodeFloat56(oraclePrice),
+            CommonLib.encodeFloat56(oraclePrice * (1 ether + _impactCost(amount * lever)) / 1 ether),
             // balance
             uint40(amount),
             // append
