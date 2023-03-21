@@ -73,6 +73,14 @@ describe('45.NestFutures3V3-algorithm2.js', function() {
             return ctx.prices[channelIndex];
         };
 
+        const impactCost = function(vol) {
+            if (vol >= 100000) {
+                return 5.556e-11 * vol + 0.0004444;
+            } else {
+                return 0;
+            }
+        };
+
         // Compare Order from local context to contract
         const compareOrder = async function(index) {
             // Local Order
@@ -109,15 +117,15 @@ describe('45.NestFutures3V3-algorithm2.js', function() {
                 //return channel.Pt + miu * (await bn() - channel.bn) * BLOCK_TIME;
                 //let miuL = channel.miu > 0 ? channel.miu : 0;
                 //let miuS = channel.miu < 0 ? channel.miu : 0;
-                let miu = 0.05
-                        * (oraclePrice - channel.lastPrice) 
-                        / channel.lastPrice 
-                        / (await bn() - channel.bn) 
-                        / BLOCK_TIME;
+                // let miu = 0.05
+                //         * (oraclePrice - channel.lastPrice) 
+                //         / channel.lastPrice 
+                //         / (await bn() - channel.bn) 
+                //         / BLOCK_TIME;
                 return {
-                    PtL: channel.PtL + (miu + 0.00000001027) * (await bn() - channel.bn) * BLOCK_TIME,
-                    PtS: channel.PtS + miu * (await bn() - channel.bn) * BLOCK_TIME,
-                    miu: miu
+                    PtL: channel.PtL + 3.472e-9 * (await bn() - channel.bn) * BLOCK_TIME,
+                    PtS: channel.PtS - 3.472e-9 * (await bn() - channel.bn) * BLOCK_TIME,
+                    miu: 0
                 };
             }
             return { PtL: channel.PtL, PtS: channel.PtS, miu: channel.miu };
@@ -178,6 +186,12 @@ describe('45.NestFutures3V3-algorithm2.js', function() {
             } else {
                 if (miuT > 0) miuT = 0;
             }
+            if (orientation) {
+                oraclePrice = oraclePrice / (1 + impactCost(balance * lever * oraclePrice / basePrice));
+            } else {
+                oraclePrice = oraclePrice * (1 + impactCost(balance * lever * oraclePrice / basePrice));
+            }
+
             let Rt = lever * (oraclePrice / expMiuT(miuT) - basePrice) / basePrice;
             let b = 0;
             if (orientation) {
@@ -218,7 +232,10 @@ describe('45.NestFutures3V3-algorithm2.js', function() {
                 channelIndex: channelIndex,
                 lever: lever,
                 orientation: orientation,
-                basePrice: lastPrice(channelIndex),
+                basePrice: orientation
+                    ? lastPrice(channelIndex) * (1 + impactCost(amount * lever))
+                    : lastPrice(channelIndex) / (1 + impactCost(amount * lever))
+                ,
                 Pt: orientation ? channel.PtL : channel.PtS
             });
 
@@ -466,13 +483,19 @@ describe('45.NestFutures3V3-algorithm2.js', function() {
 
                 let order = ctx.orders[trustOrder.orderIndex];
                 order.balance = trustOrder.balance;
-                order.basePrice = ctx.prices[order.channelIndex];
-                const pt = (await updateChannel(order.channelIndex, order.basePrice, true));
+                order.basePrice = order.orientation
+                    ? ctx.prices[order.channelIndex] * (1 + impactCost(order.balance * order.lever))
+                    : ctx.prices[order.channelIndex] / (1 + impactCost(order.balance * order.lever))
+                ;
+                const pt = await updateChannel(order.channelIndex, ctx.prices[order.channelIndex], true);
                 order.Pt = order.orientation ? pt.PtL : pt.PtS;
 
                 totalNest += (trustOrder.balance + trustOrder.fee);
 
-                trustOrder.limitPrice = ctx.prices[order.channelIndex];
+                trustOrder.limitPrice = order.orientation
+                    ? ctx.prices[order.channelIndex] * (1 + impactCost(order.balance * order.lever))
+                    : ctx.prices[order.channelIndex] / (1 + impactCost(order.balance * order.lever))
+                ;
                 trustOrder.balance = 0;
                 trustOrder.fee = 0;
                 trustOrder.status = 0;
@@ -550,7 +573,10 @@ describe('45.NestFutures3V3-algorithm2.js', function() {
                 channelIndex: channelIndex,
                 lever: lever,
                 orientation: orientation,
-                basePrice: lastPrice(channelIndex),
+                basePrice: orientation
+                    ? lastPrice(channelIndex) * (1 + impactCost(amount * lever))
+                    : lastPrice(channelIndex) / (1 + impactCost(amount * lever))
+                ,
                 Pt: orientation ? channel.PtL : channel.PtS
             });
 
@@ -561,7 +587,10 @@ describe('45.NestFutures3V3-algorithm2.js', function() {
                 channelIndex: channelIndex,
                 lever: lever,
                 orientation: orientation,
-                limitPrice: lastPrice(channelIndex),
+                limitPrice: orientation
+                    ? lastPrice(channelIndex) * (1 + impactCost(amount * lever))
+                    : lastPrice(channelIndex) / (1 + impactCost(amount * lever))
+                ,
                 stopProfitPrice: stopProfitPrice,
                 stopLossPrice: stopLossPrice,
                 balance: 0,

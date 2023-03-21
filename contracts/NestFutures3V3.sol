@@ -384,8 +384,13 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
         uint base = value * lever * oraclePrice / CommonLib.decodeFloat(uint(order.basePrice));
         uint negative;
 
+        assembly {
+            fee := div(mul(base, FEE_RATE), 1000000000000000000)
+        }
+
         // Long
         if (order.orientation) {
+            base = base * 1 ether / _impactCostRatio(base);
             negative = value * lever;
             value = value + (
                 channel.PtL > order.Pt 
@@ -395,6 +400,7 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
         } 
         // Short
         else {
+            base = base * _impactCostRatio(base) / 1 ether;
             negative = channel.PtS < order.Pt 
                      ? base * 0x10000000000000000 / _expMiuT(int(channel.PtS) - int(order.Pt)) 
                      : base;
@@ -405,8 +411,6 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
             switch gt(value, negative) 
             case true { value := sub(value, negative) }
             case false { value := 0 }
-
-            fee := div(mul(base, FEE_RATE), 1000000000000000000)
         }
     }
 
@@ -418,12 +422,12 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
         oraclePrice = price;
     }
 
-    // Impact cost
-    function _impactCost(uint vol) internal pure returns (uint C) {
+    // Impact cost, plus one, 18 decimals
+    function _impactCostRatio(uint vol) internal pure returns (uint C) {
         if (vol < 100000 ether) {
-            C = 0;
+            C = 1 ether;
         } else {
-            C = 5.556e7 * vol / 1 ether +  0.0004444e18;
+            C = 5.556e7 * vol / 1 ether +  1.0004444 ether;
         }
     }
 
@@ -501,7 +505,11 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
             uint32(_addressIndex(msg.sender)),
             // basePrice
             // Query oraclePrice
-            CommonLib.encodeFloat56(oraclePrice * (1 ether + _impactCost(amount * lever)) / 1 ether),
+            CommonLib.encodeFloat56(
+                orientation
+                ? oraclePrice * _impactCostRatio(amount * lever * CommonLib.NEST_UNIT) / 1 ether
+                : oraclePrice * 1 ether / _impactCostRatio(amount * lever * CommonLib.NEST_UNIT)
+            ),
             // balance
             uint40(amount),
             // append

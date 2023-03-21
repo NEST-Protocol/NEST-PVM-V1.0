@@ -338,7 +338,11 @@ contract NestTrustFuturesV3 is NestFutures3V3, INestTrustFutures {
             totalNest += (balance + uint(trustOrder.fee));
 
             // Update Order: basePrice, baseBlock, balance, Pt
-            order.basePrice = CommonLib.encodeFloat56(oraclePrice);
+            order.basePrice = CommonLib.encodeFloat56(
+                order.orientation
+                ? oraclePrice * _impactCostRatio(balance * uint(order.lever) * CommonLib.NEST_UNIT) / 1 ether
+                : oraclePrice * 1 ether / _impactCostRatio(balance * uint(order.lever) * CommonLib.NEST_UNIT)
+            );
             order.balance = uint40(balance);
             order.Pt = order.orientation ? channel.PtL : channel.PtS;
 
