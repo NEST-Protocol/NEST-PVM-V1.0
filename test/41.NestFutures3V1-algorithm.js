@@ -30,6 +30,7 @@ describe('41.NestFutures3V1-algorithm.js', function() {
 
         const NEST_BASE = 10000;
         const MIU_DECIMALS = 1e12;
+        const FEE_RATE = 0.001;
         const ownerNestBalance = 100000000000000000000000000n;
 
         await nest.transfer(owner.address, ownerNestBalance);
@@ -183,7 +184,7 @@ describe('41.NestFutures3V1-algorithm.js', function() {
 
             await compareOrder(index);
 
-            const totalNest = amount + amount * lever * 0.002;
+            const totalNest = amount + amount * lever * FEE_RATE;
             FEQ({ a: totalNest, b: parseFloat(previous.owner.NEST) - parseFloat(accounts.owner.NEST) }, true);
             FEQ({ a: totalNest, b: parseFloat(accounts.nestVault.NEST) - parseFloat(previous.nestVault.NEST) }, true);
 
@@ -225,7 +226,7 @@ describe('41.NestFutures3V1-algorithm.js', function() {
                 oraclePrice
             ) + order.appends;
             // Service fee
-            let fee = order.balance * order.lever * oraclePrice / order.basePrice * 0.002;
+            let fee = order.balance * order.lever * oraclePrice / order.basePrice * FEE_RATE;
             // Update order
             order.balance = 0;
             order.appends = 0;
@@ -273,7 +274,7 @@ describe('41.NestFutures3V1-algorithm.js', function() {
                     ) + order.appends;
 
                     // Compare with liquidate line
-                    if (value < order.balance * order.lever * oraclePrice / order.basePrice * 0.002 + 15 ||
+                    if (value < order.balance * order.lever * oraclePrice / order.basePrice * FEE_RATE + 15 ||
                         value < order.balance * order.lever * 0.5 / 100
                     ) {
                         // Liquidated, update channel
@@ -366,7 +367,7 @@ describe('41.NestFutures3V1-algorithm.js', function() {
                 stopProfitPrice: stopProfitPrice,
                 stopLossPrice: stopLossPrice,
                 balance: amount,
-                fee: amount * lever * 0.002,
+                fee: amount * lever * FEE_RATE,
                 status: 1
             });
             ctx.orders.push({
@@ -386,7 +387,7 @@ describe('41.NestFutures3V1-algorithm.js', function() {
             await compareTrustOrder(index);
 
             // Check balance
-            const totalNest = amount + amount * lever * 0.002 + 15;
+            const totalNest = amount + amount * lever * FEE_RATE + 15;
             FEQ({
                 a: totalNest,
                 b: parseFloat(previous.owner.NEST) - parseFloat(accounts.owner.NEST),
@@ -516,7 +517,7 @@ describe('41.NestFutures3V1-algorithm.js', function() {
             await compareOrder(index);
             await compareTrustOrder(ctx.trustOrders.length - 1);
 
-            const totalNest = amount + amount * lever * 0.002;
+            const totalNest = amount + amount * lever * FEE_RATE;
             FEQ({ a: totalNest, b: parseFloat(previous.owner.NEST) - parseFloat(accounts.owner.NEST) }, true);
             FEQ({ a: totalNest, b: parseFloat(accounts.nestVault.NEST) - parseFloat(previous.nestVault.NEST) }, true);
         };
@@ -595,7 +596,7 @@ describe('41.NestFutures3V1-algorithm.js', function() {
                     oraclePrice
                 );
 
-                let fee = order.balance * order.lever * oraclePrice / order.basePrice * 0.002;
+                let fee = order.balance * order.lever * oraclePrice / order.basePrice * FEE_RATE;
 
                 if (value > fee + 15) {
                     totalNest += (value - fee - 15);
