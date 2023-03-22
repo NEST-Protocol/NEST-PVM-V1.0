@@ -14,7 +14,7 @@ import "./custom/NestFrequentlyUsed.sol";
 contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
 
     // Service fee for buy, sell, add and liquidate
-    uint constant FEE_RATE = 0.001 ether;
+    uint constant FEE_RATE = 0.0005 ether;
 
     // Global parameter for trade channel
     struct TradeChannel {
@@ -500,6 +500,7 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
         emit Buy(orderIndex, amount, msg.sender);
 
         // 5. Create order
+        uint impactCostRatio = _impactCostRatio(amount * lever * CommonLib.NEST_UNIT);
         _orders.push(Order(
             // owner
             uint32(_addressIndex(msg.sender)),
@@ -507,8 +508,8 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
             // Query oraclePrice
             CommonLib.encodeFloat56(
                 orientation
-                ? oraclePrice * _impactCostRatio(amount * lever * CommonLib.NEST_UNIT) / 1 ether
-                : oraclePrice * 1 ether / _impactCostRatio(amount * lever * CommonLib.NEST_UNIT)
+                ? oraclePrice * impactCostRatio / 1 ether
+                : oraclePrice * 1 ether / impactCostRatio
             ),
             // balance
             uint40(amount),

@@ -3,7 +3,7 @@ const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, listBalances, snd, tableSnd, d1, Vc, Vp, UI, FEQ } = require('./utils.js');
 const { ethers, upgrades } = require('hardhat');
 
-describe('45.NestFutures3V3-algorithm2.js', function() {
+describe('47.NestFutures3V3-algorithm3.js', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
@@ -207,7 +207,11 @@ describe('45.NestFutures3V3-algorithm2.js', function() {
         const balanceOf = async function(orderIndex, oraclePrice) {
             const order = ctx.orders[orderIndex];
             const pt = await currentPt(ctx.channels[order.channelIndex], oraclePrice);
-            const miuT = (order.orientation ? pt.PtL : pt.PtS) - order.Pt;
+            //const miuT = (order.orientation ? pt.PtL : pt.PtS) - order.Pt;
+            const miuT = order.orientation
+                       ? 3.472e-9 * (await bn() - order.openBlock) * BLOCK_TIME
+                       :-3.472e-9 * (await bn() - order.openBlock) * BLOCK_TIME;
+
             const value = _valueOf(
                 miuT, order.balance, order.lever, order.orientation, order.basePrice, oraclePrice, order.appends);
             const cb = parseFloat(toDecimal(await nestTrustFuturesV3.balanceOf(orderIndex, toBigInt(oraclePrice))));
@@ -236,7 +240,8 @@ describe('45.NestFutures3V3-algorithm2.js', function() {
                     ? lastPrice(channelIndex) * (1 + impactCost(amount * lever))
                     : lastPrice(channelIndex) / (1 + impactCost(amount * lever))
                 ,
-                Pt: orientation ? channel.PtL : channel.PtS
+                Pt: orientation ? channel.PtL : channel.PtS,
+                openBlock: await bn()
             });
 
             await compareOrder(index);
@@ -271,7 +276,10 @@ describe('45.NestFutures3V3-algorithm2.js', function() {
             let channel = await updateChannel(order.channelIndex, lastPrice(order.channelIndex));
             
             // μT = P1 - P0
-            let miuT = (order.orientation ? channel.PtL : channel.PtS) - order.Pt;
+            //let miuT = (order.orientation ? channel.PtL : channel.PtS) - order.Pt;
+            let miuT = order.orientation
+                       ? 3.472e-9 * (await bn() - order.openBlock) * BLOCK_TIME
+                       :-3.472e-9 * (await bn() - order.openBlock) * BLOCK_TIME;
             // Query last price
             let oraclePrice = lastPrice(order.channelIndex);
             // Calculate value of order
@@ -323,7 +331,10 @@ describe('45.NestFutures3V3-algorithm2.js', function() {
                 if (order.lever > 1 && order.balance > 0) {
                     // μT = P1 - P0
                     const pt = await currentPt(channel, oraclePrice);
-                    let miuT = (order.orientation ? pt.PtL : pt.PtS) - order.Pt;
+                    //let miuT = (order.orientation ? pt.PtL : pt.PtS) - order.Pt;
+                    const miuT = order.orientation
+                       ? 3.472e-9 * (await bn() - order.openBlock) * BLOCK_TIME
+                       :-3.472e-9 * (await bn() - order.openBlock) * BLOCK_TIME;
                     // Calculate value of order
                     let value = _valueOf(
                         miuT, 
@@ -483,6 +494,7 @@ describe('45.NestFutures3V3-algorithm2.js', function() {
 
                 let order = ctx.orders[trustOrder.orderIndex];
                 order.balance = trustOrder.balance;
+                order.openBlock = await bn();
                 order.basePrice = order.orientation
                     ? ctx.prices[order.channelIndex] * (1 + impactCost(order.balance * order.lever))
                     : ctx.prices[order.channelIndex] / (1 + impactCost(order.balance * order.lever))
@@ -577,7 +589,8 @@ describe('45.NestFutures3V3-algorithm2.js', function() {
                     ? lastPrice(channelIndex) * (1 + impactCost(amount * lever))
                     : lastPrice(channelIndex) / (1 + impactCost(amount * lever))
                 ,
-                Pt: orientation ? channel.PtL : channel.PtS
+                Pt: orientation ? channel.PtL : channel.PtS,
+                openBlock: await bn()
             });
 
             ctx.trustOrders.push({
@@ -672,7 +685,10 @@ describe('45.NestFutures3V3-algorithm2.js', function() {
                 if (order.balance > 0) {
                     let oraclePrice = lastPrice(order.channelIndex);
                     let channel = await updateChannel(order.channelIndex, oraclePrice, true);
-                    let miuT = (order.orientation ? channel.PtL : channel.PtS) - order.Pt;
+                    //let miuT = (order.orientation ? channel.PtL : channel.PtS) - order.Pt;
+                    const miuT = order.orientation
+                       ? 3.472e-9 * (await bn() - order.openBlock) * BLOCK_TIME
+                       :-3.472e-9 * (await bn() - order.openBlock) * BLOCK_TIME;
                     let value = _valueOf(
                         miuT,
                         order.balance,
