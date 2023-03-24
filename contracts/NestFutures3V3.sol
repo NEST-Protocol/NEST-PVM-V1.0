@@ -41,7 +41,7 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
     
     // Global parameters for trade channel
     TradeChannel[3] _channels;
-
+    
     // TODO:
     // Address of direct poster
     //address constant DIRECT_POSTER = 0x06Ca5C8eFf273009C94D963e0AB8A8B9b09082eF;
@@ -330,9 +330,10 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
                 // 5. Liquidate logic
                 // lever is great than 1, and balance less than a regular value, can be liquidated
                 // the regular value is: Max(M0 * L * St / S0 * c, a) | expired
-                // the regular value is: Max(M0 * L * St / S0 * c + a, M0 * L * 0.5%)
+                // the regular value is: Max(M0 * L * St / S0 * c + a, M0 * L * 0.5%) | expired
+                // the regular value is: Max(M0 * L * St / S0 * c + a, M0 * L * 1%)
                 unchecked {
-                    if (value < balance / 200 || value < fee + CommonLib.MIN_FUTURE_VALUE) {
+                    if (value < balance / 100 || value < fee + CommonLib.MIN_FUTURE_VALUE) {
                         // Clear all data of order, use this code next time
                         assembly {
                             mstore(0, _orders.slot)
