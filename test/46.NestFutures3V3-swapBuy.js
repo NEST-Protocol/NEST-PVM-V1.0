@@ -14,6 +14,14 @@ describe('46.NestFutures3V3-swapBuy.js', function() {
         } = await deploy();
         const pair = await pancakeFactory.getPair(usdt.address, nest.address);
 
+        // await pancakeRouter.swapExactTokensForTokens(
+        //     toBigInt(400000),
+        //     0,
+        //     [nest.address, usdt.address],
+        //     owner.address,
+        //     99999999999n
+        // );
+
         const tokens = [eth, nest, usdt];
         let previous;
         let accounts;
