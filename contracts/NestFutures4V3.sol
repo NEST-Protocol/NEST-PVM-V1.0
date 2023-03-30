@@ -250,14 +250,15 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
         uint stopProfitPrice,
         uint stopLossPrice
     ) external payable override {
-        _buyRequest(channelIndex, lever, orientation, amount, basePrice, limit, stopProfitPrice, stopLossPrice);
-
         // Transfer NEST from user
         TransferHelper.safeTransferFrom(
             NEST_TOKEN_ADDRESS, 
             msg.sender, 
             NEST_VAULT_ADDRESS, 
-            amount * CommonLib.NEST_UNIT * (1 ether + FEE_RATE * lever) / 1 ether + (limit ? CommonLib.EXECUTE_FEE_NEST : 0)
+            (
+                amount + 
+                _buyRequest(channelIndex, lever, orientation, amount, basePrice, limit, stopProfitPrice, stopLossPrice)
+            ) * CommonLib.NEST_UNIT + (limit ? CommonLib.EXECUTE_FEE_NEST : 0)
         );
     }
 
@@ -309,15 +310,18 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
                 msg.sender, 
                 (uint(order.balance) + uint(order.fee)) * CommonLib.NEST_UNIT
             );
-            order.status = uint8(S_CANCELED);
         } else if (uint(order.status) == S_LIMIT_REQUEST) {
             INestVault(NEST_VAULT_ADDRESS).transferTo(
                 msg.sender, 
                 (uint(order.balance) + uint(order.fee) + CommonLib.EXECUTE_FEE) * CommonLib.NEST_UNIT
             );
-            order.status = uint8(S_CANCELED);
+        } else {
+            revert("NF:status error");
         }
 
+        order.balance = uint40(0);
+        order.fee = uint40(0);
+        order.status = uint8(S_CANCELED);
         _orders[orderIndex] = order;
     }
 
@@ -568,6 +572,7 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
     /// @param lever Lever of order
     /// @param orientation true: long, false: short
     /// @param amount Amount of paid NEST, 4 decimals
+    /// @param fee Fee of this order, 4 decimals
     /// @param basePrice Base price of this order
     /// @param stopProfitPrice If not 0, will open a stop order
     /// @param stopLossPrice If not 0, will open a stop order
@@ -580,16 +585,16 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
         bool limit,
         uint stopProfitPrice,
         uint stopLossPrice
-    ) internal returns (uint orderIndex) {
+    ) internal returns (uint fee) {
         // 1. Check arguments
         require(amount > CommonLib.FUTURES_NEST_LB && amount < 0x10000000000, "NF:amount invalid");
         require(lever > CommonLib.LEVER_LB && lever < CommonLib.LEVER_RB, "NF:lever not allowed");
 
-        // 4. Emit event
-        orderIndex = _orders.length;
-        emit BuyRequest(orderIndex, amount, msg.sender);
+        // 2. Emit event
+        emit BuyRequest(_orders.length, amount, msg.sender);
 
-        // 5. Create order
+        // 3. Create order
+        fee = amount * lever * FEE_RATE / 1 ether;
         _orders.push(Order(
             // owner
             msg.sender,
@@ -610,7 +615,7 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
             uint32(block.number),
             limit ? uint8(S_LIMIT_REQUEST) : uint8(S_BUY_REQUEST),
 
-            uint40(amount * lever * FEE_RATE / 1 ether),
+            uint40(fee),
             stopProfitPrice > 0 ? CommonLib.encodeFloat56(stopProfitPrice) : uint56(0),
             stopLossPrice > 0 ? CommonLib.encodeFloat56(stopLossPrice) : uint56(0)
         ));

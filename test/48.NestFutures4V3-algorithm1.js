@@ -7,11 +7,7 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
-        const { 
-            eth, usdt, hbtc, nest, dcu, nestOptions, nestFutures, nestLPGuarantee, nestProbability, nestCyberInk,
-            nestNFTAuction, nestFutures4V3, nestVault, pancakeRouter,
-            nestPriceFacade, nestBuybackPool, BLOCK_TIME, USDT_DECIMALS
-        } = await deploy();
+        const { eth, usdt, nest, nestFutures4V3, nestVault, pancakeRouter, BLOCK_TIME } = await deploy();
 
         const tokens = [eth, nest, usdt];
         let previous;
@@ -71,10 +67,8 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
 
         // Post price
         const post = async function(period, prices) {
-            await listAccounts();
             // Post price to the contract
             await nestFutures4V3.post(period, [toBigInt(prices[0]), toBigInt(prices[1]), toBigInt(prices[2])]);
-            await listAccounts();
             // Update price to context
             ctx.prices[0] = prices[0],
             ctx.prices[1] = prices[1],
@@ -83,7 +77,7 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
 
         // Post price and execute
         const execute = async function(period, prices, buyOrderIndices, sellOrderIndices, limitOrderIndices, stopOrderIndices, liquidateOrderIndices) {
-            await listAccounts();
+            await listAccounts(true);
             // Post price to the contract
             await nestFutures4V3.execute(period, [toBigInt(prices[0]), toBigInt(prices[1]), toBigInt(prices[2])], 
                 buyOrderIndices,
@@ -92,7 +86,7 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
                 stopOrderIndices,
                 liquidateOrderIndices
             );
-            await listAccounts();
+            await listAccounts(true);
             // Update price to context
             ctx.prices[0] = prices[0],
             ctx.prices[1] = prices[1],
@@ -287,13 +281,15 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
                 owner: co.owner,
                 balance: parseFloat(co.balance) / NEST_BASE,
                 channelIndex: co.channelIndex,
-                appends: parseFloat(co.appends) / NEST_BASE,
                 lever: co.lever,
+                appends: parseFloat(co.appends) / NEST_BASE,
                 orientation: co.orientation,
                 basePrice: toDecimal(co.basePrice),
-                //Pt: parseFloat(co.Pt) / MIU_DECIMALS
                 openBlock: co.openBlock,
-                status: co.status
+                status: co.status,
+                fee: parseFloat(co.fee) / NEST_BASE,
+                stopProfitPrice: toDecimal(co.stopProfitPrice),
+                stopLossPrice: toDecimal(co.stopLossPrice)
             };
             //console.log({ jo: jo, po: po });
             
@@ -307,6 +303,9 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
             FEQ({ a: jo.status, b: po.status }, true);
 
             // TODO: Compare more fields
+            FEQ({ a: jo.fee, b: po.fee, d: 0.0000000001 }, true);
+            FEQ({ a: jo.stopProfitPrice, b: po.stopProfitPrice, d: 0.0000000001 }, true);
+            FEQ({ a: jo.stopLossPrice, b: po.stopLossPrice, d: 0.0000000001 }, true);
         };
 
         // Decode the floating-point representation of fraction * 16 ^ exponent to uint
@@ -358,7 +357,7 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
             limit, stopProfitPrice, stopLossPrice, echo) {
             await listAccounts(true);
             await nestFutures4V3.newBuyRequest(channelIndex, lever, orientation, amount * NEST_BASE, 
-                toBigInt(basePrice), limit, stopProfitPrice, stopLossPrice);
+                toBigInt(basePrice), limit, toBigInt(stopProfitPrice), toBigInt(stopLossPrice));
             await listAccounts(true);
 
             const index = ctx.orders.length;
@@ -366,13 +365,14 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
                 index: index, 
                 owner: sender.address,
                 balance: amount,
-                appends: 0,
                 channelIndex: channelIndex,
                 lever: lever,
+                appends: 0,
                 orientation: orientation,
                 basePrice: basePrice,
                 openBlock: await bn(),
                 status: limit ? S_LIMIT_REQUEST : S_BUY_REQUEST,
+                fee: amount * lever * FEE_RATE,
                 stopProfitPrice: stopProfitPrice,
                 stopLossPrice: stopLossPrice
             });
@@ -406,81 +406,6 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
             order.status = S_SELL_REQUEST;
         };
 
-        // Liquidate orders
-        const liquidate = async function(sender, indices) {
-            await listAccounts(true);
-            await nestFutures4V3.liquidate(indices);
-            await listAccounts(true);
-
-            let reward = 0;
-            for (let i = 0; i < indices.length; ++i) {
-                let index = indices[i];
-                
-                let order = ctx.orders[index];
-                let channel = ctx.channels[order.channelIndex];
-                let oraclePrice = lastPrice(order.channelIndex);
-
-                if (order.lever > 1 && order.balance > 0) {
-                    // μT = P1 - P0
-                    const pt = await currentPt(channel, oraclePrice);
-                    //let miuT = (order.orientation ? pt.PtL : pt.PtS) - order.Pt;
-                    const miuT = order.orientation
-                       ? 3.472e-9 * (await bn() - order.openBlock) * BLOCK_TIME
-                       :-3.472e-9 * (await bn() - order.openBlock) * BLOCK_TIME;
-                    // Calculate value of order
-                    let value = _valueOf(
-                        miuT, 
-                        order.balance, 
-                        order.lever, 
-                        order.orientation, 
-                        order.basePrice, 
-                        oraclePrice,
-                        order.appends
-                    );
-                    if (value < 0) value = 0;
-
-                    // Compare with liquidate line
-                    if (value < order.balance * order.lever * oraclePrice / order.basePrice * FEE_RATE + 15 ||
-                        value < order.balance * order.lever * 0.5 / 100
-                    ) {
-                        // Liquidated, update channel
-                        await updateChannel(order.channelIndex, oraclePrice, true);
-
-                        reward += value;
-                        order.balance = 0;
-                        order.appends = 0;
-
-                        order.index = 0;
-                        order.owner = '0x0000000000000000000000000000000000000000';
-                        order.channelIndex = 0;
-                        order.lever = 0;
-                        order.orientation = false;
-                        order.basePrice = 0;
-                        order.Pt = 0;
-                    }
-                }
-
-                await compareOrder(index);
-            }
-
-            FEQ({
-               a: reward,
-               b: parseFloat(accounts.owner.NEST) - parseFloat(previous.owner.NEST),
-               d: 0.0000001
-            }, false);
-            FEQ({
-                a: reward,
-                b: parseFloat(previous.nestVault.NEST) - parseFloat(accounts.nestVault.NEST),
-                d: 0.0000001
-            }, false);
-
-            for (let i = 0; i < indices.length; ++i) {
-                let index = indices[i];
-                let order = ctx.orders[index];
-                await updateChannel(order.channelIndex, ctx.prices[order.channelIndex], false);
-            }
-        };
-
         // Update LimitPrice
         const updateLimitPrice = async function(sender, orderIndex, limitPrice) {
             await nestFutures4V3.updateLimitPrice(orderIndex, toBigInt(limitPrice));
@@ -501,20 +426,19 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
             await compareOrder(orderIndex);
         };
 
-        // Cancel LimitOrder
-        const cancelLimitOrder = async function(sender, trustOrderIndex) {
+        // Cancel buy request
+        const cancelBuyRequest = async function(sender, orderIndex) {
             await listAccounts(true);
-            await nestFutures4V3.cancelLimitOrder(trustOrderIndex);
+            await nestFutures4V3.cancelBuyRequest(orderIndex);
             await listAccounts(true);
+            
+            let order = ctx.orders[orderIndex];
+            const totalNest = order.balance + order.fee + (order.status == S_LIMIT_REQUEST ? 15 : 0);
+            order.balance = 0;
+            order.fee = 0;
+            order.status = S_CANCELED;
 
-            let trustOrder = ctx.trustOrders[trustOrderIndex];
-            const totalNest = trustOrder.balance + trustOrder.fee + 15;
-            trustOrder.balance = 0;
-            trustOrder.fee = 0;
-            trustOrder.status = 2;
-
-            await compareOrder(trustOrder.orderIndex);
-            await compareTrustOrder(trustOrderIndex);
+            await compareOrder(orderIndex);
 
             FEQ({
                 a: totalNest,
@@ -523,7 +447,7 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
             }, true);
             FEQ({
                 a: totalNest,
-                b: parseFloat(previous.nestFutures4V3.NEST) - parseFloat(accounts.nestFutures4V3.NEST),
+                b: parseFloat(previous.nestVault.NEST) - parseFloat(accounts.nestVault.NEST),
                 d: 0.0000000001
             }, true);
         };
@@ -550,12 +474,13 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
                     owner: co.owner,
                     balance: parseFloat(co.balance) / NEST_BASE,
                     channelIndex: co.channelIndex,
-                    appends: parseFloat(co.appends) / NEST_BASE,
                     lever: co.lever,
+                    appends: parseFloat(co.appends) / NEST_BASE,
                     orientation: co.orientation,
                     basePrice: toDecimal(co.basePrice),
                     openBlock: co.openBlock,
                     status: co.status,
+                    fee: parseFloat(co.fee) / NEST_BASE,
                     stopProfitPrice: toDecimal(co.stopProfitPrice),
                     stopLossPrice: toDecimal(co.stopLossPrice)
                 };
@@ -568,6 +493,9 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
                 FEQ({ a: jo.lever, b: co.lever }, true);
                 FEQ({ a: jo.openBlock, b: co.openBlock }, true);
                 FEQ({ a: jo.status, b: co.status }, true);
+                FEQ({ a: jo.fee, b: co.fee }, true);
+                FEQ({ a: jo.stopProfitPrice, b: co.stopProfitPrice, d: 0.00000000001 }, true);
+                FEQ({ a: jo.stopLossPrice, b: co.stopLossPrice, d: 0.00000000001 }, true);
             }
         };
 
@@ -778,7 +706,7 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
         // 12. executeLimitOrder
         else if (true) {
             console.log('13. executeLimitOrder');
-            await execute(200, [1230, 15500, 245], [], [], [36, 37, 38], [], []);
+            await execute(200, [1230, 15500, 245], [], [], [36, 37/*, 38*/], [], []);
             //await list(owner, 0, 4, 0);
         }
         // 10. newStopOrder
@@ -793,6 +721,14 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
             await execute(200, [1230, 15500, 245], [], [], [], [36], []);
             await list(owner, 36, 1, 1);
         }
+        
+        if (true) {
+            console.log('12. cancelBuyRequest');
+            await cancelBuyRequest(owner, 38);
+            await list(owner, 38, 1, 0);
+            return;
+        }
+
         if (true) {
             console.log('1. create');
             await usdt.transfer(owner.address, 1000000000000000000000000n);
@@ -811,6 +747,7 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
 
             await listAccounts();
         }
+
         if (true) {
             console.log('12. newBuyRequestWithUsdt');
             await usdt.approve(nestFutures4V3.address, 10000000000000000000000000n);
