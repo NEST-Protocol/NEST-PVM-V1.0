@@ -78,11 +78,15 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
         // Post price and execute
         const execute = async function(period, prices, buyOrderIndices, sellOrderIndices, limitOrderIndices, stopOrderIndices, liquidateOrderIndices) {
             await listAccounts(true);
+            
+            let orderIndices = [];
+            for (var i = 0; i < buyOrderIndices.length; ++i) { orderIndices.push(buyOrderIndices[i]); }
+            for (var i = 0; i < sellOrderIndices.length; ++i) { orderIndices.push(sellOrderIndices[i]); }
+            for (var i = 0; i < limitOrderIndices.length; ++i) { orderIndices.push(limitOrderIndices[i]); }
+
             // Post price to the contract
             await nestFutures4V3.execute(period, [toBigInt(prices[0]), toBigInt(prices[1]), toBigInt(prices[2])], 
-                buyOrderIndices,
-                sellOrderIndices,
-                limitOrderIndices,
+                orderIndices,
                 stopOrderIndices,
                 liquidateOrderIndices
             );

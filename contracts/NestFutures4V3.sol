@@ -111,26 +111,20 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
     /// @param period Term of validity
     /// @param prices Price array, direct price, eth&btc&bnb, eg: 1700e18, 25000e18, 300e18
     /// Please note that the price is no longer relative to 2000 USD
-    /// @param buyOrderIndices Indices of order to buy
-    /// @param sellOrderIndices Indices of order to sell
-    /// @param limitOrderIndices Indices of order to sell
+    /// @param executeOrderIndices Indices of order to buy
     /// @param stopOrderIndices Indices of order to stop
     /// @param liquidateOrderIndices Indices of order to liquidate
     function execute(
         uint period, 
         uint[CHANNEL_COUNT] calldata prices, 
-        uint[] calldata buyOrderIndices, 
-        uint[] calldata sellOrderIndices,
-        uint[] calldata limitOrderIndices,
+        uint[] calldata executeOrderIndices, 
         uint[] calldata stopOrderIndices,
         uint[] calldata liquidateOrderIndices
     ) external {
         // TODO: Check price
         post(period, prices);
 
-        _executeBuy(buyOrderIndices, prices);
-        _executeSell(sellOrderIndices, prices);
-        _executeLimit(limitOrderIndices, prices);
+        _execute(executeOrderIndices, prices);
         _executeStop(stopOrderIndices, prices);
         _liquidate(liquidateOrderIndices, prices);
     }
@@ -600,14 +594,18 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
         ));
     }
 
-    // Execute buy orders
-    function _executeBuy(uint[] calldata orderIndices, uint[CHANNEL_COUNT] calldata oraclePrices) internal {
+    // Execute orders
+    function _execute(uint[] calldata orderIndices, uint[CHANNEL_COUNT] calldata oraclePrices) internal {
         for (uint i = orderIndices.length; i > 0;) {
             uint orderIndex = orderIndices[--i];
             Order memory order = _orders[orderIndex];
-            if (uint(order.status) == S_BUY_REQUEST) {
+            uint status = uint(order.status);
+            uint oraclePrice = oraclePrices[uint(order.channelIndex)];
+
+            // Execute buy
+            if (status == S_BUY_REQUEST) {
                 // TODO: Optimize code
-                uint oraclePrice = CommonLib.decodeFloat(CommonLib.encodeFloat56(oraclePrices[uint(order.channelIndex)]));
+                oraclePrice = CommonLib.decodeFloat(CommonLib.encodeFloat56(oraclePrice));
                 uint basePrice = CommonLib.decodeFloat(uint(order.basePrice));
                 if (order.orientation) {
                     if (basePrice >= oraclePrice/*&& basePrice <= oraclePrice * (1 ether + SLIDING_POINT) / 1 ether*/) {
@@ -650,24 +648,11 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
                         );
                     }
                 }
-            }
-            _orders[orderIndex] = order;
-        }
-    }
-    
-    // Execute sell orders
-    function _executeSell(uint[] calldata orderIndices, uint[CHANNEL_COUNT] calldata oraclePrices) internal {
-        for (uint i = orderIndices.length; i > 0;) {
-            uint orderIndex = orderIndices[--i];
-            // 1. Load the order
-            Order memory order = _orders[orderIndex];
-            if (uint(order.status) == S_SELL_REQUEST) {
+            } else if (status == S_SELL_REQUEST) {
                 //require(msg.sender == order.owner, "NF:not owner");
                 //require(uint(order.status) == S_NORMAL, "NF:status error");
 
                 // 2. Query price
-                uint channelIndex = uint(order.channelIndex);
-                uint oraclePrice = oraclePrices[channelIndex];
 
                 // 3. Update channel
 
@@ -677,43 +662,13 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
                 order.balance = uint40(0);
                 order.appends = uint40(0);
                 order.status = uint8(S_CLEARED);
-                _orders[orderIndex] = order;
 
                 // 5. Transfer NEST to user
                 // If value grater than fee, deduct and transfer NEST to owner
                 if (value > fee) {
                     INestVault(NEST_VAULT_ADDRESS).transferTo(order.owner, value - fee);
                 }
-            }
-        }
-    }
-
-    /// @dev Execute limit order, only maintains account
-    /// @param orderIndices Array of TrustOrder index
-    function _executeLimit(uint[] calldata orderIndices, uint[CHANNEL_COUNT] calldata oraclePrices) internal {
-        //uint totalNest = 0;
-        uint oraclePrice = 0;
-        uint channelIndex = 0x10000;
-
-        // 1. Loop and execute
-        uint orderIndex = 0;
-        uint i = orderIndices.length << 5;
-        while (i > 0) { 
-            assembly {
-                i := sub(i, 0x20)
-                orderIndex := calldataload(add(orderIndices.offset, i))
-            }
-
-            Order memory order = _orders[orderIndex];
-            if (uint(order.status) == S_LIMIT_REQUEST) {
-                if (channelIndex != uint(order.channelIndex)) {
-                    // If channelIndex is not same with previous, need load new channel and query oracle
-                    // At first, channelIndex is 0x10000, this is impossible the same with current channelIndex
-                    // Load current channel
-                    channelIndex = uint(order.channelIndex);
-                    oraclePrice = oraclePrices[channelIndex];
-                }
-
+            } else if (uint(order.status) == S_LIMIT_REQUEST) {
                 uint balance = uint(order.balance);
                 //totalNest += (balance + uint(order.fee));
 
@@ -727,14 +682,9 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
                 order.balance = uint40(balance);
                 order.openBlock = uint32(block.number);
                 order.status = uint8(S_NORMAL);
-
-                // Update Order
-                _orders[orderIndex] = order;
             }
+            _orders[orderIndex] = order;
         }
-
-        // Transfer NEST to NestVault
-        //TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, NEST_VAULT_ADDRESS, totalNest * CommonLib.NEST_UNIT);
     }
 
     /// @dev Execute limit order, only maintains account
