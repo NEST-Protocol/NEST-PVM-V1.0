@@ -237,6 +237,7 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
                     ) {
                         totalNest += value;
                         order.balance = 0;
+                        order.fee = 0;
                         order.appends = 0;
 
                         //order.index = 0;
@@ -661,7 +662,7 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
             await execute(200, [1230, 15500, 245], [], [], [], [], orderIndices);
             await listAccounts();
 
-            //await list(owner, 0, 36, 1);
+            await list(owner, 5, 1, 1);
             await execute(200, [1230, 15500, 245], [], [], [], [], orderIndices);
             await listAccounts();
         }

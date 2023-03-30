@@ -15,15 +15,17 @@ import "./custom/NestFrequentlyUsed.sol";
 /// @dev Nest futures with dynamic miu
 contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
 
+    uint constant CHANNEL_COUNT = 3;
     // Service fee for buy, sell, add and liquidate
     uint constant FEE_RATE = 0.0005 ether;
+    uint constant SLIDING_POINT = 0.0002 ether;
+    
     uint constant S_CLEARED = 0x00;
     uint constant S_BUY_REQUEST = 0x01;
     uint constant S_NORMAL = 0x02;
     uint constant S_SELL_REQUEST = 0x03;
     uint constant S_LIMIT_REQUEST = 0x04;
     uint constant S_CANCELED = 0xFF;
-    uint constant SLIDING_POINT = 0.0002 ether;
 
     // Registered account address mapping
     mapping(address=>uint) _accountMapping;
@@ -67,7 +69,7 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
     /// Please note that the price is no longer relative to 2000 USD
     function post(
         uint period, 
-        uint[3] calldata prices
+        uint[CHANNEL_COUNT] calldata prices
     ) public {
         require(msg.sender == DIRECT_POSTER, "NF:not directPoster");
         assembly {
@@ -116,7 +118,7 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
     /// @param liquidateOrderIndices Indices of order to liquidate
     function execute(
         uint period, 
-        uint[3] calldata prices, 
+        uint[CHANNEL_COUNT] calldata prices, 
         uint[] calldata buyOrderIndices, 
         uint[] calldata sellOrderIndices,
         uint[] calldata limitOrderIndices,
@@ -304,20 +306,17 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
     /// @param orderIndex Index of target order
     function cancelBuyRequest(uint orderIndex) external {
         Order memory order = _orders[orderIndex];
+        uint status = uint(order.status);
         require(order.owner == msg.sender, "NF:not owner");
-        if (uint(order.status) == S_BUY_REQUEST) {
-            INestVault(NEST_VAULT_ADDRESS).transferTo(
-                msg.sender, 
-                (uint(order.balance) + uint(order.fee)) * CommonLib.NEST_UNIT
-            );
-        } else if (uint(order.status) == S_LIMIT_REQUEST) {
-            INestVault(NEST_VAULT_ADDRESS).transferTo(
-                msg.sender, 
-                (uint(order.balance) + uint(order.fee) + CommonLib.EXECUTE_FEE) * CommonLib.NEST_UNIT
-            );
-        } else {
-            revert("NF:status error");
-        }
+        require(status == S_BUY_REQUEST || status == S_LIMIT_REQUEST, "NF:status error");
+        INestVault(NEST_VAULT_ADDRESS).transferTo(
+            msg.sender, 
+            (
+                uint(order.balance) + 
+                uint(order.fee) + 
+                (status == S_LIMIT_REQUEST ? CommonLib.EXECUTE_FEE : 0)
+            ) * CommonLib.NEST_UNIT
+        );
 
         order.balance = uint40(0);
         order.fee = uint40(0);
@@ -414,28 +413,11 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
         );
         (uint amount0Out, uint amount1Out) = USDT_TOKEN_ADDRESS == token0 ? (uint(0), amountOut) : (amountOut, uint(0));
         IPancakePair(NEST_USDT_PAIR_ADDRESS).swap(amount0Out, amount1Out, to, new bytes(0)); 
-
-        // address[] memory path = new address[](2);
-        // path[0] = USDT_TOKEN_ADDRESS;
-        // path[1] = NEST_TOKEN_ADDRESS;
-
-        // TransferHelper.safeTransferFrom(USDT_TOKEN_ADDRESS, msg.sender, address(this), usdtAmount);
-        // SimpleERC20(USDT_TOKEN_ADDRESS).approve(PANCAKE_ROUTER_ADDRESS, usdtAmount);
-        // uint[] memory amounts = IPancakeRouter02(PANCAKE_ROUTER_ADDRESS).swapExactTokensForTokens(
-        //     usdtAmount,
-        //     minNestAmount,
-        //     path,
-        //     to,
-        //     block.timestamp
-        // );
-
-        // nestAmount = amounts[amounts.length - 1];
-        // require(nestAmount > minNestAmount, 'NF:INSUFFICIENT_OUTPUT_AMOUNT');
     }
 
     /// @dev Liquidate order
     /// @param orderIndices Target order indices
-    function _liquidate(uint[] calldata orderIndices, uint[3] calldata oraclePrices) internal {
+    function _liquidate(uint[] calldata orderIndices, uint[CHANNEL_COUNT] calldata oraclePrices) internal {
         // 0. Global variables
         // Total reward of this transaction
         uint reward = 0;
@@ -481,10 +463,15 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
                     if (value < balance / 100 || value < fee + CommonLib.MIN_FUTURE_VALUE) {
                         // Clear all data of order, use this code next time
                         assembly {
-                            mstore(0, _orders.slot)
+                            //mstore(0, _orders.slot)
+                            //sstore(add(keccak256(0, 0x20), shl(1, index)), 0)
+                            //sstore(add(keccak256(0, 0x20), add(1, shl(1, index))), 0)
+
                             // Each Order take 2 slots
-                            sstore(add(keccak256(0, 0x20), shl(1, index)), 0)
-                            sstore(add(keccak256(0, 0x20), add(1, shl(1, index))), 0)
+                            mstore(0, _orders.slot)
+                            let offset := add(keccak256(0, 0x20), shl(1, index))
+                            sstore(offset, 0)
+                            sstore(add(offset, 1), 0)
                         }
                         
                         // Add reward
@@ -554,14 +541,6 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
         }
     }
 
-    // Query price
-    function _lastPrice(uint channelIndex) internal view returns (uint oraclePrice) {
-        // Query price from oracle
-        (uint period, uint height, uint price) = lastPrice(channelIndex);
-        unchecked { require(block.number < height + period, "NF:price expired"); }
-        oraclePrice = price;
-    }
-
     // Impact cost, plus one, 18 decimals
     function _impactCostRatio(uint vol) internal pure returns (uint C) {
         C = 5.556e7 * vol / 1 ether +  1.0004444 ether;
@@ -622,7 +601,7 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
     }
 
     // Execute buy orders
-    function _executeBuy(uint[] calldata orderIndices, uint[3] calldata oraclePrices) internal {
+    function _executeBuy(uint[] calldata orderIndices, uint[CHANNEL_COUNT] calldata oraclePrices) internal {
         for (uint i = orderIndices.length; i > 0;) {
             uint orderIndex = orderIndices[--i];
             Order memory order = _orders[orderIndex];
@@ -677,7 +656,7 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
     }
     
     // Execute sell orders
-    function _executeSell(uint[] calldata orderIndices, uint[3] calldata oraclePrices) internal {
+    function _executeSell(uint[] calldata orderIndices, uint[CHANNEL_COUNT] calldata oraclePrices) internal {
         for (uint i = orderIndices.length; i > 0;) {
             uint orderIndex = orderIndices[--i];
             // 1. Load the order
@@ -711,7 +690,7 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
 
     /// @dev Execute limit order, only maintains account
     /// @param orderIndices Array of TrustOrder index
-    function _executeLimit(uint[] calldata orderIndices, uint[3] calldata oraclePrices) internal {
+    function _executeLimit(uint[] calldata orderIndices, uint[CHANNEL_COUNT] calldata oraclePrices) internal {
         //uint totalNest = 0;
         uint oraclePrice = 0;
         uint channelIndex = 0x10000;
@@ -760,7 +739,7 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
 
     /// @dev Execute limit order, only maintains account
     /// @param orderIndices Array of TrustOrder index
-    function _executeStop(uint[] calldata orderIndices, uint[3] calldata oraclePrices) internal {
+    function _executeStop(uint[] calldata orderIndices, uint[CHANNEL_COUNT] calldata oraclePrices) internal {
         //uint executeFee = 0;
         uint oraclePrice = 0;
         uint channelIndex = 0x10000;
