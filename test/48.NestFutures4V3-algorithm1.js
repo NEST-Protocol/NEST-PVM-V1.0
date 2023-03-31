@@ -263,6 +263,13 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
                 b: parseFloat(previous.nestVault.NEST) - parseFloat(accounts.nestVault.NEST),
                 d: 0.000000001
             }, true);
+
+            // buyOrderIndices, sellOrderIndices, limitOrderIndices, stopOrderIndices, liquidateOrderIndices
+            for (var i = 0; i < buyOrderIndices.length; ++i) { await compareOrder(buyOrderIndices[i]); }
+            for (var i = 0; i < sellOrderIndices.length; ++i) { await compareOrder(sellOrderIndices[i]); }
+            for (var i = 0; i < limitOrderIndices.length; ++i) { await compareOrder(limitOrderIndices[i]); }
+            for (var i = 0; i < stopOrderIndices.length; ++i) { await compareOrder(stopOrderIndices[i]); }
+            for (var i = 0; i < liquidateOrderIndices.length; ++i) { await compareOrder(liquidateOrderIndices[i]); }
         };
 
         // Return lastPrice of target channel
@@ -670,8 +677,8 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
         // 7. Create LimitOrder and execute (eth&btc&bnb, long&short, lever0-51), check channel, check balance, check order
         if (true) {
             console.log('7. createLimitOrder');
-            await newBuyRequest(owner, 0, 3, true, 3000, 1200, true, 1800, 800);
-            await newBuyRequest(owner, 1, 7, false, 88888, 18000, true, 10000, 20000);
+            await newBuyRequest(owner, 0, 3, true, 3000, 1235, true, 1800, 800);
+            await newBuyRequest(owner, 1, 7, false, 88888, 15000, true, 10000, 20000);
             await newBuyRequest(owner, 2, 4, true, 5000, 200, true, 400, 100);
             await list(owner, 0, 4, 0);
         }
