@@ -720,10 +720,10 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
                     oraclePrice = oraclePrices[channelIndex];
                 }
 
-                if (true
-                    // order.orientation 
-                    // ? oraclePrice <= CommonLib.decodeFloat(uint(order.basePrice))
-                    // : oraclePrice >= CommonLib.decodeFloat(uint(order.basePrice))
+                if (
+                    order.orientation 
+                    ? oraclePrice <= CommonLib.decodeFloat(uint(order.basePrice))
+                    : oraclePrice >= CommonLib.decodeFloat(uint(order.basePrice))
                 ) {
                     uint balance = uint(order.balance);
                     //totalNest += (balance + uint(order.fee));
@@ -778,12 +778,12 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
                     oraclePrice = oraclePrices[channelIndex];
                 }
 
-                if (true
-                    // order.orientation
-                    // ? oraclePrice >= CommonLib.decodeFloat(uint(order.stopProfitPrice)) 
-                    //     || oraclePrice <= CommonLib.decodeFloat(uint(order.stopLossPrice))
-                    // : oraclePrice <= CommonLib.decodeFloat(uint(order.stopProfitPrice))
-                    //     || oraclePrice <= CommonLib.decodeFloat(uint(order.stopLossPrice))
+                if (
+                    order.orientation
+                    ? oraclePrice >= CommonLib.decodeFloat(uint(order.stopProfitPrice)) 
+                        || oraclePrice <= CommonLib.decodeFloat(uint(order.stopLossPrice))
+                    : oraclePrice <= CommonLib.decodeFloat(uint(order.stopProfitPrice))
+                        || oraclePrice <= CommonLib.decodeFloat(uint(order.stopLossPrice))
                 ) {
                     (uint value, uint fee) = _valueOf(order, oraclePrice);
 

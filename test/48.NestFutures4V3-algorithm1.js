@@ -686,7 +686,7 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
         // 8. updateLimitPrice
         if (true) {
             console.log('8. updateLimitPrice');
-            await updateLimitPrice(owner, 37, 16000);
+            await updateLimitPrice(owner, 37, 15100);
             await list(owner, 0, 4, 0);
         }
 
@@ -726,7 +726,7 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
         // 13. executeStopOrder
         if (true) {
             console.log('11. executeStopOrder');
-            await execute(200, [1230, 15500, 245], [], [], [], [36], []);
+            await execute(200, [1801, 15500, 245], [], [], [], [36], []);
             await list(owner, 36, 1, 1);
         }
         
