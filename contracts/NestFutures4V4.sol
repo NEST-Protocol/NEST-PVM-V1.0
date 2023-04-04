@@ -17,6 +17,7 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
 
     // Number of channels
     uint constant CHANNEL_COUNT = 3;
+    // TODO: Change to 0.0002?
     // Service fee for buy, sell, add and liquidate
     uint constant FEE_RATE = 0.0005 ether;
     // Sliding point for user's price
@@ -66,14 +67,26 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
     constructor() {
     }
 
-    /// @dev Direct post price
+    /// @dev Direct post price and execute
     /// @param period Term of validity
     /// @param prices Price array, direct price, eth&btc&bnb, eg: 1700e18, 25000e18, 300e18
     /// Please note that the price is no longer relative to 2000 USD
-    function post(
+    /// @param orderIndices Indices of orders to execute
+    // @param buyOrderIndices Indices of order to buy
+    // @param sellOrderIndices Indices of order to sell
+    // @param limitOrderIndices Indices of order to sell
+    // @param stopOrderIndices Indices of order to stop
+    // @param liquidateOrderIndices Indices of order to liquidate
+    function execute(
         uint period, 
-        uint[CHANNEL_COUNT] calldata prices
-    ) public {
+        uint[CHANNEL_COUNT] calldata prices, 
+        uint[] calldata orderIndices
+        // uint[] calldata buyOrderIndices, 
+        // uint[] calldata sellOrderIndices,
+        // uint[] calldata limitOrderIndices,
+        // uint[] calldata stopOrderIndices,
+        // uint[] calldata liquidateOrderIndices
+    ) external {
         require(msg.sender == DIRECT_POSTER, "NF:not directPoster");
         assembly {
             // Encode value at position indicated by value to float
@@ -108,29 +121,6 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
             )
         }
         _lastPrices = period;
-    }
-
-    /// @dev Direct post price and execute
-    /// @param period Term of validity
-    /// @param prices Price array, direct price, eth&btc&bnb, eg: 1700e18, 25000e18, 300e18
-    /// Please note that the price is no longer relative to 2000 USD
-    /// @param orderIndices Indices of orders to execute
-    // @param buyOrderIndices Indices of order to buy
-    // @param sellOrderIndices Indices of order to sell
-    // @param limitOrderIndices Indices of order to sell
-    // @param stopOrderIndices Indices of order to stop
-    // @param liquidateOrderIndices Indices of order to liquidate
-    function execute(
-        uint period, 
-        uint[CHANNEL_COUNT] calldata prices, 
-        uint[] calldata orderIndices
-        // uint[] calldata buyOrderIndices, 
-        // uint[] calldata sellOrderIndices,
-        // uint[] calldata limitOrderIndices,
-        // uint[] calldata stopOrderIndices,
-        // uint[] calldata liquidateOrderIndices
-    ) external {
-        post(period, prices);
         _execute(orderIndices, prices);
     }
 
@@ -150,8 +140,7 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
     /// @param orderIndex Index of order
     /// @param oraclePrice Current price from oracle, usd based, 18 decimals
     function balanceOf(uint orderIndex, uint oraclePrice) external view override returns (uint value) {
-        Order memory order = _orders[orderIndex];
-        (value,) = _valueOf(order, oraclePrice);
+        (value,) = _valueOf(_orders[orderIndex], oraclePrice);
     }
 
     /// @dev Find the orders of the target address (in reverse order)
@@ -410,86 +399,6 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
         emit SellRequest(orderIndex, uint(order.balance), msg.sender);
     }
 
-    // Swap USDT to NEST
-    function _swapUsdtForNest(uint usdtAmount, uint minNestAmount, address to) internal returns (uint amountOut) {
-        // 1. Calculate out nestAmount
-        // Confirm token0 address
-        (address token0,) = PancakeLibrary.sortTokens(USDT_TOKEN_ADDRESS, NEST_TOKEN_ADDRESS);
-        // Get reserves of token0 and token1
-        (uint  reserve0, uint  reserve1,) = IPancakePair(NEST_USDT_PAIR_ADDRESS).getReserves();
-        // Determine reverseIn and reserveOut based on the token0 address
-        (uint reserveIn, uint reserveOut) = USDT_TOKEN_ADDRESS == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
-        // Calculate out amount
-        amountOut = PancakeLibrary.getAmountOut(usdtAmount, reserveIn, reserveOut);
-        require(amountOut > minNestAmount, 'NF:INSUFFICIENT_OUTPUT_AMOUNT');
-
-        // 2. Swap with NEST-USDT pair at pancake
-        TransferHelper.safeTransferFrom(
-            USDT_TOKEN_ADDRESS, 
-            msg.sender, 
-            NEST_USDT_PAIR_ADDRESS, 
-            usdtAmount
-        );
-        (uint amount0Out, uint amount1Out) = USDT_TOKEN_ADDRESS == token0 ? (uint(0), amountOut) : (amountOut, uint(0));
-        IPancakePair(NEST_USDT_PAIR_ADDRESS).swap(amount0Out, amount1Out, to, new bytes(0)); 
-    }
-
-    // Calculate e^μT
-    function _expMiuT(int miuT) internal pure returns (uint) {
-        // return _toUInt(ABDKMath64x64.exp(
-        //     _toInt128((orientation ? MIU_LONG : MIU_SHORT) * (block.number - baseBlock) * BLOCK_TIME)
-        // ));
-
-        // Using approximate algorithm: x*(1+rt)
-        // This may be 0, or negative!
-        int v = (miuT * 0x10000000000000000) / 1e12 + 0x10000000000000000;
-        if (v < 1) return 1;
-        return uint(v);
-    }
-
-    // Calculate net worth
-    function _valueOf(
-        Order memory order, 
-        uint oraclePrice
-    ) internal view returns (uint value, uint fee) {
-        value = uint(order.balance) * CommonLib.NEST_UNIT;
-        uint lever = uint(order.lever);
-        uint base = value * lever * oraclePrice / CommonLib.decodeFloat(uint(order.basePrice));
-        uint negative;
-
-        assembly {
-            fee := div(mul(base, FEE_RATE), 1000000000000000000)
-        }
-
-        // Long
-        if (order.orientation) {
-            base = base * 1 ether / _impactCostRatio(base);
-            negative = value * lever;
-            value = value + base * 0x10000000000000000 / _expMiuT(
-                int((block.number - uint(order.openBlock)) * CommonLib.BLOCK_TIME / 1000 * 3.472e3)
-            )  + uint(order.appends) * CommonLib.NEST_UNIT;
-        } 
-        // Short
-        else {
-            base = base * _impactCostRatio(base) / 1 ether;
-            negative = base * 0x10000000000000000 / _expMiuT(
-                -int((block.number - uint(order.openBlock)) * CommonLib.BLOCK_TIME / 1000 * 3.472e3)
-            ) ;
-            value = value * (1 + lever) + uint(order.appends) * CommonLib.NEST_UNIT;
-        }
-
-        assembly {
-            switch gt(value, negative) 
-            case true { value := sub(value, negative) }
-            case false { value := 0 }
-        }
-    }
-
-    // Impact cost, plus one, 18 decimals
-    function _impactCostRatio(uint vol) internal pure returns (uint C) {
-        C = 5.556e7 * vol / 1 ether +  1.0004444 ether;
-    }
-
     /// @dev Buy futures request
     /// @param channelIndex Index of target channel
     /// @param lever Lever of order
@@ -602,12 +511,6 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
             }
             // 3. Execute sell request
             else if (status == S_SELL_REQUEST) {
-                //require(msg.sender == order.owner, "NF:not owner");
-                //require(uint(order.status) == S_NORMAL, "NF:status error");
-
-                // 2. Query price
-                // 3. Update channel
-
                 // 4. Calculate value and update Order
                 (uint value, uint fee) = _valueOf(order, oraclePrices[uint(order.channelIndex)]);
                 //emit Sell(orderIndex, uint(order.balance), msg.sender, value);
@@ -629,7 +532,6 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
                     : oraclePrice >= CommonLib.decodeFloat(uint(order.basePrice))
                 ) {
                     uint balance = uint(order.balance);
-                    //totalNest += (balance + uint(order.fee));
 
                     // TODO: Use oraclePrice or basePrice?
                     // Update Order: basePrice, baseBlock, balance, Pt
@@ -650,8 +552,6 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
                     (uint value, uint fee) = _valueOf(order, oraclePrice);
                     if (uint(order.lever) > 1) {
                         balance = balance * CommonLib.NEST_UNIT * uint(order.lever);
-
-                        // 4. Calculate order value
 
                         // 5. Liquidate logic
                         // lever is great than 1, and balance less than a regular value, can be liquidated
@@ -697,7 +597,6 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
                         if (value > fee + CommonLib.EXECUTE_FEE_NEST) {
                             INestVault(NEST_VAULT_ADDRESS).transferTo(order.owner, value - fee - CommonLib.EXECUTE_FEE_NEST);
                         }
-                        //executeFee += CommonLib.EXECUTE_FEE_NEST;
                         //emit Sell(orderIndex, balance, order.owner, value);
                     } else { 
                         continue;
@@ -712,6 +611,86 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
         if (reward > 0) {
             INestVault(NEST_VAULT_ADDRESS).transferTo(msg.sender, reward);
         }
+    }
+
+    // Swap USDT to NEST
+    function _swapUsdtForNest(uint usdtAmount, uint minNestAmount, address to) internal returns (uint amountOut) {
+        // 1. Calculate out nestAmount
+        // Confirm token0 address
+        (address token0,) = PancakeLibrary.sortTokens(USDT_TOKEN_ADDRESS, NEST_TOKEN_ADDRESS);
+        // Get reserves of token0 and token1
+        (uint  reserve0, uint  reserve1,) = IPancakePair(NEST_USDT_PAIR_ADDRESS).getReserves();
+        // Determine reverseIn and reserveOut based on the token0 address
+        (uint reserveIn, uint reserveOut) = USDT_TOKEN_ADDRESS == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
+        // Calculate out amount
+        amountOut = PancakeLibrary.getAmountOut(usdtAmount, reserveIn, reserveOut);
+        require(amountOut > minNestAmount, 'NF:INSUFFICIENT_OUTPUT_AMOUNT');
+
+        // 2. Swap with NEST-USDT pair at pancake
+        TransferHelper.safeTransferFrom(
+            USDT_TOKEN_ADDRESS, 
+            msg.sender, 
+            NEST_USDT_PAIR_ADDRESS, 
+            usdtAmount
+        );
+        (uint amount0Out, uint amount1Out) = USDT_TOKEN_ADDRESS == token0 ? (uint(0), amountOut) : (amountOut, uint(0));
+        IPancakePair(NEST_USDT_PAIR_ADDRESS).swap(amount0Out, amount1Out, to, new bytes(0)); 
+    }
+
+    // Calculate e^μT
+    function _expMiuT(int miuT) internal pure returns (uint) {
+        // return _toUInt(ABDKMath64x64.exp(
+        //     _toInt128((orientation ? MIU_LONG : MIU_SHORT) * (block.number - baseBlock) * BLOCK_TIME)
+        // ));
+
+        // Using approximate algorithm: x*(1+rt)
+        // This may be 0, or negative!
+        int v = (miuT * 0x10000000000000000) / 1e12 + 0x10000000000000000;
+        if (v < 1) return 1;
+        return uint(v);
+    }
+
+    // Calculate net worth
+    function _valueOf(
+        Order memory order, 
+        uint oraclePrice
+    ) internal view returns (uint value, uint fee) {
+        value = uint(order.balance) * CommonLib.NEST_UNIT;
+        uint lever = uint(order.lever);
+        uint base = value * lever * oraclePrice / CommonLib.decodeFloat(uint(order.basePrice));
+        uint negative;
+
+        assembly {
+            fee := div(mul(base, FEE_RATE), 1000000000000000000)
+        }
+
+        // Long
+        if (order.orientation) {
+            base = base * 1 ether / _impactCostRatio(base);
+            negative = value * lever;
+            value = value + base * 0x10000000000000000 / _expMiuT(
+                int((block.number - uint(order.openBlock)) * CommonLib.BLOCK_TIME / 1000 * 3.472e3)
+            )  + uint(order.appends) * CommonLib.NEST_UNIT;
+        } 
+        // Short
+        else {
+            base = base * _impactCostRatio(base) / 1 ether;
+            negative = base * 0x10000000000000000 / _expMiuT(
+                -int((block.number - uint(order.openBlock)) * CommonLib.BLOCK_TIME / 1000 * 3.472e3)
+            ) ;
+            value = value * (1 + lever) + uint(order.appends) * CommonLib.NEST_UNIT;
+        }
+
+        assembly {
+            switch gt(value, negative) 
+            case true { value := sub(value, negative) }
+            case false { value := 0 }
+        }
+    }
+
+    // Impact cost, plus one, 18 decimals
+    function _impactCostRatio(uint vol) internal pure returns (uint C) {
+        C = 5.556e7 * vol / 1 ether +  1.0004444 ether;
     }
 
     // Convert Order to OrderView

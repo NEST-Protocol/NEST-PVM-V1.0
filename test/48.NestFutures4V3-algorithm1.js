@@ -515,7 +515,7 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
             return l1 < l2 ? l2 : l1;
         };
 
-        await post(200, [1250, 16000, 250]);
+        await execute(200, [1250, 16000, 250], [], [], [], [], []);
         
         // 1. Normal buy (eth&btc&bnb, long&short, lever0-51), check channel, check balance, check order
         if (true) {
@@ -654,7 +654,7 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
                 23,24,25,26,27,28,29,30,31,32,33,34,5,6,7,8,9,10,11,12,13,35,
                 0,1,2,3,4,5,6,7,8,9,10,11,12,29,30,31,32,33,34,35
             ];
-            await post(200, [1230, 15500, 245]);
+            await execute(200, [1230, 15500, 245], [], [], [], [], []);
             for (let i = 0; i < 36; ++i) { 
                 if (false) {
                     console.log({
