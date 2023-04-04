@@ -82,6 +82,18 @@ library CommonLib {
         }
     }
 
+    /// @dev Encode the uint value as a floating-point representation in the form of fraction * 16 ^ exponent
+    /// @param value Destination uint value
+    /// @return v float format
+    function encodeFloat40(uint value) internal pure returns (uint40 v) {
+        assembly {
+            for { v := 0 } gt(value, 0x3FFFFFFFF) { v := add(v, 1) } {
+                value := shr(4, value)
+            }
+            v := or(v, shl(6, value))
+        }
+    }
+
     /// @dev Decode the floating-point representation of fraction * 16 ^ exponent to uint
     /// @param floatValue fraction value
     /// @return decode format

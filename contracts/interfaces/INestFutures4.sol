@@ -9,31 +9,30 @@ interface INestFutures4 {
     struct Order {
         // Address of owner
         address owner;
-        // Base price of this order, encoded with encodeFloat56()
-        uint56 basePrice;
-        // Balance of this order, 4 decimals
-        uint40 balance;
-
-        // Append amount of this order
-        uint40 appends;
+        // Status of order
+        uint8 status;
         // Index of target channel, support eth, btc and bnb
         uint8 channelIndex;
         // Leverage of this order
         uint8 lever;
-        // Orientation of this order, long or short
-        bool orientation;
-        // Pt, use this to calculate miuT
-        //int56 Pt;
+        // Block number of this order opened
         uint32 openBlock;
-        uint8 status;
-
+        // Base price of this order, encoded with encodeFloat40()
+        uint40 basePrice;
+        
+        // Balance of this order, 4 decimals
+        uint40 balance;
+        // Append amount of this order
+        uint40 appends;
         // Service fee, 4 decimals
         uint40 fee;                     // 48
+        // Orientation of this order, long or short
+        bool orientation;
 
-        // Stop price for trigger sell, encoded by encodeFloat56()
-        uint56 stopProfitPrice;         // 56
-        // Stop price for trigger sell, encoded by encodeFloat56()
-        uint56 stopLossPrice;           // 56
+        // Stop price for trigger sell, encoded by encodeFloat40()
+        uint40 stopProfitPrice;         // 56
+        // Stop price for trigger sell, encoded by encodeFloat40()
+        uint40 stopLossPrice;           // 56
     }
 
     /// @dev Order for view methods
@@ -55,7 +54,9 @@ interface INestFutures4 {
         // Base price of this order
         uint basePrice;
 
+        // Block number of this order opened
         uint32 openBlock;
+        // Status of order
         uint8 status;
         
         uint40 fee;

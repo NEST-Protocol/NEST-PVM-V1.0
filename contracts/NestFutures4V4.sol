@@ -336,7 +336,7 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
         require(uint(order.status) == S_LIMIT_REQUEST, "NF:status error");
         
         // Update limitPrice
-        _orders[orderIndex].basePrice = CommonLib.encodeFloat56(limitPrice);
+        _orders[orderIndex].basePrice = CommonLib.encodeFloat40(limitPrice);
     }
 
     /// @dev Update stopPrice for Order
@@ -352,8 +352,8 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
 
         // Update stopPrice
         // When user updateStopPrice, stopProfitPrice and stopLossPrice are not 0 general, so we don't consider 0
-        order.stopProfitPrice = CommonLib.encodeFloat56(stopProfitPrice);
-        order.stopLossPrice   = CommonLib.encodeFloat56(stopLossPrice  );
+        order.stopProfitPrice = CommonLib.encodeFloat40(stopProfitPrice);
+        order.stopLossPrice   = CommonLib.encodeFloat40(stopLossPrice  );
 
         // Update Order
         _orders[orderIndex] = order;
@@ -422,6 +422,7 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
         require(amount > CommonLib.FUTURES_NEST_LB && amount < 0x10000000000, "NF:amount invalid");
         require(lever > CommonLib.LEVER_LB && lever < CommonLib.LEVER_RB, "NF:lever not allowed");
         require(basePrice > 0, "NF:basePrice invalid");
+        require(channelIndex < CHANNEL_COUNT, "NF:channel invalid");
 
         // 2. Emit event
         emit BuyRequest(_orders.length, amount, msg.sender);
@@ -431,26 +432,29 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
         _orders.push(Order(
             // owner
             msg.sender,
-            // basePrice
-            // Query oraclePrice
-            CommonLib.encodeFloat56(basePrice),
-            // balance
-            uint40(amount),
-            // append
-            uint40(0),
+            // status
+            limit ? uint8(S_LIMIT_REQUEST) : uint8(S_BUY_REQUEST),
             // channelIndex
             uint8(channelIndex),
             // lever
             uint8(lever),
+            // openBlock
+            uint32(block.number),
+            // basePrice
+            // Query oraclePrice
+            CommonLib.encodeFloat40(basePrice),
+
+            // balance
+            uint40(amount),
+            // appends
+            uint40(0),
+            // fee
+            uint40(fee),
             // orientation
             orientation,
 
-            uint32(block.number),
-            limit ? uint8(S_LIMIT_REQUEST) : uint8(S_BUY_REQUEST),
-
-            uint40(fee),
-            stopProfitPrice > 0 ? CommonLib.encodeFloat56(stopProfitPrice) : uint56(0),
-            stopLossPrice > 0 ? CommonLib.encodeFloat56(stopLossPrice) : uint56(0)
+            stopProfitPrice > 0 ? CommonLib.encodeFloat40(stopProfitPrice) : uint40(0),
+            stopLossPrice > 0 ? CommonLib.encodeFloat40(stopLossPrice) : uint40(0)
         ));
     }
 
@@ -480,7 +484,8 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
                 // Load current channel
                 channelIndex = uint(order.channelIndex);
                 // TODO: Optimize code, don't encode and decode?
-                oraclePrice = CommonLib.decodeFloat(CommonLib.encodeFloat56(oraclePrices[channelIndex]));
+                //oraclePrice = CommonLib.decodeFloat(CommonLib.encodeFloat40(oraclePrices[channelIndex]));
+                oraclePrice = oraclePrices[channelIndex];
             }
 
             uint status = uint(order.status);
@@ -501,7 +506,7 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
                         uint(order.lever) * 
                         CommonLib.NEST_UNIT
                     );
-                    order.basePrice = CommonLib.encodeFloat56(
+                    order.basePrice = CommonLib.encodeFloat40(
                         order.orientation 
                             ? oraclePrice * impactCostRatio / 1 ether
                             : oraclePrice * 1 ether / impactCostRatio
@@ -535,7 +540,7 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
 
                     // TODO: Use oraclePrice or basePrice?
                     // Update Order: basePrice, baseBlock, balance, Pt
-                    order.basePrice = CommonLib.encodeFloat56(
+                    order.basePrice = CommonLib.encodeFloat40(
                         order.orientation
                         ? oraclePrice * _impactCostRatio(balance * uint(order.lever) * CommonLib.NEST_UNIT) / 1 ether
                         : oraclePrice * 1 ether / _impactCostRatio(balance * uint(order.lever) * CommonLib.NEST_UNIT)
@@ -580,14 +585,16 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
                     }
 
                     // Execute stop
+                    uint stopProfitPrice = CommonLib.decodeFloat(uint(order.stopProfitPrice));
+                    uint stopLossPrice   = CommonLib.decodeFloat(uint(order.stopLossPrice  ));
                     if (
-                        (uint(order.stopProfitPrice) > 0 || uint(order.stopLossPrice) > 0) && (
-                        order.orientation
-                        ? oraclePrice >= CommonLib.decodeFloat(uint(order.stopProfitPrice)) 
-                            || oraclePrice <= CommonLib.decodeFloat(uint(order.stopLossPrice))
-                        : oraclePrice <= CommonLib.decodeFloat(uint(order.stopProfitPrice))
-                            || oraclePrice <= CommonLib.decodeFloat(uint(order.stopLossPrice))
-                    )) {
+                        (stopProfitPrice > 0 || stopLossPrice > 0) && 
+                        (
+                            order.orientation
+                                ? (oraclePrice >= stopProfitPrice || oraclePrice <= stopLossPrice)
+                                : (oraclePrice <= stopProfitPrice || oraclePrice <= stopLossPrice)
+                        )
+                    ) {
                         order.balance = uint40(0);
                         order.appends = uint40(0);
                         order.status = uint8(S_CLEARED);

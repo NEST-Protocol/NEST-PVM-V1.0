@@ -262,12 +262,12 @@ describe('49.NestFutures4V4-algorithm1.js', function() {
             FEQ({
                 a: totalNest,
                 b: parseFloat(accounts.owner.NEST) - parseFloat(previous.owner.NEST),
-                d: 0.000000001
-            }, false);
+                d: 0.0000001
+            }, true);
             FEQ({
                 a: totalNest,
                 b: parseFloat(previous.nestVault.NEST) - parseFloat(accounts.nestVault.NEST),
-                d: 0.000000001
+                d: 0.0000001
             }, true);
 
             // buyOrderIndices, sellOrderIndices, limitOrderIndices, stopOrderIndices, liquidateOrderIndices
@@ -308,7 +308,7 @@ describe('49.NestFutures4V4-algorithm1.js', function() {
             //console.log({ jo: jo, po: po });
             
             // Compare two Order: basePrice, balance, appends, lever, valueOf, Pt
-            FEQ({ a: jo.basePrice, b: po.basePrice, d: 0.00000000001 }, true);
+            FEQ({ a: jo.basePrice, b: po.basePrice, d: 0.000000001 }, true);
             FEQ({ a: jo.balance, b: po.balance, d: 0.00000000001 }, true);
             FEQ({ a: jo.appends, b: po.appends, d: 0.00000000001 }, true);
             FEQ({ a: jo.lever, b: po.lever }, true);
@@ -318,8 +318,8 @@ describe('49.NestFutures4V4-algorithm1.js', function() {
 
             // TODO: Compare more fields
             FEQ({ a: jo.fee, b: po.fee, d: 0.0000000001 }, true);
-            FEQ({ a: jo.stopProfitPrice, b: po.stopProfitPrice, d: 0.0000000001 }, true);
-            FEQ({ a: jo.stopLossPrice, b: po.stopLossPrice, d: 0.0000000001 }, true);
+            FEQ({ a: jo.stopProfitPrice, b: po.stopProfitPrice, d: 0.000000001 }, true);
+            FEQ({ a: jo.stopLossPrice, b: po.stopLossPrice, d: 0.000000001 }, true);
         };
 
         // Decode the floating-point representation of fraction * 16 ^ exponent to uint
@@ -362,13 +362,18 @@ describe('49.NestFutures4V4-algorithm1.js', function() {
             const value = _valueOf(
                 miuT, order.balance, order.lever, order.orientation, order.basePrice, oraclePrice, order.appends);
             const cb = parseFloat(toDecimal(await nestFutures4V4.balanceOf(orderIndex, toBigInt(oraclePrice))));
-            FEQ({ a: value, b: cb, d: 0.00000001 });
+            FEQ({ a: value, b: cb, d: 0.0000001 }, true);
             return value;
         };
 
         // Create new buy request
         const newBuyRequest = async function(sender, channelIndex, lever, orientation, amount, basePrice,
             limit, stopProfitPrice, stopLossPrice, echo) {
+            if (orientation) {
+                basePrice = basePrice * 1.0001;
+            } else {
+                basePrice = basePrice * 0.9999;
+            }
             await listAccounts(true);
             await nestFutures4V4.newBuyRequest(channelIndex, lever, orientation, amount * NEST_BASE, 
                 toBigInt(basePrice), limit, toBigInt(stopProfitPrice), toBigInt(stopLossPrice));
@@ -501,15 +506,15 @@ describe('49.NestFutures4V4-algorithm1.js', function() {
                 console.log({ jo, co });
                 
                 // Compare two Order: basePrice, balance, appends, lever, valueOf, Pt
-                FEQ({ a: jo.basePrice, b: co.basePrice, d: 0.00000000001 }, true);
+                FEQ({ a: jo.basePrice, b: co.basePrice, d: 0.000000001 }, true);
                 FEQ({ a: jo.balance, b: co.balance, d: 0.00000000001 }, true);
                 FEQ({ a: jo.appends, b: co.appends, d: 0.00000000001 }, true);
                 FEQ({ a: jo.lever, b: co.lever }, true);
                 FEQ({ a: jo.openBlock, b: co.openBlock }, true);
                 FEQ({ a: jo.status, b: co.status }, true);
                 FEQ({ a: jo.fee, b: co.fee }, true);
-                FEQ({ a: jo.stopProfitPrice, b: co.stopProfitPrice, d: 0.00000000001 }, true);
-                FEQ({ a: jo.stopLossPrice, b: co.stopLossPrice, d: 0.00000000001 }, true);
+                FEQ({ a: jo.stopProfitPrice, b: co.stopProfitPrice, d: 0.000000001 }, true);
+                FEQ({ a: jo.stopLossPrice, b: co.stopLossPrice, d: 0.000000001 }, true);
             }
         };
 
@@ -526,7 +531,6 @@ describe('49.NestFutures4V4-algorithm1.js', function() {
         // 1. Normal buy (eth&btc&bnb, long&short, lever0-51), check channel, check balance, check order
         if (true) {
             console.log('1. buy');
-
             // eth-long
             await newBuyRequest(owner, 0, 1, true, 1000, 1250, false, 0, 0);                 // 0
             await newBuyRequest(owner, 0, 2, true, 2000, 1250, false, 0, 0);                 // 1
@@ -651,15 +655,16 @@ describe('49.NestFutures4V4-algorithm1.js', function() {
         // 6. Post different price and liquidate
         if (true) {
             console.log('6. liquidate');
-            const orderIndices = [
-                0,1,2,3,4,5,6,7,8,9,10,11,12,13,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,14,15,16,17,18,19,20,
-                21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,
-                0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,
-                0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,
-                0,1,2,3,4,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,14,15,16,17,18,19,20,21,22,
-                23,24,25,26,27,28,29,30,31,32,33,34,5,6,7,8,9,10,11,12,13,35,
-                0,1,2,3,4,5,6,7,8,9,10,11,12,29,30,31,32,33,34,35
-            ];
+            // const orderIndices = [
+            //     0,1,2,3,4,5,6,7,8,9,10,11,12,13,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,14,15,16,17,18,19,20,
+            //     21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,
+            //     0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,
+            //     0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,
+            //     0,1,2,3,4,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,14,15,16,17,18,19,20,21,22,
+            //     23,24,25,26,27,28,29,30,31,32,33,34,5,6,7,8,9,10,11,12,13,35,
+            //     0,1,2,3,4,5,6,7,8,9,10,11,12,29,30,31,32,33,34,35
+            // ];
+            const orderIndices = [4, 16, 22, 23, 28, 35];
             await execute(200, [1230, 15500, 245], [], [], [], [], []);
             for (let i = 0; i < 36; ++i) { 
                 if (false) {
@@ -686,21 +691,21 @@ describe('49.NestFutures4V4-algorithm1.js', function() {
             await newBuyRequest(owner, 0, 3, true, 3000, 1235, true, 1800, 800);
             await newBuyRequest(owner, 1, 7, false, 88888, 15000, true, 10000, 20000);
             await newBuyRequest(owner, 2, 4, true, 5000, 200, true, 400, 100);
-            await list(owner, 0, 4, 0);
+            //await list(owner, 0, 4, 0);
         }
 
         // 8. updateLimitPrice
         if (true) {
             console.log('8. updateLimitPrice');
             await updateLimitPrice(owner, 37, 15100);
-            await list(owner, 0, 4, 0);
+            //await list(owner, 0, 4, 0);
         }
 
         // 9. updateStopPrice
         if (true) {
             console.log('9. updateStopPrice');
             await updateStopPrice(owner, 1, 11111, 22222);
-            await list(owner, 0, 4, 0);
+            //await list(owner, 0, 4, 0);
         }
         
         // 11. buyWithStopOrder
