@@ -3,11 +3,11 @@ const { deploy } = require('../scripts/deploy.js');
 const { toBigInt, toDecimal, showReceipt, listBalances, snd, tableSnd, d1, Vc, Vp, UI, FEQ } = require('./utils.js');
 const { ethers, upgrades } = require('hardhat');
 
-describe('48.NestFutures4V3-algorithm1.js', function() {
+describe('49.NestFutures4V4-algorithm1.js', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
-        const { eth, usdt, nest, nestFutures4V3, nestVault, pancakeRouter, BLOCK_TIME } = await deploy();
+        const { eth, usdt, nest, nestFutures4V4, nestVault, pancakeRouter, BLOCK_TIME } = await deploy();
 
         const tokens = [eth, nest, usdt];
         let previous;
@@ -18,7 +18,7 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
                 height: await ethers.provider.getBlockNumber(),
                 owner: await listBalances(owner, tokens),
                 nestVault: await listBalances(nestVault, tokens),
-                nestFutures4V3: await listBalances(nestFutures4V3, tokens)
+                nestFutures4V4: await listBalances(nestFutures4V4, tokens)
             };
             if (!silent) console.log(accounts);
             return accounts;
@@ -68,7 +68,7 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
         // Post price
         const post = async function(period, prices) {
             // Post price to the contract
-            await nestFutures4V3.post(period, [toBigInt(prices[0]), toBigInt(prices[1]), toBigInt(prices[2])]);
+            await nestFutures4V4.post(period, [toBigInt(prices[0]), toBigInt(prices[1]), toBigInt(prices[2])]);
             // Update price to context
             ctx.prices[0] = prices[0],
             ctx.prices[1] = prices[1],
@@ -79,12 +79,18 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
         const execute = async function(period, prices, buyOrderIndices, sellOrderIndices, limitOrderIndices, stopOrderIndices, liquidateOrderIndices) {
             await listAccounts(true);
             // Post price to the contract
-            await nestFutures4V3.execute(period, [toBigInt(prices[0]), toBigInt(prices[1]), toBigInt(prices[2])], 
-                buyOrderIndices,
-                sellOrderIndices,
-                limitOrderIndices,
-                stopOrderIndices,
-                liquidateOrderIndices
+            let orderIndices = [];
+            for (var i = 0; i < buyOrderIndices.length; ++i) { orderIndices.push(buyOrderIndices[i]); }
+            for (var i = 0; i < sellOrderIndices.length; ++i) { orderIndices.push(sellOrderIndices[i]); }
+            for (var i = 0; i < limitOrderIndices.length; ++i) { orderIndices.push(limitOrderIndices[i]); }
+            for (var i = 0; i < stopOrderIndices.length; ++i) { orderIndices.push(stopOrderIndices[i]); }
+            for (var i = 0; i < liquidateOrderIndices.length; ++i) { orderIndices.push(liquidateOrderIndices[i]); }
+            await nestFutures4V4.execute(period, [toBigInt(prices[0]), toBigInt(prices[1]), toBigInt(prices[2])], orderIndices
+                // buyOrderIndices,
+                // sellOrderIndices,
+                // limitOrderIndices,
+                // stopOrderIndices,
+                // liquidateOrderIndices
             );
             await listAccounts(true);
             // Update price to context
@@ -257,7 +263,7 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
                 a: totalNest,
                 b: parseFloat(accounts.owner.NEST) - parseFloat(previous.owner.NEST),
                 d: 0.000000001
-            }, true);
+            }, false);
             FEQ({
                 a: totalNest,
                 b: parseFloat(previous.nestVault.NEST) - parseFloat(accounts.nestVault.NEST),
@@ -282,7 +288,7 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
             // Local Order
             const jo = UI(ctx.orders[index]);
             // Order from contract
-            const co = UI((await nestFutures4V3.list(index, 1, 1))[0]);
+            const co = UI((await nestFutures4V4.list(index, 1, 1))[0]);
             // Parse Order to local format
             const po = {
                 index: co.index,
@@ -355,7 +361,7 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
 
             const value = _valueOf(
                 miuT, order.balance, order.lever, order.orientation, order.basePrice, oraclePrice, order.appends);
-            const cb = parseFloat(toDecimal(await nestFutures4V3.balanceOf(orderIndex, toBigInt(oraclePrice))));
+            const cb = parseFloat(toDecimal(await nestFutures4V4.balanceOf(orderIndex, toBigInt(oraclePrice))));
             FEQ({ a: value, b: cb, d: 0.00000001 });
             return value;
         };
@@ -364,7 +370,7 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
         const newBuyRequest = async function(sender, channelIndex, lever, orientation, amount, basePrice,
             limit, stopProfitPrice, stopLossPrice, echo) {
             await listAccounts(true);
-            await nestFutures4V3.newBuyRequest(channelIndex, lever, orientation, amount * NEST_BASE, 
+            await nestFutures4V4.newBuyRequest(channelIndex, lever, orientation, amount * NEST_BASE, 
                 toBigInt(basePrice), limit, toBigInt(stopProfitPrice), toBigInt(stopLossPrice));
             await listAccounts(true);
 
@@ -399,7 +405,7 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
         // Append order
         const add = async function(sender, index, amount) {
             await listAccounts(true);
-            await nestFutures4V3.add(index, amount * NEST_BASE);
+            await nestFutures4V4.add(index, amount * NEST_BASE);
             await listAccounts(true);
 
             ctx.orders[index].appends += amount;
@@ -409,14 +415,14 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
 
         // Create new sell request
         const newSellRequest = async function(sender, index, echo) {
-            await nestFutures4V3.newSellRequest(index);
+            await nestFutures4V4.newSellRequest(index);
             let order = ctx.orders[index];
             order.status = S_SELL_REQUEST;
         };
 
         // Update LimitPrice
         const updateLimitPrice = async function(sender, orderIndex, limitPrice) {
-            await nestFutures4V3.updateLimitPrice(orderIndex, toBigInt(limitPrice));
+            await nestFutures4V4.updateLimitPrice(orderIndex, toBigInt(limitPrice));
             let order = ctx.orders[orderIndex];
             order.basePrice = limitPrice;
 
@@ -425,7 +431,7 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
 
         // Update StopPrice
         const updateStopPrice = async function(sender, orderIndex, stopProfitPrice, stopLossPrice) {
-            await nestFutures4V3.updateStopPrice(orderIndex, toBigInt(stopProfitPrice), toBigInt(stopLossPrice));
+            await nestFutures4V4.updateStopPrice(orderIndex, toBigInt(stopProfitPrice), toBigInt(stopLossPrice));
 
             let order = ctx.orders[orderIndex];
             order.stopProfitPrice = stopProfitPrice;
@@ -437,7 +443,7 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
         // Cancel buy request
         const cancelBuyRequest = async function(sender, orderIndex) {
             await listAccounts(true);
-            await nestFutures4V3.cancelBuyRequest(orderIndex);
+            await nestFutures4V4.cancelBuyRequest(orderIndex);
             await listAccounts(true);
             
             let order = ctx.orders[orderIndex];
@@ -462,7 +468,7 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
 
         // list Order
         const list = async function(sender, offset, count, order) {
-            const cl = await nestFutures4V3.list(offset, count, order);
+            const cl = await nestFutures4V4.list(offset, count, order);
             const jl = [];
             if (order == 0) {
                 for (let i = 0; i < count; ++i) {
@@ -758,10 +764,10 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
 
         if (true) {
             console.log('12. newBuyRequestWithUsdt');
-            await usdt.approve(nestFutures4V3.address, 10000000000000000000000000n);
+            await usdt.approve(nestFutures4V4.address, 10000000000000000000000000n);
             
             await listAccounts();
-            await nestFutures4V3.newBuyRequestWithUsdt(
+            await nestFutures4V4.newBuyRequestWithUsdt(
                 //uint usdtAmount,
                 toBigInt(10),
                 //uint minNestAmount,
