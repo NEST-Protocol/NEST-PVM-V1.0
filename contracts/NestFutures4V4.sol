@@ -42,7 +42,7 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
 
     // The prices of (eth, btc and bnb) posted by directPost() method is stored in this field
     // Bits explain: period(16)|height(48)|price3(64)|price2(64)|price1(64)
-    uint _lastPrices;
+    //uint _lastPrices;
     
     // TODO:
     // Address of direct poster
@@ -68,7 +68,7 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
     }
 
     /// @dev Direct post price and execute
-    /// @param period Term of validity
+    // @param period Term of validity
     /// @param prices Price array, direct price, eth&btc&bnb, eg: 1700e18, 25000e18, 300e18
     /// Please note that the price is no longer relative to 2000 USD
     /// @param orderIndices Indices of orders to execute
@@ -78,7 +78,6 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
     // @param stopOrderIndices Indices of order to stop
     // @param liquidateOrderIndices Indices of order to liquidate
     function execute(
-        uint period, 
         uint[CHANNEL_COUNT] calldata prices, 
         uint[] calldata orderIndices
         // uint[] calldata buyOrderIndices, 
@@ -88,6 +87,7 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
         // uint[] calldata liquidateOrderIndices
     ) external {
         require(msg.sender == DIRECT_POSTER, "NF:not directPoster");
+        /*
         assembly {
             // Encode value at position indicated by value to float
             function encode(value) -> v {
@@ -121,20 +121,185 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
             )
         }
         _lastPrices = period;
-        _execute(orderIndices, prices);
+        */
+        
+        // 0. Global variables
+        // Total reward of this transaction
+        uint reward = 0;
+        // Last price of current channel
+        uint oraclePrice = 0;
+        // Index of current channel
+        uint channelIndex = 0x10000;
+
+        uint orderIndex = 0;
+        uint i = orderIndices.length << 5;
+        while (i > 0) {
+            assembly {
+                i := sub(i, 0x20)
+                orderIndex := calldataload(add(orderIndices.offset, i))
+            }
+            // 1. Load Order
+            Order memory order = _orders[orderIndex];
+
+            // 2. Query price
+            if (channelIndex != uint(order.channelIndex)) {
+                // If channelIndex is not same with previous, need load new channel and query oracle
+                // At first, channelIndex is 0x10000, this is impossible the same with current channelIndex
+                // Load current channel
+                channelIndex = uint(order.channelIndex);
+                // TODO: Optimize code, don't encode and decode?
+                //oraclePrice = CommonLib.decodeFloat(CommonLib.encodeFloat40(prices[channelIndex]));
+                oraclePrice = prices[channelIndex];
+            }
+
+            uint status = uint(order.status);
+            // 3. Execute buy request
+            if (status == S_BUY_REQUEST) {
+                uint basePrice = CommonLib.decodeFloat(uint(order.basePrice));
+                uint balance = uint(order.balance);
+
+                // TODO: Optimize code, 1 if else, 2 expand
+                if (order.orientation ? basePrice < oraclePrice : basePrice > oraclePrice) {
+                    emit Revert(orderIndex, balance, order.owner);
+
+                    order.status = uint8(S_CANCELED);
+                    INestVault(NEST_VAULT_ADDRESS).transferTo(
+                        order.owner, 
+                        (balance + uint(order.fee)) * CommonLib.NEST_UNIT
+                    );
+                } else {
+                    emit Buy(orderIndex, balance, order.owner);
+
+                    uint impactCostRatio = _impactCostRatio(balance * uint(order.lever) * CommonLib.NEST_UNIT);
+                    order.basePrice = CommonLib.encodeFloat40(
+                        order.orientation 
+                            ? oraclePrice * impactCostRatio / 1 ether
+                            : oraclePrice * 1 ether / impactCostRatio
+                    );
+                    order.status = uint8(S_NORMAL);
+                }
+            }
+            // 4. Execute sell request
+            else if (status == S_SELL_REQUEST) {
+
+                // 4. Calculate value and update Order
+                (uint value, uint fee) = _valueOf(order, oraclePrice);
+                emit Sell(orderIndex, uint(order.balance), order.owner, value);
+
+                //emit Sell(orderIndex, uint(order.balance), msg.sender, value);
+                order.balance = uint40(0);
+                order.appends = uint40(0);
+                order.status = uint8(S_CLEARED);
+
+                // 5. Transfer NEST to user
+                // If value grater than fee, deduct and transfer NEST to owner
+                if (value > fee) {
+                    INestVault(NEST_VAULT_ADDRESS).transferTo(order.owner, value - fee);
+                }
+            }
+            // 5. Execute limit request
+            else if (status == S_LIMIT_REQUEST) {
+                if (
+                    order.orientation 
+                    ? oraclePrice <= CommonLib.decodeFloat(uint(order.basePrice))
+                    : oraclePrice >= CommonLib.decodeFloat(uint(order.basePrice))
+                ) {
+                    uint balance = uint(order.balance);
+                    emit Buy(orderIndex, balance, order.owner);
+
+                    // TODO: Use oraclePrice or basePrice?
+                    // Update Order: basePrice, baseBlock, balance, Pt
+                    order.basePrice = CommonLib.encodeFloat40(
+                        order.orientation
+                        ? oraclePrice * _impactCostRatio(balance * uint(order.lever) * CommonLib.NEST_UNIT) / 1 ether
+                        : oraclePrice * 1 ether / _impactCostRatio(balance * uint(order.lever) * CommonLib.NEST_UNIT)
+                    );
+                    order.balance = uint40(balance);
+                    order.openBlock = uint32(block.number);
+                    order.status = uint8(S_NORMAL);
+                }
+            } 
+            // 6. Normal, Liquidate or stop
+            else if (status == S_NORMAL) {
+                uint balance = uint(order.balance);
+                if (balance == 0) {
+                    continue;
+                }
+                (uint value, uint fee) = _valueOf(order, oraclePrice);
+                if (uint(order.lever) > 1) {
+                    balance = balance * CommonLib.NEST_UNIT * uint(order.lever);
+
+                    // 5. Liquidate logic
+                    // lever is great than 1, and balance less than a regular value, can be liquidated
+                    // the regular value is: Max(M0 * L * St / S0 * c, a) | expired
+                    // the regular value is: Max(M0 * L * St / S0 * c + a, M0 * L * 0.5%) | expired
+                    // the regular value is: Max(M0 * L * St / S0 * c + a, M0 * L * 1%)
+                    unchecked {
+                        if (value < balance / 100 || value < fee + CommonLib.MIN_FUTURE_VALUE) {
+                            // Clear all data of order, use this code next time
+                            assembly {
+                                mstore(0, _orders.slot)
+                                let offset := add(keccak256(0, 0x20), shl(1, orderIndex))
+                                // Each Order take 2 slots
+                                sstore(offset, 0)
+                                sstore(add(offset, 1), 0)
+                            }
+                            
+                            // Add reward
+                            reward += value;
+
+                            // Emit liquidate event
+                            emit Liquidate(orderIndex, order.owner, value);
+                            continue;
+                        }
+                    }
+                }
+
+                // Execute stop
+                uint stopProfitPrice = CommonLib.decodeFloat(uint(order.stopProfitPrice));
+                uint stopLossPrice   = CommonLib.decodeFloat(uint(order.stopLossPrice  ));
+                if (
+                    (stopProfitPrice == 0 && stopLossPrice == 0) || 
+                    (
+                        order.orientation
+                            ? (oraclePrice < stopProfitPrice && oraclePrice > stopLossPrice)
+                            : (oraclePrice > stopProfitPrice && oraclePrice < stopLossPrice)
+                    )
+                ) {
+                    continue;
+                }
+                
+                emit Sell(orderIndex, balance, order.owner, value);
+
+                order.balance = uint40(0);
+                order.appends = uint40(0);
+                order.status = uint8(S_CLEARED);
+                _orders[orderIndex] = order;
+
+                // Newest value of order is greater than fee + EXECUTE_FEE, deduct and transfer NEST to owner
+                if (value > fee + CommonLib.EXECUTE_FEE_NEST) {
+                    INestVault(NEST_VAULT_ADDRESS).transferTo(order.owner, value - fee - CommonLib.EXECUTE_FEE_NEST);
+                }
+            }
+
+            _orders[orderIndex] = order;
+        }
+        if (reward > 0) {
+            INestVault(NEST_VAULT_ADDRESS).transferTo(msg.sender, reward);
+        }
     }
 
-    /// @dev List prices
-    /// @param channelIndex index of target channel
-    function lastPrice(uint channelIndex) public view override returns (uint period, uint height, uint price) {
-        // Bits explain: period(16)|height(48)|price3(64)|price2(64)|price1(64)
-        uint rawPrice =_lastPrices;
-        return (
-            rawPrice >> 240,
-            (rawPrice >> 192) & 0xFFFFFFFFFFFF,
-            CommonLib.decodeFloat((rawPrice >> (channelIndex << 6)) & 0xFFFFFFFFFFFFFFFF)
-        );
-    }
+    // /// @dev List prices
+    // /// @param channelIndex index of target channel
+    // function lastPrice(uint channelIndex) public view override returns (uint period, uint height, uint price) {
+    //     // Bits explain: period(16)|height(48)|price3(64)|price2(64)|price1(64)
+    //     uint rawPrice =_lastPrices;
+    //     return (
+    //         rawPrice >> 240,
+    //         (rawPrice >> 192) & 0xFFFFFFFFFFFF,
+    //         CommonLib.decodeFloat((rawPrice >> (channelIndex << 6)) & 0xFFFFFFFFFFFFFFFF)
+    //     );
+    // }
 
     /// @dev Returns the current value of target order
     /// @param orderIndex Index of order
@@ -396,7 +561,7 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
         order.status = uint8(S_SELL_REQUEST);
         _orders[orderIndex] = order;
 
-        emit SellRequest(orderIndex, uint(order.balance), msg.sender);
+        //emit SellRequest(orderIndex, uint(order.balance), msg.sender);
     }
 
     /// @dev Buy futures request
@@ -456,168 +621,6 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
             stopProfitPrice > 0 ? CommonLib.encodeFloat40(stopProfitPrice) : uint40(0),
             stopLossPrice > 0 ? CommonLib.encodeFloat40(stopLossPrice) : uint40(0)
         ));
-    }
-
-    // Execute orders
-    function _execute(uint[] calldata orderIndices, uint[CHANNEL_COUNT] calldata oraclePrices) internal {
-        // 0. Global variables
-        // Total reward of this transaction
-        uint reward = 0;
-        // Last price of current channel
-        uint oraclePrice = 0;
-        // Index of current channel
-        uint channelIndex = 0x10000;
-
-        uint orderIndex = 0;
-        uint i = orderIndices.length << 5;
-        while (i > 0) {
-            assembly {
-                i := sub(i, 0x20)
-                orderIndex := calldataload(add(orderIndices.offset, i))
-            }
-            // 1. Load Order
-            Order memory order = _orders[orderIndex];
-
-            if (channelIndex != uint(order.channelIndex)) {
-                // If channelIndex is not same with previous, need load new channel and query oracle
-                // At first, channelIndex is 0x10000, this is impossible the same with current channelIndex
-                // Load current channel
-                channelIndex = uint(order.channelIndex);
-                // TODO: Optimize code, don't encode and decode?
-                //oraclePrice = CommonLib.decodeFloat(CommonLib.encodeFloat40(oraclePrices[channelIndex]));
-                oraclePrice = oraclePrices[channelIndex];
-            }
-
-            uint status = uint(order.status);
-            // 2. Execute buy request
-            if (status == S_BUY_REQUEST) {
-                uint basePrice = CommonLib.decodeFloat(uint(order.basePrice));
-
-                // TODO: Optimize code, 1 if else, 2 expand
-                if (order.orientation ? basePrice < oraclePrice : basePrice > oraclePrice) {
-                    order.status = uint8(S_CANCELED);
-                    INestVault(NEST_VAULT_ADDRESS).transferTo(
-                        order.owner, 
-                        (uint(order.balance) + uint(order.fee)) * CommonLib.NEST_UNIT
-                    );
-                } else {
-                    uint impactCostRatio = _impactCostRatio(
-                        uint(order.balance) * 
-                        uint(order.lever) * 
-                        CommonLib.NEST_UNIT
-                    );
-                    order.basePrice = CommonLib.encodeFloat40(
-                        order.orientation 
-                            ? oraclePrice * impactCostRatio / 1 ether
-                            : oraclePrice * 1 ether / impactCostRatio
-                    );
-                    order.status = uint8(S_NORMAL);
-                }
-            }
-            // 3. Execute sell request
-            else if (status == S_SELL_REQUEST) {
-                // 4. Calculate value and update Order
-                (uint value, uint fee) = _valueOf(order, oraclePrices[uint(order.channelIndex)]);
-                //emit Sell(orderIndex, uint(order.balance), msg.sender, value);
-                order.balance = uint40(0);
-                order.appends = uint40(0);
-                order.status = uint8(S_CLEARED);
-
-                // 5. Transfer NEST to user
-                // If value grater than fee, deduct and transfer NEST to owner
-                if (value > fee) {
-                    INestVault(NEST_VAULT_ADDRESS).transferTo(order.owner, value - fee);
-                }
-            }
-            // 4. Execute limit request
-            else if (status == S_LIMIT_REQUEST) {
-                if (
-                    order.orientation 
-                    ? oraclePrice <= CommonLib.decodeFloat(uint(order.basePrice))
-                    : oraclePrice >= CommonLib.decodeFloat(uint(order.basePrice))
-                ) {
-                    uint balance = uint(order.balance);
-
-                    // TODO: Use oraclePrice or basePrice?
-                    // Update Order: basePrice, baseBlock, balance, Pt
-                    order.basePrice = CommonLib.encodeFloat40(
-                        order.orientation
-                        ? oraclePrice * _impactCostRatio(balance * uint(order.lever) * CommonLib.NEST_UNIT) / 1 ether
-                        : oraclePrice * 1 ether / _impactCostRatio(balance * uint(order.lever) * CommonLib.NEST_UNIT)
-                    );
-                    order.balance = uint40(balance);
-                    order.openBlock = uint32(block.number);
-                    order.status = uint8(S_NORMAL);
-                }
-            } 
-            // 5. Normal
-            else if (status == S_NORMAL) {
-                uint balance = uint(order.balance);
-                if (balance > 0) {
-                    (uint value, uint fee) = _valueOf(order, oraclePrice);
-                    if (uint(order.lever) > 1) {
-                        balance = balance * CommonLib.NEST_UNIT * uint(order.lever);
-
-                        // 5. Liquidate logic
-                        // lever is great than 1, and balance less than a regular value, can be liquidated
-                        // the regular value is: Max(M0 * L * St / S0 * c, a) | expired
-                        // the regular value is: Max(M0 * L * St / S0 * c + a, M0 * L * 0.5%) | expired
-                        // the regular value is: Max(M0 * L * St / S0 * c + a, M0 * L * 1%)
-                        unchecked {
-                            if (value < balance / 100 || value < fee + CommonLib.MIN_FUTURE_VALUE) {
-                                // Clear all data of order, use this code next time
-                                assembly {
-                                    mstore(0, _orders.slot)
-                                    let offset := add(keccak256(0, 0x20), shl(1, orderIndex))
-                                    // Each Order take 2 slots
-                                    sstore(offset, 0)
-                                    sstore(add(offset, 1), 0)
-                                }
-                                
-                                // Add reward
-                                reward += value;
-
-                                // Emit liquidate event
-                                emit Liquidate(orderIndex, msg.sender, value);
-                                continue;
-                            }
-                        }
-                    }
-
-                    // Execute stop
-                    uint stopProfitPrice = CommonLib.decodeFloat(uint(order.stopProfitPrice));
-                    uint stopLossPrice   = CommonLib.decodeFloat(uint(order.stopLossPrice  ));
-                    if (
-                        (stopProfitPrice > 0 || stopLossPrice > 0) && 
-                        (
-                            order.orientation
-                                ? (oraclePrice >= stopProfitPrice || oraclePrice <= stopLossPrice)
-                                : (oraclePrice <= stopProfitPrice || oraclePrice <= stopLossPrice)
-                        )
-                    ) {
-                        order.balance = uint40(0);
-                        order.appends = uint40(0);
-                        order.status = uint8(S_CLEARED);
-                        _orders[orderIndex] = order;
-
-                        // Newest value of order is greater than fee + EXECUTE_FEE, deduct and transfer NEST to owner
-                        if (value > fee + CommonLib.EXECUTE_FEE_NEST) {
-                            INestVault(NEST_VAULT_ADDRESS).transferTo(order.owner, value - fee - CommonLib.EXECUTE_FEE_NEST);
-                        }
-                        //emit Sell(orderIndex, balance, order.owner, value);
-                    } else { 
-                        continue;
-                    }
-                } else { 
-                    continue;
-                }
-            }
-
-            _orders[orderIndex] = order;
-        }
-        if (reward > 0) {
-            INestVault(NEST_VAULT_ADDRESS).transferTo(msg.sender, reward);
-        }
     }
 
     // Swap USDT to NEST

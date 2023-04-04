@@ -85,7 +85,7 @@ describe('49.NestFutures4V4-algorithm1.js', function() {
             for (var i = 0; i < limitOrderIndices.length; ++i) { orderIndices.push(limitOrderIndices[i]); }
             for (var i = 0; i < stopOrderIndices.length; ++i) { orderIndices.push(stopOrderIndices[i]); }
             for (var i = 0; i < liquidateOrderIndices.length; ++i) { orderIndices.push(liquidateOrderIndices[i]); }
-            await nestFutures4V4.execute(period, [toBigInt(prices[0]), toBigInt(prices[1]), toBigInt(prices[2])], orderIndices
+            await nestFutures4V4.execute([toBigInt(prices[0]), toBigInt(prices[1]), toBigInt(prices[2])], orderIndices
                 // buyOrderIndices,
                 // sellOrderIndices,
                 // limitOrderIndices,

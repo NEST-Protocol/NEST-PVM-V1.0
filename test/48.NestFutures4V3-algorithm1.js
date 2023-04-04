@@ -79,7 +79,7 @@ describe('48.NestFutures4V3-algorithm1.js', function() {
         const execute = async function(period, prices, buyOrderIndices, sellOrderIndices, limitOrderIndices, stopOrderIndices, liquidateOrderIndices) {
             await listAccounts(true);
             // Post price to the contract
-            await nestFutures4V3.execute(period, [toBigInt(prices[0]), toBigInt(prices[1]), toBigInt(prices[2])], 
+            await nestFutures4V3.execute([toBigInt(prices[0]), toBigInt(prices[1]), toBigInt(prices[2])], 
                 buyOrderIndices,
                 sellOrderIndices,
                 limitOrderIndices,

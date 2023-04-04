@@ -42,7 +42,7 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
 
     // The prices of (eth, btc and bnb) posted by directPost() method is stored in this field
     // Bits explain: period(16)|height(48)|price3(64)|price2(64)|price1(64)
-    uint _lastPrices;
+    //uint _lastPrices;
     
     // TODO:
     // Address of direct poster
@@ -68,7 +68,7 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
     }
 
     /// @dev Direct post price and execute
-    /// @param period Term of validity
+    // @param period Term of validity
     /// @param prices Price array, direct price, eth&btc&bnb, eg: 1700e18, 25000e18, 300e18
     /// Please note that the price is no longer relative to 2000 USD
     /// @param buyOrderIndices Indices of order to buy
@@ -77,7 +77,6 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
     /// @param stopOrderIndices Indices of order to stop
     /// @param liquidateOrderIndices Indices of order to liquidate
     function execute(
-        uint period, 
         uint[CHANNEL_COUNT] calldata prices, 
         uint[] calldata buyOrderIndices, 
         uint[] calldata sellOrderIndices,
@@ -86,39 +85,39 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
         uint[] calldata liquidateOrderIndices
     ) external {
         require(msg.sender == DIRECT_POSTER, "NF:not directPoster");
-        assembly {
-            // Encode value at position indicated by value to float
-            function encode(value) -> v {
-                v := 0
-                // Load value from calldata
-                // Encode logic
-                for { value := calldataload(value) } gt(value, 0x3FFFFFFFFFFFFFF) { value := shr(4, value) } {
-                    v := add(v, 1)
-                }
-                v := or(v, shl(6, value))
-            }
+        // assembly {
+        //     // Encode value at position indicated by value to float
+        //     function encode(value) -> v {
+        //         v := 0
+        //         // Load value from calldata
+        //         // Encode logic
+        //         for { value := calldataload(value) } gt(value, 0x3FFFFFFFFFFFFFF) { value := shr(4, value) } {
+        //             v := add(v, 1)
+        //         }
+        //         v := or(v, shl(6, value))
+        //     }
 
-            period := 
-            or(
-                or(
-                    or(
-                        or(
-                            // period
-                            shl(240, period), 
-                            // block.number
-                            shl(192, number())
-                        ), 
-                        // equivalents[2]
-                        shl(128, encode(0x64))
-                    ), 
-                    // equivalents[1]
-                    shl(64, encode(0x44))
-                ), 
-                // equivalents[0]
-                encode(0x24)
-            )
-        }
-        _lastPrices = period;
+        //     period := 
+        //     or(
+        //         or(
+        //             or(
+        //                 or(
+        //                     // period
+        //                     shl(240, period), 
+        //                     // block.number
+        //                     shl(192, number())
+        //                 ), 
+        //                 // equivalents[2]
+        //                 shl(128, encode(0x64))
+        //             ), 
+        //             // equivalents[1]
+        //             shl(64, encode(0x44))
+        //         ), 
+        //         // equivalents[0]
+        //         encode(0x24)
+        //     )
+        // }
+        // _lastPrices = period;
 
         // Execute buy orders
         _executeBuy(buyOrderIndices, prices);
@@ -136,17 +135,17 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
         _liquidate(liquidateOrderIndices, prices);
     }
 
-    /// @dev List prices
-    /// @param channelIndex index of target channel
-    function lastPrice(uint channelIndex) public view override returns (uint period, uint height, uint price) {
-        // Bits explain: period(16)|height(48)|price3(64)|price2(64)|price1(64)
-        uint rawPrice =_lastPrices;
-        return (
-            rawPrice >> 240,
-            (rawPrice >> 192) & 0xFFFFFFFFFFFF,
-            CommonLib.decodeFloat((rawPrice >> (channelIndex << 6)) & 0xFFFFFFFFFFFFFFFF)
-        );
-    }
+    // /// @dev List prices
+    // /// @param channelIndex index of target channel
+    // function lastPrice(uint channelIndex) public view override returns (uint period, uint height, uint price) {
+    //     // Bits explain: period(16)|height(48)|price3(64)|price2(64)|price1(64)
+    //     uint rawPrice =_lastPrices;
+    //     return (
+    //         rawPrice >> 240,
+    //         (rawPrice >> 192) & 0xFFFFFFFFFFFF,
+    //         CommonLib.decodeFloat((rawPrice >> (channelIndex << 6)) & 0xFFFFFFFFFFFFFFFF)
+    //     );
+    // }
 
     /// @dev Returns the current value of target order
     /// @param orderIndex Index of order
@@ -408,7 +407,7 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
         order.status = uint8(S_SELL_REQUEST);
         _orders[orderIndex] = order;
 
-        emit SellRequest(orderIndex, uint(order.balance), msg.sender);
+        //emit SellRequest(orderIndex, uint(order.balance), msg.sender);
     }
 
     /// @dev Buy futures request
@@ -498,20 +497,21 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
                     //oraclePrice = CommonLib.decodeFloat(CommonLib.encodeFloat40(oraclePrices[channelIndex]));
                 }
                 uint basePrice = CommonLib.decodeFloat(uint(order.basePrice));
+                uint balance = uint(order.balance);
 
                 // TODO: Optimize code, 1 if else, 2 expand
                 if (order.orientation ? basePrice < oraclePrice : basePrice > oraclePrice) {
+                    emit Revert(orderIndex, balance, order.owner);
+
                     order.status = uint8(S_CANCELED);
                     INestVault(NEST_VAULT_ADDRESS).transferTo(
                         order.owner, 
-                        (uint(order.balance) + uint(order.fee)) * CommonLib.NEST_UNIT
+                        (balance + uint(order.fee)) * CommonLib.NEST_UNIT
                     );
                 } else {
-                    uint impactCostRatio = _impactCostRatio(
-                        uint(order.balance) * 
-                        uint(order.lever) * 
-                        CommonLib.NEST_UNIT
-                    );
+                    emit Buy(orderIndex, balance, order.owner);
+
+                    uint impactCostRatio = _impactCostRatio(balance * uint(order.lever) * CommonLib.NEST_UNIT);
                     order.basePrice = CommonLib.encodeFloat40(
                         order.orientation 
                             ? oraclePrice * impactCostRatio / 1 ether
@@ -554,6 +554,8 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
 
                 // 4. Calculate value and update Order
                 (uint value, uint fee) = _valueOf(order, oraclePrice);
+                emit Sell(orderIndex, uint(order.balance), order.owner, value);
+
                 //emit Sell(orderIndex, uint(order.balance), msg.sender, value);
                 order.balance = uint40(0);
                 order.appends = uint40(0);
@@ -600,6 +602,7 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
                     : oraclePrice >= CommonLib.decodeFloat(uint(order.basePrice))
                 ) {
                     uint balance = uint(order.balance);
+                    emit Buy(orderIndex, balance, order.owner);
 
                     // TODO: Use oraclePrice or basePrice?
                     // Update Order: basePrice, baseBlock, balance, Pt
@@ -652,24 +655,27 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
                 uint stopProfitPrice = CommonLib.decodeFloat(uint(order.stopProfitPrice));
                 uint stopLossPrice   = CommonLib.decodeFloat(uint(order.stopLossPrice  ));
                 if (
-                    (stopProfitPrice > 0 || stopLossPrice > 0) && 
+                    (stopProfitPrice == 0 && stopLossPrice == 0) || 
                     (
                         order.orientation
-                            ? (oraclePrice >= stopProfitPrice || oraclePrice <= stopLossPrice)
-                            : (oraclePrice <= stopProfitPrice || oraclePrice <= stopLossPrice)
+                            ? (oraclePrice < stopProfitPrice && oraclePrice > stopLossPrice)
+                            : (oraclePrice > stopProfitPrice && oraclePrice < stopLossPrice)
                     )
                 ) {
-                    (uint value, uint fee) = _valueOf(order, oraclePrice);
+                    continue;
+                }
 
-                    order.balance = uint40(0);
-                    order.appends = uint40(0);
-                    order.status = uint8(S_CLEARED);
-                    _orders[orderIndex] = order;
+                (uint value, uint fee) = _valueOf(order, oraclePrice);
+                emit Sell(orderIndex, balance, order.owner, value);
 
-                    // Newest value of order is greater than fee + EXECUTE_FEE, deduct and transfer NEST to owner
-                    if (value > fee + CommonLib.EXECUTE_FEE_NEST) {
-                        INestVault(NEST_VAULT_ADDRESS).transferTo(order.owner, value - fee - CommonLib.EXECUTE_FEE_NEST);
-                    }
+                order.balance = uint40(0);
+                order.appends = uint40(0);
+                order.status = uint8(S_CLEARED);
+                _orders[orderIndex] = order;
+
+                // Newest value of order is greater than fee + EXECUTE_FEE, deduct and transfer NEST to owner
+                if (value > fee + CommonLib.EXECUTE_FEE_NEST) {
+                    INestVault(NEST_VAULT_ADDRESS).transferTo(order.owner, value - fee - CommonLib.EXECUTE_FEE_NEST);
                 }
             }
         }
@@ -734,7 +740,7 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
                         reward += value;
 
                         // Emit liquidate event
-                        emit Liquidate(orderIndex, msg.sender, value);
+                        emit Liquidate(orderIndex, order.owner, value);
                     }
                 }
             }

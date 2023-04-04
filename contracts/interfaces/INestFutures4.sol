@@ -66,43 +66,75 @@ interface INestFutures4 {
         uint stopLossPrice;           // 56
     }
 
-    /// @dev Buy order event
+    /// @dev Buy request event
     /// @param index Index of order
-    /// @param nestAmount Amount of paid NEST, 4 decimals
+    /// @param amount Amount of paid NEST, 4 decimals
     /// @param owner The owner of order
     event BuyRequest(
         uint index,
-        uint nestAmount,
+        uint amount,
+        address owner
+    );
+
+    // /// @dev Sell order event
+    // /// @param index Index of order
+    // /// @param amount Amount to sell, 4 decimals
+    // /// @param owner The owner of order
+    // event SellRequest(
+    //     uint index,
+    //     uint amount,
+    //     address owner
+    // );
+
+    /// @dev Buy order event
+    /// @param orderIndex Index of order
+    /// @param amount Amount of paid NEST, 4 decimals
+    /// @param owner The owner of order
+    event Buy(
+        uint orderIndex,
+        uint amount,
+        address owner
+    );
+
+    /// @dev Revert order event
+    /// @param orderIndex Index of order
+    /// @param amount Amount of paid NEST, 4 decimals
+    /// @param owner The owner of order
+    event Revert(
+        uint orderIndex,
+        uint amount,
         address owner
     );
 
     /// @dev Add order event
-    /// @param index Index of order
+    /// @param orderIndex Index of order
     /// @param amount Amount to sell, 4 decimals
     /// @param owner The owner of order
     event Add(
-        uint index,
+        uint orderIndex,
         uint amount,
         address owner
     );
 
     /// @dev Sell order event
-    /// @param index Index of order
+    /// @param orderIndex Index of order
     /// @param amount Amount to sell, 4 decimals
     /// @param owner The owner of order
-    event SellRequest(
-        uint index,
+    /// @param value Amount of NEST obtained
+    event Sell(
+        uint orderIndex,
         uint amount,
-        address owner
+        address owner,
+        uint value
     );
 
     /// @dev Liquidate order event
-    /// @param index Index of order
-    /// @param sender Address of sender
+    /// @param orderIndex Index of order
+    /// @param owner Address of owner
     /// @param reward Liquidation reward
     event Liquidate(
-        uint index,
-        address sender,
+        uint orderIndex,
+        address owner,
         uint reward
     );
 
@@ -164,7 +196,7 @@ interface INestFutures4 {
     /// @return orderArray List of orders
     function list(uint offset, uint count, uint order) external view returns (OrderView[] memory orderArray);
 
-    /// @dev List prices
-    /// @param channelIndex index of target channel
-    function lastPrice(uint channelIndex) external view returns (uint period, uint height, uint price);
+    // /// @dev List prices
+    // /// @param channelIndex index of target channel
+    // function lastPrice(uint channelIndex) external view returns (uint period, uint height, uint price);
 }
