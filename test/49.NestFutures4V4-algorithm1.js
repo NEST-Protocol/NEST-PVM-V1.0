@@ -160,6 +160,10 @@ describe('49.NestFutures4V4-algorithm1.js', function() {
                     // Update order
                     order.balance = 0;
                     order.appends = 0;
+                    order.fee = 0;
+                    order.orientation = false;
+                    order.stopProfitPrice = 0;
+                    order.stopLossPrice = 0;
                     order.status = S_CLEARED;
 
                     let nest = value - fee;
@@ -212,6 +216,10 @@ describe('49.NestFutures4V4-algorithm1.js', function() {
 
                     order.balance = 0;
                     order.appends = 0;
+                    order.fee = 0;
+                    order.orientation = false;
+                    order.stopProfitPrice = 0;
+                    order.stopLossPrice = 0;
                     order.status = S_CLEARED;
                 }
             }
@@ -454,7 +462,12 @@ describe('49.NestFutures4V4-algorithm1.js', function() {
             let order = ctx.orders[orderIndex];
             const totalNest = order.balance + order.fee + (order.status == S_LIMIT_REQUEST ? 15 : 0);
             order.balance = 0;
+            order.appends = 0;
             order.fee = 0;
+            order.orientation = false;
+            order.stopProfitPrice = 0;
+            order.stopLossPrice = 0;
+            
             order.status = S_CANCELED;
 
             await compareOrder(orderIndex);

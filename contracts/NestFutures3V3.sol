@@ -425,10 +425,10 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
 
     // Impact cost, plus one, 18 decimals
     function _impactCostRatio(uint vol) internal pure returns (uint C) {
-        if (vol < 100000 ether) {
-            C = 1 ether;
-        } else {
-            C = 5.556e7 * vol / 1 ether +  1.0004444 ether;
+        // vol is 18 decimals value of NEST, multiply with max lever 50, and suppose St/S0 can be reach 1e10, 
+        // it also letter than 1e30, so 5.556e7 * vol, is impossible be overflow
+        unchecked { 
+            C = 5.556e7 * vol / 1 ether +  1.0004444 ether; 
         }
     }
 

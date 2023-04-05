@@ -74,11 +74,12 @@ describe('47.NestFutures3V3-algorithm3.js', function() {
         };
 
         const impactCost = function(vol) {
-            if (vol >= 100000) {
-                return 5.556e-11 * vol + 0.0004444;
-            } else {
-                return 0;
-            }
+            return 5.556e-11 * vol + 0.0004444;
+            // if (vol >= 100000) {
+            //     return 5.556e-11 * vol + 0.0004444;
+            // } else {
+            //     return 0;
+            // }
         };
 
         // Compare Order from local context to contract
