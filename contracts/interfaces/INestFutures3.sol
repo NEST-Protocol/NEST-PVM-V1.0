@@ -94,22 +94,22 @@ interface INestFutures3 {
     /// @param oraclePrice Current price from oracle, usd based, 18 decimals
     function balanceOf(uint orderIndex, uint oraclePrice) external view returns (uint value);
     
-    /// @dev Buy futures
-    /// @param channelIndex Index of target channel
-    /// @param lever Lever of order
-    /// @param orientation true: long, false: short
-    /// @param amount Amount of paid NEST, 4 decimals
-    function buy(
-        uint channelIndex, 
-        uint lever, 
-        bool orientation, 
-        uint amount
-    ) external payable;
+    // /// @dev Buy futures
+    // /// @param channelIndex Index of target channel
+    // /// @param lever Lever of order
+    // /// @param orientation true: long, false: short
+    // /// @param amount Amount of paid NEST, 4 decimals
+    // function buy(
+    //     uint channelIndex, 
+    //     uint lever, 
+    //     bool orientation, 
+    //     uint amount
+    // ) external payable;
 
-    /// @dev Append buy
-    /// @param orderIndex Index of target order
-    /// @param amount Amount of paid NEST
-    function add(uint orderIndex, uint amount) external payable;
+    // /// @dev Append buy
+    // /// @param orderIndex Index of target order
+    // /// @param amount Amount of paid NEST
+    // function add(uint orderIndex, uint amount) external payable;
 
     /// @dev Sell order
     /// @param orderIndex Index of order

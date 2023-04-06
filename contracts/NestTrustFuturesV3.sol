@@ -42,23 +42,7 @@ contract NestTrustFuturesV3 is NestFutures3V3, INestTrustFutures {
     // Array of TrustOrders
     TrustOrder[] _trustOrders;
 
-    // TODO:
     address constant MAINTAINS_ADDRESS = 0x029972C516c4F248c5B066DA07DbAC955bbb5E7F;
-    address constant USDT_TOKEN_ADDRESS = 0x55d398326f99059fF775485246999027B3197955;
-    address constant NEST_USDT_PAIR_ADDRESS = 0x04fF0eA8a05F1c75557981e9303568F043B88b4C;
-    // address MAINTAINS_ADDRESS;
-    // address NEST_USDT_PAIR_ADDRESS;
-    // address USDT_TOKEN_ADDRESS;
-
-    // /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
-    // ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
-    // /// @param newGovernance INestGovernance implementation contract address
-    // function update(address newGovernance) public virtual override {
-    //     super.update(newGovernance);
-    //     MAINTAINS_ADDRESS = INestGovernance(newGovernance).checkAddress("nest.app.maintains");
-    //     NEST_USDT_PAIR_ADDRESS = INestGovernance(newGovernance).checkAddress("pancake.pair.nestusdt");
-    //     USDT_TOKEN_ADDRESS = INestGovernance(newGovernance).checkAddress("common.token.usdt");
-    // }
 
     modifier onlyMaintains {
         require(msg.sender == MAINTAINS_ADDRESS, "NFP:not maintains");
@@ -150,35 +134,6 @@ contract NestTrustFuturesV3 is NestFutures3V3, INestTrustFutures {
         }
     }
 
-    /// @dev Create TrustOrder, for everyone
-    /// @param channelIndex Index of target trade channel, support eth, btc and bnb
-    /// @param lever Leverage of this order
-    /// @param orientation Orientation of this order, long or short
-    /// @param amount Amount of buy order
-    /// @param limitPrice Limit price for trigger buy
-    /// @param stopProfitPrice If not 0, will open a stop order
-    /// @param stopLossPrice If not 0, will open a stop order
-    function newTrustOrder(
-        uint16 channelIndex, 
-        uint8 lever, 
-        bool orientation, 
-        uint amount, 
-        uint limitPrice,
-        uint stopProfitPrice,
-        uint stopLossPrice
-    ) external override {
-        // 1. Create TrustOrder
-        uint fee = _newTrustOrder(channelIndex, lever, orientation, amount, limitPrice, stopProfitPrice, stopLossPrice);
-
-        // 2. Transfer NEST
-        TransferHelper.safeTransferFrom(
-            NEST_TOKEN_ADDRESS,
-            msg.sender, 
-            address(this), 
-            (amount + fee + CommonLib.EXECUTE_FEE) * CommonLib.NEST_UNIT
-        );
-    }
-
     /// @dev Update limitPrice for TrustOrder
     /// @param trustOrderIndex Index of TrustOrder
     /// @param limitPrice Limit price for trigger buy
@@ -239,40 +194,6 @@ contract NestTrustFuturesV3 is NestFutures3V3, INestTrustFutures {
             CommonLib.encodeFloat56(stopLossPrice),
             uint8(S_EXECUTED)
         ));
-    }
-
-    /// @dev Buy futures with StopOrder
-    /// @param channelIndex Index of target channel
-    /// @param lever Lever of order
-    /// @param orientation true: long, false: short
-    /// @param amount Amount of paid NEST, 4 decimals
-    /// @param stopProfitPrice If not 0, will open a stop order
-    /// @param stopLossPrice If not 0, will open a stop order
-    function buyWithStopOrder(
-        uint channelIndex, 
-        uint lever, 
-        bool orientation, 
-        uint amount,
-        uint stopProfitPrice, 
-        uint stopLossPrice
-    ) external payable override {
-        _trustOrders.push(TrustOrder(
-            uint32(_buy(channelIndex, lever, orientation, amount)),
-            uint40(0),
-            uint40(0),
-            // When user newStopOrder, stopProfitPrice and stopLossPrice are not 0 general, so we don't consider 0
-            CommonLib.encodeFloat56(stopProfitPrice),
-            CommonLib.encodeFloat56(stopLossPrice),
-            uint8(S_EXECUTED)
-        ));
-        
-        // Transfer NEST from user
-        TransferHelper.safeTransferFrom(
-            NEST_TOKEN_ADDRESS, 
-            msg.sender, 
-            NEST_VAULT_ADDRESS, 
-            amount * CommonLib.NEST_UNIT * (1 ether + FEE_RATE * lever) / 1 ether
-        );
     }
 
     /// @dev Cancel TrustOrder, for everyone
@@ -424,180 +345,6 @@ contract NestTrustFuturesV3 is NestFutures3V3, INestTrustFutures {
     /// @param value Value of total execute fee
     function settleExecuteFee(uint value) external onlyGovernance {
         TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, MAINTAINS_ADDRESS, value);
-    }
-
-    /// @dev Buy futures use USDT
-    /// @param usdtAmount Amount of paid USDT, 18 decimals
-    /// @param minNestAmount Minimal amount of  NEST, 18 decimals
-    /// @param channelIndex Index of target channel
-    /// @param lever Lever of order
-    /// @param orientation true: long, false: short
-    /// @param stopProfitPrice If not 0, will open a stop order
-    /// @param stopLossPrice If not 0, will open a stop order
-    function buyWithUsdt(
-        uint usdtAmount,
-        uint minNestAmount,
-        uint channelIndex,
-        uint lever,
-        bool orientation,
-        uint stopProfitPrice,
-        uint stopLossPrice
-    ) external {
-        // 1. Swap with NEST-USDT pair at pancake
-        uint nestAmount = _swapUsdtForNest(usdtAmount, minNestAmount, NEST_VAULT_ADDRESS);
-
-        // 2. Create buy order
-        uint orderIndex = _buy(
-            channelIndex, 
-            lever, 
-            orientation, 
-            nestAmount * 1 ether / (1 ether + FEE_RATE * lever) / CommonLib.NEST_UNIT
-        );
-        
-        // 3. Create stop order
-        if (stopProfitPrice > 0 || stopLossPrice > 0) {
-            _trustOrders.push(TrustOrder(
-                uint32(orderIndex),
-                uint40(0),
-                uint40(0),
-                CommonLib.encodeFloat56(stopProfitPrice),
-                CommonLib.encodeFloat56(stopLossPrice),
-                uint8(S_EXECUTED)
-            ));
-        }
-    }
-
-    /// @dev Create TrustOrder use USDT, for everyone
-    /// @param usdtAmount Amount of paid USDT, 18 decimals
-    /// @param minNestAmount Minimal amount of  NEST, 18 decimals
-    /// @param channelIndex Index of target trade channel, support eth, btc and bnb
-    /// @param lever Leverage of this order
-    /// @param orientation Orientation of this order, long or short
-    /// @param limitPrice Limit price for trigger buy
-    /// @param stopProfitPrice If not 0, will open a stop order
-    /// @param stopLossPrice If not 0, will open a stop order
-    function newTrustOrderWithUsdt(
-        uint usdtAmount,
-        uint minNestAmount, 
-        uint16 channelIndex, 
-        uint8 lever, 
-        bool orientation, 
-        uint limitPrice,
-        uint stopProfitPrice,
-        uint stopLossPrice
-    ) external {
-        // Create TrustOrder
-        _newTrustOrder(
-            channelIndex,
-            lever,
-            orientation,
-            
-            // Swap with NEST-USDT pair at pancake
-            (_swapUsdtForNest(usdtAmount, minNestAmount, address(this)) - CommonLib.EXECUTE_FEE_NEST) 
-                * 1 ether 
-                / (1 ether + FEE_RATE * uint(lever)) 
-                / CommonLib.NEST_UNIT,
-            
-            limitPrice,
-            stopProfitPrice,
-            stopLossPrice
-        );
-    }
-
-    // Swap USDT to NEST
-    function _swapUsdtForNest(uint usdtAmount, uint minNestAmount, address to) internal returns (uint amountOut) {
-        // 1. Calculate out nestAmount
-        // Confirm token0 address
-        (address token0,) = PancakeLibrary.sortTokens(USDT_TOKEN_ADDRESS, NEST_TOKEN_ADDRESS);
-        // Get reserves of token0 and token1
-        (uint  reserve0, uint  reserve1,) = IPancakePair(NEST_USDT_PAIR_ADDRESS).getReserves();
-        // Determine reverseIn and reserveOut based on the token0 address
-        (uint reserveIn, uint reserveOut) = USDT_TOKEN_ADDRESS == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
-        // Calculate out amount
-        amountOut = PancakeLibrary.getAmountOut(usdtAmount, reserveIn, reserveOut);
-        require(amountOut > minNestAmount, 'NF:INSUFFICIENT_OUTPUT_AMOUNT');
-
-        // 2. Swap with NEST-USDT pair at pancake
-        TransferHelper.safeTransferFrom(
-            USDT_TOKEN_ADDRESS, 
-            msg.sender, 
-            NEST_USDT_PAIR_ADDRESS, 
-            usdtAmount
-        );
-        (uint amount0Out, uint amount1Out) = USDT_TOKEN_ADDRESS == token0 ? (uint(0), amountOut) : (amountOut, uint(0));
-        IPancakePair(NEST_USDT_PAIR_ADDRESS).swap(amount0Out, amount1Out, to, new bytes(0)); 
-
-        // address[] memory path = new address[](2);
-        // path[0] = USDT_TOKEN_ADDRESS;
-        // path[1] = NEST_TOKEN_ADDRESS;
-
-        // TransferHelper.safeTransferFrom(USDT_TOKEN_ADDRESS, msg.sender, address(this), usdtAmount);
-        // SimpleERC20(USDT_TOKEN_ADDRESS).approve(PANCAKE_ROUTER_ADDRESS, usdtAmount);
-        // uint[] memory amounts = IPancakeRouter02(PANCAKE_ROUTER_ADDRESS).swapExactTokensForTokens(
-        //     usdtAmount,
-        //     minNestAmount,
-        //     path,
-        //     to,
-        //     block.timestamp
-        // );
-
-        // nestAmount = amounts[amounts.length - 1];
-        // require(nestAmount > minNestAmount, 'NF:INSUFFICIENT_OUTPUT_AMOUNT');
-    }
-
-    // Create TrustOrder
-    function _newTrustOrder(
-        uint16 channelIndex, 
-        uint8 lever, 
-        bool orientation, 
-        uint amount, 
-        uint limitPrice,
-        uint stopProfitPrice,
-        uint stopLossPrice
-    ) internal returns (uint fee) {
-        // 1. Check arguments
-        require(amount > CommonLib.FUTURES_NEST_LB && amount < 0x10000000000, "NF:amount invalid");
-        require(lever > CommonLib.LEVER_LB && lever < CommonLib.LEVER_RB, "NF:lever not allowed");
-        
-        // 2. Service fee, 4 decimals
-        fee = amount * FEE_RATE * uint(lever) / 1 ether;
-
-        // 3. Create TrustOrder
-        _trustOrders.push(TrustOrder(
-            // orderIndex
-            uint32(_orders.length),
-            // balance
-            uint40(amount),
-            // fee
-            uint40(fee),
-            // stopProfitPrice
-            stopProfitPrice > 0 ? CommonLib.encodeFloat56(stopProfitPrice) : uint56(0),
-            // stopLossPrice
-            stopLossPrice   > 0 ? CommonLib.encodeFloat56(stopLossPrice  ) : uint56(0),
-            // status
-            uint8(S_NORMAL)
-        ));
-
-        // 4. Create Order
-        _orders.push(Order(
-            // owner
-            uint32(_addressIndex(msg.sender)),
-            // basePrice
-            // Query oraclePrice
-            CommonLib.encodeFloat56(limitPrice),
-            // balance
-            uint40(0),
-            // appends
-            uint40(0),
-            // channelIndex
-            channelIndex,
-            // lever
-            lever,
-            // orientation
-            orientation,
-            // Pt
-            int56(0)
-        ));
     }
 
     // Convert TrustOrder to TrustOrderView

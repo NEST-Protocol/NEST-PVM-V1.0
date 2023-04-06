@@ -157,7 +157,7 @@ contract NestTrustFuturesV1 is NestFutures3V1, INestTrustFutures {
         uint limitPrice,
         uint stopProfitPrice,
         uint stopLossPrice
-    ) external override {
+    ) external {
         // 1. Check arguments
         require(amount > CommonLib.FUTURES_NEST_LB && amount < 0x10000000000, "NF:amount invalid");
         require(lever > CommonLib.LEVER_LB && lever < CommonLib.LEVER_RB, "NF:lever not allowed");
@@ -287,7 +287,7 @@ contract NestTrustFuturesV1 is NestFutures3V1, INestTrustFutures {
         uint amount,
         uint stopProfitPrice, 
         uint stopLossPrice
-    ) external payable override {
+    ) external payable {
         buy(channelIndex, lever, orientation, amount);
         newStopOrder(_orders.length - 1, stopProfitPrice, stopLossPrice);
     }

@@ -218,7 +218,7 @@ contract NestFutures3V1 is NestFrequentlyUsed, INestFutures3 {
         uint lever, 
         bool orientation, 
         uint amount
-    ) public payable override {
+    ) public payable {
         // 1. Check arguments
         require(amount > CommonLib.FUTURES_NEST_LB && amount < 0x10000000000, "NF:amount invalid");
         require(lever > CommonLib.LEVER_LB && lever < CommonLib.LEVER_RB, "NF:lever not allowed");
@@ -267,7 +267,7 @@ contract NestFutures3V1 is NestFrequentlyUsed, INestFutures3 {
     /// @dev Append buy
     /// @param orderIndex Index of target order
     /// @param amount Amount of paid NEST
-    function add(uint orderIndex, uint amount) external payable override {
+    function add(uint orderIndex, uint amount) external payable {
         // 1. Check arguments
         require(amount < 0x10000000000, "NF:amount invalid");
         _orders[orderIndex].appends += uint40(amount);

@@ -41,28 +41,8 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
     
     // Global parameters for trade channel
     TradeChannel[3] _channels;
-    
-    // // TODO:
-    // // Address of direct poster
-    // //address constant DIRECT_POSTER = 0x06Ca5C8eFf273009C94D963e0AB8A8B9b09082eF;
-    // //address constant DIRECT_POSTER = 0xd9f3aA57576a6da995fb4B7e7272b4F16f04e681;
-    // address DIRECT_POSTER;
-    // /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
-    // ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
-    // /// @param newGovernance INestGovernance implementation contract address
-    // function update(address newGovernance) public virtual override {
-    //     super.update(newGovernance);
-    //     DIRECT_POSTER = INestGovernance(newGovernance).checkAddress("nest.app.directPoster");
-    // }
 
     constructor() {
-    }
-    
-    /// @dev To support open-zeppelin/upgrades
-    /// @param governance INestGovernance implementation contract address
-    function initialize(address governance) public override {
-        super.initialize(governance);
-        _accounts.push();
     }
 
     /// @dev Direct post price
@@ -208,48 +188,6 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
                 }
             }
         }
-    }
-
-    /// @dev Buy futures
-    /// @param channelIndex Index of target channel
-    /// @param lever Lever of order
-    /// @param orientation true: long, false: short
-    /// @param amount Amount of paid NEST, 4 decimals
-    function buy(
-        uint channelIndex, 
-        uint lever, 
-        bool orientation, 
-        uint amount
-    ) public payable override {
-        _buy(channelIndex, lever, orientation, amount);
-
-        // Transfer NEST from user
-        TransferHelper.safeTransferFrom(
-            NEST_TOKEN_ADDRESS, 
-            msg.sender, 
-            NEST_VAULT_ADDRESS, 
-            amount * CommonLib.NEST_UNIT * (1 ether + FEE_RATE * lever) / 1 ether
-        );
-    }
-
-    /// @dev Append buy
-    /// @param orderIndex Index of target order
-    /// @param amount Amount of paid NEST
-    function add(uint orderIndex, uint amount) external payable override {
-        // 1. Check arguments
-        require(amount < 0x10000000000, "NF:amount invalid");
-        _orders[orderIndex].appends += uint40(amount);
-
-        // 2. Emit event
-        emit Add(orderIndex, amount, msg.sender);
-
-        // 3. Transfer NEST from user
-        TransferHelper.safeTransferFrom(
-            NEST_TOKEN_ADDRESS, 
-            msg.sender, 
-            NEST_VAULT_ADDRESS, 
-            amount * CommonLib.NEST_UNIT
-        );
     }
 
     /// @dev Sell order
@@ -471,60 +409,6 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
 
         channel.lastPrice = CommonLib.encodeFloat56(S1);
         channel.bn = uint32(block.number);
-    }
-
-    /// @dev Buy futures
-    /// @param channelIndex Index of target channel
-    /// @param lever Lever of order
-    /// @param orientation true: long, false: short
-    /// @param amount Amount of paid NEST, 4 decimals
-    function _buy(
-        uint channelIndex, 
-        uint lever, 
-        bool orientation, 
-        uint amount
-    ) internal returns (uint orderIndex) {
-        // 1. Check arguments
-        require(amount > CommonLib.FUTURES_NEST_LB && amount < 0x10000000000, "NF:amount invalid");
-        require(lever > CommonLib.LEVER_LB && lever < CommonLib.LEVER_RB, "NF:lever not allowed");
-
-        // 2. Load target channel
-        // channelIndex is increase from 0, if channelIndex out of range, means target channel not exist
-        uint oraclePrice = _lastPrice(channelIndex);
-        TradeChannel memory channel = _updateChannel(channelIndex, oraclePrice);
-
-        // 3. Update parameter for channel
-        _channels[channelIndex] = channel;
-
-        // 4. Emit event
-        orderIndex = _orders.length;
-        emit Buy(orderIndex, amount, msg.sender);
-
-        // 5. Create order
-        uint impactCostRatio = _impactCostRatio(amount * lever * CommonLib.NEST_UNIT);
-        _orders.push(Order(
-            // owner
-            uint32(_addressIndex(msg.sender)),
-            // basePrice
-            // Query oraclePrice
-            CommonLib.encodeFloat56(
-                orientation
-                ? oraclePrice * impactCostRatio / 1 ether
-                : oraclePrice * 1 ether / impactCostRatio
-            ),
-            // balance
-            uint40(amount),
-            // append
-            uint40(0),
-            // channelIndex
-            uint16(channelIndex),
-            // lever
-            uint8(lever),
-            // orientation
-            orientation,
-            // Pt
-            orientation ? channel.PtL : channel.PtS
-        ));
     }
 
     // Convert Order to OrderView
