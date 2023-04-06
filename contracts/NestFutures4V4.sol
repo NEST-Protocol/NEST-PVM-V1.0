@@ -32,8 +32,9 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
     // Array of orders
     Order[] _orders;
 
-    // Address of direct poster
-    address constant USDT_TOKEN_ADDRESS = 0x55d398326f99059fF775485246999027B3197955;
+    // Address of maintains
+    address constant MAINTAINS_ADDRESS      = 0x029972C516c4F248c5B066DA07DbAC955bbb5E7F;
+    address constant USDT_TOKEN_ADDRESS     = 0x55d398326f99059fF775485246999027B3197955;
     address constant NEST_USDT_PAIR_ADDRESS = 0x04fF0eA8a05F1c75557981e9303568F043B88b4C;
 
     constructor() {
@@ -44,7 +45,7 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
     /// Please note that the price is no longer relative to 2000 USD
     /// @param orderIndices Indices of orders to execute
     function execute(uint[CHANNEL_COUNT] calldata prices, uint[] calldata orderIndices) external {
-        require(msg.sender == DIRECT_POSTER, "NF:not directPoster");
+        require(msg.sender == MAINTAINS_ADDRESS, "NF:not maintains");
         
         // Total reward of liquidation
         uint reward = 0;
