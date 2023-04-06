@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.6;
 
-/// @dev Nest futures without merger
+/// @dev Nest futures with responsive
 interface INestFutures4 {
     
     /// @dev Order structure
@@ -161,6 +161,43 @@ interface INestFutures4 {
         uint stopProfitPrice,
         uint stopLossPrice
     ) external payable;
+
+    /// @dev Buy futures use USDT
+    /// @param usdtAmount Amount of paid USDT, 18 decimals
+    /// @param minNestAmount Minimal amount of  NEST, 18 decimals
+    /// @param channelIndex Index of target channel
+    /// @param lever Lever of order
+    /// @param orientation true: long, false: short
+    /// @param basePrice Target price of this order, if limit is true, means limit price, or means open price
+    /// @param limit True means this is a limit order
+    /// @param stopProfitPrice If not 0, will open a stop order
+    /// @param stopLossPrice If not 0, will open a stop order
+    function newBuyRequestWithUsdt(
+        uint usdtAmount,
+        uint minNestAmount,
+        uint channelIndex,
+        uint lever,
+        bool orientation,
+        uint basePrice,
+        bool limit,
+        uint stopProfitPrice,
+        uint stopLossPrice
+    ) external payable;
+
+    /// @dev Cancel buy request
+    /// @param orderIndex Index of target order
+    function cancelBuyRequest(uint orderIndex) external;
+
+    /// @dev Update limitPrice for Order
+    /// @param orderIndex Index of Order
+    /// @param limitPrice Limit price for trigger buy
+    function updateLimitPrice(uint orderIndex, uint limitPrice) external;
+
+    /// @dev Update stopPrice for Order
+    /// @param orderIndex Index of target Order
+    /// @param stopProfitPrice If not 0, will open a stop order
+    /// @param stopLossPrice If not 0, will open a stop order
+    function updateStopPrice(uint orderIndex, uint stopProfitPrice, uint stopLossPrice) external;
 
     /// @dev Append buy
     /// @param orderIndex Index of target order

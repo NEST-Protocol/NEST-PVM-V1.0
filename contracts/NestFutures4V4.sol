@@ -12,7 +12,7 @@ import "./interfaces/IPancakePair.sol";
 
 import "./custom/NestFrequentlyUsed.sol";
 
-/// @dev Nest futures with dynamic miu
+/// @dev Nest futures with responsive
 contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
 
     // Number of channels
@@ -22,26 +22,16 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
     uint constant FEE_RATE = 0.0005 ether;
     
     // Status of order
-    uint constant S_CLEARED = 0x00;
-    uint constant S_BUY_REQUEST = 0x01;
-    uint constant S_NORMAL = 0x02;
-    uint constant S_SELL_REQUEST = 0x03;
-    uint constant S_LIMIT_REQUEST = 0x04;
-    uint constant S_CANCELED = 0xFF;
-
-    // Registered account address mapping
-    mapping(address=>uint) _accountMapping;
-
-    // Registered accounts
-    address[] _accounts;
+    uint constant S_CLEARED         = 0x00;
+    uint constant S_BUY_REQUEST     = 0x01;
+    uint constant S_NORMAL          = 0x02;
+    uint constant S_SELL_REQUEST    = 0x03;
+    uint constant S_LIMIT_REQUEST   = 0x04;
+    uint constant S_CANCELED        = 0xFF;
 
     // Array of orders
     Order[] _orders;
 
-    // The prices of (eth, btc and bnb) posted by directPost() method is stored in this field
-    // Bits explain: period(16)|height(48)|price3(64)|price2(64)|price1(64)
-    //uint _lastPrices;
-    
     // TODO:
     // Address of direct poster
     // address constant DIRECT_POSTER = 0x06Ca5C8eFf273009C94D963e0AB8A8B9b09082eF;  // bsc_main
@@ -97,11 +87,21 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
                 if (order.orientation ? basePrice < oraclePrice : basePrice > oraclePrice) {
                     emit Revert(orderIndex, balance, order.owner);
 
-                    order.status = uint8(S_CANCELED);
                     INestVault(NEST_VAULT_ADDRESS).transferTo(
                         order.owner, 
                         (balance + uint(order.fee)) * CommonLib.NEST_UNIT
                     );
+
+                    // Clear second slot of order
+                    order.balance = uint40(0);
+                    order.appends = uint40(0);
+                    order.fee = uint40(0);
+                    // In order to revert gas, set all status of order in second slot to 0
+                    order.orientation = false;
+                    order.stopProfitPrice = uint40(0);
+                    order.stopLossPrice = uint40(0);
+                    
+                    order.status = uint8(S_CANCELED);
                 } 
                 // basePrice matched, execute
                 else {
@@ -122,6 +122,7 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
                 (uint value, uint fee) = _valueOf(order, oraclePrice);
                 emit Sell(orderIndex, balance, order.owner, value);
 
+                // Clear second slot of order
                 order.balance = uint40(0);
                 order.appends = uint40(0);
                 order.fee = uint40(0);
@@ -135,29 +136,30 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
                 // Transfer NEST to user
                 // If value grater than fee, deduct and transfer NEST to owner
                 if (value > fee) {
-                    INestVault(NEST_VAULT_ADDRESS).transferTo(order.owner, value - fee);
+                    unchecked {
+                        INestVault(NEST_VAULT_ADDRESS).transferTo(order.owner, value - fee);
+                    }
                 }
             }
             // 3. Execute limit request
             else if (status == S_LIMIT_REQUEST) {
-                if (
-                    order.orientation 
-                        ? oraclePrice <= CommonLib.decodeFloat(uint(order.basePrice))
-                        : oraclePrice >= CommonLib.decodeFloat(uint(order.basePrice))
-                ) {
-                    emit Buy(orderIndex, balance, order.owner);
-
-                    // Update Order: basePrice, baseBlock, balance, Pt
-                    uint impactCostRatio = _impactCostRatio(balance * uint(order.lever) * CommonLib.NEST_UNIT);
-                    order.basePrice = CommonLib.encodeFloat40(
-                        order.orientation
-                            ? oraclePrice * impactCostRatio / 1 ether
-                            : oraclePrice * 1 ether / impactCostRatio
-                    );
-                    order.balance = uint40(balance);
-                    order.openBlock = uint32(block.number);
-                    order.status = uint8(S_NORMAL);
+                uint basePrice = CommonLib.decodeFloat(uint(order.basePrice));
+                if (order.orientation ? oraclePrice > basePrice : oraclePrice < basePrice) {
+                    continue;
                 }
+
+                emit Buy(orderIndex, balance, order.owner);
+
+                // Update Order: basePrice, baseBlock, balance, status
+                uint impactCostRatio = _impactCostRatio(balance * uint(order.lever) * CommonLib.NEST_UNIT);
+                order.basePrice = CommonLib.encodeFloat40(
+                    order.orientation
+                        ? oraclePrice * impactCostRatio / 1 ether
+                        : oraclePrice * 1 ether / impactCostRatio
+                );
+                // openBlock of target Order is current block number
+                order.openBlock = uint32(block.number);
+                order.status = uint8(S_NORMAL);
             } 
             // Normal, Liquidate or stop
             else if (status == S_NORMAL) {
@@ -210,6 +212,7 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
                 
                 emit Sell(orderIndex, balance, order.owner, value);
 
+                // Clear second slot of order
                 order.balance = uint40(0);
                 order.appends = uint40(0);
                 order.fee = uint40(0);
@@ -375,7 +378,7 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
         bool limit,
         uint stopProfitPrice,
         uint stopLossPrice
-    ) external {
+    ) external payable override {
         // 1. Swap with NEST-USDT pair at pancake
         uint nestAmount = _swapUsdtForNest(usdtAmount, minNestAmount, NEST_VAULT_ADDRESS);
 
@@ -396,7 +399,7 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
 
     /// @dev Cancel buy request
     /// @param orderIndex Index of target order
-    function cancelBuyRequest(uint orderIndex) external {
+    function cancelBuyRequest(uint orderIndex) external override {
         // Load Order
         Order memory order = _orders[orderIndex];
         uint status = uint(order.status);
@@ -435,7 +438,7 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
     /// @dev Update limitPrice for Order
     /// @param orderIndex Index of Order
     /// @param limitPrice Limit price for trigger buy
-    function updateLimitPrice(uint orderIndex, uint limitPrice) external {
+    function updateLimitPrice(uint orderIndex, uint limitPrice) external override {
         // Load Order
         Order memory order = _orders[orderIndex];
 
@@ -452,7 +455,7 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
     /// @param orderIndex Index of target Order
     /// @param stopProfitPrice If not 0, will open a stop order
     /// @param stopLossPrice If not 0, will open a stop order
-    function updateStopPrice(uint orderIndex, uint stopProfitPrice, uint stopLossPrice) external {
+    function updateStopPrice(uint orderIndex, uint stopProfitPrice, uint stopLossPrice) external override {
         // Load Order
         Order memory order = _orders[orderIndex];
 
