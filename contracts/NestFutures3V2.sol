@@ -82,27 +82,27 @@ contract NestFutures3V2 is NestFrequentlyUsed, INestFutures3 {
                 v := or(v, shl(6, value))
             }
 
-            period := 
-            or(
+            sstore(_lastPrices.slot, 
                 or(
                     or(
                         or(
-                            // period
-                            shl(240, period), 
-                            // block.number
-                            shl(192, number())
+                            or(
+                                // period
+                                shl(240, period), 
+                                // block.number
+                                shl(192, number())
+                            ), 
+                            // equivalents[2]
+                            shl(128, encode(0x64))
                         ), 
-                        // equivalents[2]
-                        shl(128, encode(0x64))
+                        // equivalents[1]
+                        shl(64, encode(0x44))
                     ), 
-                    // equivalents[1]
-                    shl(64, encode(0x44))
-                ), 
-                // equivalents[0]
-                encode(0x24)
+                    // equivalents[0]
+                    encode(0x24)
+                )
             )
         }
-        _lastPrices = period;
     }
 
     /// @dev List prices

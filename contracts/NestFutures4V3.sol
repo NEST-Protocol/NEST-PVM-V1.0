@@ -442,7 +442,6 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
                 uint basePrice = CommonLib.decodeFloat(uint(order.basePrice));
                 uint balance = uint(order.balance);
 
-                // TODO: Optimize code, 1 if else, 2 expand
                 if (order.orientation ? basePrice < oraclePrice : basePrice > oraclePrice) {
                     emit Revert(orderIndex, balance, order.owner);
 
@@ -548,7 +547,6 @@ contract NestFutures4V3 is NestFrequentlyUsed, INestFutures4 {
                     uint balance = uint(order.balance);
                     emit Buy(orderIndex, balance, order.owner);
 
-                    // TODO: Use oraclePrice or basePrice?
                     // Update Order: basePrice, baseBlock, balance, Pt
                     order.basePrice = CommonLib.encodeFloat40(
                         order.orientation
