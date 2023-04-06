@@ -43,22 +43,22 @@ contract NestTrustFuturesV3 is NestFutures3V3, INestTrustFutures {
     TrustOrder[] _trustOrders;
 
     // TODO:
-    // address constant MAINTAINS_ADDRESS = 0x029972C516c4F248c5B066DA07DbAC955bbb5E7F;
-    // address constant USDT_TOKEN_ADDRESS = 0x55d398326f99059fF775485246999027B3197955;
-    // address constant NEST_USDT_PAIR_ADDRESS = 0x04fF0eA8a05F1c75557981e9303568F043B88b4C;
-    address MAINTAINS_ADDRESS;
-    address NEST_USDT_PAIR_ADDRESS;
-    address USDT_TOKEN_ADDRESS;
+    address constant MAINTAINS_ADDRESS = 0x029972C516c4F248c5B066DA07DbAC955bbb5E7F;
+    address constant USDT_TOKEN_ADDRESS = 0x55d398326f99059fF775485246999027B3197955;
+    address constant NEST_USDT_PAIR_ADDRESS = 0x04fF0eA8a05F1c75557981e9303568F043B88b4C;
+    // address MAINTAINS_ADDRESS;
+    // address NEST_USDT_PAIR_ADDRESS;
+    // address USDT_TOKEN_ADDRESS;
 
-    /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
-    ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
-    /// @param newGovernance INestGovernance implementation contract address
-    function update(address newGovernance) public virtual override {
-        super.update(newGovernance);
-        MAINTAINS_ADDRESS = INestGovernance(newGovernance).checkAddress("nest.app.maintains");
-        NEST_USDT_PAIR_ADDRESS = INestGovernance(newGovernance).checkAddress("pancake.pair.nestusdt");
-        USDT_TOKEN_ADDRESS = INestGovernance(newGovernance).checkAddress("common.token.usdt");
-    }
+    // /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
+    // ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
+    // /// @param newGovernance INestGovernance implementation contract address
+    // function update(address newGovernance) public virtual override {
+    //     super.update(newGovernance);
+    //     MAINTAINS_ADDRESS = INestGovernance(newGovernance).checkAddress("nest.app.maintains");
+    //     NEST_USDT_PAIR_ADDRESS = INestGovernance(newGovernance).checkAddress("pancake.pair.nestusdt");
+    //     USDT_TOKEN_ADDRESS = INestGovernance(newGovernance).checkAddress("common.token.usdt");
+    // }
 
     modifier onlyMaintains {
         require(msg.sender == MAINTAINS_ADDRESS, "NFP:not maintains");

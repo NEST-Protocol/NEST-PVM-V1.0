@@ -13,15 +13,15 @@ import "./NestFutures2.sol";
 /// @dev Nest futures without merger
 contract NestFutures2_Test is NestFutures2 {
 
-    // TODO:
-    address DIRECT_POSTER;
-    /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
-    ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
-    /// @param newGovernance INestGovernance implementation contract address
-    function update(address newGovernance) public virtual override {
-        super.update(newGovernance);
-        DIRECT_POSTER = INestGovernance(newGovernance).checkAddress("nest.app.directPoster");
-    }
+    // // TODO:
+    // address DIRECT_POSTER;
+    // /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
+    // ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
+    // /// @param newGovernance INestGovernance implementation contract address
+    // function update(address newGovernance) public virtual override {
+    //     super.update(newGovernance);
+    //     DIRECT_POSTER = INestGovernance(newGovernance).checkAddress("nest.app.directPoster");
+    // }
 
     // Initialize account array, execute once
     function init() external {

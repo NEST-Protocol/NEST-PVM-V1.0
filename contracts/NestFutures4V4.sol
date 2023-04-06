@@ -32,25 +32,9 @@ contract NestFutures4V4 is NestFrequentlyUsed, INestFutures4 {
     // Array of orders
     Order[] _orders;
 
-    // TODO:
     // Address of direct poster
-    // address constant DIRECT_POSTER = 0x06Ca5C8eFf273009C94D963e0AB8A8B9b09082eF;  // bsc_main
-    // address constant DIRECT_POSTER = 0xd9f3aA57576a6da995fb4B7e7272b4F16f04e681;  // bsc_test
-    // address constant USDT_TOKEN_ADDRESS = 0x55d398326f99059fF775485246999027B3197955;
-    // address constant NEST_USDT_PAIR_ADDRESS = 0x04fF0eA8a05F1c75557981e9303568F043B88b4C;
-    address DIRECT_POSTER;
-    address NEST_USDT_PAIR_ADDRESS;
-    address USDT_TOKEN_ADDRESS;
-
-    /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
-    ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
-    /// @param newGovernance INestGovernance implementation contract address
-    function update(address newGovernance) public virtual override {
-        super.update(newGovernance);
-        DIRECT_POSTER = INestGovernance(newGovernance).checkAddress("nest.app.directPoster");
-        NEST_USDT_PAIR_ADDRESS = INestGovernance(newGovernance).checkAddress("pancake.pair.nestusdt");
-        USDT_TOKEN_ADDRESS = INestGovernance(newGovernance).checkAddress("common.token.usdt");
-    }
+    address constant USDT_TOKEN_ADDRESS = 0x55d398326f99059fF775485246999027B3197955;
+    address constant NEST_USDT_PAIR_ADDRESS = 0x04fF0eA8a05F1c75557981e9303568F043B88b4C;
 
     constructor() {
     }

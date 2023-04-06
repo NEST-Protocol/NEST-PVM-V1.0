@@ -42,18 +42,18 @@ contract NestFutures3V3 is NestFrequentlyUsed, INestFutures3 {
     // Global parameters for trade channel
     TradeChannel[3] _channels;
     
-    // TODO:
-    // Address of direct poster
-    //address constant DIRECT_POSTER = 0x06Ca5C8eFf273009C94D963e0AB8A8B9b09082eF;
-    //address constant DIRECT_POSTER = 0xd9f3aA57576a6da995fb4B7e7272b4F16f04e681;
-    address DIRECT_POSTER;
-    /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
-    ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
-    /// @param newGovernance INestGovernance implementation contract address
-    function update(address newGovernance) public virtual override {
-        super.update(newGovernance);
-        DIRECT_POSTER = INestGovernance(newGovernance).checkAddress("nest.app.directPoster");
-    }
+    // // TODO:
+    // // Address of direct poster
+    // //address constant DIRECT_POSTER = 0x06Ca5C8eFf273009C94D963e0AB8A8B9b09082eF;
+    // //address constant DIRECT_POSTER = 0xd9f3aA57576a6da995fb4B7e7272b4F16f04e681;
+    // address DIRECT_POSTER;
+    // /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
+    // ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
+    // /// @param newGovernance INestGovernance implementation contract address
+    // function update(address newGovernance) public virtual override {
+    //     super.update(newGovernance);
+    //     DIRECT_POSTER = INestGovernance(newGovernance).checkAddress("nest.app.directPoster");
+    // }
 
     constructor() {
     }
