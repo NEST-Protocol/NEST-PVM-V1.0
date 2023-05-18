@@ -14,6 +14,7 @@ exports.deploy = async function() {
     const NestFutures2 = await ethers.getContractFactory('NestFutures2');
     const NestTrustFuturesV3 = await ethers.getContractFactory('NestTrustFuturesV3');
     const NestFutures4V4 = await ethers.getContractFactory('NestFutures4V4');
+    const NestFutures4V5 = await ethers.getContractFactory('NestFutures4V5');
 
     console.log('** Deploy: bsc@20230406.js **');
 
@@ -57,22 +58,8 @@ exports.deploy = async function() {
     const nestFutures4V4 = await NestFutures4V4.attach('0x02904e03937E6a36D475025212859f1956BeC3f0');
     console.log('nestFutures4V4: ' + nestFutures4V4.address);
     
-    // const newNestTrustFuturesV3 = await NestTrustFuturesV3.deploy();
-    // console.log('newNestTrustFuturesV3: ' + newNestTrustFuturesV3.address);
-
-    // 2. Deploy newNestFutures2
-    // TODO: Make sure nestFutures2.NEST_FUTURES3_ADDRESS set (After nestTrustFuturesV3 deployed)
-    //const newNestFutures2 = await NestFutures2.deploy();
-    //console.log('newNestFutures2: ' + newNestFutures2.address);
-
-    // 3. Verify code on bscscan
-
-    // 4. Upgrade nestFutures2 and check
-    // proxyAdmin: 0x42557CAc22ED9933b5E91c8a285167586153A0EB
-    // nestTrustFuturesV3: 0x907b35BE2dc26b12734D92e5fe20Fd511dFb0723
-
-    // 5. Approve
-    // await nestVault.approve(nestFutures4V4.address, 1000000000000000000000000n);
+    const newNestFutures4V5 = await NestFutures4V5.deploy();
+    console.log('newNestFutures4V5: ' + newNestFutures4V5.address);
     
     console.log('---------- OK ----------');
     

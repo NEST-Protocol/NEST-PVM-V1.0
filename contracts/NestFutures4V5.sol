@@ -29,33 +29,13 @@ contract NestFutures4V5 is NestFrequentlyUsed, INestFutures4 {
     uint constant S_LIMIT_REQUEST   = 0x04;
     uint constant S_CANCELED        = 0xFF;
 
-    // TODO: Remove
-    mapping(address=>uint) _placeHolder_accountMapping;
-    // TODO: Remove
-    address[] _placeHolder_accounts;
-
     // Array of orders
     Order[] _orders;
 
-    // TODO:
-    // Address of direct poster
-    // address constant DIRECT_POSTER = 0x06Ca5C8eFf273009C94D963e0AB8A8B9b09082eF;  // bsc_main
-    // address constant DIRECT_POSTER = 0xd9f3aA57576a6da995fb4B7e7272b4F16f04e681;  // bsc_test
-    // address constant USDT_TOKEN_ADDRESS = 0x55d398326f99059fF775485246999027B3197955;
-    // address constant NEST_USDT_PAIR_ADDRESS = 0x04fF0eA8a05F1c75557981e9303568F043B88b4C;
-    address DIRECT_POSTER;
-    address NEST_USDT_PAIR_ADDRESS;
-    address USDT_TOKEN_ADDRESS;
-
-    /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
-    ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
-    /// @param newGovernance INestGovernance implementation contract address
-    function update(address newGovernance) public virtual override {
-        super.update(newGovernance);
-        DIRECT_POSTER = INestGovernance(newGovernance).checkAddress("nest.app.directPoster");
-        NEST_USDT_PAIR_ADDRESS = INestGovernance(newGovernance).checkAddress("pancake.pair.nestusdt");
-        USDT_TOKEN_ADDRESS = INestGovernance(newGovernance).checkAddress("common.token.usdt");
-    }
+    // Address of maintains
+    address constant MAINTAINS_ADDRESS      = 0x029972C516c4F248c5B066DA07DbAC955bbb5E7F;
+    address constant USDT_TOKEN_ADDRESS     = 0x55d398326f99059fF775485246999027B3197955;
+    address constant NEST_USDT_PAIR_ADDRESS = 0x04fF0eA8a05F1c75557981e9303568F043B88b4C;
 
     constructor() {
     }
@@ -65,7 +45,7 @@ contract NestFutures4V5 is NestFrequentlyUsed, INestFutures4 {
     /// Please note that the price is no longer relative to 2000 USD
     /// @param orderIndices Indices of orders to execute
     function execute(uint[CHANNEL_COUNT] calldata prices, uint[] calldata orderIndices) external {
-        require(msg.sender == DIRECT_POSTER, "NF:not directPoster");
+        require(msg.sender == MAINTAINS_ADDRESS, "NF:not maintains");
         
         // Total reward of liquidation
         uint reward = 0;
