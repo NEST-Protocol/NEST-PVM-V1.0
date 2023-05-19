@@ -46,6 +46,7 @@ module.exports = {
           }
         }
       }, {
+        // 0.8.20 introduced an new instruction, which not supported by bsc
         version: '0.8.19',
         settings: {
           optimizer: {
@@ -88,7 +89,7 @@ module.exports = {
       // "https://bsc-mainnet.s.chainbase.online/v1/2IACpoXYkHcgiWwSB4l2VmdWizr",
       //"https://bsc.getblock.io/33a5ac19-a33e-40c9-aa06-33e32c18b459/mainnet/",
       chainId: 56,
-      gasPrice: 5e9,
+      gasPrice: 3e9,
       gas: 6000000,
       accounts: [config.account.bsc_main.key, config.account.bsc_main.userA, config.account.bsc_main.userB],
       timeout: 2000000000
