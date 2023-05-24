@@ -13,86 +13,105 @@ exports.deploy = async function() {
     const NestVault = await ethers.getContractFactory('NestVault');
     const NestTrustFuturesV3 = await ethers.getContractFactory('NestTrustFuturesV3');
     const NestFutures4V3 = await ethers.getContractFactory('NestFutures4V3');
-    const NestFutures4V4 = await ethers.getContractFactory('NestFutures4V4');
+    const NestFutures4V5 = await ethers.getContractFactory('NestFutures4V5');
     const PancakeFactory = await ethers.getContractFactory('PancakeFactory');
     const PancakeRouter = await ethers.getContractFactory('PancakeRouter');
 
-    console.log('** Deploy: bsc_test@20230404.js **');
+    console.log('** Deploy: scroll_test@20230523 **');
     
-    // ** Deploy: bbsc_test@20230404.js **
-    // usdt: 0xDd4A68D8236247BDC159F7C5fF92717AA634cBCc
-    // nest: 0x821edD79cc386E56FeC9DA5793b87a3A52373cdE
-    // nestGovernance: 0x5691dc0770D55B9469a3242DA282754687687935
-    // nestVault: 0x0649A02C15229Cb970CDcE456f9dd52248023520
-    // nestTrustFuturesV3: 0xE8b787EdE23997Ff5C64067e2220FBbd13b085A1
-    // nestFutures4V3: 0x35253D54A3866c21A7DdEFb82B122D75d94F5327
-    // nestFutures4V4: 0x476981D37FaA3bE8E8768E8E7d0d01625433126a
-    // pancakeFactory: 0x1D743a4a2313cf59083aFA48Aed90F815Fc073DC
-    // pancakeRouter: 0x7E9747Dd4a7390FCA7D86A400D14F031981Bc1E1
-    // nestUsdtPair: 0xF55D681c2D64310e2196E55562c402effCfe2E5E
+    // ** Deploy: scroll_test@20230523 **
+    // ** Deploy: scroll_test@20230523 **
+    // usdt: 0x5cbb73B367FD69807381d06BC2041BEc86d8487d
+    // nest: 0x48e5c876074549cD4Bb7be0800154450b59b1eB6
+    // nestGovernance: 0x821edD79cc386E56FeC9DA5793b87a3A52373cdE
+    // nestVault: 0x3948F9ec377110327dE3Fb8176C8Ed46296d76bA
+    // nestFutures4V5: 0xBaC502281e9C6F9c947D9b2a9b0AE828EECe4164
+    // pancakeFactory: 0x73851c710953900dc8dE699A94762d21b1c941b2
+
+    // ** Deploy: scroll_test@20230523 **
+    // usdt: 0x5cbb73B367FD69807381d06BC2041BEc86d8487d
+    // nest: 0x48e5c876074549cD4Bb7be0800154450b59b1eB6
+    // nestGovernance: 0x821edD79cc386E56FeC9DA5793b87a3A52373cdE
+    // nestVault: 0x3948F9ec377110327dE3Fb8176C8Ed46296d76bA
+    // nestFutures4V5: 0xBaC502281e9C6F9c947D9b2a9b0AE828EECe4164
+    // pancakeFactory: 0x73851c710953900dc8dE699A94762d21b1c941b2
+    // pancakeRouter: 0xF50822767bEce47c277982d3fCFd39f0F561bf2E
+    // nestUsdtPair: 0xAa44f0e4674633eFB94b91926cEABe6Be14a40FB
+    // directPoster: 0xd9f3aA57576a6da995fb4B7e7272b4F16f04e681
     // proxyAdmin: 0x43D2c8141E792D391A64F7140E708Ba05962C71A
 
     //const usdt = await TestERC20.deploy('USDT', 'USDT', 18);
-    const usdt = await TestERC20.attach('0xDd4A68D8236247BDC159F7C5fF92717AA634cBCc');
+    const usdt = await TestERC20.attach('0x5cbb73B367FD69807381d06BC2041BEc86d8487d');
     console.log('usdt: ' + usdt.address);
 
-    const nest = await TestERC20.attach('0x821edD79cc386E56FeC9DA5793b87a3A52373cdE');
+    //const nest = await TestERC20.deploy('NEST', 'NEST', 18);
+    const nest = await TestERC20.attach('0x48e5c876074549cD4Bb7be0800154450b59b1eB6');
     console.log('nest: ' + nest.address);
 
     //const nestGovernance = await upgrades.deployProxy(NestGovernance, ['0x0000000000000000000000000000000000000000'], { initializer: 'initialize' });
-    const nestGovernance = await NestGovernance.attach('0x5691dc0770D55B9469a3242DA282754687687935');
+    const nestGovernance = await NestGovernance.attach('0x821edD79cc386E56FeC9DA5793b87a3A52373cdE');
     console.log('nestGovernance: ' + nestGovernance.address);
 
     //const nestVault = await upgrades.deployProxy(NestVault, [nestGovernance.address], { initializer: 'initialize' });
-    const nestVault = await NestVault.attach('0x0649A02C15229Cb970CDcE456f9dd52248023520');
+    const nestVault = await NestVault.attach('0x3948F9ec377110327dE3Fb8176C8Ed46296d76bA');
     console.log('nestVault: ' + nestVault.address);
 
-    //const nestTrustFuturesV3 = await upgrades.deployProxy(NestTrustFuturesV3, [nestGovernance.address], { initializer: 'initialize' });
-    const nestTrustFuturesV3 = await NestTrustFuturesV3.attach('0xE8b787EdE23997Ff5C64067e2220FBbd13b085A1');
-    console.log('nestTrustFuturesV3: ' + nestTrustFuturesV3.address);
-
-    //const nestFutures4V3 = await upgrades.deployProxy(NestFutures4V3, [nestGovernance.address], { initializer: 'initialize' });
-    const nestFutures4V3 = await NestFutures4V3.attach('0x35253D54A3866c21A7DdEFb82B122D75d94F5327');
-    console.log('nestFutures4V3: ' + nestFutures4V3.address);
-
-    //const nestFutures4V4 = await upgrades.deployProxy(NestFutures4V4, [nestGovernance.address], { initializer: 'initialize' });
-    const nestFutures4V4 = await NestFutures4V4.attach('0x476981D37FaA3bE8E8768E8E7d0d01625433126a');
-    console.log('nestFutures4V4: ' + nestFutures4V4.address);
+    //const nestFutures4V5 = await upgrades.deployProxy(NestFutures4V5, [nestGovernance.address], { initializer: 'initialize' });
+    const nestFutures4V5 = await NestFutures4V5.attach('0xBaC502281e9C6F9c947D9b2a9b0AE828EECe4164');
+    console.log('nestFutures4V5: ' + nestFutures4V5.address);
 
     // -------- TEST --------
     //const pancakeFactory = await PancakeFactory.deploy('0x0000000000000000000000000000000000000000');
-    const pancakeFactory = await PancakeFactory.attach('0x1D743a4a2313cf59083aFA48Aed90F815Fc073DC');
+    const pancakeFactory = await PancakeFactory.attach('0x73851c710953900dc8dE699A94762d21b1c941b2');
     console.log('pancakeFactory: ' + pancakeFactory.address);
     
     //const pancakeRouter = await PancakeRouter.deploy(pancakeFactory.address, '0x0000000000000000000000000000000000000000');
-    const pancakeRouter = await PancakeRouter.attach('0x7E9747Dd4a7390FCA7D86A400D14F031981Bc1E1');
+    const pancakeRouter = await PancakeRouter.attach('0xF50822767bEce47c277982d3fCFd39f0F561bf2E');
     console.log('pancakeRouter: ' + pancakeRouter.address);
     
     //await pancakeFactory.createPair(usdt.address, nest.address);
     const nestUsdtPairAddress = await pancakeFactory.getPair(usdt.address, nest.address);
     console.log('nestUsdtPair: ' + nestUsdtPairAddress);
 
-    // await nestFutures4V4.update(nestGovernance.address);
-    // await nestVault.approve(nestFutures4V4.address, 1000000000000000000000000n);
+    // console.log('2. nestGovernance.setBuiltinAddress()');
+    // await nestGovernance.setBuiltinAddress(
+    //     nest.address,
+    //     '0x0000000000000000000000000000000000000000',
+    //     '0x0000000000000000000000000000000000000000',
+    //     '0x0000000000000000000000000000000000000000',
+    //     '0x0000000000000000000000000000000000000000',
+    //     '0x0000000000000000000000000000000000000000',
+    //     '0x0000000000000000000000000000000000000000',
+    //     '0x0000000000000000000000000000000000000000',
+    //     '0x0000000000000000000000000000000000000000',
+    //     '0x0000000000000000000000000000000000000000'
+    // );
 
-    // await nest.approve(nestFutures4V4.address, 1000000000000000000000000n);
-    // await usdt.approve(nestFutures4V4.address, 1000000000000000000000000n);
+    // await nestVault.approve(nestFutures4V5.address, 1000000000000000000000000n);
+
+    // await nest.approve(nestFutures4V5.address, 1000000000000000000000000n);
+    // await usdt.approve(nestFutures4V5.address, 1000000000000000000000000n);
 
     // await nestGovernance.registerAddress('pancake.app.router', pancakeRouter.address);
     // await nestGovernance.registerAddress('pancake.pair.nestusdt', nestUsdtPairAddress);
     // await nestGovernance.registerAddress('common.token.usdt', usdt.address);
     // await nestGovernance.registerAddress('pancake.app.router', pancakeRouter.address);
+    // await nestGovernance.registerAddress('nest.app.vault', nestVault.address);
+    // await nestGovernance.registerAddress('nest.app.directPoster', '0xd9f3aA57576a6da995fb4B7e7272b4F16f04e681');
+    // await nestFutures4V5.update(nestGovernance.address);
 
-    // console.log('nest: ' + await nestGovernance.getNestTokenAddress());
-    // console.log('nest.v4.openPrice: ' + await nestGovernance.checkAddress("nest.v4.openPrice"));
-    // console.log('nest.app.vault: ' + await nestGovernance.checkAddress("nest.app.vault"));
-    // console.log('nest.app.directPoster: ' + await nestGovernance.checkAddress("nest.app.directPoster"));
-    // console.log('nest.app.maintains: ' + await nestGovernance.checkAddress("nest.app.maintains"));
-    // console.log('pancake.pair.nestusdt: ' + await nestGovernance.checkAddress("pancake.pair.nestusdt"));
-    // console.log('common.token.usdt: ' + await nestGovernance.checkAddress("common.token.usdt"));
+    console.log('nest: ' + await nestGovernance.getNestTokenAddress());
+    console.log('nest.app.vault: ' + await nestGovernance.checkAddress("nest.app.vault"));
+    console.log('nest.app.directPoster: ' + await nestGovernance.checkAddress("nest.app.directPoster"));
+    console.log('pancake.pair.nestusdt: ' + await nestGovernance.checkAddress("pancake.pair.nestusdt"));
+    console.log('common.token.usdt: ' + await nestGovernance.checkAddress("common.token.usdt"));
 
-    //await usdt.approve(pancakeRouter.address, 1000000000000000000000000n);
-    //await nest.approve(pancakeRouter.address, 1000000000000000000000000n);
+    //await usdt.transfer('0x0e20201B2e9bC6eba51bcC6E710C510dC2cFCfA4', 1000000000000000000000000n);
+    //await nest.transfer('0x0e20201B2e9bC6eba51bcC6E710C510dC2cFCfA4', 1000000000000000000000000n);
+
+    // await usdt.approve(pancakeRouter.address, 1000000000000000000000000n);
+    // await nest.approve(pancakeRouter.address, 1000000000000000000000000n);
+
     // await pancakeRouter.addLiquidity(
     //     usdt.address,
     //     nest.address,
@@ -103,7 +122,7 @@ exports.deploy = async function() {
     //     '0x0e20201B2e9bC6eba51bcC6E710C510dC2cFCfA4',
     //     100000000000n
     // );
-    //await usdt.approve(nestTrustFuturesV3.address, 1000000000000000000000000n);
+    // await usdt.approve(nestFutures4V5.address, 1000000000000000000000000n);
     // await pancakeRouter.swapExactTokensForTokens(
     //     100000000000000000000n,
     //     1000000000000000000000n,
@@ -111,7 +130,26 @@ exports.deploy = async function() {
     //     '0x0e20201B2e9bC6eba51bcC6E710C510dC2cFCfA4',
     //     100000000000n
     // );
-
+    await nestFutures4V5.newBuyRequestWithUsdt(
+        //uint usdtAmount,
+        10000000000000000000n,
+        //uint minNestAmount,
+        100000000000000000000n,
+        //uint channelIndex,
+        0,
+        //uint lever,
+        1,
+        //bool orientation,
+        true,
+        //uint basePrice,
+        1230000000000000000000n,
+        //bool limit,
+        false,
+        //uint stopProfitPrice,
+        0,
+        //uint stopLossPrice
+        0
+    );
     /*
     ** Deploy: bbsc_test@20230404.js **
     usdt: 0xDd4A68D8236247BDC159F7C5fF92717AA634cBCc
@@ -190,7 +228,7 @@ exports.deploy = async function() {
 
         nestGovernance: nestGovernance,
         nestVault: nestVault,
-        nestTrustFuturesV3: nestTrustFuturesV3,
+        nestFutures4V5: nestFutures4V5,
         pancakeRouter: pancakeRouter,
 
         BLOCK_TIME: BLOCK_TIME,
