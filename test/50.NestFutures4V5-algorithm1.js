@@ -7,7 +7,7 @@ describe('49.nestFutures4V5-algorithm1.js', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
-        const { eth, usdt, nest, nestFutures4V5, nestVault, pancakeRouter, BLOCK_TIME } = await deploy();
+        const { eth, usdt, nest, nestFutures4V5, pancakeRouter, BLOCK_TIME } = await deploy();
 
         const tokens = [eth, nest, usdt];
         let previous;
@@ -17,7 +17,7 @@ describe('49.nestFutures4V5-algorithm1.js', function() {
             accounts = {
                 height: await ethers.provider.getBlockNumber(),
                 owner: await listBalances(owner, tokens),
-                nestVault: await listBalances(nestVault, tokens),
+                nestVault: await listBalances(nestFutures4V5, tokens),
                 nestFutures4V5: await listBalances(nestFutures4V5, tokens)
             };
             if (!silent) console.log(accounts);

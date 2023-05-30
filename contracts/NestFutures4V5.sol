@@ -6,7 +6,6 @@ import "./libs/TransferHelper.sol";
 import "./libs/CommonLib.sol";
 import "./libs/PancakeLibrary.sol";
 
-import "./interfaces/INestVault.sol";
 import "./interfaces/INestFutures4.sol";
 import "./interfaces/IPancakePair.sol";
 
@@ -92,7 +91,8 @@ contract NestFutures4V5 is NestFrequentlyUsed, INestFutures4 {
                 if (order.orientation ? basePrice < oraclePrice : basePrice > oraclePrice) {
                     emit Revert(orderIndex, balance, order.owner);
 
-                    INestVault(NEST_VAULT_ADDRESS).transferTo(
+                    TransferHelper.safeTransfer(
+                        NEST_TOKEN_ADDRESS,
                         order.owner, 
                         (balance + uint(order.fee)) * CommonLib.NEST_UNIT
                     );
@@ -142,7 +142,7 @@ contract NestFutures4V5 is NestFrequentlyUsed, INestFutures4 {
                 // If value grater than fee, deduct and transfer NEST to owner
                 if (value > fee) {
                     unchecked {
-                        INestVault(NEST_VAULT_ADDRESS).transferTo(order.owner, value - fee);
+                        TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, order.owner, value - fee);
                     }
                 }
             }
@@ -231,7 +231,8 @@ contract NestFutures4V5 is NestFrequentlyUsed, INestFutures4 {
                 // Newest value of order is greater than fee + EXECUTE_FEE, deduct and transfer NEST to owner
                 if (value > fee + CommonLib.EXECUTE_FEE_NEST) {
                     unchecked {
-                        INestVault(NEST_VAULT_ADDRESS).transferTo(
+                        TransferHelper.safeTransfer(
+                            NEST_TOKEN_ADDRESS,
                             order.owner, 
                             value - fee - CommonLib.EXECUTE_FEE_NEST
                         );
@@ -243,7 +244,7 @@ contract NestFutures4V5 is NestFrequentlyUsed, INestFutures4 {
         }
 
         if (reward > 0) {
-            INestVault(NEST_VAULT_ADDRESS).transferTo(msg.sender, reward);
+            TransferHelper.safeTransfer(NEST_TOKEN_ADDRESS, msg.sender, reward);
         }
     }
 
@@ -354,7 +355,7 @@ contract NestFutures4V5 is NestFrequentlyUsed, INestFutures4 {
         TransferHelper.safeTransferFrom(
             NEST_TOKEN_ADDRESS, 
             msg.sender, 
-            NEST_VAULT_ADDRESS, 
+            address(this), 
             (
                 amount + 
                 // Create buy request, returns fee(in 4 decimals)
@@ -385,7 +386,7 @@ contract NestFutures4V5 is NestFrequentlyUsed, INestFutures4 {
         uint stopLossPrice
     ) external payable override {
         // 1. Swap with NEST-USDT pair at pancake
-        uint nestAmount = _swapUsdtForNest(usdtAmount, minNestAmount, NEST_VAULT_ADDRESS);
+        uint nestAmount = _swapUsdtForNest(usdtAmount, minNestAmount, address(this));
 
         // 2. Create buy order
         _buyRequest(
@@ -415,7 +416,8 @@ contract NestFutures4V5 is NestFrequentlyUsed, INestFutures4 {
         require(status == S_BUY_REQUEST || status == S_LIMIT_REQUEST, "NF:status error");
 
         // Return NEST to owner
-        INestVault(NEST_VAULT_ADDRESS).transferTo(
+        TransferHelper.safeTransfer(
+            NEST_TOKEN_ADDRESS,
             msg.sender, 
             (
                 // balance
@@ -492,7 +494,7 @@ contract NestFutures4V5 is NestFrequentlyUsed, INestFutures4 {
         TransferHelper.safeTransferFrom(
             NEST_TOKEN_ADDRESS, 
             msg.sender, 
-            NEST_VAULT_ADDRESS, 
+            address(this), 
             amount * CommonLib.NEST_UNIT
         );
     }
