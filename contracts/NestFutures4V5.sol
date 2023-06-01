@@ -9,10 +9,10 @@ import "./libs/PancakeLibrary.sol";
 import "./interfaces/INestFutures4.sol";
 import "./interfaces/IPancakePair.sol";
 
-import "./custom/NestFrequentlyUsed.sol";
+import "./NestBase.sol";
 
 /// @dev Nest futures with responsive
-contract NestFutures4V5 is NestFrequentlyUsed, INestFutures4 {
+contract NestFutures4V5 is NestBase, INestFutures4 {
 
     // Number of channels
     uint constant CHANNEL_COUNT = 7;
@@ -42,6 +42,7 @@ contract NestFutures4V5 is NestFrequentlyUsed, INestFutures4 {
     // address constant DIRECT_POSTER = 0xd9f3aA57576a6da995fb4B7e7272b4F16f04e681;  // bsc_test
     // address constant USDT_TOKEN_ADDRESS = 0x55d398326f99059fF775485246999027B3197955;
     // address constant NEST_USDT_PAIR_ADDRESS = 0x04fF0eA8a05F1c75557981e9303568F043B88b4C;
+    address NEST_TOKEN_ADDRESS;
     address DIRECT_POSTER;
     address NEST_USDT_PAIR_ADDRESS;
     address USDT_TOKEN_ADDRESS;
@@ -51,6 +52,7 @@ contract NestFutures4V5 is NestFrequentlyUsed, INestFutures4 {
     /// @param newGovernance INestGovernance implementation contract address
     function update(address newGovernance) public virtual override {
         super.update(newGovernance);
+        NEST_TOKEN_ADDRESS = INestGovernance(newGovernance).getNestTokenAddress();
         DIRECT_POSTER = INestGovernance(newGovernance).checkAddress("nest.app.directPoster");
         NEST_USDT_PAIR_ADDRESS = INestGovernance(newGovernance).checkAddress("pancake.pair.nestusdt");
         USDT_TOKEN_ADDRESS = INestGovernance(newGovernance).checkAddress("common.token.usdt");
