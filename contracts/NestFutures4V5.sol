@@ -6,13 +6,16 @@ import "./libs/TransferHelper.sol";
 import "./libs/CommonLib.sol";
 import "./libs/PancakeLibrary.sol";
 
+import "./interfaces/ICommonGovernance.sol";
 import "./interfaces/INestFutures4.sol";
 import "./interfaces/IPancakePair.sol";
 
-import "./NestBase.sol";
+import "./common/CommonBase.sol";
+
+import "hardhat/console.sol";
 
 /// @dev Nest futures with responsive
-contract NestFutures4V5 is NestBase, INestFutures4 {
+contract NestFutures4V5 is CommonBase, INestFutures4 {
 
     // Number of channels
     uint constant CHANNEL_COUNT = 7;
@@ -49,13 +52,12 @@ contract NestFutures4V5 is NestBase, INestFutures4 {
 
     /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
     ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
-    /// @param newGovernance INestGovernance implementation contract address
-    function update(address newGovernance) public virtual override {
-        super.update(newGovernance);
-        NEST_TOKEN_ADDRESS = INestGovernance(newGovernance).getNestTokenAddress();
-        DIRECT_POSTER = INestGovernance(newGovernance).checkAddress("nest.app.directPoster");
-        NEST_USDT_PAIR_ADDRESS = INestGovernance(newGovernance).checkAddress("pancake.pair.nestusdt");
-        USDT_TOKEN_ADDRESS = INestGovernance(newGovernance).checkAddress("common.token.usdt");
+    /// @param governance INestGovernance implementation contract address
+    function update(address governance) external onlyGovernance {
+        NEST_TOKEN_ADDRESS = ICommonGovernance(governance).checkAddress("nest.app.nest");
+        DIRECT_POSTER = ICommonGovernance(governance).checkAddress("nest.app.directPoster");
+        NEST_USDT_PAIR_ADDRESS = ICommonGovernance(governance).checkAddress("pancake.pair.nestusdt");
+        USDT_TOKEN_ADDRESS = ICommonGovernance(governance).checkAddress("common.token.usdt");
     }
 
     constructor() {

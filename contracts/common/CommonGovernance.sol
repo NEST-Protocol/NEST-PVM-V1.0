@@ -13,6 +13,10 @@ contract CommonGovernance is CommonBase, ICommonGovernance {
     /// @dev Address registered in the system
     mapping(string=>address) _registeredAddress;
 
+    constructor() {
+        _administrators[msg.sender] = 1;
+    }
+
     function setAdministrator(address target, uint flag) external override onlyGovernance {
         _administrators[target] = flag;
     }

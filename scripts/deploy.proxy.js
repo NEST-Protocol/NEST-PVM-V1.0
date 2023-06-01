@@ -9,10 +9,33 @@ exports.deploy = async function() {
     
     const eth = { address: '0x0000000000000000000000000000000000000000' };
     const TestERC20 = await ethers.getContractFactory('TestERC20');
-    const NestGovernance = await ethers.getContractFactory('NestGovernance');
+    const CommonGovernance = await ethers.getContractFactory('CommonGovernance');
+    const CommonProxy = await ethers.getContractFactory('CommonProxy');
     const NestFutures4V5 = await ethers.getContractFactory('NestFutures4V5');
     const PancakeFactory = await ethers.getContractFactory('PancakeFactory');
     const PancakeRouter = await ethers.getContractFactory('PancakeRouter');
+
+    const deployProxy = async function(artifact, args) {
+        const target = await artifact.deploy(args);
+        const proxy = await CommonProxy.deploy(target.address);
+        return artifact.attach(proxy.address);
+    };
+
+    const getCalldata = function(methodName, argumentTypes, args) {
+        // let fullMethodName = 'function ' + methodName + '(' + argumentTypes.join(',') + ') external';
+        // //console.log(fullMethodName);
+        // const calldata0 = new ethers.utils.Interface([fullMethodName]).encodeFunctionData(methodName, args);
+        // //console.log('calldata0: ' + calldata0);
+        
+        let method = methodName + '(' + argumentTypes.join(',') + ')';
+        //console.log(method);
+        const signatureData = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(method)).substring(0, 10);
+        const argumentData = ethers.utils.defaultAbiCoder.encode(argumentTypes, args).substring(2);
+        const calldata1 = signatureData + argumentData;
+        //console.log('calldata1: ' + calldata1);
+
+        return calldata1;
+    };
 
     console.log('** Deploy: deploy.proxy.js **');
     
@@ -24,13 +47,15 @@ exports.deploy = async function() {
     //const nest = await TestERC20.attach('0x0000000000000000000000000000000000000000');
     console.log('nest: ' + nest.address);
 
-    const nestGovernance = await upgrades.deployProxy(NestGovernance, ['0x0000000000000000000000000000000000000000'], { initializer: 'initialize' });
-    //const nestGovernance = await NestGovernance.attach('0x0000000000000000000000000000000000000000');
-    console.log('nestGovernance: ' + nestGovernance.address);
+    const commonGovernance = await CommonGovernance.deploy();
+    //const commonGovernance = await CommonGovernance.attach('0x0000000000000000000000000000000000000000');
+    console.log('commonGovernance: ' + commonGovernance.address);
 
-    const nestFutures4V5 = await upgrades.deployProxy(NestFutures4V5, [nestGovernance.address], { initializer: 'initialize' });
+    const nestFutures4V5 = await deployProxy(NestFutures4V5, []);
     //const nestFutures4V5 = await NestFutures4V5.attach('0x0000000000000000000000000000000000000000');
     console.log('nestFutures4V5: ' + nestFutures4V5.address);
+
+    await nestFutures4V5.setGovernance(commonGovernance.address);
 
     // -------- TEST --------
     const pancakeFactory = await PancakeFactory.deploy('0x0000000000000000000000000000000000000000');
@@ -43,28 +68,16 @@ exports.deploy = async function() {
 
     // -------- TEST --------
 
-    console.log('2. nestGovernance.setBuiltinAddress()');
-    await nestGovernance.setBuiltinAddress(
-        nest.address,
-        '0x0000000000000000000000000000000000000000',
-        '0x0000000000000000000000000000000000000000',
-        '0x0000000000000000000000000000000000000000',
-        '0x0000000000000000000000000000000000000000',
-        '0x0000000000000000000000000000000000000000',
-        '0x0000000000000000000000000000000000000000',
-        '0x0000000000000000000000000000000000000000',
-        '0x0000000000000000000000000000000000000000',
-        '0x0000000000000000000000000000000000000000'
-    );
-    await nestGovernance.registerAddress('nest.app.directPoster', (await ethers.getSigners())[0].address)
-    await nestGovernance.registerAddress('nest.app.maintains', (await ethers.getSigners())[0].address);
-    await nestGovernance.registerAddress('pancake.app.router', pancakeRouter.address);
-    await nestGovernance.registerAddress('pancake.pair.nestusdt', await pancakeFactory.getPair(usdt.address, nest.address));
-    await nestGovernance.registerAddress('common.token.usdt', usdt.address);
+    await commonGovernance.registerAddress('nest.app.directPoster', (await ethers.getSigners())[0].address)
+    await commonGovernance.registerAddress('nest.app.nest', nest.address);
+    await commonGovernance.registerAddress('pancake.app.router', pancakeRouter.address);
+    await commonGovernance.registerAddress('pancake.pair.nestusdt', await pancakeFactory.getPair(usdt.address, nest.address));
+    await commonGovernance.registerAddress('common.token.usdt', usdt.address);
 
     console.log('7. nestFutures4V5.update()');
-    await nestFutures4V5.update(nestGovernance.address);
-    
+    //await nestFutures4V5.update(commonGovernance.address);
+    await commonGovernance.execute(nestFutures4V5.address, getCalldata('update', ['address'], [commonGovernance.address]));
+
     await nest.transfer(nestFutures4V5.address, 100000000000000000000000000n);
     await nest.approve(nestFutures4V5.address, 100000000000000000000000000n);
 
@@ -79,7 +92,7 @@ exports.deploy = async function() {
         usdt: usdt,
         nest: nest,
 
-        nestGovernance: nestGovernance,
+        commonGovernance: commonGovernance,
         nestFutures4V5: nestFutures4V5,
         pancakeFactory: pancakeFactory,
         pancakeRouter: pancakeRouter,

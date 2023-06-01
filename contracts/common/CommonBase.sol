@@ -44,6 +44,6 @@ contract CommonBase {
         }
     }
 
-    function update(address governance) external virtual onlyGovernance {
-    }
+    // function update(address governance) public virtual onlyGovernance {
+    // }
 }
