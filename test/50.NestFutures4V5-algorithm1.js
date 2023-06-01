@@ -7,9 +7,9 @@ describe('49.nestFutures4V5-algorithm1.js', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
-        const { eth, usdt, nest, nestFutures4V5, pancakeRouter, BLOCK_TIME } = await deploy();
+        const { eth, usdt, nest, nest2, nestFutures4V5, pancakeRouter, BLOCK_TIME } = await deploy();
 
-        const tokens = [eth, nest, usdt];
+        const tokens = [eth, nest, usdt, nest2];
         let previous;
         let accounts;
         const listAccounts = async function(silent) {
@@ -17,6 +17,7 @@ describe('49.nestFutures4V5-algorithm1.js', function() {
             accounts = {
                 height: await ethers.provider.getBlockNumber(),
                 owner: await listBalances(owner, tokens),
+                addr1: await listBalances(addr1, tokens),
                 nestVault: await listBalances(nestFutures4V5, tokens),
                 nestFutures4V5: await listBalances(nestFutures4V5, tokens)
             };
@@ -786,7 +787,6 @@ describe('49.nestFutures4V5-algorithm1.js', function() {
             console.log('12. cancelBuyRequest');
             await cancelBuyRequest(owner, 38);
             await list(owner, 38, 1, 0);
-            return;
         }
 
         if (true) {
@@ -833,6 +833,13 @@ describe('49.nestFutures4V5-algorithm1.js', function() {
                 //uint stopLossPrice
                 0
             );
+            await listAccounts();
+        }
+
+        if (true) {
+            await nest2.connect(addr1).faucet();
+            await listAccounts();
+            await nest2.connect(addr1).faucet();
             await listAccounts();
         }
     });

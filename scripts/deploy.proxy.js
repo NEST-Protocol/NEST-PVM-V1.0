@@ -11,6 +11,7 @@ exports.deploy = async function() {
     const TestERC20 = await ethers.getContractFactory('TestERC20');
     const CommonGovernance = await ethers.getContractFactory('CommonGovernance');
     const CommonProxy = await ethers.getContractFactory('CommonProxy');
+    const NestToken = await ethers.getContractFactory('NestToken');
     const NestFutures4V5 = await ethers.getContractFactory('NestFutures4V5');
     const PancakeFactory = await ethers.getContractFactory('PancakeFactory');
     const PancakeRouter = await ethers.getContractFactory('PancakeRouter');
@@ -47,6 +48,10 @@ exports.deploy = async function() {
     //const nest = await TestERC20.attach('0x0000000000000000000000000000000000000000');
     console.log('nest: ' + nest.address);
 
+    const nest2 = await NestToken.deploy();
+    //const nest2 = await NestToken.attach('0x0000000000000000000000000000000000000000');
+    console.log('nest2: ' + nest2.address);
+    
     const commonGovernance = await CommonGovernance.deploy();
     //const commonGovernance = await CommonGovernance.attach('0x0000000000000000000000000000000000000000');
     console.log('commonGovernance: ' + commonGovernance.address);
@@ -91,6 +96,7 @@ exports.deploy = async function() {
         eth: eth,
         usdt: usdt,
         nest: nest,
+        nest2: nest2,
 
         commonGovernance: commonGovernance,
         nestFutures4V5: nestFutures4V5,

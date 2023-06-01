@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.0;
 
 import "./libs/TransferHelper.sol";
 import "./libs/CommonLib.sol";
@@ -11,8 +11,6 @@ import "./interfaces/INestFutures4.sol";
 import "./interfaces/IPancakePair.sol";
 
 import "./common/CommonBase.sol";
-
-import "hardhat/console.sol";
 
 /// @dev Nest futures with responsive
 contract NestFutures4V5 is CommonBase, INestFutures4 {
