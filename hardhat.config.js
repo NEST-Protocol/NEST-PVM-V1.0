@@ -72,7 +72,7 @@ module.exports = {
     },
     bsc_test: {
       url: 
-      'http://localhost:50001/bsc_test_getblock/',
+      'http://localhost:50000/bsc_test_getblock/',
       //'https://bsc.getblock.io/33a5ac19-a33e-40c9-aa06-33e32c18b459/testnet/',
       //'https://bsc-testnet.s.chainbase.online/v1/2IACpoXYkHcgiWwSB4l2VmdWizr',
       chainId: 97,
@@ -83,7 +83,7 @@ module.exports = {
     },
     bsc_main: {
       url: 
-      'http://localhost:50001/bsc_main_getblock/',
+      'http://localhost:50000/bsc_main_getblock/',
       //"https://bsc-dataseed1.defibit.io/",
       // "https://bsc-mainnet.s.chainbase.online/v1/2IACpoXYkHcgiWwSB4l2VmdWizr",
       //"https://bsc.getblock.io/33a5ac19-a33e-40c9-aa06-33e32c18b459/mainnet/",
@@ -95,7 +95,8 @@ module.exports = {
     },
     scrollTest: {
       url: 
-      'https://alpha-rpc.scroll.io/l2',
+      'http://localhost:50000/scroll_test/',
+      //'https://alpha-rpc.scroll.io/l2/',
       //'https://bsc.getblock.io/33a5ac19-a33e-40c9-aa06-33e32c18b459/testnet/',
       //'https://bsc-testnet.s.chainbase.online/v1/2IACpoXYkHcgiWwSB4l2VmdWizr',
       chainId: 534353,

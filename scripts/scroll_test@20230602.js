@@ -39,33 +39,39 @@ exports.deploy = async function() {
     };
 
     console.log('** Deploy: scroll_test@20230602.js **');
-    
-    const nest = await NestToken.deploy();
+
+    // ** Deploy: scroll_test@20230602.js **
+    // nest: 0x146Af6aE0c93e9Aca1a39A644Ee7728bA9ddFA7c
+    // commonGovernance: 0xC75bd10B11E498083075876B3D6e1e6df1427De6
+    // nestFutures4V5: 0xc39dC1385a44fBB895991580EA55FC10e7451cB3
+    // directPoster: 0xd9f3aA57576a6da995fb4B7e7272b4F16f04e681
+
+    //const nest = await NestToken.deploy();
     //const nest = await TestERC20.deploy('NEST', 'NEST', 18);
-    //const nest = await TestERC20.attach('0x0000000000000000000000000000000000000000');
+    const nest = await TestERC20.attach('0x146Af6aE0c93e9Aca1a39A644Ee7728bA9ddFA7c');
     console.log('nest: ' + nest.address);
 
-    const commonGovernance = await CommonGovernance.deploy();
-    //const commonGovernance = await CommonGovernance.attach('0x0000000000000000000000000000000000000000');
+    //const commonGovernance = await CommonGovernance.deploy();
+    const commonGovernance = await CommonGovernance.attach('0xC75bd10B11E498083075876B3D6e1e6df1427De6');
     console.log('commonGovernance: ' + commonGovernance.address);
 
-    const nestFutures4V5 = await deployProxy(NestFutures4V5, []);
-    //const nestFutures4V5 = await NestFutures4V5.attach('0x0000000000000000000000000000000000000000');
+    //const nestFutures4V5 = await deployProxy(NestFutures4V5, []);
+    const nestFutures4V5 = await NestFutures4V5.attach('0xc39dC1385a44fBB895991580EA55FC10e7451cB3');
     console.log('nestFutures4V5: ' + nestFutures4V5.address);
 
-    await nestFutures4V5.setGovernance(commonGovernance.address);
+    // await nestFutures4V5.setGovernance(commonGovernance.address);
 
-    // -------- TEST --------
+    // // -------- TEST --------
 
-    await commonGovernance.registerAddress('nest.app.directPoster', (await ethers.getSigners())[0].address)
-    await commonGovernance.registerAddress('nest.app.nest', nest.address);
+    // await commonGovernance.registerAddress('nest.app.directPoster', '0xd9f3aA57576a6da995fb4B7e7272b4F16f04e681');
+    // await commonGovernance.registerAddress('nest.app.nest', nest.address);
 
-    console.log('7. nestFutures4V5.update()');
-    //await nestFutures4V5.update(commonGovernance.address);
-    await commonGovernance.execute(nestFutures4V5.address, getCalldata('update', ['address'], [commonGovernance.address]));
+    // console.log('7. nestFutures4V5.update()');
+    // //await nestFutures4V5.update(commonGovernance.address);
+    // await commonGovernance.execute(nestFutures4V5.address, getCalldata('update', ['address'], [commonGovernance.address]));
 
-    await nest.mintTo(nestFutures4V5.address, 100000000000000000000000000n);
-    await nest.approve(nestFutures4V5.address, 100000000000000000000000000n);
+    // await nest.mintTo(nestFutures4V5.address, 100000000000000000000000000n);
+    // await nest.approve(nestFutures4V5.address, 100000000000000000000000000n);
 
     console.log('---------- OK ----------');
     
@@ -73,7 +79,6 @@ exports.deploy = async function() {
 
     const contracts = {
         eth: eth,
-        usdt: usdt,
         nest: nest,
 
         commonGovernance: commonGovernance,
