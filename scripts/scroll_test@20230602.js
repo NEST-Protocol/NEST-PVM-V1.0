@@ -38,12 +38,8 @@ exports.deploy = async function() {
         return calldata1;
     };
 
-    console.log('** Deploy: deploy.proxy.js **');
+    console.log('** Deploy: scroll_test@20230602.js **');
     
-    const usdt = await TestERC20.deploy('USDT', 'USDT', 18);
-    //const usdt = await TestERC20.attach('0x0000000000000000000000000000000000000000');
-    console.log('usdt: ' + usdt.address);
-
     const nest = await NestToken.deploy();
     //const nest = await TestERC20.deploy('NEST', 'NEST', 18);
     //const nest = await TestERC20.attach('0x0000000000000000000000000000000000000000');
@@ -60,21 +56,9 @@ exports.deploy = async function() {
     await nestFutures4V5.setGovernance(commonGovernance.address);
 
     // -------- TEST --------
-    const pancakeFactory = await PancakeFactory.deploy('0x0000000000000000000000000000000000000000');
-    console.log('pancakeFactory: ' + pancakeFactory.address);
-
-    const pancakeRouter = await PancakeRouter.deploy(pancakeFactory.address, '0x0000000000000000000000000000000000000000');
-    console.log('pancakeRouter: ' + pancakeRouter.address);
-
-    await pancakeFactory.createPair(usdt.address, nest.address);
-
-    // -------- TEST --------
 
     await commonGovernance.registerAddress('nest.app.directPoster', (await ethers.getSigners())[0].address)
     await commonGovernance.registerAddress('nest.app.nest', nest.address);
-    await commonGovernance.registerAddress('pancake.app.router', pancakeRouter.address);
-    await commonGovernance.registerAddress('pancake.pair.nestusdt', await pancakeFactory.getPair(usdt.address, nest.address));
-    await commonGovernance.registerAddress('common.token.usdt', usdt.address);
 
     console.log('7. nestFutures4V5.update()');
     //await nestFutures4V5.update(commonGovernance.address);
@@ -94,8 +78,6 @@ exports.deploy = async function() {
 
         commonGovernance: commonGovernance,
         nestFutures4V5: nestFutures4V5,
-        pancakeFactory: pancakeFactory,
-        pancakeRouter: pancakeRouter,
 
         BLOCK_TIME: BLOCK_TIME,
         USDT_DECIMALS: 18,

@@ -7,9 +7,9 @@ describe('49.nestFutures4V5-algorithm1.js', function() {
     it('First', async function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
         
-        const { eth, usdt, nest, nest2, nestFutures4V5, pancakeRouter, BLOCK_TIME } = await deploy();
+        const { eth, usdt, nest, nestFutures4V5, pancakeRouter, BLOCK_TIME } = await deploy();
 
-        const tokens = [eth, nest, usdt, nest2];
+        const tokens = [eth, nest, usdt];
         let previous;
         let accounts;
         const listAccounts = async function(silent) {
@@ -37,7 +37,7 @@ describe('49.nestFutures4V5-algorithm1.js', function() {
         const SLIDING_POINT = 0.0002;
         const ownerNestBalance = 100000000000000000000000000n;
 
-        await nest.transfer(owner.address, ownerNestBalance);
+        await nest.mintTo(owner.address, ownerNestBalance);
         await listAccounts();
 
         // Local context
@@ -837,10 +837,11 @@ describe('49.nestFutures4V5-algorithm1.js', function() {
         }
 
         if (true) {
-            await nest2.connect(addr1).faucet();
+            await nest.connect(addr1).faucet();
+            await nest.connect(owner).mintTo(addr1.address, toBigInt(10000));
             await listAccounts();
-            await nest2.connect(addr1).faucet();
-            await listAccounts();
+
+            
         }
     });
 });

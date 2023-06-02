@@ -29,13 +29,6 @@ contract CommonBase {
     }
 
     function _onlyGovernance() internal view {
-        // TODO: Compare gas cost between two methods 
-        // address governance;
-        // assembly {
-        //     governance := sload(_GOVERNANCE_SLOT)
-        // }
-        // require(msg.sender == governance, "COM:!gov");
-
         assembly {
             if iszero(eq(caller(), sload(_GOVERNANCE_SLOT))) {
                 mstore(0, "!GOV")

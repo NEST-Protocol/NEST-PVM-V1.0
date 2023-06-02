@@ -8,35 +8,43 @@ import "./CommonBase.sol";
 
 contract CommonGovernance is CommonBase, ICommonGovernance {
 
-    mapping(address=>uint) _administrators;
-
-    /// @dev Address registered in the system
-    mapping(string=>address) _registeredAddress;
-
     constructor() {
-        _administrators[msg.sender] = 1;
+        assembly {
+            mstore(0, caller())
+            sstore(keccak256(0, 0x20), 1)
+        }
     }
 
     function setAdministrator(address target, uint flag) external override onlyGovernance {
-        _administrators[target] = flag;
+        assembly {
+            mstore(0, caller())
+            sstore(keccak256(0, 0x20), flag)
+        }
     }
 
-    function checkAdministrator(address target) external view override returns (uint) {
-        return _administrators[target];
+    function checkAdministrator(address target) external view override returns (uint flag) {
+        assembly {
+            mstore(0, caller())
+            flag := sload(keccak256(0, 0x20))
+        }
     }
 
     /// @dev Registered address. The address registered here is the address accepted by nest system
     /// @param key The key
     /// @param addr Destination address. 0 means to delete the registration information
     function registerAddress(string memory key, address addr) external override onlyGovernance {
-        _registeredAddress[key] = addr;
+        assembly {
+            sstore(keccak256(add(key, 0x20), mload(key)), addr)
+        }
     }
 
     /// @dev Get registered address
     /// @param key The key
-    /// @return Destination address. 0 means empty
-    function checkAddress(string memory key) external view override returns (address) {
-        return _registeredAddress[key];
+    /// @return addr Destination address. 0 means empty
+    function checkAddress(string memory key) external view override returns (address addr) {
+        assembly {
+            addr := sload(keccak256(add(key, 0x20), mload(key)))
+        }
     }
 
     /// @dev Execute transaction from NestGovernance
@@ -44,8 +52,12 @@ contract CommonGovernance is CommonBase, ICommonGovernance {
     /// @param data Calldata
     /// @return success Return data in bytes
     function execute(address target, bytes calldata data) external payable override returns (bool success) {
-        require(_administrators[msg.sender] > 0, "COM:!gov");
         assembly {
+            mstore(0, caller())
+            if iszero(sload(keccak256(0, 0x20))) {
+                mstore(0, "COM:!gov")
+                revert(0, 0x20) 
+            }
             // Copy msg.data. We take full control of memory in this inline assembly
             // block because it will not return to Solidity code. We overwrite the
             // Solidity scratch pad at memory position 0.

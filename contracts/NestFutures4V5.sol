@@ -29,11 +29,6 @@ contract NestFutures4V5 is CommonBase, INestFutures4 {
     uint constant S_LIMIT_REQUEST   = 0x04;
     uint constant S_CANCELED        = 0xFF;
 
-    // TODO: Remove
-    mapping(address=>uint) _placeHolder_accountMapping;
-    // TODO: Remove
-    address[] _placeHolder_accounts;
-
     // Array of orders
     Order[] _orders;
 
