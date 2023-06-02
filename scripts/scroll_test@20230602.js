@@ -42,7 +42,7 @@ exports.deploy = async function() {
 
     // ** Deploy: scroll_test@20230602.js **
     // nest: 0x146Af6aE0c93e9Aca1a39A644Ee7728bA9ddFA7c
-    // commonGovernance: 0xC75bd10B11E498083075876B3D6e1e6df1427De6
+    // commonGovernance: 0x526B8eE84c05b4cf742789026A447E2F052B21C8
     // nestFutures4V5: 0xc39dC1385a44fBB895991580EA55FC10e7451cB3
     // directPoster: 0xd9f3aA57576a6da995fb4B7e7272b4F16f04e681
 
@@ -52,7 +52,7 @@ exports.deploy = async function() {
     console.log('nest: ' + nest.address);
 
     //const commonGovernance = await CommonGovernance.deploy();
-    const commonGovernance = await CommonGovernance.attach('0xC75bd10B11E498083075876B3D6e1e6df1427De6');
+    const commonGovernance = await CommonGovernance.attach('0x526B8eE84c05b4cf742789026A447E2F052B21C8');
     console.log('commonGovernance: ' + commonGovernance.address);
 
     //const nestFutures4V5 = await deployProxy(NestFutures4V5, []);

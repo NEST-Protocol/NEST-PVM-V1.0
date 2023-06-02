@@ -17,14 +17,14 @@ contract CommonGovernance is CommonBase, ICommonGovernance {
 
     function setAdministrator(address target, uint flag) external override onlyGovernance {
         assembly {
-            mstore(0, caller())
+            mstore(0, target)
             sstore(keccak256(0, 0x20), flag)
         }
     }
 
     function checkAdministrator(address target) external view override returns (uint flag) {
         assembly {
-            mstore(0, caller())
+            mstore(0, target)
             flag := sload(keccak256(0, 0x20))
         }
     }
