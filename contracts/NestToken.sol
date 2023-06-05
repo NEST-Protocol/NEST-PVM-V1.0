@@ -30,7 +30,7 @@ contract NestToken is CommonBase, SimpleERC20 {
     }
 
     function remain(address target) external view returns (uint value) {
-        value = quotaPerDay - _drawnRecords[(uint160(msg.sender) << 96) | (block.timestamp / 86400)];
+        value = quotaPerDay - _drawnRecords[(uint160(target) << 96) | (block.timestamp / 86400)];
     }
 
     function faucet() external {

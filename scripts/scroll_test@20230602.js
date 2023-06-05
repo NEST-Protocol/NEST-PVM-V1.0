@@ -48,7 +48,7 @@ exports.deploy = async function() {
 
     //const nest = await NestToken.deploy();
     //const nest = await TestERC20.deploy('NEST', 'NEST', 18);
-    const nest = await TestERC20.attach('0x146Af6aE0c93e9Aca1a39A644Ee7728bA9ddFA7c');
+    const nest = await NestToken.attach('0x146Af6aE0c93e9Aca1a39A644Ee7728bA9ddFA7c');
     console.log('nest: ' + nest.address);
 
     //const commonGovernance = await CommonGovernance.deploy();
@@ -72,6 +72,8 @@ exports.deploy = async function() {
 
     // await nest.mintTo(nestFutures4V5.address, 100000000000000000000000000n);
     // await nest.approve(nestFutures4V5.address, 100000000000000000000000000n);
+
+    //await nest.mintTo('0x481a74d43ae3A7BdE38B7fE36E46CF9a6cbb4F39', 10000000000000000000000000n);
 
     console.log('---------- OK ----------');
     

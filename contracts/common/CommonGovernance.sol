@@ -6,15 +6,20 @@ import "../interfaces/ICommonGovernance.sol";
 
 import "./CommonBase.sol";
 
+/// @dev Governance contract for common
 contract CommonGovernance is CommonBase, ICommonGovernance {
 
     constructor() {
         assembly {
+            // Creator of this contract is administrator by default
             mstore(0, caller())
             sstore(keccak256(0, 0x20), 1)
         }
     }
 
+    /// @dev Set administrator flag for target address
+    /// @param target Target address
+    /// @param flag 1 means true, 0 means false
     function setAdministrator(address target, uint flag) external override onlyGovernance {
         assembly {
             mstore(0, target)
@@ -22,6 +27,9 @@ contract CommonGovernance is CommonBase, ICommonGovernance {
         }
     }
 
+    /// @dev Check administrator state of target address
+    /// @param target Target address
+    /// @return flag 1 means true, 0 means false
     function checkAdministrator(address target) external view override returns (uint flag) {
         assembly {
             mstore(0, target)

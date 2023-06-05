@@ -2,10 +2,17 @@
 
 pragma solidity ^0.8.0;
 
+/// @dev Governance contract for common
 interface ICommonGovernance {
 
+    /// @dev Set administrator flag for target address
+    /// @param target Target address
+    /// @param flag 1 means true, 0 means false
     function setAdministrator(address target, uint flag) external;
 
+    /// @dev Check administrator state of target address
+    /// @param target Target address
+    /// @return flag 1 means true, 0 means false
     function checkAdministrator(address target) external view returns (uint);
 
     /// @dev Registered address. The address registered here is the address accepted by nest system

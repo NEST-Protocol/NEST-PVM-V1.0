@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.0;
 
+/// @dev Base for common contract
 contract CommonBase {
 
     /**
@@ -13,6 +14,7 @@ contract CommonBase {
 
     constructor() {
         assembly {
+            // Creator is governance by default
             sstore(_GOVERNANCE_SLOT, caller())
         }
     }
@@ -22,12 +24,15 @@ contract CommonBase {
         _;
     }
 
+    /// @dev Set new governance address
+    /// @param newGovernance Address of new governance
     function setGovernance(address newGovernance) public onlyGovernance {
         assembly {
             sstore(_GOVERNANCE_SLOT, newGovernance)
         }
     }
 
+    // Check if caller is governance
     function _onlyGovernance() internal view {
         assembly {
             if iszero(eq(caller(), sload(_GOVERNANCE_SLOT))) {
