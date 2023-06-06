@@ -9,12 +9,12 @@ import "./common/CommonBase.sol";
 /// @dev Nest Token for scroll test net
 contract NestToken is CommonBase, SimpleERC20 {
 
-    uint quotaPerDay;
+    uint _quotaPerDay;
 
     mapping(uint=>uint) _drawnRecords;
 
     constructor() {
-        quotaPerDay = 100 ether;
+        _quotaPerDay = 100 ether;
     }
  
     function name() public pure override returns (string memory) {
@@ -30,14 +30,14 @@ contract NestToken is CommonBase, SimpleERC20 {
     }
 
     function remain(address target) external view returns (uint value) {
-        value = quotaPerDay - _drawnRecords[(uint160(target) << 96) | (block.timestamp / 86400)];
+        value = _quotaPerDay - _drawnRecords[(uint160(target) << 96) | (block.timestamp / 86400)];
     }
 
     function faucet() external {
         uint key = (uint160(msg.sender) << 96) | (block.timestamp / 86400);
         uint drawn = _drawnRecords[key];
-        require(drawn < quotaPerDay, "NT:You have drawn today");
-        uint remain = quotaPerDay - drawn;
+        require(drawn < _quotaPerDay, "NT:You have drawn today");
+        uint remain = _quotaPerDay - drawn;
         _mint(msg.sender, remain);
         _drawnRecords[key] = drawn + remain;
     }
@@ -47,6 +47,6 @@ contract NestToken is CommonBase, SimpleERC20 {
     }
     
     function setQuotaPerDay(uint value) external onlyGovernance {
-        quotaPerDay = value;
+        _quotaPerDay = value;
     }
 }
