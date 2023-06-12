@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.0;
 
 import "./NestCraft.sol";
 
@@ -186,7 +186,7 @@ contract NestCraftSmart is NestCraft {
                     // type(8)|data(248)
                     // type: 0 int, 1 call address, 2 delegate call address
 
-                    // Find identifer in context
+                    // Find identifier in context
                     start = context[temp1];
 
                     // Normal integer

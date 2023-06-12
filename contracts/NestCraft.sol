@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.0;
 
 import "./libs/ABDKMath64x64.sol";
 import "./libs/TransferHelper.sol";
@@ -25,7 +25,6 @@ abstract contract NestCraft is NestFrequentlyUsed, INestPVMFunction {
     uint constant   OP_SELL       = 1;
      int constant   BLOCK_TIME    = 3000;
 
-    
     event Buy(string expr, address owner, uint openBlock, uint shares, uint index);
 
     struct TokenConfig {
