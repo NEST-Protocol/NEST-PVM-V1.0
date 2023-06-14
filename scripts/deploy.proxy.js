@@ -13,6 +13,7 @@ exports.deploy = async function() {
     const CommonProxy = await ethers.getContractFactory('CommonProxy');
     const NestToken = await ethers.getContractFactory('NestToken');
     const NestFutures4V5 = await ethers.getContractFactory('NestFutures4V5');
+    const NestCraft = await ethers.getContractFactory('NestCraftSmart');
     const PancakeFactory = await ethers.getContractFactory('PancakeFactory');
     const PancakeRouter = await ethers.getContractFactory('PancakeRouter');
 
@@ -57,6 +58,10 @@ exports.deploy = async function() {
     //const nestFutures4V5 = await NestFutures4V5.attach('0x0000000000000000000000000000000000000000');
     console.log('nestFutures4V5: ' + nestFutures4V5.address);
 
+    const nestCraft = await deployProxy(NestCraft, []);
+    //const nestCraft = await NestCraft.attach('0x0000000000000000000000000000000000000000');
+    console.log('nestCraft: ' + nestCraft.address);
+
     await nestFutures4V5.setGovernance(commonGovernance.address);
 
     // -------- TEST --------
@@ -79,7 +84,15 @@ exports.deploy = async function() {
     console.log('7. nestFutures4V5.update()');
     //await nestFutures4V5.update(commonGovernance.address);
     await commonGovernance.execute(nestFutures4V5.address, getCalldata('update', ['address'], [commonGovernance.address]));
+    await commonGovernance.execute(nestCraft.address, getCalldata('update', ['address'], [commonGovernance.address]));
 
+    await nestCraft.register('PI', 3141592653590000000n | (1n << 248n));
+    await nestCraft.register('E',  2718281828459000000n | (1n << 248n));
+    await nestCraft.registerAddress('P0', nestCraft.address);
+    await nestCraft.registerAddress('P1', nestCraft.address);
+    await nestCraft.registerAddress('P2', nestCraft.address);
+
+    console.log('8. mint');
     await nest.mintTo(nestFutures4V5.address, 100000000000000000000000000n);
     await nest.approve(nestFutures4V5.address, 100000000000000000000000000n);
 
@@ -96,6 +109,7 @@ exports.deploy = async function() {
         nestFutures4V5: nestFutures4V5,
         pancakeFactory: pancakeFactory,
         pancakeRouter: pancakeRouter,
+        nestCraft: nestCraft,
 
         BLOCK_TIME: BLOCK_TIME,
         USDT_DECIMALS: 18,
