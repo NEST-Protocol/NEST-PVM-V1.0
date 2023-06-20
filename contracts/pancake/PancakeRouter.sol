@@ -290,7 +290,7 @@ library PancakeLibrary {
 
     // calculates the CREATE2 address for a pair without making any external calls
     function pairFor(address factory, address tokenA, address tokenB) internal view returns (address pair) {
-        (address token0, address token1) = sortTokens(tokenA, tokenB);
+        //(address token0, address token1) = sortTokens(tokenA, tokenB);
         // pair = address(uint(keccak256(abi.encodePacked(
         //         hex'ff',
         //         factory,
@@ -303,7 +303,7 @@ library PancakeLibrary {
     // fetches and sorts the reserves for a pair
     function getReserves(address factory, address tokenA, address tokenB) internal view returns (uint reserveA, uint reserveB) {
         (address token0,) = sortTokens(tokenA, tokenB);
-        address pa = pairFor(factory, tokenA, tokenB);
+        //address pa = pairFor(factory, tokenA, tokenB);
         (uint reserve0, uint reserve1,) = IPancakePair(pairFor(factory, tokenA, tokenB)).getReserves();
         (reserveA, reserveB) = tokenA == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
     }

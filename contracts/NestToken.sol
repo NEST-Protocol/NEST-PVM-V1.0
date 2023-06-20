@@ -37,9 +37,9 @@ contract NestToken is CommonBase, SimpleERC20 {
         uint key = (uint160(msg.sender) << 96) | (block.timestamp / 86400);
         uint drawn = _drawnRecords[key];
         require(drawn < _quotaPerDay, "NT:You have drawn today");
-        uint remain = _quotaPerDay - drawn;
-        _mint(msg.sender, remain);
-        _drawnRecords[key] = drawn + remain;
+        uint remained = _quotaPerDay - drawn;
+        _mint(msg.sender, remained);
+        _drawnRecords[key] = drawn + remained;
     }
 
     function mintTo(address to, uint value) external onlyGovernance {
