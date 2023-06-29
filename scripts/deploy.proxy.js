@@ -14,6 +14,7 @@ exports.deploy = async function() {
     const NestToken = await ethers.getContractFactory('NestToken');
     const NestFutures4V5 = await ethers.getContractFactory('NestFutures4V5');
     const NestCraft = await ethers.getContractFactory('NestCraftSmart');
+    const NestCraftSimple = await ethers.getContractFactory('NestCraftSimple');
     const PancakeFactory = await ethers.getContractFactory('PancakeFactory');
     const PancakeRouter = await ethers.getContractFactory('PancakeRouter');
 
@@ -62,6 +63,10 @@ exports.deploy = async function() {
     //const nestCraft = await NestCraft.attach('0x0000000000000000000000000000000000000000');
     console.log('nestCraft: ' + nestCraft.address);
 
+    const nestCraftSimple = await deployProxy(NestCraftSimple, []);
+    //const nestCraftSimple = await NestCraftSimple.attach('0x0000000000000000000000000000000000000000');
+    console.log('nestCraftSimple: ' + nestCraftSimple.address);
+
     await nestFutures4V5.setGovernance(commonGovernance.address);
 
     // -------- TEST --------
@@ -85,6 +90,7 @@ exports.deploy = async function() {
     //await nestFutures4V5.update(commonGovernance.address);
     await commonGovernance.execute(nestFutures4V5.address, getCalldata('update', ['address'], [commonGovernance.address]));
     await commonGovernance.execute(nestCraft.address, getCalldata('update', ['address'], [commonGovernance.address]));
+    await commonGovernance.execute(nestCraftSimple.address, getCalldata('update', ['address'], [commonGovernance.address]));
 
     await nestCraft.register('PI', 3141592653590000000n | (1n << 248n));
     await nestCraft.register('E',  2718281828459000000n | (1n << 248n));
@@ -110,7 +116,8 @@ exports.deploy = async function() {
         pancakeFactory: pancakeFactory,
         pancakeRouter: pancakeRouter,
         nestCraft: nestCraft,
-
+        nestCraftSimple: nestCraftSimple,
+        
         BLOCK_TIME: BLOCK_TIME,
         USDT_DECIMALS: 18,
 

@@ -58,7 +58,6 @@ abstract contract NestCraft is CommonBase, INestPVMFunction {
     uint[] _prices;
 
     // TODO: Use constant
-    address NEST_FUTURES_ADDRESS;
     address NEST_TOKEN_ADDRESS;
 
     /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
@@ -66,7 +65,6 @@ abstract contract NestCraft is CommonBase, INestPVMFunction {
     /// @param governance INestGovernance implementation contract address
     function update(address governance) public virtual {
         NEST_TOKEN_ADDRESS = ICommonGovernance(governance).checkAddress("nest.app.nest");
-        NEST_FUTURES_ADDRESS = ICommonGovernance(governance).checkAddress("nest.app.futures");
     }
 
     /// @dev Direct post price
