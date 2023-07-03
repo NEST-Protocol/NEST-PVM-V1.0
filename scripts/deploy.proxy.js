@@ -13,14 +13,18 @@ exports.deploy = async function() {
     const CommonProxy = await ethers.getContractFactory('CommonProxy');
     const NestToken = await ethers.getContractFactory('NestToken');
     const NestFutures4V5 = await ethers.getContractFactory('NestFutures4V5');
+    const NestFutures5V1 = await ethers.getContractFactory('NestFutures5V1');
     const NestCraft = await ethers.getContractFactory('NestCraftSmart');
     const NestCraftSimple = await ethers.getContractFactory('NestCraftSimple');
     const PancakeFactory = await ethers.getContractFactory('PancakeFactory');
     const PancakeRouter = await ethers.getContractFactory('PancakeRouter');
 
-    const deployProxy = async function(artifact, args) {
-        const target = await artifact.deploy(args);
-        const proxy = await CommonProxy.deploy(target.address);
+    const deployProxy = async function(artifact, args, targetAddress) {
+        if (!targetAddress) {
+            const target = await artifact.deploy(args);
+            targetAddress = target.address;
+        }
+        const proxy = await CommonProxy.deploy(targetAddress);
         return artifact.attach(proxy.address);
     };
 
@@ -59,6 +63,10 @@ exports.deploy = async function() {
     //const nestFutures4V5 = await NestFutures4V5.attach('0x0000000000000000000000000000000000000000');
     console.log('nestFutures4V5: ' + nestFutures4V5.address);
 
+    const nestFutures5V1 = await deployProxy(NestFutures5V1, []);
+    //const nestFutures5V1 = await NestFutures5V1.attach('0x0000000000000000000000000000000000000000');
+    console.log('nestFutures5V1: ' + nestFutures5V1.address);
+
     const nestCraft = await deployProxy(NestCraft, []);
     //const nestCraft = await NestCraft.attach('0x0000000000000000000000000000000000000000');
     console.log('nestCraft: ' + nestCraft.address);
@@ -68,6 +76,7 @@ exports.deploy = async function() {
     console.log('nestCraftSimple: ' + nestCraftSimple.address);
 
     await nestFutures4V5.setGovernance(commonGovernance.address);
+    await nestFutures5V1.setGovernance(commonGovernance.address);
 
     // -------- TEST --------
     const pancakeFactory = await PancakeFactory.deploy('0x0000000000000000000000000000000000000000');
@@ -89,6 +98,7 @@ exports.deploy = async function() {
     console.log('7. nestFutures4V5.update()');
     //await nestFutures4V5.update(commonGovernance.address);
     await commonGovernance.execute(nestFutures4V5.address, getCalldata('update', ['address'], [commonGovernance.address]));
+    await commonGovernance.execute(nestFutures5V1.address, getCalldata('update', ['address'], [commonGovernance.address]));
     await commonGovernance.execute(nestCraft.address, getCalldata('update', ['address'], [commonGovernance.address]));
     await commonGovernance.execute(nestCraftSimple.address, getCalldata('update', ['address'], [commonGovernance.address]));
 
@@ -100,7 +110,9 @@ exports.deploy = async function() {
 
     console.log('8. mint');
     await nest.mintTo(nestFutures4V5.address, 100000000000000000000000000n);
+    await nest.mintTo(nestFutures5V1.address, 100000000000000000000000000n);
     await nest.approve(nestFutures4V5.address, 100000000000000000000000000n);
+    await nest.approve(nestFutures5V1.address, 100000000000000000000000000n);
 
     console.log('---------- OK ----------');
     
@@ -113,6 +125,7 @@ exports.deploy = async function() {
 
         commonGovernance: commonGovernance,
         nestFutures4V5: nestFutures4V5,
+        nestFutures5V1: nestFutures5V1,
         pancakeFactory: pancakeFactory,
         pancakeRouter: pancakeRouter,
         nestCraft: nestCraft,
