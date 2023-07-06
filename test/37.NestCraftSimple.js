@@ -8,9 +8,8 @@ describe('37.NestCraftSimple', function() {
         var [owner, addr1, addr2] = await ethers.getSigners();
 
         const { 
-            eth, nest, nestCraftSimple, BLOCK_TIME, USDT_DECIMALS
+            eth, nest, nestCraft, BLOCK_TIME, USDT_DECIMALS
         } = await deploy();
-        const nestCraft = nestCraftSimple;
 
         const tokens = [eth, nest];
         let previous;

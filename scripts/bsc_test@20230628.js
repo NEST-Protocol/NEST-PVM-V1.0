@@ -60,7 +60,7 @@ exports.deploy = async function() {
     const nestCraft = await NestCraftSimple.attach('0x06F86C308123e029ab80aCA18862Acfab52C47D8');
     console.log('nestCraft: ' + nestCraft.address);
 
-    await nest.approve(nestCraft.address, 1000000000000000000000000n);
+    //await nest.approve(nestCraft.address, 1000000000000000000000000n);
 
     //await commonGovernance.registerAddress('nest.app.nest', nest.address);
 
