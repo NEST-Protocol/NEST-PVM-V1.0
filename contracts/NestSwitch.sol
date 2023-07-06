@@ -13,15 +13,20 @@ import "./common/CommonBase.sol";
 /// @dev Switch old NEST to new NEST by this contract
 contract NestSwitch is CommonBase {
 
-    address OLD_NEST_TOKEN_ADDRESS;
-    address NEW_NEST_TOKEN_ADDRESS;
+    address immutable OLD_NEST_TOKEN_ADDRESS;
+    address immutable NEW_NEST_TOKEN_ADDRESS;
 
-    /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
-    ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
-    /// @param governance INestGovernance implementation contract address
-    function update(address governance) external onlyGovernance {
-        OLD_NEST_TOKEN_ADDRESS = ICommonGovernance(governance).checkAddress("nest.app.nest.old");
-        NEW_NEST_TOKEN_ADDRESS = ICommonGovernance(governance).checkAddress("nest.app.nest");
+    // /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
+    // ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
+    // /// @param governance INestGovernance implementation contract address
+    // function update(address governance) external onlyGovernance {
+    //     OLD_NEST_TOKEN_ADDRESS = ICommonGovernance(governance).checkAddress("nest.app.nest.old");
+    //     NEW_NEST_TOKEN_ADDRESS = ICommonGovernance(governance).checkAddress("nest.app.nest");
+    // }
+
+    constructor(address oldNestTokenAddress, address newNestTokenAddress) {
+        OLD_NEST_TOKEN_ADDRESS = oldNestTokenAddress;
+        NEW_NEST_TOKEN_ADDRESS = newNestTokenAddress;
     }
 
     // Merkle root for white list
@@ -45,9 +50,8 @@ contract NestSwitch is CommonBase {
     /// @param value Value of old NEST
     function switchOld(uint value) external {
         require(msg.sender == tx.origin, "NS:no contract");
-        uint switchRecord = _switchRecords[msg.sender];
-        require(switchRecord < type(uint).max, "NM:each address can only withdraw once");
-        _switchRecords[msg.sender] = switchRecord + value;
+        require(_switchRecords[msg.sender] == 0, "NM:each address can only withdraw once");
+        _switchRecords[msg.sender] = value;
         IERC20(OLD_NEST_TOKEN_ADDRESS).transferFrom(msg.sender, address(this), value);
     }
 

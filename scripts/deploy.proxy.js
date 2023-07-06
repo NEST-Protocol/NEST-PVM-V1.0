@@ -23,7 +23,19 @@ exports.deploy = async function() {
 
     const deployProxy = async function(artifact, args, targetAddress) {
         if (!targetAddress) {
-            const target = await artifact.deploy(args);
+            let target;
+            if (args.length == 0) { target = await artifact.deploy(); } else 
+            if (args.length == 1) { target = await artifact.deploy(args[0]); } else 
+            if (args.length == 2) { target = await artifact.deploy(args[0], args[1]); } else 
+            if (args.length == 3) { target = await artifact.deploy(args[0], args[1], args[2]); } else 
+            if (args.length == 4) { target = await artifact.deploy(args[0], args[1], args[2], args[3]); } else 
+            if (args.length == 5) { target = await artifact.deploy(args[0], args[1], args[2], args[3], args[4]); } else 
+            if (args.length == 6) { target = await artifact.deploy(args[0], args[1], args[2], args[3], args[4], args[5]); } else 
+            if (args.length == 7) { target = await artifact.deploy(args[0], args[1], args[2], args[3], args[4], args[5], args[6]); } else 
+            if (args.length == 8) { target = await artifact.deploy(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]); } else 
+            if (args.length == 9) { target = await artifact.deploy(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]); } else 
+            { throw new Error('too many arguments'); }
+
             targetAddress = target.address;
         }
         const proxy = await CommonProxy.deploy(targetAddress);
@@ -82,7 +94,7 @@ exports.deploy = async function() {
     //const nestCraftSimple = await NestCraftSimple.attach('0x0000000000000000000000000000000000000000');
     console.log('nestCraftSimple: ' + nestCraftSimple.address);
 
-    const nestSwitch = await deployProxy(NestSwitch, []);
+    const nestSwitch = await deployProxy(NestSwitch, [nest_old.address, nest.address]);
     //const nestSwitch = await NestSwitch.attach('0x0000000000000000000000000000000000000000');
     console.log('nestSwitch: ' + nestSwitch.address);
 
@@ -116,7 +128,7 @@ exports.deploy = async function() {
     await commonGovernance.execute(nestFutures5V1.address, getCalldata('update', ['address'], [commonGovernance.address]));
     await commonGovernance.execute(nestCraft.address, getCalldata('update', ['address'], [commonGovernance.address]));
     await commonGovernance.execute(nestCraftSimple.address, getCalldata('update', ['address'], [commonGovernance.address]));
-    await commonGovernance.execute(nestSwitch.address, getCalldata('update', ['address'], [commonGovernance.address]));
+    //await commonGovernance.execute(nestSwitch.address, getCalldata('update', ['address'], [commonGovernance.address]));
     
     // await nestCraft.register('PI', 3141592653590000000n | (1n << 248n));
     // await nestCraft.register('E',  2718281828459000000n | (1n << 248n));
