@@ -63,7 +63,7 @@ abstract contract NestCraft is CommonBase, INestPVMFunction {
     /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
     ///      super.update(governance) when overriding, and override method without onlyGovernance
     /// @param governance INestGovernance implementation contract address
-    function update(address governance) public virtual {
+    function update(address governance) external onlyGovernance {
         NEST_TOKEN_ADDRESS = ICommonGovernance(governance).checkAddress("nest.app.nest");
     }
 

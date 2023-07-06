@@ -18,11 +18,11 @@ contract NestToken is CommonBase, SimpleERC20 {
     }
  
     function name() public pure override returns (string memory) {
-        return "NEST";
+        return "NEST_OLD";
     }
 
     function symbol() external pure override returns (string memory) {
-        return "NEST";
+        return "NEST_OLD";
     }
 
     function decimals() public pure override returns (uint8) {
