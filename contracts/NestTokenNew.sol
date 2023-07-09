@@ -4,8 +4,10 @@ pragma solidity ^0.8.0;
 
 import "./libs/SimpleERC20.sol";
 
+import "./common/CommonBase.sol";
+
 /// @dev New NEST Token for BSC
-contract NestTokenNew is SimpleERC20 {
+contract NestTokenNew is CommonBase, SimpleERC20 {
 
     constructor() {
         _mint(msg.sender, 10000000000 ether);
