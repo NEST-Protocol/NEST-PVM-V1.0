@@ -72,7 +72,7 @@ module.exports = {
     },
     bsc_test: {
       url: 
-      'http://localhost:50001/bsc_test_getblock/',
+      'http://localhost:50000/bsc_test_getblock/',
       //'https://bsc.getblock.io/33a5ac19-a33e-40c9-aa06-33e32c18b459/testnet/',
       //'https://bsc-testnet.s.chainbase.online/v1/2IACpoXYkHcgiWwSB4l2VmdWizr',
       chainId: 97,
@@ -88,7 +88,7 @@ module.exports = {
       // "https://bsc-mainnet.s.chainbase.online/v1/2IACpoXYkHcgiWwSB4l2VmdWizr",
       //"https://bsc.getblock.io/33a5ac19-a33e-40c9-aa06-33e32c18b459/mainnet/",
       chainId: 56,
-      gasPrice: 5e9,
+      gasPrice: 3e9,
       gas: 6000000,
       accounts: [config.account.bsc_main.key, config.account.bsc_main.userA, config.account.bsc_main.userB],
       timeout: 2000000000

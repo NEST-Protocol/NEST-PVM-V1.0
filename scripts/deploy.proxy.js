@@ -9,6 +9,7 @@ exports.deploy = async function() {
     
     const eth = { address: '0x0000000000000000000000000000000000000000' };
     const TestERC20 = await ethers.getContractFactory('TestERC20');
+    const NestToken = await ethers.getContractFactory('NestToken');
     const NestPriceFacade = await ethers.getContractFactory('NestPriceFacade');
     const NestGovernance = await ethers.getContractFactory('NestGovernance');
     const NestVault = await ethers.getContractFactory('NestVault');
@@ -24,10 +25,12 @@ exports.deploy = async function() {
     const NestFutures4V3 = await ethers.getContractFactory('NestFutures4V3');
     const NestFutures4V4 = await ethers.getContractFactory('NestFutures4V4');
     const NestFutures4V5 = await ethers.getContractFactory('NestFutures4V5');
+    const NestFutures4V6 = await ethers.getContractFactory('NestFutures4V6');
     const NestMarket = await ethers.getContractFactory('NestMarket');
     const NestFuturesProxy = await ethers.getContractFactory('NestFuturesProxy');
     const PancakeFactory = await ethers.getContractFactory('PancakeFactory');
     const PancakeRouter = await ethers.getContractFactory('PancakeRouter');
+    const Gatling = await ethers.getContractFactory('Gatling');
 
     console.log('** Deploy: deploy.proxy.js **');
     
@@ -43,7 +46,8 @@ exports.deploy = async function() {
     //const dcu = await TestERC20.attach('0x0000000000000000000000000000000000000000');
     console.log('dcu: ' + dcu.address);
 
-    const nest = await TestERC20.deploy('NEST', 'NEST', 18);
+    //const nest = await TestERC20.deploy('NEST', 'NEST', 18);
+    const nest = await NestToken.deploy();
     //const nest = await TestERC20.attach('0x0000000000000000000000000000000000000000');
     console.log('nest: ' + nest.address);
 
@@ -91,6 +95,10 @@ exports.deploy = async function() {
     //const nestFutures4V5 = await NestFutures4V5.attach('0x0000000000000000000000000000000000000000');
     console.log('nestFutures4V5: ' + nestFutures4V5.address);
 
+    const nestFutures4V6 = await upgrades.deployProxy(NestFutures4V6, [nestGovernance.address], { initializer: 'initialize' });
+    //const nestFutures4V6 = await NestFutures4V6.attach('0x0000000000000000000000000000000000000000');
+    console.log('nestFutures4V6: ' + nestFutures4V6.address);
+
     const nestProbability = await upgrades.deployProxy(NestProbability, [nestGovernance.address], { initializer: 'initialize' });
     //const nestProbability = await NestProbability.attach('0x0000000000000000000000000000000000000000');
     console.log('nestProbability: ' + nestProbability.address);
@@ -114,6 +122,9 @@ exports.deploy = async function() {
     const nestFuturesProxy = await upgrades.deployProxy(NestFuturesProxy, [nestGovernance.address], { initializer: 'initialize' });
     //const nestFuturesProxy = await NestFuturesProxy.attach('0x0000000000000000000000000000000000000000');
     console.log('nestFuturesProxy: ' + nestFuturesProxy.address);
+
+    const gatling = await Gatling.deploy();
+    console.log('gatling: ' + gatling.address);
 
     // -------- TEST --------
     const pancakeFactory = await PancakeFactory.deploy('0x0000000000000000000000000000000000000000');
@@ -170,6 +181,8 @@ exports.deploy = async function() {
     await nestFutures4V4.update(nestGovernance.address);
     console.log('7. nestFutures4V5.update()');
     await nestFutures4V5.update(nestGovernance.address);
+    console.log('7. nestFutures4V6.update()');
+    await nestFutures4V6.update(nestGovernance.address);
     console.log('8. nestProbability.update()');
     await nestProbability.update(nestGovernance.address);
     console.log('8. nestBuybackPool.update()');
@@ -259,7 +272,7 @@ exports.deploy = async function() {
     await nestVault.approve(nestFutures4V5.address, 100000000000000000000000000n);
     await nestVault.approve(nestProbability.address, 100000000000000000000000000n);
     
-    await nest.transfer(nestVault.address, 100000000000000000000000000n);
+    await nest.mintTo(nestVault.address, 100000000000000000000000000n);
     await nest.approve(nestOptions.address, 100000000000000000000000000n);
     await nest.approve(nestFutures.address, 100000000000000000000000000n);
     await nest.approve(nestTrustFuturesV1.address, 100000000000000000000000000n);
@@ -268,6 +281,7 @@ exports.deploy = async function() {
     await nest.approve(nestFutures4V3.address, 100000000000000000000000000n);
     await nest.approve(nestFutures4V4.address, 100000000000000000000000000n);
     await nest.approve(nestFutures4V5.address, 100000000000000000000000000n);
+    await nest.approve(nestFutures4V6.address, 100000000000000000000000000n);
     await nest.approve(nestProbability.address, 100000000000000000000000000n);
 
     console.log('---------- OK ----------');
@@ -297,11 +311,13 @@ exports.deploy = async function() {
         nestFutures4V3: nestFutures4V3,
         nestFutures4V4: nestFutures4V4,
         nestFutures4V5: nestFutures4V5,
+        nestFutures4V6: nestFutures4V6,
         nestMarket: nestMarket,
         nestVault: nestVault,
         nestFuturesProxy: nestFuturesProxy,
         pancakeFactory: pancakeFactory,
         pancakeRouter: pancakeRouter,
+        gatling: gatling,
 
         BLOCK_TIME: BLOCK_TIME,
         USDT_DECIMALS: 18,
