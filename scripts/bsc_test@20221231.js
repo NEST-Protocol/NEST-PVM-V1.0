@@ -9,6 +9,7 @@ exports.deploy = async function() {
     
     const eth = { address: '0x0000000000000000000000000000000000000000' };
     const TestERC20 = await ethers.getContractFactory('TestERC20');
+    const NestToken = await ethers.getContractFactory('NestToken');
     const NestPriceFacade = await ethers.getContractFactory('NestPriceFacade');
     const NestGovernance = await ethers.getContractFactory('NestGovernance');
     const NestVault = await ethers.getContractFactory('NestVault');
@@ -54,6 +55,9 @@ exports.deploy = async function() {
 
     const nest = await TestERC20.attach('0x821edD79cc386E56FeC9DA5793b87a3A52373cdE');
     console.log('nest: ' + nest.address);
+
+    const nest_new = await NestToken.attach('0xcd6926193308d3b371fdd6a6219067e550000000');
+    console.log('nest_new: ' + nest_new.address);
 
     //const usdt = await TestERC20.deploy('USDT', 'USDT', 18);
     const usdt = await TestERC20.attach('0xDd4A68D8236247BDC159F7C5fF92717AA634cBCc');
@@ -114,11 +118,33 @@ exports.deploy = async function() {
     const nestRedeem = await NestRedeem.attach('0x6E9c1edACe6Fc03f9666769f09D557b1383f7F57');
     console.log('nestRedeem: ' + nestRedeem.address);
 
-    //const newNestFutures2 = await NestFutures2.deploy();
-    //console.log('newNestFutures2: ' + newNestFutures2.address);
+    // const newNestCyberInk = await NestCyberInk.deploy();
+    // console.log('newNestCyberInk: ' + newNestCyberInk.address);
+    // const newNestNFTAuction = await NestNFTAuction.deploy();
+    // console.log('newNestNFTAuction: ' + newNestNFTAuction.address);
+    // const newNestMarket = await NestMarket.deploy();
+    // console.log('newNestMarket: ' + newNestMarket.address);
+    // const balances = {
+    //     nestCyberInk: await nest.balanceOf(nestCyberInk.address),
+    //     nestNFTAuction: await nest.balanceOf(nestNFTAuction.address),
+    //     nestMarket: await nest.balanceOf(nestMarket.address)
+    // };
 
-    //const newNestFuturesProxy = await NestFuturesProxy.deploy();
-    //console.log('newNestFuturesProxy: ' + newNestFuturesProxy.address);
+    // //await nest_new.mintTo(nestCyberInk.address, balances.nestCyberInk);
+    // await nest_new.mintTo(nestNFTAuction.address, balances.nestNFTAuction);
+    // await nest_new.mintTo(nestMarket.address, balances.nestMarket);
+
+    // await nestCyberInk.update(nestGovernance.address);
+    // await nestNFTAuction.update(nestGovernance.address);
+    // await nestMarket.update(nestGovernance.address);
+    // console.log(balances);
+
+    //await nest_new.approve(nestCyberInk.address, 10000000000000000000000000n);
+    //await nestCyberInk.mint();
+    //await nestCyberInk.claim(276);
+    //console.log(await nestCyberInk.list(0, 1, 0));
+    
+
 
     console.log('---------- OK ----------');
     
