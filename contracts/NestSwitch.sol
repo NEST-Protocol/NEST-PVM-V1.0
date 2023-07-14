@@ -4,9 +4,9 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
-import "./interfaces/ICommonGovernance.sol";
+import "./libs/TransferHelper.sol";
 
-import "./libs/SimpleERC20.sol";
+import "./interfaces/ICommonGovernance.sol";
 
 import "./common/CommonBase.sol";
 
@@ -15,14 +15,6 @@ contract NestSwitch is CommonBase {
 
     address immutable OLD_NEST_TOKEN_ADDRESS;
     address immutable NEW_NEST_TOKEN_ADDRESS;
-
-    // /// @dev Rewritten in the implementation contract, for load other contract addresses. Call 
-    // ///      super.update(newGovernance) when overriding, and override method without onlyGovernance
-    // /// @param governance INestGovernance implementation contract address
-    // function update(address governance) external onlyGovernance {
-    //     OLD_NEST_TOKEN_ADDRESS = ICommonGovernance(governance).checkAddress("nest.app.nest.old");
-    //     NEW_NEST_TOKEN_ADDRESS = ICommonGovernance(governance).checkAddress("nest.app.nest");
-    // }
 
     constructor(address oldNestTokenAddress, address newNestTokenAddress) {
         OLD_NEST_TOKEN_ADDRESS = oldNestTokenAddress;
@@ -49,24 +41,46 @@ contract NestSwitch is CommonBase {
     /// @dev User call this method to deposit old NEST to contract
     /// @param value Value of old NEST
     function switchOld(uint value) external {
-        require(msg.sender == tx.origin, "NS:no contract");
-        require(_switchRecords[msg.sender] == 0, "NM:each address can only withdraw once");
+        // Contract address is forbidden
+        require(msg.sender == tx.origin, "NS:forbidden!");
+
+        // Each address can switch only once
+        require(_switchRecords[msg.sender] == 0, "NS:only once!");
+
+        // Record value of NEST to switch
         _switchRecords[msg.sender] = value;
-        IERC20(OLD_NEST_TOKEN_ADDRESS).transferFrom(msg.sender, address(this), value);
+
+        // Transfer old NEST to this contract from msg.sender
+        TransferHelper.safeTransferFrom(OLD_NEST_TOKEN_ADDRESS, msg.sender, address(this), value);
     }
 
     /// @dev User call this method to withdraw new NEST from contract
     /// @param merkleProof Merkle proof for the address
     function withdrawNew(bytes32[] calldata merkleProof) external {
+        // Load switch record
         uint switchRecord = _switchRecords[msg.sender];
-        require(switchRecord < type(uint).max, "NM:each address can only withdraw once");
+
+        // type(uint).max means user has withdrawn
+        require(switchRecord < type(uint).max, "NS:only once!");
+
+        // Check if the address is released
         require(MerkleProof.verify(
             merkleProof, 
             _merkleRoot, 
             keccak256(abi.encodePacked(msg.sender))
         ), "NS:verify failed");
 
-        IERC20(NEW_NEST_TOKEN_ADDRESS).transfer(msg.sender, switchRecord);
+        // Transfer new NEST to msg.sender
+        TransferHelper.safeTransfer(NEW_NEST_TOKEN_ADDRESS, msg.sender, switchRecord);
+
+        // Mark user has withdrawn
         _switchRecords[msg.sender] = type(uint).max;
+    }
+
+    /// @dev Migrate token to governance address
+    /// @param tokenAddress Address of target token
+    /// @param value Value to migrate
+    function migrate(address tokenAddress, uint value) external onlyGovernance {
+        TransferHelper.safeTransfer(tokenAddress, msg.sender, value);
     }
 }
