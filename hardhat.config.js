@@ -66,7 +66,7 @@ module.exports = {
     goerli: {
       url: `https://goerli.infura.io/v3/${config.infura.key}`,
       accounts: [config.account.test.key, config.account.test.userA, config.account.test.userB],
-      gas: 6e6,
+      gas: 1e6,
       initialBaseFeePerGas: 1e6,
       timeout: 2000000000
     },
