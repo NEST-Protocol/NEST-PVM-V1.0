@@ -30,7 +30,8 @@ describe('deploy', function() {
 
 		let whiteList = [
             '0x0e20201B2e9bC6eba51bcC6E710C510dC2cFCfA4',
-            '0x2a69bb61416b9eb9582a96eaa63b758c6458a820'
+            '0x2a69bb61416b9eb9582a96eaa63b758c6458a820',
+			'0x496f53bbbe449ff413798d985cd5bd30bc987a94'
         ];
         for (var i = 0; i < whiteList.length; ++i) {
             for (var j = i + 1; j < whiteList.length; ++j) {
@@ -41,6 +42,7 @@ describe('deploy', function() {
         }
         const nodes = whiteList.map(addr=>keccak256(addr));
         const merkleTree = new MerkleTree(nodes, keccak256, { sortPairs: true });
+		await nestSwitch.setMerkleRoot(merkleTree.getRoot());
         // if (true) {
         //     console.log('2. set merkle root');
 
@@ -51,7 +53,7 @@ describe('deploy', function() {
 
         //     console.log('root: ' + merkleTree.getRoot());
         // }
-		await nestSwitch.withdrawNew(merkleTree.getHexProof(nodes[0]));
+		//await nestSwitch.withdrawNew(merkleTree.getHexProof(nodes[0]));
 
 
 		console.log('ok');

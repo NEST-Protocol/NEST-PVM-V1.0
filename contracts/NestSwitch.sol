@@ -2,9 +2,8 @@
 
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-
-import "./libs/TransferHelper.sol";
 
 import "./interfaces/ICommonGovernance.sol";
 
@@ -51,7 +50,7 @@ contract NestSwitch is CommonBase {
         _switchRecords[msg.sender] = value;
 
         // Transfer old NEST to this contract from msg.sender
-        TransferHelper.safeTransferFrom(OLD_NEST_TOKEN_ADDRESS, msg.sender, address(this), value);
+        IERC20(OLD_NEST_TOKEN_ADDRESS).transferFrom(msg.sender, address(this), value);
     }
 
     /// @dev User call this method to withdraw new NEST from contract
@@ -71,7 +70,7 @@ contract NestSwitch is CommonBase {
         ), "NS:verify failed");
 
         // Transfer new NEST to msg.sender
-        TransferHelper.safeTransfer(NEW_NEST_TOKEN_ADDRESS, msg.sender, switchRecord);
+        IERC20(NEW_NEST_TOKEN_ADDRESS).transfer(msg.sender, switchRecord);
 
         // Mark user has withdrawn
         _switchRecords[msg.sender] = type(uint).max;
@@ -81,6 +80,6 @@ contract NestSwitch is CommonBase {
     /// @param tokenAddress Address of target token
     /// @param value Value to migrate
     function migrate(address tokenAddress, uint value) external onlyGovernance {
-        TransferHelper.safeTransfer(tokenAddress, msg.sender, value);
+        IERC20(tokenAddress).transfer(msg.sender, value);
     }
 }
