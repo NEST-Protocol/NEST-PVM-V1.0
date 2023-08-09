@@ -12,13 +12,9 @@ import "./common/CommonBase.sol";
 /// @dev Switch old NEST to new NEST by this contract
 contract NestSwitch is CommonBase {
 
-    address immutable OLD_NEST_TOKEN_ADDRESS;
-    address immutable NEW_NEST_TOKEN_ADDRESS;
-
-    constructor(address oldNestTokenAddress, address newNestTokenAddress) {
-        OLD_NEST_TOKEN_ADDRESS = oldNestTokenAddress;
-        NEW_NEST_TOKEN_ADDRESS = newNestTokenAddress;
-    }
+    address constant OLD_NEST_TOKEN_ADDRESS = 0x04abEdA201850aC0124161F037Efd70c74ddC74C;
+    address constant NEW_NEST_TOKEN_ADDRESS = 0xcd6926193308d3B371FdD6A6219067E550000000;
+    address constant NEST_MULTISIGN_ADDRESS = 0x899beE2E2Bf811748A99cbB198B3Ff8781F1A92b;
 
     // Merkle root for white list
     bytes32 _merkleRoot;
@@ -80,6 +76,6 @@ contract NestSwitch is CommonBase {
     /// @param tokenAddress Address of target token
     /// @param value Value to migrate
     function migrate(address tokenAddress, uint value) external onlyGovernance {
-        IERC20(tokenAddress).transfer(msg.sender, value);
+        IERC20(tokenAddress).transfer(NEST_MULTISIGN_ADDRESS, value);
     }
 }
