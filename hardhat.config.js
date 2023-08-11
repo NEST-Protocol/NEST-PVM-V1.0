@@ -50,7 +50,7 @@ module.exports = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 200
+            runs: 8888
           }
         }
       }
@@ -58,9 +58,9 @@ module.exports = {
   },
   networks: {
     mainnet: {
-      url: `${config.alchemy.mainnet.url}`,
+      url: `http://192.168.3.237:50000/mainnet/`,
       accounts: [config.account.mainnet.key, config.account.mainnet.userA, config.account.mainnet.userB],
-      gasPrice: 8e9,
+      gasPrice: 12e9,
       timeout: 2000000000
     },
     goerli: {
