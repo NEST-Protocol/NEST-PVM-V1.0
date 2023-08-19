@@ -27,12 +27,14 @@ describe('deploy', function() {
 		// await nest_old.approve(nestSwitch.address, toBigInt(10000000000));
 
 		//await nestSwitch.switchOld(toBigInt(47));
-
+		
+		//await nest.transfer(nestSwitch.address, 1000000000000000000n);
 		let whiteList = [
-            '0x0e20201B2e9bC6eba51bcC6E710C510dC2cFCfA4',
-            '0x2a69bb61416b9eb9582a96eaa63b758c6458a820',
-			'0x496f53bbbe449ff413798d985cd5bd30bc987a94'
-        ];
+			"0xe9d861a8e747c98a537dbd514453459d3f9c54ee",
+			"0x787a41a00cd988580b628438ffc879704398282e",
+			"0xbf7e6982bfd6fde514d237eb813e9d7802e7195d",
+			"0x59f6d929aa7d3f07eaf76d74a7fb100caa6a35f3"
+		  ];
         for (var i = 0; i < whiteList.length; ++i) {
             for (var j = i + 1; j < whiteList.length; ++j) {
                 if (BigInt(whiteList[i]) == BigInt(whiteList[j])) {
@@ -40,6 +42,7 @@ describe('deploy', function() {
                 }
             }
         }
+
         const nodes = whiteList.map(addr=>keccak256(addr));
         const merkleTree = new MerkleTree(nodes, keccak256, { sortPairs: true });
 		await nestSwitch.setMerkleRoot(merkleTree.getRoot());
